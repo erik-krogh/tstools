@@ -1,0 +1,65 @@
+package dk.webbies.tscreate.analysis.typeDeclaration;
+
+import dk.webbies.tscreate.jsnapconvert.Snap;
+import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Created by Erik Krogh Kristensen on 02-09-2015.
+ */
+public class DeclarationBuilder {
+    private final Snap.Obj librarySnap;
+    private final HashMap<Snap.Obj, LibraryClass> classes;
+    private final Map<Snap.Obj, FunctionType> functions;
+
+    public DeclarationBuilder(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> classes, Map<Snap.Obj, FunctionType> functions) {
+        this.librarySnap = librarySnap;
+        this.classes = classes;
+        this.functions = functions;
+    }
+
+    public DeclarationBlock buildDeclaration() {
+        Snap.Obj obj = this.librarySnap;
+        return buildDeclaration(obj);
+    }
+
+    private DeclarationBlock buildDeclaration(Snap.Obj obj) {
+        ArrayList<Declaration> result = new ArrayList<>();
+        for (Snap.Property property : obj.properties) {
+            Snap.Value value = property.value;
+            if (value == null) {
+                continue;
+            }
+            if (value instanceof Snap.BooleanConstant) {
+                result.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.BOOLEAN));
+            } else if (value instanceof Snap.NumberConstant) {
+                result.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.NUMBER));
+            } else if (value instanceof Snap.StringConstant) {
+                result.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.STRING));
+            } else {
+                Snap.Obj propertyObj = (Snap.Obj) value;
+                if (propertyObj.function != null) {
+                    Snap.Property prototypeProperty = propertyObj.getProperty("prototype");
+                    if (prototypeProperty != null && prototypeProperty.value != null && prototypeProperty.value instanceof Snap.Obj && classes.containsKey(prototypeProperty.value)) {
+                        // TODO: This is a class, handle as such
+                        throw new RuntimeException("Cannot build declarations for classes yet");
+                    } else {
+                        // Just a function
+                        result.add(new FunctionDeclaration(property.name, functions.get(propertyObj)));
+                    }
+
+
+                } else {
+
+                    // TODO: Emit. Plain object
+                    throw new RuntimeException("Cannot handle build declarations for objects yet");
+                }
+            }
+        }
+
+        return new DeclarationBlock(result);
+    }
+}
