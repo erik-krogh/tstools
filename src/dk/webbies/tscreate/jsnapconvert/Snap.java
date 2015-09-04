@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.jsnapconvert;
 
-import dk.webbies.tscreate.paser.Function;
+import dk.webbies.tscreate.paser.FunctionExpression;
 
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +80,6 @@ public class Snap {
         public String type;
         public String id;
         public List<Value> arguments;
-        public dk.webbies.tscreate.paser.Function astNode;
+        public FunctionExpression astNode;
     }
 }

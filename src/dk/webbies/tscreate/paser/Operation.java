@@ -6,5 +6,5 @@ package dk.webbies.tscreate.paser;
 public enum Operation {
     ADD,
     EQ,
-    ASSIGN;
+    ASSIGN, SUB, MULT;
 }

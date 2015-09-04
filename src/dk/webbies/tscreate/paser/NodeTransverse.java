@@ -8,13 +8,6 @@ public abstract class NodeTransverse implements NodeVisitor<Void> {
     public Void visit(BinaryExpression expression) {
         expression.getLhs().accept(this);
         expression.getRhs().accept(this);
-//        expression.getOperation() // Not passed on
-        return null;
-    }
-
-    @Override
-    public Void visit(Program program) {
-        program.getBody().forEach(statement -> statement.accept(this));
         return null;
     }
 
@@ -57,7 +50,7 @@ public abstract class NodeTransverse implements NodeVisitor<Void> {
     }
 
     @Override
-    public Void visit(Function function) {
+    public Void visit(FunctionExpression function) {
         function.getBody().accept(this);
         function.getArguments().forEach(arg -> arg.accept(this));
         return null;

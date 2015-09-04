@@ -1,8 +1,10 @@
 package dk.webbies.tscreate.analysis;
 
 import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.paser.*;
+import dk.webbies.tscreate.paser.FunctionExpression;
 
 import java.util.Map;
 
@@ -38,13 +40,25 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
     }
 
     @Override
-    public UnionNode visit(BinaryExpression expression) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public UnionNode visit(Program program) {
-        throw new UnsupportedOperationException();
+    public UnionNode visit(BinaryExpression op) {
+        UnionNode lhs = op.getLhs().accept(this);
+        UnionNode rhs = op.getRhs().accept(this);
+        switch (op.getOperation()) {
+            case ADD: {
+                return new AddNode(lhs, rhs);
+            }
+            case ASSIGN: // =
+            case EQ: // ==
+                solver.union(lhs, rhs);
+                return lhs;
+            case SUB:
+            case MULT:
+                solver.union(PrimitiveUnionNode.number(), lhs);
+                solver.union(PrimitiveUnionNode.number(), rhs);
+                return PrimitiveUnionNode.number();
+            default:
+                throw new UnsupportedOperationException();
+        }
     }
 
     @Override
@@ -73,7 +87,10 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
 
     @Override
     public UnionNode visit(Identifier identifier) {
-        throw new UnsupportedOperationException();
+        UnionNode id = get(identifier);
+        UnionNode idDec = get(identifier.getDeclaration());
+        solver.union(id, idDec);
+        return id;
     }
 
     @Override
@@ -87,10 +104,13 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
     }
 
     @Override
-    public UnionNode visit(Function function) {
+    public UnionNode visit(FunctionExpression function) {
         if (function == this.closure.function.astNode) {
             function.getBody().accept(this);
             function.getArguments().forEach(arg -> arg.accept(this));
+            for (int i = 0; i < functionNode.arguments.size(); i++) {
+                solver.union(get(function.getArguments().get(i)), functionNode.arguments.get(i));
+            }
             return null;
         }
         // Make sure not to visit the same thing twice.

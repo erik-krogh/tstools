@@ -21,6 +21,9 @@ package dk.webbies.tscreate.analysis.unionFind;
  * Modified by Erik Krogh Kristensen, for use in TSCreate (working title).
  */
 
+import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
+import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNodeWithFields;
+
 import java.util.*; // For Map, HashMap
 
 
@@ -174,6 +177,9 @@ public class UnionFindSolver {
      * @throws NoSuchElementException If either element does not exist.
      */
     public void union(UnionNode one, UnionNode two) {
+        if (one == null || two == null) {
+            throw new RuntimeException("A unionNode cannot be null");
+        }
         if (!elems.containsKey(one)) {
             add(one);
         }

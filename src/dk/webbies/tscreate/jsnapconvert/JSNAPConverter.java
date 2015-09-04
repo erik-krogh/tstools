@@ -5,9 +5,9 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import dk.webbies.tscreate.paser.BlockStatement;
+import dk.webbies.tscreate.paser.FunctionExpression;
 import dk.webbies.tscreate.paser.NodeTransverse;
-import dk.webbies.tscreate.paser.Function;
-import dk.webbies.tscreate.paser.Program;
 
 import java.io.*;
 import java.util.*;
@@ -15,7 +15,7 @@ import java.util.*;
 public class JSNAPConverter {
 
     public static void main(String[] args) throws IOException {
-        Program emptyProgram = new Program(0, Collections.EMPTY_LIST);
+        FunctionExpression emptyProgram = new FunctionExpression(":program", new BlockStatement(0, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
         Snap.Obj pixiSnap = getStateDumpFromFile("lib/tscheck/tests/pixi.js.jsnap", emptyProgram);
 
         Snap.Obj pixiUnique = extractUnique(pixiSnap);
@@ -25,7 +25,8 @@ public class JSNAPConverter {
     }
 
     public static Snap.Obj extractUnique(Snap.Obj librarySnap) throws IOException {
-        Snap.Obj domSnap = getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", new Program(0, Collections.EMPTY_LIST));
+        FunctionExpression emptyProgram = new FunctionExpression(":program", new BlockStatement(0, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
+        Snap.Obj domSnap = getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", emptyProgram);
         return extractUnique(librarySnap, domSnap);
     }
 
@@ -90,15 +91,15 @@ public class JSNAPConverter {
         return result;
     }
 
-    public static Snap.Obj getStateDumpFromFile(String path, Program program) throws IOException {
+    public static Snap.Obj getStateDumpFromFile(String path, FunctionExpression program) throws IOException {
         String jsnapRaw = readFile(path);
         return getStateDump(jsnapRaw, program);
     }
 
-    public static Snap.Obj getStateDump(String jsnapRaw, Program program) {
+    public static Snap.Obj getStateDump(String jsnapRaw, FunctionExpression program) {
         // TODO: MarkNatives.
         GsonBuilder builder = new GsonBuilder();
-        List<Function> functions = getFunctions(program);
+        List<FunctionExpression> functions = getFunctions(program);
         builder.registerTypeAdapterFactory(new KeyTypeFactory());
         Gson gson = builder.create();
         Snap.StateDump stateDump = gson.fromJson(jsnapRaw, Snap.StateDump.class);
@@ -108,24 +109,22 @@ public class JSNAPConverter {
         return stateDump.getGlobal();
     }
 
-    public static List<Function> getFunctions(Program program) {
+    public static List<FunctionExpression> getFunctions(FunctionExpression program) {
         FunctionExtractor functionExtrator = new FunctionExtractor();
         program.accept(functionExtrator);
         return functionExtrator.getFunctions();
     }
 
+    // TODO: Check that this is correct after programs became functions.
     private static class FunctionExtractor extends NodeTransverse {
-        List<Function> functions = new ArrayList<>();
-        {
-            functions.add(null);
-        }
+        List<FunctionExpression> functions = new ArrayList<>();
         @Override
-        public Void visit(Function function) {
+        public Void visit(FunctionExpression function) {
             functions.add(function);
             return super.visit(function);
         }
 
-        public List<Function> getFunctions() {
+        public List<FunctionExpression> getFunctions() {
             return functions;
         }
     }
@@ -204,7 +203,7 @@ public class JSNAPConverter {
         return map;
     }
 
-    private static void resolveFunctions(Snap.StateDump stateDump, List<Function> functions) {
+    private static void resolveFunctions(Snap.StateDump stateDump, List<FunctionExpression> functions) {
         for (Snap.Obj obj : stateDump.heap) {
             if (obj == null || obj.function == null) {
                 continue;

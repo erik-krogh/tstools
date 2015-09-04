@@ -1,5 +1,7 @@
-package dk.webbies.tscreate.analysis.typeDeclaration;
+package dk.webbies.tscreate.analysis.declarations;
 
+import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
+import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
 
@@ -48,7 +50,7 @@ public class DeclarationBuilder {
                         throw new RuntimeException("Cannot build declarations for classes yet");
                     } else {
                         // Just a function
-                        result.add(new FunctionDeclaration(property.name, functions.get(propertyObj)));
+                        result.add(new VariableDeclaration(property.name, functions.get(propertyObj)));
                     }
 
 

@@ -6,8 +6,6 @@ package dk.webbies.tscreate.paser;
 public interface NodeVisitor<T> {
     T visit(BinaryExpression expression);
 
-    T visit(Program program);
-
     T visit(BlockStatement blockStatement);
 
     T visit(Return aReturn);
@@ -22,7 +20,7 @@ public interface NodeVisitor<T> {
 
     T visit(UndefinedLiteral undefined);
 
-    T visit(Function function);
+    T visit(FunctionExpression function);
 
     T visit(NumberLiteral number);
 

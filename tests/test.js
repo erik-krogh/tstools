@@ -1,11 +1,10 @@
 
-window.bool = true;
+var bool = true;
 
-window.str = "string";
+var str = "string";
 
-window.num = 123;
+var num = 123;
 
-window.trueRandom = function() {
-    var b = 1;
-    return b; // TODO: str, null, undefined
-};
+function singleMinus(a) {
+    return a * 1;
+}

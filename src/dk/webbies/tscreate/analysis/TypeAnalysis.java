@@ -1,12 +1,12 @@
 package dk.webbies.tscreate.analysis;
 
-import dk.webbies.tscreate.analysis.unionFind.FunctionNode;
+import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.UnionNode;
+import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
 import dk.webbies.tscreate.paser.*;
-import dk.webbies.tscreate.analysis.typeDeclaration.FunctionType;
+import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 
 import java.util.*;
 
@@ -16,9 +16,9 @@ import java.util.*;
 public class TypeAnalysis {
     private final Snap.Obj librarySnap;
     private final HashMap<Snap.Obj, LibraryClass> classes;
-    private final Program program;
+    private final FunctionExpression program;
 
-    public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> classes, Program program) {
+    public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> classes, FunctionExpression program) {
         this.librarySnap = librarySnap;
         this.classes = classes;
         this.program = program;

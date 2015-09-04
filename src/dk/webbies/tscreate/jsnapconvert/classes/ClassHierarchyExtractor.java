@@ -3,7 +3,7 @@ package dk.webbies.tscreate.jsnapconvert.classes;
 import dk.webbies.tscreate.jsnapconvert.JSNAPConverter;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.paser.BlockStatement;
-import dk.webbies.tscreate.paser.Program;
+import dk.webbies.tscreate.paser.FunctionExpression;
 
 import java.io.IOException;
 import java.util.*;
@@ -11,10 +11,10 @@ import java.util.*;
 /**
  * Created by webbies on 31-08-2015.
  */
-public class ClassHierarchyExtrator {
+public class ClassHierarchyExtractor {
     private Snap.Obj snapshot;
 
-    public ClassHierarchyExtrator(Snap.Obj librarySnapshot) {
+    public ClassHierarchyExtractor(Snap.Obj librarySnapshot) {
         this.snapshot = librarySnapshot;
     }
 
@@ -122,13 +122,13 @@ public class ClassHierarchyExtrator {
     }
 
     public static void main(String[] args) throws IOException {
-        Program emptyProgram = new Program(0, Collections.EMPTY_LIST);
+        FunctionExpression emptyProgram = new FunctionExpression(":program", new BlockStatement(0, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
         Snap.Obj librarySnapshot = JSNAPConverter.getStateDumpFromFile("lib/tscheck/tests/jquery.jsnap", emptyProgram);
         Snap.Obj domSnapshot = JSNAPConverter.getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", emptyProgram);
 
         Snap.Obj libraryUnique = JSNAPConverter.extractUnique(librarySnapshot, domSnapshot);
 
-        ClassHierarchyExtrator extractor = new ClassHierarchyExtrator(libraryUnique);
+        ClassHierarchyExtractor extractor = new ClassHierarchyExtractor(libraryUnique);
 
         HashMap<Snap.Obj, LibraryClass> classes = new HashMap<>();
         HashSet<Snap.Obj> seen = new HashSet<>();

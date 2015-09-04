@@ -1,15 +1,16 @@
 package dk.webbies.tscreate;
 
-import dk.webbies.tscreate.analysis.typeDeclaration.DeclarationBlock;
-import dk.webbies.tscreate.analysis.typeDeclaration.DeclarationBuilder;
-import dk.webbies.tscreate.analysis.typeDeclaration.FunctionType;
+import dk.webbies.tscreate.analysis.declarations.DeclarationBlock;
+import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
+import dk.webbies.tscreate.analysis.declarations.DeclarationToStringVisitor;
+import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
-import dk.webbies.tscreate.jsnapconvert.classes.ClassHierarchyExtrator;
+import dk.webbies.tscreate.jsnapconvert.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnapconvert.JSNAPConverter;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
+import dk.webbies.tscreate.paser.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
-import dk.webbies.tscreate.paser.Program;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -24,19 +25,26 @@ import java.util.Map;
  */
 public class Main {
     public static void main(String[] args) throws IOException {
+        long start = System.currentTimeMillis();
         runAnalysis("Test script", "tests/test.js");
+        long end = System.currentTimeMillis();
+        System.out.println("Ran in " + (end-start) + "ms");
     }
 
     public static void runAnalysis(String name, String path) throws IOException {
         String script = getJavaScript(path);
-        Program program = new JavaScriptParser(name, script).parse();
+        FunctionExpression program = new JavaScriptParser(name, script).parse();
         Snap.Obj globalObject = JSNAPConverter.getStateDump(getJsnapRaw(path), program);
         Snap.Obj librarySnap = JSNAPConverter.extractUnique(globalObject);
-        HashMap<Snap.Obj, LibraryClass> classes = new ClassHierarchyExtrator(librarySnap).extract();
+        HashMap<Snap.Obj, LibraryClass> classes = new ClassHierarchyExtractor(librarySnap).extract();
 
         Map<Snap.Obj, FunctionType> functionTypes = new TypeAnalysis(librarySnap, classes, program).getFunctionTypes();
 
         DeclarationBlock declaration = new DeclarationBuilder(librarySnap, classes, functionTypes).buildDeclaration();
+
+        DeclarationToStringVisitor stringBuilder = new DeclarationToStringVisitor();
+        stringBuilder.visit(declaration);
+        System.out.println(stringBuilder.getResult());
 
     }
 
@@ -72,7 +80,6 @@ public class Main {
             writer.close();
             return jsnap;
         } else {
-            System.out.println("Using cached JSNAP");
             FileReader reader = new FileReader(jsnapFile);
             String result = IOUtils.toString(reader);
             reader.close();

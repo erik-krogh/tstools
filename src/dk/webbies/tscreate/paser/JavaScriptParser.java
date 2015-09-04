@@ -9,7 +9,9 @@ import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -26,7 +28,7 @@ public class JavaScriptParser {
         this.name = name;
     }
 
-    public Program parse() {
+    public FunctionExpression parse() {
         Options options = new Options("nashorn");
         options.set("anon.functions", true);
         options.set("parse.only", true);
@@ -36,15 +38,13 @@ public class JavaScriptParser {
         Context context = new Context(options, errors, Thread.currentThread().getContextClassLoader());
         Source source = Source.sourceFor(this.name, this.script);
         Parser parser = new Parser(context.getEnv(), source, errors);
-        FunctionNode functionNode = parser.parse();
+        jdk.nashorn.internal.ir.FunctionNode functionNode = parser.parse();
 
-        Program program = convert(functionNode);
+        FunctionExpression program = (FunctionExpression) convert(functionNode);
+
+        new FillFunctionsVariableDeclarations(program).visit(program);
 
         return program;
-    }
-
-    private Program convert(FunctionNode functionNode) {
-        return new Program(functionNode.getLineNumber(), convert(functionNode.getBody()).getStatements());
     }
 
     private BlockStatement convert(jdk.nashorn.internal.ir.Block body) {
@@ -60,14 +60,14 @@ public class JavaScriptParser {
             return new ExpressionStatement(statement.getLineNumber(), convert(((jdk.nashorn.internal.ir.ExpressionStatement) statement).getExpression()));
         } else if (statement instanceof VarNode) {
             VarNode var = (VarNode) statement;
-            return new VariableNode(var.getLineNumber(), convertIdent(var.getName()), convert(var.getInit()));
+            return new VariableNode(var.getLineNumber(), convert(var.getName()), convert(var.getInit()));
         }
         else {
             throw new RuntimeException("Cannot yet handle statements of :" + statement.getClass());
         }
     }
 
-    private Identifier convertIdent(IdentNode ident) {
+    private Identifier convert(IdentNode ident) {
         return new Identifier(ident.getName());
     }
 
@@ -83,12 +83,12 @@ public class JavaScriptParser {
             AccessNode accessNode = (AccessNode) expression;
             return new MemberExpression(accessNode.getProperty(), convert(accessNode.getBase()));
         } else if (expression instanceof IdentNode) {
-            IdentNode identNode = (IdentNode) expression; // TODO: Trace to declaration, Symbol?
-            return new Identifier(identNode.getPropertyName());
-        } else if (expression instanceof FunctionNode) {
-            FunctionNode functionNode = (FunctionNode) expression;
-            List<Identifier> arguments = functionNode.getParameters().stream().map(identNode -> new Identifier(identNode.getName())).collect(Collectors.toList());
-            return new Function(functionNode.getName(), convert(functionNode.getBody()), arguments);
+            IdentNode identNode = (IdentNode) expression;
+            return convert(identNode);
+        } else if (expression instanceof jdk.nashorn.internal.ir.FunctionNode) {
+            jdk.nashorn.internal.ir.FunctionNode functionNode = (jdk.nashorn.internal.ir.FunctionNode) expression;
+            List<Identifier> arguments = functionNode.getParameters().stream().map(this::convert).collect(Collectors.toList());
+            return new FunctionExpression(functionNode.getName(), convert(functionNode.getBody()), arguments);
         } else if (expression instanceof LiteralNode) {
             LiteralNode literal = (LiteralNode) expression;
             if (literal instanceof LiteralNode.PrimitiveLiteralNode) {
@@ -119,14 +119,86 @@ public class JavaScriptParser {
         }
     }
 
+    // TODO: This one is incomplete
     private Operation tokenTypeToOp(TokenType tokenType) {
         switch (tokenType) {
             case ADD:
                 return Operation.ADD;
             case ASSIGN:
                 return Operation.ASSIGN;
+            case SUB:
+                return Operation.SUB;
+            case MUL:
+                return Operation.MULT;
             default:
                 throw new RuntimeException("Cannot yet handle operation: " + tokenType.toString());
+        }
+    }
+
+    private static class FillFunctionsVariableDeclarations extends NodeTransverse {
+        private final FunctionExpression function;
+
+        public FillFunctionsVariableDeclarations(FunctionExpression function) {
+            this.function = function;
+            if (this.function.declarations != null) {
+                throw new RuntimeException("Should not find variables in a function twice");
+            }
+            this.function.declarations = new HashMap<>();
+        }
+
+        @Override
+        public Void visit(VariableNode variableNode) {
+            this.function.declarations.put(variableNode.getIdentifier().getName(), variableNode.getIdentifier());
+            return super.visit(variableNode);
+        }
+
+        @Override
+        public Void visit(FunctionExpression function) {
+            if (function == this.function) {
+                function.getArguments().forEach(arg -> this.function.declarations.put(arg.getName(), arg));
+                return super.visit(function); // Actually visiting the children.
+            } else {
+                new FillFunctionsVariableDeclarations(function).visit(function);
+                return null;
+            }
+        }
+    }
+
+    // TODO: This is not done.
+    // TODO: This is not used.
+    private static class FindVariableDeclarations extends NodeTransverse {
+        private FunctionExpression function;
+        private Map<String, Identifier> env;
+        private Map<String, Identifier> globalEnv;
+
+        public FindVariableDeclarations(FunctionExpression function, Map<String, Identifier> env, Map<String, Identifier> globalEnv) {
+            this.function = function;
+            this.env = new HashMap<>(env);
+            this.globalEnv = globalEnv;
+
+            this.env.putAll(this.function.declarations);
+        }
+
+        @Override
+        public Void visit(Identifier identifier) {
+            if (this.env.containsKey(identifier.getName())) {
+                identifier.declaration = this.env.get(identifier.getName());
+            } else if (this.globalEnv.containsKey(identifier.getName())) {
+                identifier.declaration = this.globalEnv.get(identifier.getName());
+            } else {
+                this.globalEnv.put(identifier.getName(), identifier);
+            }
+            return super.visit(identifier);
+        }
+
+        @Override
+        public Void visit(FunctionExpression function) {
+            if (this.function == function) {
+                return super.visit(function);
+            } else {
+                new FindVariableDeclarations(function, env, globalEnv).visit(function);
+                return null;
+            }
         }
     }
 }

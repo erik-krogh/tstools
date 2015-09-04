@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.unionFind;
+package dk.webbies.tscreate.analysis.unionFind.nodes;
 
 import java.util.HashMap;
 import java.util.Map;

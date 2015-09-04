@@ -1,10 +1,10 @@
 package dk.webbies.tscreate.analysis;
 
-import dk.webbies.tscreate.analysis.typeDeclaration.DeclarationType;
-import dk.webbies.tscreate.analysis.typeDeclaration.PrimitiveDeclarationType;
-import dk.webbies.tscreate.analysis.unionFind.EmptyUnionNode;
-import dk.webbies.tscreate.analysis.unionFind.PrimitiveUnionNode;
-import dk.webbies.tscreate.analysis.unionFind.UnionNode;
+import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
+import dk.webbies.tscreate.analysis.unionFind.nodes.EmptyUnionNode;
+import dk.webbies.tscreate.analysis.unionFind.nodes.PrimitiveUnionNode;
+import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 
 import java.util.ArrayList;
 import java.util.HashSet;
