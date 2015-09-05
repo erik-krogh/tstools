@@ -21,8 +21,8 @@ public class Snap {
     public static class Obj extends Value {
         public int key;
         public Function function;
-        public Value env;
-        public Value prototype;
+        public Obj env;
+        public Obj prototype;
         public List<Property> properties;
         public Map<String, Property> propertyMap = null;
         public Property getProperty(String name) {

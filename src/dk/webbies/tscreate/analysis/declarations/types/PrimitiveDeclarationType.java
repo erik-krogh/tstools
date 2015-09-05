@@ -9,7 +9,8 @@ public enum PrimitiveDeclarationType implements DeclarationType {
     STRING("string"),
     VOID("void"),
     NULL("null"),
-    UNDEFINED("void");
+    UNDEFINED("void"),
+    ANY("any");
 
     private String prettyString;
 

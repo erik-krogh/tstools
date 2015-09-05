@@ -52,6 +52,9 @@ public abstract class NodeTransverse implements NodeVisitor<Void> {
     @Override
     public Void visit(FunctionExpression function) {
         function.getBody().accept(this);
+        if (function.getName() != null) {
+            function.getName().accept(this);
+        }
         function.getArguments().forEach(arg -> arg.accept(this));
         return null;
     }
@@ -74,8 +77,23 @@ public abstract class NodeTransverse implements NodeVisitor<Void> {
 
     @Override
     public Void visit(VariableNode variableNode) {
-        variableNode.getIdentifier().accept(this);
+        variableNode.getlValue().accept(this);
         variableNode.getInit().accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visit(CallExpression callExpression) {
+        callExpression.getFunction().accept(this);
+        callExpression.getArgs().stream().forEach(arg -> arg.accept(this));
+        return null;
+    }
+
+    @Override
+    public Void visit(IfStatement ifStatement) {
+        ifStatement.getCondition().accept(this);
+        ifStatement.getIfBranch().accept(this);
+        ifStatement.getElseBranch().accept(this);
         return null;
     }
 }

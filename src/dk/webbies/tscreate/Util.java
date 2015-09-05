@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 
@@ -61,5 +62,14 @@ public class Util {
                 ioe.printStackTrace();
             }
         }
+    }
+
+    public static <T, S> List<S> cast(Class<S> clazz, List<T> list) {
+        for (T t : list) {
+            if (!clazz.isInstance(t)) {
+                throw new ClassCastException("Cannot cast : " + t + " to class " + clazz.getName());
+            }
+        }
+        return (List<S>) list;
     }
 }

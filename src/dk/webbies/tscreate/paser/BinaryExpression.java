@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.paser;
 
-import java.util.Collection;
+import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 
 /**
  * Created by erik1 on 01-09-2015.
@@ -8,9 +8,10 @@ import java.util.Collection;
 public class BinaryExpression extends Expression {
     private final Expression lhs;
     private final Expression rhs;
-    private final Operation operation;
+    private final Operator operation;
 
-    public BinaryExpression(Expression lhs, Expression rhs, Operation operation) {
+    public BinaryExpression(SourceRange location, Expression lhs, Expression rhs, Operator operation) {
+        super(location);
         this.lhs = lhs;
         this.rhs = rhs;
         this.operation = operation;
@@ -28,7 +29,7 @@ public class BinaryExpression extends Expression {
         return rhs;
     }
 
-    public Operation getOperation() {
+    public Operator getOperation() {
         return operation;
     }
 }

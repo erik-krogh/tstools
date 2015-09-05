@@ -1,12 +1,19 @@
 package dk.webbies.tscreate.analysis;
 
+import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.paser.*;
 import dk.webbies.tscreate.paser.FunctionExpression;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static dk.webbies.tscreate.Util.*;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -24,11 +31,10 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
         this.functionNode = functionNode;
     }
 
-    public FunctionNode getFunctionNode() {
-        return functionNode;
-    }
-
     UnionNode get(Node node) {
+        if (node == null) {
+            throw new NullPointerException("node cannot be null");
+        }
         TypeAnalysis.ProgramPoint key = new TypeAnalysis.ProgramPoint(this.closure, node);
         if (nodes.containsKey(key)) {
             return nodes.get(key);
@@ -44,15 +50,19 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
         UnionNode lhs = op.getLhs().accept(this);
         UnionNode rhs = op.getRhs().accept(this);
         switch (op.getOperation()) {
-            case ADD: {
+            case PLUS: {
+                solver.add(lhs);
+                solver.add(rhs);
                 return new AddNode(lhs, rhs);
             }
             case ASSIGN: // =
             case EQ: // ==
                 solver.union(lhs, rhs);
                 return lhs;
-            case SUB:
+            case MINUS:
             case MULT:
+            case DIV:
+            case MOD:
                 solver.union(PrimitiveUnionNode.number(), lhs);
                 solver.union(PrimitiveUnionNode.number(), rhs);
                 return PrimitiveUnionNode.number();
@@ -88,13 +98,16 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
     @Override
     public UnionNode visit(Identifier identifier) {
         UnionNode id = get(identifier);
+        if (identifier.getDeclaration() == null) {
+            throw new RuntimeException("Cannot have null declarations");
+        }
         UnionNode idDec = get(identifier.getDeclaration());
         solver.union(id, idDec);
         return id;
     }
 
     @Override
-    public UnionNode visit(BooleanLiteral booleanLitteral) {
+    public UnionNode visit(BooleanLiteral booleanLiteral) {
         return PrimitiveUnionNode.bool();
     }
 
@@ -108,13 +121,26 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
         if (function == this.closure.function.astNode) {
             function.getBody().accept(this);
             function.getArguments().forEach(arg -> arg.accept(this));
+            function.getArguments().forEach(arg -> solver.union(get(arg), new NonVoidNode()));
             for (int i = 0; i < functionNode.arguments.size(); i++) {
                 solver.union(get(function.getArguments().get(i)), functionNode.arguments.get(i));
             }
+            if (function.getName() != null) {
+                solver.union(get(function.getName()), functionNode);
+            }
             return null;
+        } else {
+            FunctionNode result = new FunctionNode(function);
+            if (function.getName() != null) {
+                solver.union(get(function.getName()), result);
+                function.getName().accept(this);
+            }
+            new AstConstraintVisitor(closure, solver, nodes, result).visit(function.getBody());
+            for (int i = 0; i < function.getArguments().size(); i++) {
+                solver.union(get(function.getArguments().get(i)), result.arguments.get(i));
+            }
+            return result;
         }
-        // Make sure not to visit the same thing twice.
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -124,7 +150,8 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
 
     @Override
     public UnionNode visit(ExpressionStatement expressionStatement) {
-        throw new UnsupportedOperationException();
+        expressionStatement.getExpression().accept(this);
+        return null;
     }
 
     @Override
@@ -135,8 +162,55 @@ public class AstConstraintVisitor implements NodeVisitor<UnionNode> {
     @Override
     public UnionNode visit(VariableNode variableNode) {
         UnionNode initNode = variableNode.getInit().accept(this);
-        UnionNode identifierNode = variableNode.getIdentifier().accept(this);
+        UnionNode identifierNode = variableNode.getlValue().accept(this);
         solver.union(initNode, identifierNode);
         return null;
+    }
+
+    @Override
+    public UnionNode visit(CallExpression callExpression) {
+        List<UnionNode> args = callExpression.getArgs().stream().map(arg -> arg.accept(this)).collect(Collectors.toList());
+        UnionNode function = callExpression.getFunction().accept(this);
+        EmptyUnionNode returnNode = new EmptyUnionNode();
+        solver.runWhenChanged(function, new CallGraphResolver(function, args, returnNode));
+        return returnNode;
+    }
+
+    @Override
+    public UnionNode visit(IfStatement ifStatement) {
+        ifStatement.getCondition().accept(this);
+        ifStatement.getIfBranch().accept(this);
+        ifStatement.getElseBranch().accept(this);
+        return null;
+    }
+
+    private class CallGraphResolver implements Runnable {
+        UnionNode function;
+        private List<UnionNode> args;
+        private EmptyUnionNode returnNode;
+        Set<FunctionNode> seen = new HashSet<>();
+        public CallGraphResolver(UnionNode function, List<UnionNode> args, EmptyUnionNode returnNode) {
+            this.function = function;
+            this.args = args;
+            this.returnNode = returnNode;
+            this.run();
+        }
+
+        @Override
+        public void run() {
+            List<FunctionNode> functionNodes = cast(FunctionNode.class, solver.getUnionClass(function).getNodes().stream().filter(node -> node instanceof FunctionNode).collect(Collectors.toList()));
+            functionNodes.removeAll(seen);
+            seen.addAll(functionNodes);
+            for (FunctionNode functionNode : functionNodes) {
+                for (int i = 0; i < functionNode.arguments.size() && i < this.args.size(); i++) {
+                    UnionNode parameter = functionNode.arguments.get(i);
+                    UnionNode argument = this.args.get(i);
+                    solver.union(parameter, argument);
+                }
+                solver.union(functionNode.returnNode, this.returnNode);
+            }
+
+            // TODO: If not visited?
+        }
     }
 }

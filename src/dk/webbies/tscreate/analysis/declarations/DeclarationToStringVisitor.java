@@ -13,7 +13,6 @@ import java.util.List;
 public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
     private StringBuilder builder = new StringBuilder();
     private int ident = 0;
-    private TypeVisitor typeVisitor = new TypeVisitor();
 
     public String getResult() {
         return builder.toString();
@@ -52,16 +51,38 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
 
     @Override
     public Void visit(VariableDeclaration declaration) {
-        ident();
-        write("var ");
-        write(declaration.getName());
-        write(": ");
-        declaration.getType().accept(typeVisitor);
-        write(";\n");
+        if (declaration.getType() instanceof FunctionType) {
+            FunctionType type = (FunctionType) declaration.getType();
+            ident();
+            write("declare function " + declaration.getName() + "(");
+            List<FunctionType.Argument> args = type.getArguments();
+            for (int i = 0; i < args.size(); i++) {
+                FunctionType.Argument arg = args.get(i);
+                write(arg.getName());
+                write(": ");
+                arg.getType().accept(new TypeVisitor());
+                if (i != args.size() - 1) {
+                    write(", ");
+                }
+            }
+            write("): ");
+            type.getReturnType().accept(new TypeVisitor());
+
+            write(";\n");
+        } else {
+            ident();
+            write("declare var ");
+            write(declaration.getName());
+            write(": ");
+            declaration.getType().accept(new TypeVisitor());
+            write(";\n");
+        }
+
         return null;
     }
 
     private class TypeVisitor implements DeclarationTypeVisitor<Void> {
+
         @Override
         public Void visit(FunctionType functionType) {
             write("(");
@@ -75,7 +96,7 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
                     write(", ");
                 }
             }
-            write(") : ");
+            write(") => ");
             functionType.getReturnType().accept(this);
             return null;
         }

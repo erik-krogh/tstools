@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 import dk.webbies.tscreate.paser.Identifier;
@@ -31,10 +32,16 @@ public class FunctionType implements DeclarationType {
         return arguments;
     }
 
-    public static FunctionType fromNode(FunctionNode functionNode, Map<UnionNode, List<UnionNode>> classes) {
-        DeclarationType returnType = convert(classes.get(functionNode.returnNode));
+    public static FunctionType fromNode(FunctionNode functionNode, Map<UnionNode, UnionClass> classes) {
+        UnionClass returnNode = classes.get(functionNode.returnNode);
+        DeclarationType returnType;
+        if (returnNode != null) {
+            returnType = convert(returnNode, classes);
+        } else {
+            returnType = PrimitiveDeclarationType.VOID;
+        }
 
-        List<DeclarationType> argumentTypes = functionNode.arguments.stream().map(unionNode -> convert(classes.get(unionNode))).collect(Collectors.toList());
+        List<DeclarationType> argumentTypes = functionNode.arguments.stream().map(unionNode -> convert(classes.get(unionNode), classes)).collect(Collectors.toList());
         ArrayList<Argument> declarations = new ArrayList<>();
         List<Identifier> argIds = functionNode.astFunction.getArguments();
         for (int i = 0; i < argumentTypes.size(); i++) {

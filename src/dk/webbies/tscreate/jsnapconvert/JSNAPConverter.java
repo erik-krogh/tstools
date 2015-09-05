@@ -7,6 +7,7 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import dk.webbies.tscreate.paser.BlockStatement;
 import dk.webbies.tscreate.paser.FunctionExpression;
+import dk.webbies.tscreate.paser.Identifier;
 import dk.webbies.tscreate.paser.NodeTransverse;
 
 import java.io.*;
@@ -15,7 +16,7 @@ import java.util.*;
 public class JSNAPConverter {
 
     public static void main(String[] args) throws IOException {
-        FunctionExpression emptyProgram = new FunctionExpression(":program", new BlockStatement(0, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
+        FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
         Snap.Obj pixiSnap = getStateDumpFromFile("lib/tscheck/tests/pixi.js.jsnap", emptyProgram);
 
         Snap.Obj pixiUnique = extractUnique(pixiSnap);
@@ -25,7 +26,7 @@ public class JSNAPConverter {
     }
 
     public static Snap.Obj extractUnique(Snap.Obj librarySnap) throws IOException {
-        FunctionExpression emptyProgram = new FunctionExpression(":program", new BlockStatement(0, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
+        FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
         Snap.Obj domSnap = getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", emptyProgram);
         return extractUnique(librarySnap, domSnap);
     }
@@ -189,11 +190,11 @@ public class JSNAPConverter {
 
                 if (subValue.env != null) {
                     map.put(prefix + property.name + ".[ENV]", subValue.env);
-                    map.putAll(makePrettyHeap(prefix + property.name + ".[ENV].", (Snap.Obj) subValue.env, seen));
+                    map.putAll(makePrettyHeap(prefix + property.name + ".[ENV].", subValue.env, seen));
                 }
                 if (subValue.prototype != null) {
                     map.put(prefix + property.name + ".prototype", subValue.prototype);
-                    map.putAll(makePrettyHeap(prefix + property.name + ".prototype.", (Snap.Obj) subValue.prototype, seen));
+                    map.putAll(makePrettyHeap(prefix + property.name + ".prototype.", subValue.prototype, seen));
                 }
 
                 map.putAll(makePrettyHeap(prefix + property.name + ".", subValue, seen));
@@ -233,13 +234,13 @@ public class JSNAPConverter {
                 }
                 if (prop.value instanceof Snap.Obj) {
                     Snap.Obj propValue = (Snap.Obj) prop.value;
-                    if (propValue.env instanceof Snap.Obj) {
-                        int key = ((Snap.Obj) propValue.env).key;
+                    if (propValue.env != null) {
+                        int key = (propValue.env).key;
                         Snap.Obj real = stateDump.heap.get(key);
                         propValue.env = real;
                     }
-                    if (propValue.prototype instanceof Snap.Obj) {
-                        int key = ((Snap.Obj) propValue.prototype).key;
+                    if (propValue.prototype != null) {
+                        int key = (propValue.prototype).key;
                         Snap.Obj real = stateDump.heap.get(key);
                         propValue.prototype = real;
                     }

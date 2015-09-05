@@ -1,5 +1,6 @@
 package dk.webbies.tscreate;
 
+import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBlock;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationToStringVisitor;
@@ -33,7 +34,7 @@ public class Main {
 
     public static void runAnalysis(String name, String path) throws IOException {
         String script = getJavaScript(path);
-        FunctionExpression program = new JavaScriptParser(name, script).parse();
+        FunctionExpression program = new JavaScriptParser(Parser.Config.Mode.ES5).parse(name, script).toTSCreateAST();
         Snap.Obj globalObject = JSNAPConverter.getStateDump(getJsnapRaw(path), program);
         Snap.Obj librarySnap = JSNAPConverter.extractUnique(globalObject);
         HashMap<Snap.Obj, LibraryClass> classes = new ClassHierarchyExtractor(librarySnap).extract();
@@ -73,7 +74,7 @@ public class Main {
         }
 
         if (recreate) {
-            System.out.println("Creating JSNAP from scratch. ");
+            System.out.println("Creating JSNAP from scratch. \n");
             String jsnap = Util.runNodeScript("lib/tscheck/node_modules/jsnap/jsnap.js " + path);
             FileWriter writer = new FileWriter(jsnapFile);
             IOUtils.write(jsnap, writer);

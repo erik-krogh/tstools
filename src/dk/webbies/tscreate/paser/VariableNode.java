@@ -1,15 +1,17 @@
 package dk.webbies.tscreate.paser;
 
+import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class VariableNode extends Statement {
-    private final Identifier identifier;
-    private final Expression init;
+    private final Node lValue; // TODO: More precise, both of them.
+    private final Node init;
 
-    public VariableNode(int line, Identifier identifier, Expression init) {
-        super(line);
-        this.identifier = identifier;
+    public VariableNode(SourceRange location, Node lValue, Node init) {
+        super(location);
+        this.lValue = lValue;
         this.init = init;
     }
 
@@ -18,11 +20,11 @@ public class VariableNode extends Statement {
         return visitor.visit(this);
     }
 
-    public Identifier getIdentifier() {
-        return identifier;
+    public Node getlValue() {
+        return lValue;
     }
 
-    public Expression getInit() {
+    public Node getInit() {
         return init;
     }
 }

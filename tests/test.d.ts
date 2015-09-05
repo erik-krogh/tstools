@@ -6,4 +6,4 @@ declare var num: number;
 
 declare var random : () => number;
 
-declare var myDistinctName : () => number;
+declare function myDistinctName(string: string): number;

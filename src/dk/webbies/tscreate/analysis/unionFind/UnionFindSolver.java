@@ -22,7 +22,6 @@ package dk.webbies.tscreate.analysis.unionFind;
  */
 
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
-import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNodeWithFields;
 
 import java.util.*; // For Map, HashMap
 
@@ -33,13 +32,24 @@ import java.util.*; // For Map, HashMap
  * @author Keith Schwarz (htiek@cs.stanford.edu)
  */
 public class UnionFindSolver {
+    private Set<Runnable> doneCallbacks = new HashSet<>();
+
+    public void finish() {
+        while (doneCallbacks.size() > 0) {
+            for (Runnable callback : new ArrayList<>(doneCallbacks)) {
+                callback.run();
+                doneCallbacks.remove(callback);
+            }
+        }
+    }
+
     /**
      * A utility struct holding an an object's parent and rank.
      */
     private static final class Link<T> {
         public T parent;
         public int rank = 0;
-        public MasterNode masterNode;
+        public UnionClass unionClass;
 
         /**
          * Creates a new Link object with the specified parent.
@@ -65,19 +75,6 @@ public class UnionFindSolver {
     }
 
     /**
-     * Creates a new UnionFindSolver structure that initially contains all of
-     * the elements from the specified container.  Duplicate elements
-     * will appear with multiplicity one.
-     *
-     * @param elems The elements to store in the UnionFindSolver structure.
-     */
-    public UnionFindSolver(Collection<? extends UnionNode> elems) {
-        /* Iterate across the collection, adding each to this structure. */
-        for (UnionNode elem: elems)
-            add(elem);
-    }
-
-    /**
      * Inserts a new element into the UnionFindSolver structure that initially
      * is in its own partition.  If the element already exists, this
      * function returns false.  Otherwise, it returns true.
@@ -99,12 +96,16 @@ public class UnionFindSolver {
         Link<UnionNode> link = new Link<>(elem);
         elems.put(elem, link);
 
-        link.masterNode = new MasterNode(this);
-        if (elem instanceof UnionNodeWithFields) {
-            UnionNodeWithFields fieldNode = (UnionNodeWithFields) elem;
-            link.masterNode.takeIn(fieldNode);
-        }
+        link.unionClass = new UnionClass(this, elem);
         return true;
+    }
+
+    public void runWhenChanged(UnionNode node, Runnable callback) {
+        elems.get(recFind(node)).unionClass.addChangeCallback(callback);
+    }
+
+    void allDoneCallback(Runnable callback) {
+        this.doneCallbacks.add(callback);
     }
 
     /**
@@ -150,21 +151,19 @@ public class UnionFindSolver {
         return info.parent;
     }
 
-    public Map<UnionNode, List<UnionNode>> getUnionClasses() {
-        Map<UnionNode, List<UnionNode>> classes = new HashMap<>();
+    public Map<UnionNode, UnionClass> getUnionClasses() {
+        Map<UnionNode, UnionClass> classes = new HashMap<>();
+
         for (UnionNode node : elems.keySet()) {
-            UnionNode parent = recFind(node);
-            if (classes.containsKey(parent)) {
-                classes.get(parent).add(node);
-            } else {
-                ArrayList<UnionNode> list = new ArrayList<>();
-                list.add(node);
-                classes.put(parent, list);
-            }
-            classes.put(node, classes.get(parent));
+            UnionClass UnionClass = elems.get(recFind(node)).unionClass;
+            classes.put(node, UnionClass);
         }
 
         return classes;
+    }
+
+    public UnionClass getUnionClass(UnionNode node) {
+        return elems.get(recFind(node)).unionClass;
     }
 
     /**
@@ -218,42 +217,14 @@ public class UnionFindSolver {
 
         if (twoLink.parent == oneParentBefore) {
             // OneLink is the representative.
-            oneLink.masterNode.mergeWith(twoLink.masterNode);
-            twoLink.masterNode = null;
+            oneLink.unionClass.mergeWith(twoLink.unionClass);
+            twoLink.unionClass = null;
         } else {
             // TwoLink is the representative.
-            twoLink.masterNode.mergeWith(oneLink.masterNode);
-            oneLink.masterNode = null;
+            twoLink.unionClass.mergeWith(oneLink.unionClass);
+            oneLink.unionClass = null;
         }
 
 
-    }
-
-    private final class MasterNode {
-        UnionFindSolver solver;
-        Map<String, UnionNode> fields = new HashMap<>();
-        public MasterNode(UnionFindSolver solver) {
-            this.solver = solver;
-        }
-
-        void mergeWith(MasterNode other) {
-            merge(other.fields);
-        }
-
-        void takeIn(UnionNodeWithFields node) {
-            merge(node.getFields());
-        }
-
-        private void merge(Map<String, UnionNode> fields) {
-            for (Map.Entry<String, UnionNode> entry : fields.entrySet()) {
-                String key = entry.getKey();
-                UnionNode value = entry.getValue();
-                if (this.fields.containsKey(key)) {
-                    solver.union(value, this.fields.get(key));
-                } else {
-                    this.fields.put(key, value);
-                }
-            }
-        }
     }
 }

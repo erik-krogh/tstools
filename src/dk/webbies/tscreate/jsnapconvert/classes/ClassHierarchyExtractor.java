@@ -4,6 +4,7 @@ import dk.webbies.tscreate.jsnapconvert.JSNAPConverter;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.paser.BlockStatement;
 import dk.webbies.tscreate.paser.FunctionExpression;
+import dk.webbies.tscreate.paser.Identifier;
 
 import java.io.IOException;
 import java.util.*;
@@ -49,8 +50,8 @@ public class ClassHierarchyExtractor {
             }
         }
         if (includeEnv) {
-            if (obj.env != null && obj.env instanceof Snap.Obj) {
-                extractClasses(prefixPath + ".[ENV]", (Snap.Obj) obj.env, classes, seenObjects, includeEnv);
+            if (obj.env != null) {
+                extractClasses(prefixPath + ".[ENV]", obj.env, classes, seenObjects, includeEnv);
             }
         }
     }
@@ -107,7 +108,7 @@ public class ClassHierarchyExtractor {
             libraryClass.prototypeProperties.put(property.name, property.value);
         }
 
-        libraryClass.superClass = protoTypeToClass(path + ".proto", classes, (Snap.Obj) prototype.prototype);
+        libraryClass.superClass = protoTypeToClass(path + ".proto", classes, prototype.prototype);
 
         return libraryClass;
     }
@@ -122,7 +123,7 @@ public class ClassHierarchyExtractor {
     }
 
     public static void main(String[] args) throws IOException {
-        FunctionExpression emptyProgram = new FunctionExpression(":program", new BlockStatement(0, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
+        FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
         Snap.Obj librarySnapshot = JSNAPConverter.getStateDumpFromFile("lib/tscheck/tests/jquery.jsnap", emptyProgram);
         Snap.Obj domSnapshot = JSNAPConverter.getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", emptyProgram);
 

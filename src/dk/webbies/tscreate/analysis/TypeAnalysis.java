@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis;
 
+import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
@@ -15,12 +16,12 @@ import java.util.*;
  */
 public class TypeAnalysis {
     private final Snap.Obj librarySnap;
-    private final HashMap<Snap.Obj, LibraryClass> classes;
+    private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private final FunctionExpression program;
 
     public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> classes, FunctionExpression program) {
         this.librarySnap = librarySnap;
-        this.classes = classes;
+        this.libraryClasses = classes;
         this.program = program;
     }
 
@@ -40,9 +41,12 @@ public class TypeAnalysis {
 
 
         FunctionNode functionNode = new FunctionNode(function.function.astNode);
+//        function.env
         function.function.astNode.accept(new AstConstraintVisitor(function, solver, nodes, functionNode));
 
-        Map<UnionNode, List<UnionNode>> classes = solver.getUnionClasses();
+        solver.finish();
+
+        Map<UnionNode, UnionClass> classes = solver.getUnionClasses();
 
         return FunctionType.fromNode(functionNode, classes);
     }
@@ -89,9 +93,8 @@ public class TypeAnalysis {
                 result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));
             }
         }
-        if (obj.env != null && obj.env instanceof Snap.Obj) {
-            Snap.Obj env = (Snap.Obj) obj.env;
-            result.addAll(getAllFunctionInstances(env, seen));
+        if (obj.env != null) {
+            result.addAll(getAllFunctionInstances(obj.env, seen));
         }
 
         return result;

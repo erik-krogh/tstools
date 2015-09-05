@@ -29,4 +29,8 @@ public interface NodeVisitor<T> {
     T visit(NullLiteral nullLiteral);
 
     T visit(VariableNode variableNode);
+
+    T visit(CallExpression callExpression);
+
+    T visit(IfStatement ifStatement);
 }
