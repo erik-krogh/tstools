@@ -66,5 +66,6 @@ public final class UnionClass {
 
     public void addChangeCallback(Runnable callback) {
         this.callbacks.add(callback);
+        solver.allDoneCallback(callback); // Run at least once.
     }
 }

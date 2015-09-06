@@ -26,36 +26,53 @@ public class TypeAnalysis {
     }
 
     public Map<Snap.Obj, FunctionType> getFunctionTypes() {
-        // TODO: All the classes first.
         List<Snap.Obj> functions = getAllFunctionInstances(librarySnap, new HashSet<>());
-        HashMap<Snap.Obj, FunctionType> result = new HashMap<>();
+
+        Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
         for (Snap.Obj function : functions) {
-            result.put(function, analyse(function));
+            functionNodes.put(function, new FunctionNode(function.function.astNode));
         }
+
+        Map<UnionNode, UnionClass> classes = analyseFunctions(functionNodes);
+
+        Map<Snap.Obj, FunctionType> result = new HashMap<>();
+        for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
+            result.put(entry.getKey(), FunctionType.fromNode(entry.getValue(), classes));
+        }
+
         return result;
     }
 
-    private FunctionType analyse(Snap.Obj function) {
-        UnionFindSolver solver = new UnionFindSolver();
+    private Map<UnionNode, UnionClass> analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
+        Set<Snap.Obj> functions = functionNodes.keySet();
         Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
-
-
-        FunctionNode functionNode = new FunctionNode(function.function.astNode);
-//        function.env
-        function.function.astNode.accept(new AstConstraintVisitor(function, solver, nodes, functionNode));
+        UnionFindSolver solver = new UnionFindSolver();
+        for (Snap.Obj function : functions) {
+            analyse(function, nodes, functionNodes, solver);
+        }
 
         solver.finish();
 
-        Map<UnionNode, UnionClass> classes = solver.getUnionClasses();
-
-        return FunctionType.fromNode(functionNode, classes);
+        return solver.getUnionClasses();
     }
 
-    static class ProgramPoint {
-        private Snap.Obj function;
-        private Node astNode;
+    private void analyse(Snap.Obj function, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver) {
+        Map<String, Snap.Value> values = new HashMap<>();
+        for (Snap.Property property : function.env.properties) {
+            values.put(property.name, property.value);
+        }
 
-        public ProgramPoint(Snap.Obj function, Node astNode) {
+        new ResolveEnvironmentVisitor(function, solver, nodes, values, functionNodes).visit(function.function.astNode);
+
+        FunctionNode functionNode = functionNodes.get(function);
+        function.function.astNode.accept(new UnionConstraintVisitor(function, solver, nodes, functionNode, functionNodes));
+    }
+
+    public static class ProgramPoint {
+        private Snap.Obj function;
+        private AstNode astNode;
+
+        public ProgramPoint(Snap.Obj function, AstNode astNode) {
             if (function.function == null) {
                 throw new RuntimeException("This should be a function");
             }
@@ -88,9 +105,11 @@ public class TypeAnalysis {
         if (obj.function != null && obj.function.type.equals("user")) {
             result.add(obj);
         }
-        for (Snap.Property property : obj.properties) {
-            if (property != null && property.value != null && property.value instanceof Snap.Obj) {
-                result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));
+        if (obj.properties != null) {
+            for (Snap.Property property : obj.properties) {
+                if (property != null && property.value != null && property.value instanceof Snap.Obj) {
+                    result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));
+                }
             }
         }
         if (obj.env != null) {

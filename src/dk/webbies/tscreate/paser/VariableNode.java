@@ -6,10 +6,10 @@ import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class VariableNode extends Statement {
-    private final Node lValue; // TODO: More precise, both of them.
-    private final Node init;
+    private final AstNode lValue; // TODO: More precise, both of them.
+    private final AstNode init;
 
-    public VariableNode(SourceRange location, Node lValue, Node init) {
+    public VariableNode(SourceRange location, AstNode lValue, AstNode init) {
         super(location);
         this.lValue = lValue;
         this.init = init;
@@ -20,11 +20,11 @@ public class VariableNode extends Statement {
         return visitor.visit(this);
     }
 
-    public Node getlValue() {
+    public AstNode getlValue() {
         return lValue;
     }
 
-    public Node getInit() {
+    public AstNode getInit() {
         return init;
     }
 }

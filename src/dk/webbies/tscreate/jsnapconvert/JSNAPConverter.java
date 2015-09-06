@@ -290,10 +290,10 @@ public class JSNAPConverter {
                     reader.beginObject();
                     reader.nextName();
                     int key;
-                    // TODO: When does this happen?
                     if (reader.peek() == JsonToken.BOOLEAN) {
                         reader.nextBoolean();
-                        key = 0;
+                        reader.endObject();
+                        return (T) new Snap.UndefinedConstant();
                     } else {
                         key = reader.nextInt();
                     }

@@ -96,4 +96,10 @@ public abstract class NodeTransverse implements NodeVisitor<Void> {
         ifStatement.getElseBranch().accept(this);
         return null;
     }
+
+    @Override
+    public Void visit(ObjectLiteral object) {
+        object.getProperties().values().forEach(value -> value.accept(this));
+        return null;
+    }
 }

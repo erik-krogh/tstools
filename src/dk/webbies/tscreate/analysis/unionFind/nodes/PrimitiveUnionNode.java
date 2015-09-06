@@ -1,35 +1,37 @@
 package dk.webbies.tscreate.analysis.unionFind.nodes;
 
+
+import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
+
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class PrimitiveUnionNode implements UnionNode {
-    public enum Type {
-        NUMBER, BOOL, STRING, NULL;
+    private PrimitiveDeclarationType type;
 
-    }
-
-    private Type type;
-    private PrimitiveUnionNode(Type type) {
+    private PrimitiveUnionNode(PrimitiveDeclarationType type) {
         this.type = type;
     }
-
     public static PrimitiveUnionNode number() {
-        return new PrimitiveUnionNode(Type.NUMBER);
-    }
-    public Type getType() {
-        return type;
+        return new PrimitiveUnionNode(PrimitiveDeclarationType.NUMBER);
     }
 
-    public static UnionNode bool() {
-        return new PrimitiveUnionNode(Type.BOOL);
+    public PrimitiveDeclarationType getType() {
+        return this.type;
+    }
+    public static PrimitiveUnionNode undefined() {
+        return new PrimitiveUnionNode(PrimitiveDeclarationType.UNDEFINED);
     }
 
-    public static UnionNode string() {
-        return new PrimitiveUnionNode(Type.STRING);
+    public static PrimitiveUnionNode bool() {
+        return new PrimitiveUnionNode(PrimitiveDeclarationType.BOOLEAN);
     }
 
-    public static UnionNode nullType() {
-        return new PrimitiveUnionNode(Type.NULL);
+    public static PrimitiveUnionNode string() {
+        return new PrimitiveUnionNode(PrimitiveDeclarationType.STRING);
+    }
+
+    public static PrimitiveUnionNode nullType() {
+        return new PrimitiveUnionNode(PrimitiveDeclarationType.NULL);
     }
 }

@@ -8,9 +8,9 @@ import java.util.List;
  * Created by erik1 on 01-09-2015.
  */
 public class BlockStatement extends Statement{
-    private final List<Node> statements;
+    private final List<Statement> statements;
 
-    public BlockStatement(SourceRange location, List<Node> statements) {
+    public BlockStatement(SourceRange location, List<Statement> statements) {
         super(location);
         this.statements = statements;
     }
@@ -20,7 +20,7 @@ public class BlockStatement extends Statement{
         return visitor.visit(this);
     }
 
-    public List<Node> getStatements() {
+    public List<Statement> getStatements() {
         return statements;
     }
 }

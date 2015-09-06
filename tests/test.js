@@ -1,4 +1,4 @@
-var bool = true;
+/*var bool = true;
 
 var str = "string";
 
@@ -17,12 +17,6 @@ function returnFunction(f) {
 
     };
 }
-
-// After this work, test within a function (because of the var transformation).
-// TODO: This doesn't work yet, because i don't handle the environment. (And when i do, it will loop infinitely).
-var recursive = function () {
-    return recursive;
-};
 
 function returnFunc(a) {
     return function (b) {
@@ -51,10 +45,84 @@ function callfunc2() {
     return func();
 }
 
+var myValue1 = 1;
 function returnFromEnv() {
-    return num;
+    return myValue1;
 }
 
 function returnCallFromEnv() {
-    return minus1(1);
+    return returnFromEnv();
 }
+
+function returnField() {
+    var obj = {
+        key: 2
+    };
+
+    return obj.key;
+}
+
+function returnAnUnionField() {
+    var obj = {
+        key: 2
+    };
+    obj.key = "string";
+    return obj.key;
+}
+
+function returnFromEmptyObject() {
+    var obj = {};
+    return obj.key;
+}
+
+function returnFromInitiallyEmptyThenPopulatedObject() {
+    var obj = {};
+    obj.key = "test";
+    return obj.key;
+}
+
+function functionsAndObjects() {
+    var obj = {
+        key: "value"
+    };
+    return (function () {
+        return obj.key;
+    })();
+}
+
+function functionsAndObjects2() {
+    return (function () {
+        return {
+            key: "value"
+        };
+    })().key;
+}
+
+function objAssignArgument(a) {
+    var obj = {
+        key: 2
+    };
+    obj.key = a;
+    return obj.key;
+}
+
+var returnFromEnv = (function () {
+    var objInHeap = {
+        key: "value"
+    };
+
+    function returnFunc() {
+        return objInHeap.key;
+    }
+
+    return returnFunc;
+})(); */
+
+
+// TODO: This goes in an infinite loop.
+/*var recursive = function () {
+    return recursive;
+};*/
+
+
+

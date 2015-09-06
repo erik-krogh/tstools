@@ -82,4 +82,8 @@ public class Snap {
         public List<Value> arguments;
         public FunctionExpression astNode;
     }
+
+    public static class UndefinedConstant extends Value {
+
+    }
 }

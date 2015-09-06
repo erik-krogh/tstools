@@ -41,6 +41,8 @@ public class DeclarationBuilder {
                 result.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.NUMBER));
             } else if (value instanceof Snap.StringConstant) {
                 result.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.STRING));
+            } else if (value instanceof Snap.UndefinedConstant) {
+                result.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.UNDEFINED));
             } else {
                 Snap.Obj propertyObj = (Snap.Obj) value;
                 if (propertyObj.function != null) {

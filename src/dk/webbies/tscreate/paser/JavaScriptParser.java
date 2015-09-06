@@ -16,8 +16,6 @@ import com.google.javascript.rhino.ErrorReporter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tscreate.paser.AstTransformer.*;
-
 /**
  * JavaScript parser.
  * Based on the parser from the Google Closure Compiler.
@@ -157,19 +155,7 @@ public class JavaScriptParser {
         }
 
         public FunctionExpression toTSCreateAST() {
-            List<Node> body = this.programAST.sourceElements.stream().map(AstTransformer::convert).map(node -> {
-                if (node instanceof Statement) {
-                    return (Statement)node;
-                } else if (node instanceof FunctionExpression) {
-                    SourceRange loc = node.location;
-                    FunctionExpression func = (FunctionExpression) node;
-                    Identifier name = func.getName();
-                    func.name = null; // This way converting "function name() {}", to the equivalent (in top level functions) "var name = function () {}".
-                    return new VariableNode(loc, name, func);
-                } else {
-                    throw new RuntimeException("Cannot make class into a statement for the top-program: " + node.getClass().getName());
-                }
-            }).collect(Collectors.toList());
+            List<Statement> body = this.programAST.sourceElements.stream().map(AstTransformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
             SourceRange location = new SourceRange(body.get(0).location.start, body.get(body.size() - 1).location.end);
             FunctionExpression result = new FunctionExpression(location, new Identifier(location, ":program"), new BlockStatement(location, body), Collections.EMPTY_LIST);
 
@@ -177,6 +163,20 @@ public class JavaScriptParser {
             new FindVariableDeclarations(result).visit(result);
 
             return result;
+        }
+    }
+
+    public static Statement toStatement(AstNode node) {
+        if (node instanceof Statement) {
+            return (Statement)node;
+        } else if (node instanceof FunctionExpression) {
+            SourceRange loc = node.location;
+            FunctionExpression func = (FunctionExpression) node;
+            Identifier name = func.getName();
+            func.name = null; // This way converting "function name() {}", to the equivalent (in top level functions) "var name = function () {}".
+            return new VariableNode(loc, name, func);
+        } else {
+            throw new RuntimeException("Cannot make class into a statement for the top-program: " + node.getClass().getName());
         }
     }
 
@@ -237,6 +237,7 @@ public class JavaScriptParser {
         }
     }
 
+    // TODO: Do something with function expressions that declare a function in the scope.
     private static class FindVariableDeclarations extends NodeTransverse {
         private FunctionExpression function;
         private Map<String, Identifier> env;

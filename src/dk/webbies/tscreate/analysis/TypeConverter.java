@@ -88,25 +88,15 @@ public class TypeConverter {
         if (primitives.isEmpty()) {
             return null;
         } else {
-            Set<PrimitiveUnionNode.Type> types = new HashSet<>();
+            Set<PrimitiveDeclarationType> types = new HashSet<>();
             for (PrimitiveUnionNode primitive : primitives) {
                 types.add(primitive.getType());
             }
+            // TODO: Union type?
             if (types.size() != 1) {
-                return null;
+                return PrimitiveDeclarationType.ANY;
             }
-            switch (types.iterator().next()) {
-                case NUMBER:
-                    return PrimitiveDeclarationType.NUMBER;
-                case BOOL:
-                    return PrimitiveDeclarationType.BOOLEAN;
-                case STRING:
-                    return PrimitiveDeclarationType.STRING;
-                case NULL:
-                    return PrimitiveDeclarationType.NULL;
-                default:
-                    throw new RuntimeException("Not implemented yet");
-            }
+            return types.iterator().next();
         }
     }
 }

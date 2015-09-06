@@ -5,9 +5,9 @@ import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 /**
  * Created by erik1 on 01-09-2015.
  */
-public abstract class Node {
+public abstract class AstNode {
     public final SourceRange location;
-    Node(SourceRange location) {
+    AstNode(SourceRange location) {
         this.location = location;
     }
 

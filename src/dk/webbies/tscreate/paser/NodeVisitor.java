@@ -33,4 +33,6 @@ public interface NodeVisitor<T> {
     T visit(CallExpression callExpression);
 
     T visit(IfStatement ifStatement);
+
+    T visit(ObjectLiteral object);
 }
