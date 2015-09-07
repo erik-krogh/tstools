@@ -1,30 +1,31 @@
-package dk.webbies.tscreate.paser;
+package dk.webbies.tscreate.paser.AST;
 
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+import dk.webbies.tscreate.paser.StatementVisitor;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class VariableNode extends Statement {
-    private final AstNode lValue; // TODO: More precise, both of them.
-    private final AstNode init;
+    private final Expression lValue;
+    private final Expression init;
 
-    public VariableNode(SourceRange location, AstNode lValue, AstNode init) {
+    public VariableNode(SourceRange location, Expression lValue, Expression init) {
         super(location);
         this.lValue = lValue;
         this.init = init;
     }
 
     @Override
-    public <T> T accept(NodeVisitor<T> visitor) {
+    public <T> T accept(StatementVisitor<T> visitor) {
         return visitor.visit(this);
     }
 
-    public AstNode getlValue() {
+    public Expression getlValue() {
         return lValue;
     }
 
-    public AstNode getInit() {
+    public Expression getInit() {
         return init;
     }
 }

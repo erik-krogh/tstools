@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.paser;
+package dk.webbies.tscreate.paser.AST;
 
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 
@@ -10,6 +10,4 @@ public abstract class AstNode {
     AstNode(SourceRange location) {
         this.location = location;
     }
-
-    public abstract <T> T accept(NodeVisitor<T> visitor);
 }

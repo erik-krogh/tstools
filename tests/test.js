@@ -116,13 +116,53 @@ var returnFromEnv = (function () {
     }
 
     return returnFunc;
-})(); */
+})();
 
 
 // TODO: This goes in an infinite loop.
-/*var recursive = function () {
+var recursive = function () {
     return recursive;
-};*/
+};
+
+function getConstantFunction(constant) {
+    return function () {
+        return constant;
+    }
+}
+
+var returnNumber = getConstantFunction(123);
+
+var returnString = getConstantFunction("string");
+
+var returnBool = getConstantFunction(true);
+
+var returnNull = getConstantFunction(null);
+*/
+// TODO: Handle this next.
+
+var obj = {
+    func: function () {
+        return this.value;
+    },
+    value: 2
+};
+
+function test(){
+    var a = obj["func"];
+    return obj.func();
+}
+
+
+
+/* Missing:
+ - Loops (for/while)
+ - For in.
+ - Arrays
+ - Indexers (String and Number).
+ - instanceof
+ - typeof
+
+  */
 
 
 

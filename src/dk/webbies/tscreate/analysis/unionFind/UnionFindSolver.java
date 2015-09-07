@@ -17,8 +17,6 @@ package dk.webbies.tscreate.analysis.unionFind;
  * unification, Kruskal's MST algorithm, or Hindley-Milner type
  * inference.  They are also good at finding connected components of
  * an undirected graph.
- *
- * Modified by Erik Krogh Kristensen, for use in TSCreate (working title).
  */
 
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
@@ -30,6 +28,8 @@ import java.util.*; // For Map, HashMap
  * A class representing the union-find abstraction.
  *
  * @author Keith Schwarz (htiek@cs.stanford.edu)
+ *
+ * Modified by Erik Krogh Kristensen, for use in TSCreate (working title).
  */
 public class UnionFindSolver {
     private Set<Runnable> doneCallbacks = new HashSet<>();
@@ -37,8 +37,8 @@ public class UnionFindSolver {
     public void finish() {
         while (doneCallbacks.size() > 0) {
             for (Runnable callback : new ArrayList<>(doneCallbacks)) {
-                callback.run();
                 doneCallbacks.remove(callback);
+                callback.run();
             }
         }
     }

@@ -6,8 +6,9 @@ import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
-import dk.webbies.tscreate.paser.*;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
+import dk.webbies.tscreate.paser.AST.AstNode;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.*;
 

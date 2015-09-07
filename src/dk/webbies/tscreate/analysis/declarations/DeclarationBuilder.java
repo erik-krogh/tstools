@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations;
 
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
+import dk.webbies.tscreate.analysis.declarations.types.ObjectType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
@@ -47,7 +48,7 @@ public class DeclarationBuilder {
                 Snap.Obj propertyObj = (Snap.Obj) value;
                 if (propertyObj.function != null) {
                     Snap.Property prototypeProperty = propertyObj.getProperty("prototype");
-                    if (prototypeProperty != null && prototypeProperty.value != null && prototypeProperty.value instanceof Snap.Obj && classes.containsKey(prototypeProperty.value)) {
+                    if (prototypeProperty != null && prototypeProperty.value != null && prototypeProperty.value instanceof Snap.Obj && classes.containsKey(prototypeProperty.value) && classes.get(prototypeProperty.value).isUsedAsClass) {
                         // TODO: This is a class, handle as such
                         throw new RuntimeException("Cannot build declarations for classes yet");
                     } else {
@@ -57,9 +58,7 @@ public class DeclarationBuilder {
 
 
                 } else {
-
-                    // TODO: Emit. Plain object
-                    throw new RuntimeException("Cannot handle build declarations for objects yet");
+                    result.add(new VariableDeclaration(property.name, new ObjectType(buildDeclaration(propertyObj))));
                 }
             }
         }

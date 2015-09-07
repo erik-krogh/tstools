@@ -1,6 +1,7 @@
-package dk.webbies.tscreate.paser;
+package dk.webbies.tscreate.paser.AST;
 
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+import dk.webbies.tscreate.paser.ExpressionVisitor;
 
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
  */
 // TODO: Really have to look everywhere this is used. To see if the name is used correctly.
 public class FunctionExpression extends Expression {
-    Identifier name;
+    public Identifier name;
     final BlockStatement body;
     final List<Identifier> arguments;
     public HashMap<String, Identifier> declarations;
@@ -35,7 +36,7 @@ public class FunctionExpression extends Expression {
     }
 
     @Override
-    public <T> T accept(NodeVisitor<T> visitor) {
+    public <T> T accept(ExpressionVisitor<T> visitor) {
         return visitor.visit(this);
     }
 }

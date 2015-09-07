@@ -1,6 +1,7 @@
-package dk.webbies.tscreate.paser;
+package dk.webbies.tscreate.paser.AST;
 
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+import dk.webbies.tscreate.paser.ExpressionVisitor;
 
 import java.util.Map;
 
@@ -19,7 +20,7 @@ public class ObjectLiteral extends Expression {
     }
 
     @Override
-    public <T> T accept(NodeVisitor<T> visitor) {
+    public <T> T accept(ExpressionVisitor<T> visitor) {
         return visitor.visit(this);
     }
 }

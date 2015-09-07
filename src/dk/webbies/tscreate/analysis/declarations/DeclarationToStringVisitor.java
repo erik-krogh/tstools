@@ -1,9 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations;
 
-import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.analysis.declarations.types.DeclarationTypeVisitor;
-import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
-import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
+import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.analysis.declarations.types.*;
 
 import java.util.List;
 
@@ -104,6 +102,33 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
         @Override
         public Void visit(PrimitiveDeclarationType primitive) {
             write(primitive.getPrettyString());
+            return null;
+        }
+
+        @Override
+        public Void visit(ObjectType objectType) {
+            List<VariableDeclaration> decs = Util.cast(VariableDeclaration.class, objectType.getBlock().getDeclarations());
+            if (decs.size() == 0) {
+                write("{}");
+            } else {
+                write("{ \n");
+                ident++;
+
+                for (int i = 0; i < decs.size(); i++) {
+                    VariableDeclaration dec = decs.get(i);
+                    ident();
+                    write(dec.getName());
+                    write(": ");
+                    dec.getType().accept(this);
+                    if (i != decs.size() - 1) {
+                        write(",");
+                    }
+                    write("\n");
+                }
+                ident--;
+                ident();
+                write("}");
+            }
             return null;
         }
     }

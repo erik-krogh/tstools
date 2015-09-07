@@ -21,6 +21,16 @@ public class TypeConverter {
             throw new NullPointerException();
         }
         List<UnionNode> nodes = unionClass.getNodes();
+
+        // Cannot use null here, make them into that it cannot be void.
+        nodes = nodes.stream().map((node -> {
+            if (node instanceof PrimitiveUnionNode && ((PrimitiveUnionNode) node).getType() == PrimitiveDeclarationType.NULL) {
+                return new NonVoidNode();
+            } else {
+                return node;
+            }
+        })).collect(Collectors.toList());
+
         // TODO: Make method non static, to include a cache, that looks at the instances of nodes (since they are unique). Use System.identityHashCode().
         if (nodes.isEmpty()) {
             return PrimitiveDeclarationType.VOID;

@@ -7,4 +7,6 @@ public interface DeclarationTypeVisitor<T> {
     T visit(FunctionType functionType);
 
     T visit(PrimitiveDeclarationType primitive);
+
+    T visit(ObjectType objectType);
 }

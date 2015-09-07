@@ -2,9 +2,9 @@ package dk.webbies.tscreate.jsnapconvert.classes;
 
 import dk.webbies.tscreate.jsnapconvert.JSNAPConverter;
 import dk.webbies.tscreate.jsnapconvert.Snap;
-import dk.webbies.tscreate.paser.BlockStatement;
-import dk.webbies.tscreate.paser.FunctionExpression;
-import dk.webbies.tscreate.paser.Identifier;
+import dk.webbies.tscreate.paser.AST.BlockStatement;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
+import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.io.IOException;
 import java.util.*;
@@ -36,9 +36,7 @@ public class ClassHierarchyExtractor {
             Snap.Property prototypeProperty = obj.getProperty("prototype");
             if (prototypeProperty != null && prototypeProperty.value instanceof Snap.Obj) {
                 Snap.Obj prototypeObj = (Snap.Obj) prototypeProperty.value;
-                if (prototypeObj.properties.size() > 1) {
-                    LibraryClass libraryClass = createLibraryClass(prefixPath, obj, classes);
-                }
+                LibraryClass libraryClass = createLibraryClass(prefixPath, obj, classes);
             }
         }
 

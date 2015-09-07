@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.jsnapconvert;
 
-import dk.webbies.tscreate.paser.FunctionExpression;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.HashMap;
 import java.util.List;

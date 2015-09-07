@@ -4,8 +4,7 @@ import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
@@ -20,14 +19,46 @@ public class HeapValueNode extends UnionNodeObject {
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    addField(property.name, fromValue(property.value, solver, functionNodes));
+                    List<UnionNode> fieldNodes = fromValue(property.value, solver, functionNodes);
+                    EmptyUnionNode fieldNode = new EmptyUnionNode();
+                    for (UnionNode node : fieldNodes) {
+                        solver.union(node, fieldNode);
+                    }
+                    addField(property.name, fieldNode);
                 }
             }
         }
     }
 
     private static Map<Snap.Value, HeapValueNode> cache = new HashMap<>();
-    public static UnionNode fromValue(Snap.Value value, UnionFindSolver solver, Map<Snap.Obj, FunctionNode> functionNodes) {
+    public static List<UnionNode> fromValue(Snap.Value value, UnionFindSolver solver, Map<Snap.Obj, FunctionNode> functionNodes) {
+        UnionNode primitive = getPrimitiveValue(value);
+        if (primitive != null) {
+            return Arrays.asList(primitive);
+        }
+
+        List<UnionNode> result = new ArrayList<>();
+
+        Snap.Obj obj = (Snap.Obj) value;
+        if (obj.function != null) {
+            if (obj.function.type.equals("user")) {
+                FunctionNode functionNode = new FunctionNode(obj.function.astNode);
+                solver.union(functionNodes.get(obj), functionNode);
+                result.add(functionNode);
+            } else {
+                throw new UnsupportedOperationException("Dont know functions of type: " + obj.function.type + " yet");
+            }
+        }
+
+        if (cache.containsKey(value)) {
+            result.add(cache.get(value));
+        } else {
+            result.add(new HeapValueNode(value, solver, functionNodes));
+        }
+        return result;
+    }
+
+    private static PrimitiveUnionNode getPrimitiveValue(Snap.Value value) {
         if (value instanceof Snap.BooleanConstant) {
             return PrimitiveUnionNode.bool();
         }
@@ -43,21 +74,6 @@ public class HeapValueNode extends UnionNodeObject {
         if (value == null) {
             return PrimitiveUnionNode.nullType();
         }
-        Snap.Obj obj = (Snap.Obj) value;
-        if (obj.function != null) {
-            if (obj.function.type.equals("user")) {
-                FunctionNode functionNode = new FunctionNode(obj.function.astNode);
-                solver.union(functionNodes.get(obj), functionNode);
-                return functionNode; // TODO: Adding some fields?
-            } else {
-                throw new UnsupportedOperationException("Dont know functions of type: " + obj.function.type + " yet");
-            }
-        }
-
-        if (cache.containsKey(value)) {
-            return cache.get(value);
-        } else {
-            return new HeapValueNode(value, solver, functionNodes);
-        }
+        return null;
     }
 }

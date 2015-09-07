@@ -11,12 +11,14 @@ import java.util.Map;
  * Created by webbies on 02-09-2015.
  */
 public class LibraryClass {
-    List<String> pathsSeen = new ArrayList<>();
-    Map<String, Snap.Value> prototypeProperties = new HashMap<>();
-    Map<String, Snap.Value> staticFields = new HashMap<>();
-    LibraryClass superClass;
-    Snap.Obj prototype;
+    public List<String> pathsSeen = new ArrayList<>();
+    public Map<String, Snap.Value> prototypeProperties = new HashMap<>();
+    public Map<String, Snap.Value> staticFields = new HashMap<>();
+    public LibraryClass superClass;
 
+    public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class. // TODO: Mark that?
+
+    public Snap.Obj prototype;
     boolean collectedStaticFields = false;
 
     public LibraryClass(String pathSeen, Snap.Obj prototype) {

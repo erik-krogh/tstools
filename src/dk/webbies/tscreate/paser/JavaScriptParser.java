@@ -12,6 +12,7 @@ import com.google.javascript.jscomp.parsing.parser.trees.ProgramTree;
 import com.google.javascript.jscomp.parsing.parser.util.SourcePosition;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import com.google.javascript.rhino.ErrorReporter;
+import dk.webbies.tscreate.paser.AST.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -200,7 +201,7 @@ public class JavaScriptParser {
         protected void reportWarning(SourcePosition sourcePosition, String s) { }
     }
 
-    private static class FillFunctionsVariableDeclarations extends NodeTransverse {
+    private static class FillFunctionsVariableDeclarations implements NodeTransverse<Void> {
         private final FunctionExpression function;
 
         public FillFunctionsVariableDeclarations(FunctionExpression function) {
@@ -229,7 +230,7 @@ public class JavaScriptParser {
                 if (this.function.getName() != null) {
                     this.function.declarations.put(this.function.getName().getName(), this.function.getName());
                 }
-                return super.visit(function); // Actually visiting the children.
+                return NodeTransverse.super.visit(function); // Actually visiting the children.
             } else {
                 new FillFunctionsVariableDeclarations(function).visit(function);
                 return null;
@@ -238,7 +239,7 @@ public class JavaScriptParser {
     }
 
     // TODO: Do something with function expressions that declare a function in the scope.
-    private static class FindVariableDeclarations extends NodeTransverse {
+    private static class FindVariableDeclarations implements NodeTransverse<Void> {
         private FunctionExpression function;
         private Map<String, Identifier> env;
         private Map<String, Identifier> globalEnv;
@@ -264,13 +265,13 @@ public class JavaScriptParser {
             } else {
                 this.globalEnv.put(identifier.getName(), identifier);
             }
-            return super.visit(identifier);
+            return NodeTransverse.super.visit(identifier);
         }
 
         @Override
         public Void visit(FunctionExpression function) {
             if (this.function == function) {
-                return super.visit(function);
+                return NodeTransverse.super.visit(function);
             } else {
                 new FindVariableDeclarations(function, env, globalEnv).visit(function);
                 return null;

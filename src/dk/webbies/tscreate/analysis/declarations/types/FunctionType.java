@@ -3,7 +3,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
-import dk.webbies.tscreate.paser.Identifier;
+import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;

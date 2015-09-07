@@ -5,17 +5,18 @@ import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.nodes.HeapValueNode;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 import dk.webbies.tscreate.jsnapconvert.Snap;
-import dk.webbies.tscreate.paser.FunctionExpression;
-import dk.webbies.tscreate.paser.Identifier;
-import dk.webbies.tscreate.paser.NodeTransverse;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
+import dk.webbies.tscreate.paser.AST.Identifier;
+import dk.webbies.tscreate.paser.AST.NodeTransverse;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
-public class ResolveEnvironmentVisitor extends NodeTransverse {
+public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private final Snap.Obj function;
     private final UnionFindSolver solver;
     private final Map<TypeAnalysis.ProgramPoint, UnionNode> nodes;
@@ -37,7 +38,7 @@ public class ResolveEnvironmentVisitor extends NodeTransverse {
         if (function != this.function.function.astNode) {
             new ResolveEnvironmentVisitor(this.function, this.solver, this.nodes, this.values, this.functionNodes);
         }
-        return super.visit(function);
+        return NodeTransverse.super.visit(function);
     }
 
     @Override
@@ -46,8 +47,14 @@ public class ResolveEnvironmentVisitor extends NodeTransverse {
         if (this.values.containsKey(name)) {
             UnionNode idNode = UnionConstraintVisitor.getUnionNode(identifier, this.function, this.nodes);
             Snap.Value value = this.values.get(name);
-            solver.union(idNode, HeapValueNode.fromValue(value, this.solver, this.functionNodes));
+            List<UnionNode> nodes = HeapValueNode.fromValue(value, this.solver, this.functionNodes);
+            if (nodes.isEmpty()) {
+                throw new RuntimeException("Cannot have an identifier be nothing");
+            }
+            for (UnionNode node : nodes) {
+                solver.union(idNode, node);
+            }
         }
-        return super.visit(identifier);
+        return NodeTransverse.super.visit(identifier);
     }
 }

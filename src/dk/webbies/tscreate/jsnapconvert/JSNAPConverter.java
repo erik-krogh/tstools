@@ -5,10 +5,10 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import dk.webbies.tscreate.paser.BlockStatement;
-import dk.webbies.tscreate.paser.FunctionExpression;
-import dk.webbies.tscreate.paser.Identifier;
-import dk.webbies.tscreate.paser.NodeTransverse;
+import dk.webbies.tscreate.paser.AST.BlockStatement;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
+import dk.webbies.tscreate.paser.AST.Identifier;
+import dk.webbies.tscreate.paser.AST.NodeTransverse;
 
 import java.io.*;
 import java.util.*;
@@ -117,12 +117,12 @@ public class JSNAPConverter {
     }
 
     // TODO: Check that this is correct after programs became functions.
-    private static class FunctionExtractor extends NodeTransverse {
+    private static class FunctionExtractor implements NodeTransverse<Void> {
         List<FunctionExpression> functions = new ArrayList<>();
         @Override
         public Void visit(FunctionExpression function) {
             functions.add(function);
-            return super.visit(function);
+            return NodeTransverse.super.visit(function);
         }
 
         public List<FunctionExpression> getFunctions() {
