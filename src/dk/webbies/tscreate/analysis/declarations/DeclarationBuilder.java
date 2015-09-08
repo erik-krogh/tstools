@@ -49,7 +49,6 @@ public class DeclarationBuilder {
                 if (propertyObj.function != null) {
                     Snap.Property prototypeProperty = propertyObj.getProperty("prototype");
                     if (prototypeProperty != null && prototypeProperty.value != null && prototypeProperty.value instanceof Snap.Obj && classes.containsKey(prototypeProperty.value) && classes.get(prototypeProperty.value).isUsedAsClass) {
-                        // TODO: This is a class, handle as such
                         throw new RuntimeException("Cannot build declarations for classes yet");
                     } else {
                         // Just a function

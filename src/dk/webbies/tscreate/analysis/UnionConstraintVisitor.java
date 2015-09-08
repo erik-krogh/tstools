@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis;
 
+import dk.webbies.tscreate.Main;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 import dk.webbies.tscreate.jsnapconvert.Snap;
@@ -17,7 +18,6 @@ import static dk.webbies.tscreate.Util.*;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-// TODO: UnsupportedOperationException.
 public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
     private final Snap.Obj closure;
     private final UnionFindSolver solver;
@@ -61,39 +61,61 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.add(rhs);
                 return new AddNode(lhs, rhs);
             }
-            // TODO: Doc about this. And the equals ones.
-            case PLUS_EQUAL: {
+            case EQUAL: // =
+            case NOT_EQUAL: // !=
+            case EQUAL_EQUAL: // ==
+            case NOT_EQUAL_EQUAL: // !==
+            case EQUAL_EQUAL_EQUAL: // ===
+            case PLUS_EQUAL: { // +=
                 solver.union(lhs, rhs);
                 return lhs;
             }
-            case EQUAL: // =
-            case EQ: // ==
-                solver.union(lhs, rhs);
-                return lhs;
-            case MINUS:
-            case MULT:
-            case DIV:
-            case MOD:
-            case MINUS_EQUAL:
-            case MULT_EQUAL:
-            case DIV_EQUAL:
-            case MOD_EQUAL:
-            solver.union(PrimitiveUnionNode.number(), lhs);
-                solver.union(PrimitiveUnionNode.number(), rhs);
-                return PrimitiveUnionNode.number();
-            case AND:
-            case OR:
+            case AND: // &&
+            case OR: // ||
                 return PrimitiveUnionNode.bool();
-            case LESS_THAN:
-            case GREATER_THAN:
+            case MINUS: // -
+            case MULT: // *
+            case DIV: // /
+            case MOD: // %
+            case MINUS_EQUAL: // -=
+            case MULT_EQUAL: // *=
+            case DIV_EQUAL: // /=
+            case MOD_EQUAL: // %=
+            case LESS_THAN: // <
+            case LESS_THAN_EQUAL: // <=
+            case GREATER_THAN: // >
+            case GREATER_THAN_EQUAL: // >=
+            case BITWISE_AND: // &
+            case BITWISE_OR: // |
+            case BITWISE_XOR: // ^
+            case LEFT_SHIFT: // <<
+            case RIGHT_SHIFT: // >>
+            case UNSIGNED_RIGHT_SHIFT: // >>>
                 solver.union(PrimitiveUnionNode.number(), lhs);
                 solver.union(PrimitiveUnionNode.number(), rhs);
                 return PrimitiveUnionNode.number();
-            case INSTANCEOF:
-                return new EmptyUnionNode(); // TODO:
+            case INSTANCEOF: // instanceof
+                return PrimitiveUnionNode.bool();
+            case IN: // in
+                // solver.union(lhs, PrimitiveUnionNode.string()); // TODO: String or number.
+                solver.union(rhs, new UnionNodeObject());
+                return PrimitiveUnionNode.bool();
             default:
                 throw new UnsupportedOperationException("Dont yet handle the operator: " + op.getOperator());
         }
+    }
+
+    @Override
+    public UnionNode visit(ForInStatement forIn) {
+        forIn.getInitializer().accept(new NodeTransverse<Void>() {
+            @Override
+            public Void visit(Identifier identifier) {
+                solver.union(get(identifier), PrimitiveUnionNode.string());
+                return null;
+            }
+        });
+        solver.union(get(forIn.getCollection()), new UnionNodeObject());
+        return null;
     }
 
     @Override
@@ -102,6 +124,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         switch (unOp.getOperator()) {
             case MINUS:
             case PLUS:
+            case MINUS_MINUS:
+            case PLUS_PLUS:
+            case BITWISE_NOT:
                 solver.union(PrimitiveUnionNode.number(), exp);
                 return PrimitiveUnionNode.number();
             case NOT:
@@ -110,10 +135,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 return PrimitiveUnionNode.string();
             case VOID:
                 return PrimitiveUnionNode.undefined();
-            case POST_MINUS_MINUS:
-            case POST_PLUS_PLUS:
-                solver.union(PrimitiveUnionNode.number(), exp);
-                return PrimitiveUnionNode.number();
+            case DELETE:
+                return new EmptyUnionNode();
             default:
                 throw new UnsupportedOperationException("Dont yet handle the operator: " + unOp.getOperator());
         }
@@ -140,11 +163,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @Override
-    public UnionNode visit(MemberLookupExpression memberLookup) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public UnionNode visit(CommaExpression commaExpression) {
         commaExpression.getExpressions().forEach(exp -> exp.accept(this));
         return get(commaExpression.getLastExpression());
@@ -167,6 +185,13 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @Override
+    public UnionNode visit(SwitchStatement switchStatement) {
+        // TODO: Number of string for the expression.
+        StatementTransverse.super.visit(switchStatement);
+        return null;
+    }
+
+    @Override
     public UnionNode visit(StringLiteral string) {
         return PrimitiveUnionNode.string();
     }
@@ -176,9 +201,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         UnionNode id = get(identifier);
         if (identifier.getDeclaration() == null) {
             throw new RuntimeException("Cannot have null declarations");
+        } else {
+            UnionNode idDec = get(identifier.getDeclaration());
+            solver.union(id, idDec);
         }
-        UnionNode idDec = get(identifier.getDeclaration());
-        solver.union(id, idDec);
         return id;
     }
 
@@ -263,6 +289,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @Override
+    public UnionNode visit(MemberLookupExpression memberLookupExpression) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public UnionNode visit(CallExpression callExpression) {
         List<UnionNode> args = callExpression.getArgs().stream().map(arg -> arg.accept(this)).collect(Collectors.toList());
         UnionNode function = callExpression.getFunction().accept(this);
@@ -288,6 +319,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         List<UnionNode> args;
         EmptyUnionNode returnNode;
         Set<FunctionNode> seen = new HashSet<>();
+
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, EmptyUnionNode returnNode) {
             this.thisNode = thisNode;
             this.function = function;
@@ -301,7 +333,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             functionNodes.removeAll(seen);
             seen.addAll(functionNodes);
             for (FunctionNode functionNode : functionNodes) {
-                for (int i = 0; i < functionNode.arguments.size() && i < this.args.size(); i++) { // TODO: What if the FunctionExpression provide to many arguments.
+                for (int i = 0; i < functionNode.arguments.size() && i < this.args.size(); i++) {
                     UnionNode parameter = functionNode.arguments.get(i);
                     UnionNode argument = this.args.get(i);
                     solver.union(parameter, argument);
@@ -317,8 +349,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
             List<HeapValueNode> heapValues = cast(HeapValueNode.class, nodes.stream().filter(node ->
                     node instanceof HeapValueNode &&
-                    ((HeapValueNode) node).value instanceof Snap.Obj &&
-                    ((Snap.Obj)((HeapValueNode) node).value).function != null).collect(Collectors.toList()));
+                            ((HeapValueNode) node).value instanceof Snap.Obj &&
+                            ((Snap.Obj) ((HeapValueNode) node).value).function != null).collect(Collectors.toList()));
 
             for (HeapValueNode heapValue : heapValues) {
                 Snap.Obj closure = (Snap.Obj) heapValue.value;

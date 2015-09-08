@@ -31,7 +31,7 @@ public class TypeConverter {
             }
         })).collect(Collectors.toList());
 
-        // TODO: Make method non static, to include a cache, that looks at the instances of nodes (since they are unique). Use System.identityHashCode().
+        // TODO: Make method non static, to include a cache, that looks at the instances of nodes (since they are unique). Use System.identityHashCode(). Use this to make a lot of interfaces, that can then later be inlined.
         if (nodes.isEmpty()) {
             return PrimitiveDeclarationType.VOID;
         }
@@ -68,6 +68,7 @@ public class TypeConverter {
         }
 
         if (primitives.isEmpty() && !adds.isEmpty()) {
+            // TODO: Do not recurse.
             List<DeclarationType> addTypes = new ArrayList<>();
             for (AddNode add : adds) {
                 addTypes.add(convert(classes.get(add.getLhs()), classes));
@@ -88,10 +89,7 @@ public class TypeConverter {
             if (primitiveTypes.size() == 1 && hasNumber) {
                 return PrimitiveDeclarationType.NUMBER;
             }
-            if (primitiveTypes.size() == 1 && hasString) {
-                return PrimitiveDeclarationType.STRING;
-            }
-            throw new RuntimeException("Could not resolve the add. ");
+            return PrimitiveDeclarationType.STRING;
         }
 
 

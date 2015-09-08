@@ -238,7 +238,6 @@ public class JavaScriptParser {
         }
     }
 
-    // TODO: Do something with function expressions that declare a function in the scope.
     private static class FindVariableDeclarations implements NodeTransverse<Void> {
         private FunctionExpression function;
         private Map<String, Identifier> env;
@@ -264,6 +263,7 @@ public class JavaScriptParser {
                 identifier.declaration = this.globalEnv.get(identifier.getName());
             } else {
                 this.globalEnv.put(identifier.getName(), identifier);
+                identifier.declaration = identifier;
             }
             return NodeTransverse.super.visit(identifier);
         }

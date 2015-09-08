@@ -116,7 +116,6 @@ public class JSNAPConverter {
         return functionExtrator.getFunctions();
     }
 
-    // TODO: Check that this is correct after programs became functions.
     private static class FunctionExtractor implements NodeTransverse<Void> {
         List<FunctionExpression> functions = new ArrayList<>();
         @Override

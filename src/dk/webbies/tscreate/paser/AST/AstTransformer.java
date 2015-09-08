@@ -3,6 +3,7 @@ package dk.webbies.tscreate.paser.AST;
 import com.google.javascript.jscomp.parsing.parser.IdentifierToken;
 import com.google.javascript.jscomp.parsing.parser.LiteralToken;
 import com.google.javascript.jscomp.parsing.parser.Token;
+import com.google.javascript.jscomp.parsing.parser.TokenType;
 import com.google.javascript.jscomp.parsing.parser.trees.*;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tscreate.paser.JavaScriptParser;
@@ -48,6 +49,10 @@ public class AstTransformer {
                     return new StringLiteral(loc, value.substring(1, value.length() - 1));
                 } else if (value.matches("[0-9]*.?[0-9]*")) {
                     return new NumberLiteral(loc, Double.parseDouble(value));
+                } else if (value.startsWith("0x")) {
+                    return new NumberLiteral(loc, Long.parseLong(value.toLowerCase().substring(2, value.length()), 16));
+                } else if (value.startsWith("/")) {
+                    throw new UnsupportedOperationException("I don't handle RegExps yet. " + value);
                 } else {
                     throw new RuntimeException("Could not recognize literal: " + value);
                 }
@@ -74,7 +79,14 @@ public class AstTransformer {
             List<Statement> statements = block.statements.stream().map(AstTransformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
             return new BlockStatement(loc, statements);
         } else if (tree instanceof ReturnStatementTree) {
-            return new Return(loc, (Expression) AstTransformer.convert(((ReturnStatementTree) tree).expression));
+            Expression expression = null;
+            ReturnStatementTree aReturn = (ReturnStatementTree) tree;
+            if (aReturn.expression != null) {
+                expression = (Expression) AstTransformer.convert(aReturn.expression);
+            } else {
+                expression = new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0));
+            }
+            return new Return(loc, expression);
         } else if (tree instanceof BinaryOperatorTree) {
             BinaryOperatorTree biOp = (BinaryOperatorTree) tree;
             return new BinaryExpression(loc, (Expression)convert(biOp.left), (Expression)convert(biOp.right), convertOperator(biOp.operator));
@@ -106,7 +118,16 @@ public class AstTransformer {
             ObjectLiteralExpressionTree object = (ObjectLiteralExpressionTree) tree;
             Map<String, Expression> properties = new HashMap<>();
             cast(PropertyNameAssignmentTree.class, object.propertyNameAndValues).stream().forEach(prop -> {
-                properties.put(prop.name.asIdentifier().value, (Expression) convert(prop.value));
+                Token name = prop.name;
+                if (name.type == TokenType.IDENTIFIER) {
+                    properties.put(name.asIdentifier().value, (Expression) convert(prop.value));
+                } else if (name.type == TokenType.STRING){
+                    String value = name.asLiteral().value;
+                    properties.put(value.substring(1, value.length() - 1), (Expression) convert(prop.value));
+                } else if (name.type == TokenType.NUMBER){
+                    String value = name.asLiteral().value;
+                    properties.put(value, (Expression) convert(prop.value));
+                }
             });
             return new ObjectLiteral(loc, properties);
         } else if (tree instanceof MemberExpressionTree) {
@@ -149,8 +170,8 @@ public class AstTransformer {
             PostfixExpressionTree post = (PostfixExpressionTree) tree;
             Operator operator;
             switch (post.operator.type) {
-                case PLUS_PLUS: operator = Operator.POST_PLUS_PLUS; break;
-                case MINUS_MINUS: operator = Operator.POST_MINUS_MINUS; break;
+                case PLUS_PLUS: operator = Operator.PLUS_PLUS; break;
+                case MINUS_MINUS: operator = Operator.MINUS_MINUS; break;
                 default:throw new RuntimeException("Unknown operator for postfix operator: " + post.operator);
             }
             return new UnaryExpression(loc, operator, (Expression)convert(post.operand));
@@ -174,6 +195,31 @@ public class AstTransformer {
         } else if (tree instanceof ThrowStatementTree) {
             ThrowStatementTree throwStatement = (ThrowStatementTree) tree;
             return new ThrowStatement(loc, (Expression) convert(throwStatement.value));
+        } else if (tree instanceof ForInStatementTree) {
+            ForInStatementTree forIn = (ForInStatementTree) tree;
+            AstNode initializerNode = convert(forIn.initializer);
+            if (initializerNode instanceof Expression) {
+                initializerNode = new ExpressionStatement(loc, (Expression) initializerNode);
+            }
+            return new ForInStatement(loc, (Statement) initializerNode, (Expression) convert(forIn.collection), (Statement) convert(forIn.body));
+        } else if (tree instanceof TryStatementTree) {
+            TryStatementTree tryStatement = (TryStatementTree) tree;
+            BlockStatement finallyBlock = null;
+            if (tryStatement.finallyBlock != null) {
+                finallyBlock = (BlockStatement) convert(tryStatement.finallyBlock);
+            } else {
+                finallyBlock = new BlockStatement(loc, Collections.EMPTY_LIST);
+            }
+            return new TryStatement(loc, (Statement) convert(tryStatement.body), (CatchStatement) convert(tryStatement.catchBlock), finallyBlock);
+        } else if (tree instanceof CatchTree) {
+            CatchTree catchTree = (CatchTree) tree;
+            return new CatchStatement(loc, (Identifier) convert(catchTree.exception), (Statement)convert(catchTree.catchBody));
+        } else if (tree instanceof FinallyTree) {
+            FinallyTree finallyTree = (FinallyTree) tree;
+            return convert(finallyTree.block);
+        } else if (tree instanceof DoWhileStatementTree) {
+            DoWhileStatementTree doWhile = (DoWhileStatementTree) tree;
+            return new WhileStatement(loc, (Expression) convert(doWhile.condition), (Statement) convert(doWhile.body));
         }
 
         throw new RuntimeException("Cannot yet handle that kind of expression: " + tree.getClass().getName());
@@ -184,7 +230,6 @@ public class AstTransformer {
         return new AbstractMap.SimpleEntry<>((Expression) convert(caseClause.expression), statement);
     }
 
-    // TODO: The bit-wise operators. & and |.
     private static Operator convertOperator(Token operator) {
         switch (operator.type) {
             case MINUS: return Operator.MINUS;
@@ -199,24 +244,38 @@ public class AstTransformer {
             case PERCENT_EQUAL: return Operator.MOD_EQUAL;
             case PLUS_EQUAL: return Operator.PLUS_EQUAL;
 
-            // Assign, equal, not equal. Doesn't matter in this analysis. They are all just unified, and returns a boolean.
-            case EQUAL:
-            case NOT_EQUAL:
-            case EQUAL_EQUAL:
-            case NOT_EQUAL_EQUAL:
-            case EQUAL_EQUAL_EQUAL:
-                return Operator.EQUAL;
+            case EQUAL: return Operator.EQUAL;
+            case NOT_EQUAL: return Operator.NOT_EQUAL;
+            case EQUAL_EQUAL: return Operator.EQUAL_EQUAL;
+            case NOT_EQUAL_EQUAL: return Operator.NOT_EQUAL_EQUAL;
+            case EQUAL_EQUAL_EQUAL: return Operator.EQUAL_EQUAL_EQUAL;
+
             case INSTANCEOF: return Operator.INSTANCEOF;
             case BANG: return Operator.NOT;
             case TYPEOF: return Operator.TYPEOF;
             case AND: return Operator.AND;
             case OR: return Operator.OR;
             case VOID: return Operator.VOID;
-            // Dont care if less than, or less than equal.
-            case LESS_EQUAL:
+
+            case LESS_EQUAL: return Operator.LESS_THAN_EQUAL;
             case OPEN_ANGLE: return Operator.LESS_THAN;
-            case GREATER_EQUAL:
+            case GREATER_EQUAL: return Operator.GREATER_THAN_EQUAL;
             case CLOSE_ANGLE: return Operator.GREATER_THAN;
+
+            case MINUS_MINUS: return Operator.MINUS_MINUS;
+            case PLUS_PLUS: return Operator.PLUS_PLUS;
+
+            case IN: return Operator.IN;
+            case DELETE: return Operator.DELETE;
+
+            case AMPERSAND: return Operator.BITWISE_AND;
+            case BAR: return Operator.BITWISE_OR;
+            case CARET: return Operator.BITWISE_XOR;
+            case TILDE: return Operator.BITWISE_NOT;
+            case LEFT_SHIFT: return Operator.LEFT_SHIFT;
+            case RIGHT_SHIFT: return Operator.RIGHT_SHIFT;
+            case UNSIGNED_RIGHT_SHIFT: return Operator.UNSIGNED_RIGHT_SHIFT;
+
             default:
                 throw new RuntimeException("Dont know the operator: " + operator.type);
         }

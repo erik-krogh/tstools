@@ -9,7 +9,6 @@ import java.util.List;
 /**
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
-// TODO: Really have to look everywhere this is used. To see if the name is used correctly.
 public class FunctionExpression extends Expression {
     public Identifier name;
     final BlockStatement body;

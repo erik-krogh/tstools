@@ -8,10 +8,22 @@ import dk.webbies.tscreate.paser.AST.*;
  * Transverses all the Expressions and sub-Expressions (except the function, since it contains Statements).
  */
 public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
+    StatementVisitor<T> getStatementVisitor();
+
     @Override
     public default T visit(BinaryExpression expression) {
         expression.getLhs().accept(this);
         expression.getRhs().accept(this);
+        return null;
+    }
+
+    @Override
+    public default T visit(FunctionExpression function) {
+        function.getBody().accept(getStatementVisitor());
+        if (function.getName() != null) {
+            function.getName().accept(this);
+        }
+        function.getArguments().forEach(arg -> arg.accept(this));
         return null;
     }
 

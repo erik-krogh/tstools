@@ -27,4 +27,10 @@ public interface StatementVisitor<T> {
     T visit(VariableNode variableNode);
 
     T visit(WhileStatement whileStatement);
+
+    T visit(ForInStatement forinStatement);
+
+    T visit(TryStatement tryStatement);
+
+    T visit(CatchStatement catchStatement);
 }

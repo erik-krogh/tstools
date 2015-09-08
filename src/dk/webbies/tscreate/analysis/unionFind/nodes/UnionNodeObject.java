@@ -5,7 +5,7 @@ package dk.webbies.tscreate.analysis.unionFind.nodes;
  */
 public class UnionNodeObject extends UnionNodeWithFields {
     public UnionNodeObject() {
-        System.currentTimeMillis();
+
     }
 
     public void addField(String fieldName, UnionNode node) {

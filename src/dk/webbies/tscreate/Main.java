@@ -27,7 +27,7 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
-        runAnalysis("Test script", "tests/underscore.js");
+        runAnalysis("Test script", "tests/test.js");
         long end = System.currentTimeMillis();
         System.out.println("Ran in " + (end-start) + "ms");
     }

@@ -1,4 +1,5 @@
-/*var bool = true;
+/*
+var bool = true;
 
 var str = "string";
 
@@ -120,9 +121,9 @@ var returnFromEnv = (function () {
 
 
 // TODO: This goes in an infinite loop.
-var recursive = function () {
+/!*var recursive = function () {
     return recursive;
-};
+};*!/
 
 function getConstantFunction(constant) {
     return function () {
@@ -138,19 +139,19 @@ var returnBool = getConstantFunction(true);
 
 var returnNull = getConstantFunction(null);
 */
+
 // TODO: Handle this next.
 
-var obj = {
-    func: function () {
-        return this.value;
-    },
-    value: 2
-};
+
 
 function test(){
-    var a = obj["func"];
-    return obj.func();
+    for (var a in {}) {
+        var test = 1 + 2;
+    }
+
+    return 1;
 }
+
 
 
 
@@ -163,6 +164,3 @@ function test(){
  - typeof
 
   */
-
-
-

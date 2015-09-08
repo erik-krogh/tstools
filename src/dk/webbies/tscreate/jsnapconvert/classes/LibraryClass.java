@@ -16,7 +16,7 @@ public class LibraryClass {
     public Map<String, Snap.Value> staticFields = new HashMap<>();
     public LibraryClass superClass;
 
-    public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class. // TODO: Mark that?
+    public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class.
 
     public Snap.Obj prototype;
     boolean collectedStaticFields = false;

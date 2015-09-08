@@ -16,7 +16,7 @@ public class FunctionNode extends UnionNodeWithFields {
 
     public FunctionNode(FunctionExpression function) {
         this.astFunction = function;
-        this.returnNode = new EmptyUnionNode(); // TODO: Check everywhere this is used, and see if thisNode should be added.
+        this.returnNode = new EmptyUnionNode();
         this.thisNode = new EmptyUnionNode();
         for (int i = 0; i < function.getArguments().size(); i++) {
             EmptyUnionNode node = new EmptyUnionNode();

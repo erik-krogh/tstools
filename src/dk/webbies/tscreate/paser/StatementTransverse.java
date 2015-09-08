@@ -86,5 +86,26 @@ public interface StatementTransverse<T> extends StatementVisitor<T>  {
         return null;
     }
 
+    @Override
+    public default T visit(ForInStatement forIn) {
+        forIn.getInitializer().accept(this);
+        forIn.getCollection().accept(getExpressionVisitor());
+        forIn.getBody().accept(this);
+        return null;
+    }
 
+    @Override
+    public default T visit(TryStatement tryStatement) {
+        tryStatement.getTryBlock().accept(this);
+        tryStatement.getCatchBlock().accept(this);
+        tryStatement.getFinallyBlock().accept(this);
+        return null;
+    }
+
+    @Override
+    public default T visit(CatchStatement catchStatement) {
+        catchStatement.getException().accept(getExpressionVisitor());
+        catchStatement.getBody().accept(this);
+        return null;
+    }
 }

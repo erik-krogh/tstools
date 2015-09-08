@@ -6,7 +6,7 @@ import java.util.Map;
 public class GenericType implements Type {
     /**
      * A mix of InterfaceType and ReferenceType.
-     * TODO consider custom deserializer and delegation...
+     * [T]ODO consider custom deserializer and delegation...
      */
 
     private List<Type> typeParameters;
