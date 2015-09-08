@@ -6,12 +6,12 @@ import dk.webbies.tscreate.paser.StatementVisitor;
 /**
  * Created by Erik Krogh Kristensen on 07-09-2015.
  */
-public class ForInObjectStatement extends Statement {
+public class ForinStatement extends Statement {
     private final Statement initializer;
     private final Expression collection;
     private final Statement body;
 
-    public ForInObjectStatement(SourceRange loc, Statement initializer, Expression collection, Statement body) {
+    public ForinStatement(SourceRange loc, Statement initializer, Expression collection, Statement body) {
         super(loc);
         this.initializer = initializer;
         this.collection = collection;
