@@ -30,8 +30,4 @@ public class PrimitiveUnionNode implements UnionNode {
     public static PrimitiveUnionNode string() {
         return new PrimitiveUnionNode(PrimitiveDeclarationType.STRING);
     }
-
-    public static PrimitiveUnionNode nullType() {
-        return new PrimitiveUnionNode(PrimitiveDeclarationType.NULL);
-    }
 }

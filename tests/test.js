@@ -144,12 +144,8 @@ var returnNull = getConstantFunction(null);
 
 
 
-function test(){
-    for (var a in {}) {
-        var test = 1 + 2;
-    }
-
-    return 1;
+function recursive() {
+    return recursive;
 }
 
 

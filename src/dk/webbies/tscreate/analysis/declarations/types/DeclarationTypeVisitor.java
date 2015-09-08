@@ -9,4 +9,6 @@ public interface DeclarationTypeVisitor<T> {
     T visit(PrimitiveDeclarationType primitive);
 
     T visit(ObjectType objectType);
+
+    T visit(InterfaceType interfaceType);
 }

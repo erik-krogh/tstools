@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.analysis.unionFind.nodes;
 
-import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 
@@ -58,7 +57,7 @@ public class HeapValueNode extends UnionNodeObject {
         return result;
     }
 
-    private static PrimitiveUnionNode getPrimitiveValue(Snap.Value value) {
+    private static UnionNode getPrimitiveValue(Snap.Value value) {
         if (value instanceof Snap.BooleanConstant) {
             return PrimitiveUnionNode.bool();
         }
@@ -72,7 +71,7 @@ public class HeapValueNode extends UnionNodeObject {
             return PrimitiveUnionNode.undefined();
         }
         if (value == null) {
-            return PrimitiveUnionNode.nullType();
+            return new NonVoidNode();
         }
         return null;
     }

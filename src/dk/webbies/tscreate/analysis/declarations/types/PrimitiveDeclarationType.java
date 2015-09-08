@@ -8,7 +8,6 @@ public enum PrimitiveDeclarationType implements DeclarationType {
     BOOLEAN("boolean"),
     STRING("string"),
     VOID("void"),
-    NULL("null"),
     UNDEFINED("void"),
     ANY("any");
 

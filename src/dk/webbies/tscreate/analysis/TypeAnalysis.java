@@ -36,9 +36,11 @@ public class TypeAnalysis {
 
         Map<UnionNode, UnionClass> classes = analyseFunctions(functionNodes);
 
+        TypeConverter typeConverter = new TypeConverter(classes);
+
         Map<Snap.Obj, FunctionType> result = new HashMap<>();
         for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
-            result.put(entry.getKey(), FunctionType.fromNode(entry.getValue(), classes));
+            result.put(entry.getKey(), typeConverter.createFunctionType(entry.getValue()));
         }
 
         return result;

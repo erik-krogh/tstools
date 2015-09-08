@@ -131,5 +131,17 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
             }
             return null;
         }
+
+        @Override
+        public Void visit(InterfaceType interfaceType) {
+            write("I really dont know how to do interfaces yet");
+            if (interfaceType.getFunction() != null) {
+                interfaceType.getFunction().accept(this);
+            }
+            if (interfaceType.getObject() != null) {
+                interfaceType.getObject().accept(this);
+            }
+            return null;
+        }
     }
 }

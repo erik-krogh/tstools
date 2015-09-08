@@ -11,19 +11,23 @@ import java.util.List;
 public class FunctionNode extends UnionNodeWithFields {
     public final UnionNode returnNode;
     public final List<UnionNode> arguments = new ArrayList<>();
-    public final FunctionExpression astFunction;
+    public FunctionExpression astFunction;
     public final UnionNode thisNode;
 
-    public FunctionNode(FunctionExpression function) {
-        this.astFunction = function;
+    public FunctionNode(int numberOfArguments) {
         this.returnNode = new EmptyUnionNode();
         this.thisNode = new EmptyUnionNode();
-        for (int i = 0; i < function.getArguments().size(); i++) {
+        for (int i = 0; i < numberOfArguments; i++) {
             EmptyUnionNode node = new EmptyUnionNode();
             arguments.add(node);
             addField("function-argument-" + i, node);
         }
         addField("function-return", returnNode);
         addField("function-this", thisNode);
+    }
+
+    public FunctionNode(FunctionExpression function) {
+        this(function.getArguments().size());
+        this.astFunction = function;
     }
 }

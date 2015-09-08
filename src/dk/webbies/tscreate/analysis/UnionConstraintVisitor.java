@@ -1,11 +1,11 @@
 package dk.webbies.tscreate.analysis;
 
-import dk.webbies.tscreate.Main;
-import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 import dk.webbies.tscreate.jsnapconvert.Snap;
-import dk.webbies.tscreate.paser.*;
 import dk.webbies.tscreate.paser.AST.*;
+import dk.webbies.tscreate.paser.ExpressionVisitor;
+import dk.webbies.tscreate.paser.StatementTransverse;
 
 import java.util.HashSet;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tscreate.Util.*;
+import static dk.webbies.tscreate.Util.cast;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -252,7 +252,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(NullLiteral nullLiteral) {
-        return PrimitiveUnionNode.nullType();
+        return new NonVoidNode();
     }
 
     @Override
