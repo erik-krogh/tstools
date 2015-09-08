@@ -41,11 +41,11 @@ public class HeapValueNode extends UnionNodeObject {
         Snap.Obj obj = (Snap.Obj) value;
         if (obj.function != null) {
             if (obj.function.type.equals("user")) {
-                FunctionNode functionNode = new FunctionNode(obj.function.astNode);
+                FunctionNode functionNode = new FunctionNode(obj);
                 solver.union(functionNodes.get(obj), functionNode);
                 result.add(functionNode);
             } else {
-                throw new UnsupportedOperationException("Dont know functions of type: " + obj.function.type + " yet");
+                throw new UnsupportedOperationException("Don't know functions of type: " + obj.function.type + " yet");
             }
         }
 

@@ -134,7 +134,7 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
 
         @Override
         public Void visit(InterfaceType interfaceType) {
-            write("I really dont know how to do interfaces yet");
+            // TODO: Just wrong.
             if (interfaceType.getFunction() != null) {
                 interfaceType.getFunction().accept(this);
             }

@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.jsnapconvert.classes;
 
+import dk.webbies.tscreate.analysis.unionFind.nodes.EmptyUnionNode;
+import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 import dk.webbies.tscreate.jsnapconvert.Snap;
 
 import java.util.ArrayList;
@@ -15,6 +17,8 @@ public class LibraryClass {
     public Map<String, Snap.Value> prototypeProperties = new HashMap<>();
     public Map<String, Snap.Value> staticFields = new HashMap<>();
     public LibraryClass superClass;
+
+    public UnionNode thisNode = new EmptyUnionNode();
 
     public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class.
 

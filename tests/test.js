@@ -140,13 +140,15 @@ var returnBool = getConstantFunction(true);
 var returnNull = getConstantFunction(null);
 */
 
-// TODO: Handle this next.
+var test = (function () {
+    function MyClass() {
+        this.stuff = 123;
+    }
 
-
-
-function recursive() {
-    return recursive;
-}
+    return function () {
+        return new MyClass().stuff;
+    }
+});
 
 
 

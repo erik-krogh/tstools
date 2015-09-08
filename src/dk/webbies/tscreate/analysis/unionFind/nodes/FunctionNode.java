@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.unionFind.nodes;
 
+import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ public class FunctionNode extends UnionNodeWithFields {
     public final List<UnionNode> arguments = new ArrayList<>();
     public FunctionExpression astFunction;
     public final UnionNode thisNode;
+    public Snap.Obj closure = null;
 
     public FunctionNode(int numberOfArguments) {
         this.returnNode = new EmptyUnionNode();
@@ -29,5 +31,10 @@ public class FunctionNode extends UnionNodeWithFields {
     public FunctionNode(FunctionExpression function) {
         this(function.getArguments().size());
         this.astFunction = function;
+    }
+
+    public FunctionNode(Snap.Obj closure) {
+        this(closure.function.astNode);
+        this.closure = closure;
     }
 }

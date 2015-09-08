@@ -22,7 +22,7 @@ public class NewExpression extends Expression {
         return operand;
     }
 
-    public List<Expression> getArguments() {
+    public List<Expression> getArgs() {
         return arguments;
     }
 

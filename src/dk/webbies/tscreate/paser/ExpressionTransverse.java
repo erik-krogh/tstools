@@ -99,7 +99,7 @@ public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
     @Override
     public default T visit(NewExpression newExp) {
         newExp.getOperand().accept(this);
-        newExp.getArguments().forEach(arg -> arg.accept(this));
+        newExp.getArgs().forEach(arg -> arg.accept(this));
         return null;
     }
 

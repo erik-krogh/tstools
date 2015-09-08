@@ -3,14 +3,12 @@ package dk.webbies.tscreate.analysis;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 import dk.webbies.tscreate.jsnapconvert.Snap;
+import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.*;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 import dk.webbies.tscreate.paser.StatementTransverse;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.Util.cast;
@@ -24,13 +22,15 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private final Map<TypeAnalysis.ProgramPoint, UnionNode> nodes;
     private final FunctionNode functionNode;
     private Map<Snap.Obj, FunctionNode> functionNodes;
+    private HashMap<Snap.Obj, LibraryClass> libraryClasses;
 
-    public UnionConstraintVisitor(Snap.Obj function, UnionFindSolver solver, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes) {
+    public UnionConstraintVisitor(Snap.Obj function, UnionFindSolver solver, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
         this.closure = function;
         this.solver = solver;
         this.nodes = nodes;
         this.functionNode = functionNode;
         this.functionNodes = functionNodes;
+        this.libraryClasses = libraryClasses;
     }
 
     UnionNode get(AstNode node) {
@@ -148,11 +148,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @Override
-    public UnionNode visit(NewExpression newExp) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public UnionNode visit(ConditionalExpression condExp) {
         UnionNode cond = condExp.getCondition().accept(this);
         solver.add(cond);
@@ -237,7 +232,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(get(function.getName()), result);
                 function.getName().accept(this);
             }
-            new UnionConstraintVisitor(this.closure, this.solver, this.nodes, result, this.functionNodes).visit(function.getBody());
+            new UnionConstraintVisitor(this.closure, this.solver, this.nodes, result, this.functionNodes, libraryClasses).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 solver.union(get(function.getArguments().get(i)), result.arguments.get(i));
             }
@@ -313,6 +308,42 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return returnNode;
     }
 
+    @Override
+    public UnionNode visit(NewExpression newExp) {
+        List<UnionNode> args = newExp.getArgs().stream().map(arg -> arg.accept(this)).collect(Collectors.toList());
+        UnionNode function = newExp.getOperand().accept(this);
+        solver.add(function);
+        EmptyUnionNode thisNode = new EmptyUnionNode();
+        solver.runWhenChanged(function, new NewCallResolver(function, args, thisNode));
+        return thisNode;
+    }
+
+    private class NewCallResolver implements Runnable {
+        private final UnionNode function;
+        private final EmptyUnionNode thisNode;
+        private final CallGraphResolver callResolver;
+
+        public NewCallResolver(UnionNode function, List<UnionNode> args, EmptyUnionNode thisNode) {
+            this.function = function;
+            this.thisNode = thisNode;
+            this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyUnionNode());
+        }
+
+        @Override
+        public void run() {
+            List<FunctionNode> functionNodes = getFunctionNodes(function);
+            for (FunctionNode node : functionNodes) {
+                if (node.closure != null) {
+                    @SuppressWarnings("RedundantCast")
+                    LibraryClass clazz = libraryClasses.get((Snap.Obj)node.closure.getProperty("prototype").value);
+                    clazz.isUsedAsClass = true;
+                    solver.union(this.thisNode, clazz.thisNode);
+                }
+            }
+            this.callResolver.run();
+        }
+    }
+
     private class CallGraphResolver implements Runnable {
         UnionNode thisNode;
         UnionNode function;
@@ -329,7 +360,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            List<FunctionNode> functionNodes = getFunctionNodes();
+            List<FunctionNode> functionNodes = getFunctionNodes(function);
             functionNodes.removeAll(seen);
             seen.addAll(functionNodes);
             for (FunctionNode functionNode : functionNodes) {
@@ -342,28 +373,28 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(functionNode.thisNode, this.thisNode);
             }
         }
+    }
 
-        private List<FunctionNode> getFunctionNodes() {
-            List<UnionNode> nodes = solver.getUnionClass(function).getNodes();
-            List<FunctionNode> result = cast(FunctionNode.class, nodes.stream().filter(node -> node instanceof FunctionNode).collect(Collectors.toList()));
+    private List<FunctionNode> getFunctionNodes(UnionNode function) {
+        List<UnionNode> nodes = solver.getUnionClass(function).getNodes();
+        List<FunctionNode> result = cast(FunctionNode.class, nodes.stream().filter(node -> node instanceof FunctionNode).collect(Collectors.toList()));
 
-            List<HeapValueNode> heapValues = cast(HeapValueNode.class, nodes.stream().filter(node ->
-                    node instanceof HeapValueNode &&
-                            ((HeapValueNode) node).value instanceof Snap.Obj &&
-                            ((Snap.Obj) ((HeapValueNode) node).value).function != null).collect(Collectors.toList()));
+        List<HeapValueNode> heapValues = cast(HeapValueNode.class, nodes.stream().filter(node ->
+                node instanceof HeapValueNode &&
+                        ((HeapValueNode) node).value instanceof Snap.Obj &&
+                        ((Snap.Obj) ((HeapValueNode) node).value).function != null).collect(Collectors.toList()));
 
-            for (HeapValueNode heapValue : heapValues) {
-                Snap.Obj closure = (Snap.Obj) heapValue.value;
-                String type = closure.function.type;
-                if (type.equals("user")) {
-                    FunctionNode functionNode = UnionConstraintVisitor.this.functionNodes.get(closure);
-                    result.add(functionNode);
-                } else {
-                    throw new UnsupportedOperationException("Cannot yet handle functions of type: " + type);
-                }
+        for (HeapValueNode heapValue : heapValues) {
+            Snap.Obj closure = (Snap.Obj) heapValue.value;
+            String type = closure.function.type;
+            if (type.equals("user")) {
+                FunctionNode functionNode = UnionConstraintVisitor.this.functionNodes.get(closure);
+                result.add(functionNode);
+            } else {
+                throw new UnsupportedOperationException("Cannot yet handle functions of type: " + type);
             }
-
-            return result;
         }
+
+        return result;
     }
 }

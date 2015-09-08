@@ -20,9 +20,9 @@ public class TypeAnalysis {
     private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private final FunctionExpression program;
 
-    public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> classes, FunctionExpression program) {
+    public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, FunctionExpression program) {
         this.librarySnap = librarySnap;
-        this.libraryClasses = classes;
+        this.libraryClasses = libraryClasses;
         this.program = program;
     }
 
@@ -68,7 +68,7 @@ public class TypeAnalysis {
         new ResolveEnvironmentVisitor(function, solver, nodes, values, functionNodes).visit(function.function.astNode);
 
         FunctionNode functionNode = functionNodes.get(function);
-        function.function.astNode.accept(new UnionConstraintVisitor(function, solver, nodes, functionNode, functionNodes));
+        function.function.astNode.accept(new UnionConstraintVisitor(function, solver, nodes, functionNode, functionNodes, libraryClasses));
     }
 
     public static class ProgramPoint {
