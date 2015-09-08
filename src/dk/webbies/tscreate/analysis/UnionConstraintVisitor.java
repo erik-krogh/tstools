@@ -97,7 +97,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case INSTANCEOF: // instanceof
                 return PrimitiveUnionNode.bool();
             case IN: // in
-                // solver.union(lhs, PrimitiveUnionNode.string()); // TODO: String or number.
+                solver.union(lhs, new IndexerExpUnionNode());
                 solver.union(rhs, new UnionNodeObject());
                 return PrimitiveUnionNode.bool();
             default:
@@ -186,7 +186,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(SwitchStatement switchStatement) {
-        // TODO: Number of string for the expression.
+        solver.union(get(switchStatement.getExpression()), new IndexerExpUnionNode());
         StatementTransverse.super.visit(switchStatement);
         return null;
     }
