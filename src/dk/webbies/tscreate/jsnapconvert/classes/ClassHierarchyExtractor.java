@@ -1,10 +1,6 @@
 package dk.webbies.tscreate.jsnapconvert.classes;
 
-import dk.webbies.tscreate.jsnapconvert.JSNAPConverter;
 import dk.webbies.tscreate.jsnapconvert.Snap;
-import dk.webbies.tscreate.paser.AST.BlockStatement;
-import dk.webbies.tscreate.paser.AST.FunctionExpression;
-import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.io.IOException;
 import java.util.*;
@@ -19,7 +15,7 @@ public class ClassHierarchyExtractor {
         this.snapshot = librarySnapshot;
     }
 
-    private void extractClasses(String prefixPath, Snap.Obj obj, Map<Snap.Obj, LibraryClass> classes, Set<Snap.Obj> seenObjects, boolean includeEnv) {
+    private List<Snap.Obj> extractClasses(String prefixPath, Snap.Obj obj, Map<Snap.Obj, LibraryClass> classes, Set<Snap.Obj> seenObjects) {
         if (seenObjects.contains(obj)) {
             Snap.Property prototype = obj.getProperty("prototype");
             if (prototype != null && prototype.value != null && prototype.value instanceof Snap.Obj) {
@@ -28,35 +24,34 @@ public class ClassHierarchyExtractor {
                     klass.pathsSeen.add(prefixPath);
                 }
             }
-            return;
+            return Collections.EMPTY_LIST;
         }
         seenObjects.add(obj);
+        ArrayList<Snap.Obj> missingEnvs = new ArrayList<>();
 
         if (obj.function != null && obj.properties != null) {
             Snap.Property prototypeProperty = obj.getProperty("prototype");
             if (prototypeProperty != null && prototypeProperty.value instanceof Snap.Obj) {
-                Snap.Obj prototypeObj = (Snap.Obj) prototypeProperty.value;
-                LibraryClass libraryClass = createLibraryClass(prefixPath, obj, classes);
+                createLibraryClass(prefixPath, obj, classes);
             }
         }
 
         if (obj.properties != null) {
             for (Snap.Property property : obj.properties) {
                 if (property.value instanceof Snap.Obj) {
-                    extractClasses(prefixPath + "." + property.name, (Snap.Obj) property.value, classes, seenObjects, includeEnv);
+                    missingEnvs.addAll(extractClasses(prefixPath + "." + property.name, (Snap.Obj) property.value, classes, seenObjects));
                 }
             }
         }
-        if (includeEnv) {
-            if (obj.env != null) {
-                extractClasses(prefixPath + ".[ENV]", obj.env, classes, seenObjects, includeEnv);
-            }
+        if (obj.env != null) {
+            missingEnvs.add(obj.env);
         }
+        return missingEnvs;
     }
 
-    private LibraryClass createLibraryClass(String path, Snap.Obj obj, Map<Snap.Obj, LibraryClass> classes) {
+    private void createLibraryClass(String path, Snap.Obj obj, Map<Snap.Obj, LibraryClass> classes) {
         if (obj == null) {
-            return null;
+            return;
         }
 
         LibraryClass libraryClass = null;
@@ -64,15 +59,15 @@ public class ClassHierarchyExtractor {
 
         if (classes.containsKey(prototype)) {
             libraryClass = classes.get(prototype);
-            if (libraryClass.collectedStaticFields) {
-                return libraryClass;
+            if (libraryClass.collectedStaticFields) { // TODO: I don't need the static fields here, right?
+                return;
             }
         }
         if (libraryClass == null) {
             libraryClass = protoTypeToClass(path, classes, prototype);
         }
         if (libraryClass == null) {
-            return null;
+            return;
         }
         libraryClass.collectedStaticFields = true;
         for (Snap.Property property : obj.properties) {
@@ -81,8 +76,6 @@ public class ClassHierarchyExtractor {
                 libraryClass.staticFields.put(property.name, property.value);
             }
         }
-
-        return libraryClass;
     }
 
     private LibraryClass protoTypeToClass(String path, Map<Snap.Obj, LibraryClass> classes, Snap.Obj prototype) {
@@ -115,13 +108,21 @@ public class ClassHierarchyExtractor {
         HashMap<Snap.Obj, LibraryClass> classes = new HashMap<>();
         HashSet<Snap.Obj> seen = new HashSet<>();
         // Reason for two passes: Names look prettier when we don't go through the environment.
-        this.extractClasses("window", (Snap.Obj) this.snapshot, classes, seen, false);
-        this.extractClasses("window", (Snap.Obj) this.snapshot, classes, seen, true);
+        List<Snap.Obj> missinEnvs = this.extractClasses("window", (Snap.Obj) this.snapshot, classes, seen);
+        for (Snap.Obj missinEnv : missinEnvs) {
+            for (Snap.Property property : missinEnv.properties) {
+                if (property.value instanceof Snap.Obj) {
+                    Snap.Obj obj = (Snap.Obj) property.value;
+                    extractClasses("[ENV]." + property.name, obj, classes, seen);
+                }
+            }
+        }
+
         return classes;
     }
 
     public static void main(String[] args) throws IOException {
-        FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
+        /*FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
         Snap.Obj librarySnapshot = JSNAPConverter.getStateDumpFromFile("lib/tscheck/tests/jquery.jsnap", emptyProgram);
         Snap.Obj domSnapshot = JSNAPConverter.getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", emptyProgram);
 
@@ -133,7 +134,7 @@ public class ClassHierarchyExtractor {
         HashSet<Snap.Obj> seen = new HashSet<>();
         extractor.extractClasses("window", (Snap.Obj) libraryUnique, classes, seen, false);
         extractor.extractClasses("window", (Snap.Obj) libraryUnique, classes, seen, true);
-        System.out.println();
+        System.out.println();*/
 
     }
 }

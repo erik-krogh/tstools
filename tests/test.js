@@ -138,17 +138,83 @@ var returnString = getConstantFunction("string");
 var returnBool = getConstantFunction(true);
 
 var returnNull = getConstantFunction(null);
-*/
 
 var test = (function () {
     function MyClass() {
         this.stuff = 123;
     }
 
+    MyClass.prototype.getString = function () {
+        return "string"
+    };
+
     return function () {
-        return new MyClass().stuff;
+        return new MyClass().getString();
     }
-});
+})();
+*/
+var typeScriptInheritanceTest = (function () {
+    var __extends = (this && this.__extends) || function (d, b) {
+            for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+            function __() {
+                this.constructor = d;
+            }
+
+            __.prototype = b.prototype;
+            d.prototype = new __();
+        };
+    var Animal = (function () {
+        function Animal(name) {
+            this.name = name;
+        }
+
+        Animal.prototype.move = function (meters) {
+
+        };
+        Animal.prototype.getConstant = function () {
+            return 123;
+        };
+        return Animal;
+    })();
+    var Snake = (function (_super) {
+        __extends(Snake, _super);
+        function Snake(name) {
+
+        }
+
+        Snake.prototype.move = function () {
+
+        };
+        Snake.prototype.getConstant = function () {
+            return "string";
+        };
+        return Snake;
+    })(Animal);
+    var Horse = (function (_super) {
+        __extends(Horse, _super);
+        function Horse(name) {
+
+        }
+
+        Horse.prototype.move = function () {
+
+        };
+        return Horse;
+    })(Animal);
+
+    function expectString() {
+        return new Snake("Sammy the Python").getConstant();
+    }
+
+    function expectNumber() {
+        return new Horse("Tommy the Palomino").getConstant();
+    }
+
+    return {
+        expectString: expectString,
+        expectNumber: expectNumber
+    }
+})();
 
 
 

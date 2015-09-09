@@ -35,7 +35,9 @@ public class UnionFindSolver {
     private Set<Runnable> doneCallbacks = new HashSet<>();
 
     public void finish() {
+//        int counter = 1;
         while (doneCallbacks.size() > 0) {
+//            System.out.println(counter++);
             for (Runnable callback : new ArrayList<>(doneCallbacks)) {
                 doneCallbacks.remove(callback);
                 callback.run();
@@ -137,6 +139,10 @@ public class UnionFindSolver {
     private UnionNode recFind(UnionNode elem) {
         /* Get the info on this object. */
         Link<UnionNode> info = elems.get(elem);
+        if (info == null) { // TODO: This happens with the TypeScript inheritance example.
+            this.add(elem);
+            info = elems.get(elem);
+        }
 
         /* If the element is its own parent, it's the representative of its
          * class and we should say so.
@@ -164,6 +170,12 @@ public class UnionFindSolver {
 
     public UnionClass getUnionClass(UnionNode node) {
         return elems.get(recFind(node)).unionClass;
+    }
+
+    public void union(UnionNode one, List<UnionNode> list) {
+        for (UnionNode unionNode : list) {
+            this.union(one, unionNode);
+        }
     }
 
     /**

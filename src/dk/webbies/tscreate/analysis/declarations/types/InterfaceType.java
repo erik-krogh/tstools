@@ -21,14 +21,14 @@ public class InterfaceType implements DeclarationType {
     }
 
     public FunctionType getFunction() {
-        if (function == null && object == null) {
+        if (function == null && object == null && false) { // TODO:
             throw new NullPointerException("An interface must have either an object or function associated");
         }
         return function;
     }
 
     public ObjectType getObject() {
-        if (function == null && object == null) {
+        if (function == null && object == null && false) {
             throw new NullPointerException("An interface must have either an object or function associated");
         }
         return object;

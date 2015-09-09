@@ -48,11 +48,16 @@ public class AstTransformer {
                 if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
                     return new StringLiteral(loc, value.substring(1, value.length() - 1));
                 } else if (value.matches("[0-9]*.?[0-9]*")) {
-                    return new NumberLiteral(loc, Double.parseDouble(value));
+                    if (value.startsWith("0x")) {
+                        return new NumberLiteral(loc, Long.parseLong(value.substring(2, value.length()), 16));
+                    } else {
+                        return new NumberLiteral(loc, Double.parseDouble(value));
+                    }
                 } else if (value.startsWith("0x")) {
                     return new NumberLiteral(loc, Long.parseLong(value.toLowerCase().substring(2, value.length()), 16));
                 } else if (value.startsWith("/")) {
-                    throw new UnsupportedOperationException("I don't handle RegExps yet. " + value);
+                    String regExp = value.substring(1, value.length() - 1);
+                    return new NewExpression(loc, new Identifier(loc, "RegExp"), Arrays.asList(new StringLiteral(loc, regExp)));
                 } else {
                     throw new RuntimeException("Could not recognize literal: " + value);
                 }
