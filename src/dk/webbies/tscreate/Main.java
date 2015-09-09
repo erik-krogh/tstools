@@ -27,7 +27,7 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
-        runAnalysis("Test script", "tests/jquery.js");
+        runAnalysis("Test script", "tests/test.js");
         long end = System.currentTimeMillis();
         System.out.println("Ran in " + (end-start) + "ms");
     }
@@ -39,7 +39,6 @@ public class Main {
         Snap.Obj librarySnap = JSNAPConverter.extractUnique(globalObject);
         HashMap<Snap.Obj, LibraryClass> classes = new ClassHierarchyExtractor(librarySnap).extract();
 
-        // TODO: Make sure that all instances of a class is unioned together.
         Map<Snap.Obj, FunctionType> functionTypes = new TypeAnalysis(librarySnap, classes, program).getFunctionTypes();
 
         DeclarationBlock declaration = new DeclarationBuilder(librarySnap, classes, functionTypes).buildDeclaration();

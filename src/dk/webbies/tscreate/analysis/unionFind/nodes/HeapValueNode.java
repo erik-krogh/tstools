@@ -48,6 +48,9 @@ public class HeapValueNode extends UnionNodeObject {
                 throw new UnsupportedOperationException("Don't know functions of type: " + obj.function.type + " yet");
             }
         }
+        if (obj.prototype != null) {
+            result.add(new HasPrototypeUnionNode(obj.prototype));
+        }
 
         if (cache.containsKey(value)) {
             result.add(cache.get(value));

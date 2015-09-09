@@ -136,7 +136,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case VOID:
                 return PrimitiveUnionNode.undefined();
             case DELETE:
-                return new EmptyUnionNode();
+                return PrimitiveUnionNode.bool();
             default:
                 throw new UnsupportedOperationException("Dont yet handle the operator: " + unOp.getOperator());
         }
@@ -273,7 +273,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(MemberLookupExpression memberLookupExpression) {
-        throw new UnsupportedOperationException();
+        memberLookupExpression.getLookupKey().accept(this);
+        memberLookupExpression.getOperand().accept(this);
+        solver.union(get(memberLookupExpression.getLookupKey()), new IndexerExpUnionNode());
+        solver.union(get(memberLookupExpression), new IsIndexedUnionNode(get(memberLookupExpression), get(memberLookupExpression.getLookupKey())));
+        return get(memberLookupExpression);
     }
 
     @Override
@@ -308,7 +312,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(MemberExpression member) {
-        // TODO: Handle prototypes by running it later, just like the callgraph.
         UnionNode objectExp = member.getExpression().accept(this);
         UnionNodeObject object = new UnionNodeObject();
         UnionNode result = get(member);
@@ -321,8 +324,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     private class PrototypeResolver implements Runnable {
         private MemberExpression member;
-        private Set<LibraryClassUnionNode> seen = new HashSet<>();
-        private Set<HeapValueNode> seenHeap = new HashSet<>();
+        private Set<HasPrototypeUnionNode> seen = new HashSet<>();
 
         public PrototypeResolver(MemberExpression member) {
             this.member = member;
@@ -330,21 +332,13 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            // TODO: HasPrototypeUnionNode on the heap nodes.
             List<UnionNode> unionNodes = solver.getUnionClass(get(member.getExpression())).getNodes();
-            List<HeapValueNode> heapObjects = cast(HeapValueNode.class, unionNodes.stream().filter(node -> node instanceof HeapValueNode).collect(Collectors.toList()));
-            heapObjects.removeAll(seenHeap);
-            seenHeap.addAll(heapObjects);
-            for (HeapValueNode heapObject : heapObjects) {
-                List<UnionNode> nodes = lookupProperty(heapObject.value);
-                solver.union(get(member), nodes);
-            }
 
-            List<LibraryClassUnionNode> libraryClasses = cast(LibraryClassUnionNode.class, unionNodes.stream().filter(node -> node instanceof LibraryClassUnionNode).collect(Collectors.toList()));
-            libraryClasses.removeAll(seen);
-            seen.addAll(libraryClasses);
-            for (LibraryClassUnionNode libraryClass : libraryClasses) {
-                List<UnionNode> nodes = lookupProperty(libraryClass.getLibaryClass().prototype);
+            List<HasPrototypeUnionNode> prototypes = cast(HasPrototypeUnionNode.class, unionNodes.stream().filter(node -> node instanceof HasPrototypeUnionNode).collect(Collectors.toList()));
+            prototypes.removeAll(seen);
+            seen.addAll(prototypes);
+            for (HasPrototypeUnionNode prototype : prototypes) {
+                List<UnionNode> nodes = lookupProperty(prototype.getPrototype());
                 solver.union(get(member), nodes);
             }
         }
@@ -392,7 +386,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 }
                 clazz.isUsedAsClass = true;
                 solver.union(this.thisNode, clazz.thisNode);
-                solver.union(this.thisNode, new LibraryClassUnionNode(clazz));
+                solver.union(this.thisNode, new HasPrototypeUnionNode(clazz.prototype));
             });
             this.callResolver.run();
         }

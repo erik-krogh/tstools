@@ -202,12 +202,14 @@ var typeScriptInheritanceTest = (function () {
         return Horse;
     })(Animal);
 
+    var snake = new Snake("Sammy the Python");
     function expectString() {
-        return new Snake("Sammy the Python").getConstant();
+        return snake.getConstant();
     }
 
+    var horse = new Horse("Tommy the Palomino");
     function expectNumber() {
-        return new Horse("Tommy the Palomino").getConstant();
+        return horse.getConstant();
     }
 
     return {

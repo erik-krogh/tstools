@@ -75,20 +75,16 @@ public class TypeConverter {
 
         if (functions.isEmpty() && objects.isEmpty()) {
             DeclarationType addType = null;
-            if (adds.isEmpty()) {
+            if (!adds.isEmpty()) {
                 addType = getAddType(adds);
             }
             if (primitives.isEmpty()) {
                 return addType;
             }
 
-            Set<PrimitiveDeclarationType> types = new HashSet<>();
-            for (PrimitiveUnionNode primitive : primitives) {
-                types.add(primitive.getType());
-            }
-            // TODO: Union type?
+            Set<PrimitiveDeclarationType> types = primitives.stream().map(PrimitiveUnionNode::getType).collect(Collectors.toSet());
             if (types.size() != 1) {
-                return PrimitiveDeclarationType.ANY;
+                return new UnionDeclarationType(types);
             }
             return types.iterator().next();
         }
@@ -149,7 +145,7 @@ public class TypeConverter {
     }
 
     public FunctionType createFunctionType(List<FunctionNode> functionNodes) {
-        FunctionNode function = getFunctionRepresentative(functionNodes); // TODO: This removes the connections with the unionTypes. So nothing works.
+        FunctionNode function = getFunctionRepresentative(functionNodes);
         return createFunctionType(function);
     }
 
@@ -163,7 +159,7 @@ public class TypeConverter {
         boolean hasNumber = primitiveTypes.contains(PrimitiveDeclarationType.NUMBER);
         boolean hasString = primitiveTypes.contains(PrimitiveDeclarationType.STRING);
         if (hasString && hasNumber) {
-            return PrimitiveDeclarationType.STRING; // TODO: Union Type?
+            return new UnionDeclarationType(PrimitiveDeclarationType.STRING, PrimitiveDeclarationType.NUMBER);
         }
         if (hasNumber) {
             return PrimitiveDeclarationType.NUMBER;

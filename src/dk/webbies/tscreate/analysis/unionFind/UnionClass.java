@@ -1,9 +1,6 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
-import dk.webbies.tscreate.analysis.unionFind.nodes.EmptyUnionNode;
-import dk.webbies.tscreate.analysis.unionFind.nodes.IndexerExpUnionNode;
-import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
-import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNodeWithFields;
+import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +18,7 @@ public final class UnionClass {
 
     UnionClass(UnionFindSolver solver, UnionNode node) {
         this.solver = solver;
-        if (!(node instanceof EmptyUnionNode || node instanceof IndexerExpUnionNode /*TODO: Do not ignore. */)) {
+        if (!(node instanceof EmptyUnionNode || node instanceof IsIndexedUnionNode || node instanceof IndexerExpUnionNode /*TODO: Do not ignore. */)) {
             this.nodes.add(node);
         }
         if (node instanceof UnionNodeWithFields) {

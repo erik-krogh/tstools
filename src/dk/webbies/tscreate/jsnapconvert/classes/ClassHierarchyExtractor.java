@@ -2,7 +2,6 @@ package dk.webbies.tscreate.jsnapconvert.classes;
 
 import dk.webbies.tscreate.jsnapconvert.Snap;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -53,29 +52,12 @@ public class ClassHierarchyExtractor {
         if (obj == null) {
             return;
         }
-
-        LibraryClass libraryClass = null;
         Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
 
         if (classes.containsKey(prototype)) {
-            libraryClass = classes.get(prototype);
-            if (libraryClass.collectedStaticFields) { // TODO: I don't need the static fields here, right?
-                return;
-            }
-        }
-        if (libraryClass == null) {
-            libraryClass = protoTypeToClass(path, classes, prototype);
-        }
-        if (libraryClass == null) {
             return;
         }
-        libraryClass.collectedStaticFields = true;
-        for (Snap.Property property : obj.properties) {
-            String name = property.name;
-            if (!(name.equals("caller") || name.equals("length") || name.equals("arguments") || name.equals("prototype") || name.equals("name"))) {
-                libraryClass.staticFields.put(property.name, property.value);
-            }
-        }
+        protoTypeToClass(path, classes, prototype);
     }
 
     private LibraryClass protoTypeToClass(String path, Map<Snap.Obj, LibraryClass> classes, Snap.Obj prototype) {
@@ -91,13 +73,6 @@ public class ClassHierarchyExtractor {
         }
         LibraryClass libraryClass = new LibraryClass(path, prototype);
         classes.put(prototype, libraryClass);
-
-        for (Snap.Property property : prototype.properties) {
-            if (property.name.equals("constructor")) {
-                continue;
-            }
-            libraryClass.prototypeProperties.put(property.name, property.value);
-        }
 
         libraryClass.superClass = protoTypeToClass(path + ".proto", classes, prototype.prototype);
 
@@ -119,22 +94,5 @@ public class ClassHierarchyExtractor {
         }
 
         return classes;
-    }
-
-    public static void main(String[] args) throws IOException {
-        /*FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
-        Snap.Obj librarySnapshot = JSNAPConverter.getStateDumpFromFile("lib/tscheck/tests/jquery.jsnap", emptyProgram);
-        Snap.Obj domSnapshot = JSNAPConverter.getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", emptyProgram);
-
-        Snap.Obj libraryUnique = JSNAPConverter.extractUnique(librarySnapshot, domSnapshot);
-
-        ClassHierarchyExtractor extractor = new ClassHierarchyExtractor(libraryUnique);
-
-        HashMap<Snap.Obj, LibraryClass> classes = new HashMap<>();
-        HashSet<Snap.Obj> seen = new HashSet<>();
-        extractor.extractClasses("window", (Snap.Obj) libraryUnique, classes, seen, false);
-        extractor.extractClasses("window", (Snap.Obj) libraryUnique, classes, seen, true);
-        System.out.println();*/
-
     }
 }

@@ -1,8 +1,10 @@
 package dk.webbies.tscreate.analysis.declarations;
 
 import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.analysis.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -140,6 +142,19 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
             }
             if (interfaceType.getObject() != null) {
                 interfaceType.getObject().accept(this);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visit(UnionDeclarationType union) {
+            ArrayList<DeclarationType> types = union.getTypes();
+            for (int i = 0; i < types.size(); i++) {
+                DeclarationType type = types.get(i);
+                type.accept(this);
+                if (i != types.size() - 1) {
+                    write(" | ");
+                }
             }
             return null;
         }
