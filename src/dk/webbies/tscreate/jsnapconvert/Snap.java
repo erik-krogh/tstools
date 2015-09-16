@@ -1,7 +1,9 @@
 package dk.webbies.tscreate.jsnapconvert;
 
+import dk.brics.tajs.envspec.typescript.types.Signature;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +83,9 @@ public class Snap {
         public String id;
         public List<Value> arguments;
         public FunctionExpression astNode;
+
+        public List<Signature> callSignatures = new ArrayList<>();
+        public List<Signature> constructorSignatures = new ArrayList<>();
     }
 
     public static class UndefinedConstant extends Value {

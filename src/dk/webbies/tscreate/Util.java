@@ -3,14 +3,9 @@ package dk.webbies.tscreate;
 
 import org.apache.commons.io.IOUtils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 
 /**
  * Created by erik1 on 01-09-2015.
@@ -37,12 +32,12 @@ public class Util {
     }
 
     private static class StreamGobbler extends Thread {
-        InputStream is;
+        BufferedInputStream is;
         private CountDownLatch latch;
         private String result;
 
         private StreamGobbler(InputStream is, CountDownLatch latch) {
-            this.is = is;
+            this.is = new BufferedInputStream(is);
             this.latch = latch;
             this.start();
         }
@@ -64,12 +59,20 @@ public class Util {
         }
     }
 
-    public static <T, S> List<S> cast(Class<S> clazz, List<T> list) {
+    // I would really like to force ColT and ColS to be the same subtype of Collection. But I don't think Java generics can handle that.
+    public static <T, S, ColT extends Collection<T>, ColS extends Collection<S>> ColS cast(Class<S> clazz, ColT list) {
         for (T t : list) {
             if (!clazz.isInstance(t)) {
                 throw new ClassCastException("Cannot cast : " + t + " to class " + clazz.getName());
             }
         }
-        return (List<S>) list;
+        return (ColS)list;
+    }
+
+    public static String readFile(String path) throws IOException {
+        FileReader reader = new FileReader(new File(path));
+        String result = IOUtils.toString(reader);
+        reader.close();
+        return result;
     }
 }

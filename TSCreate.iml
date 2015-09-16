@@ -4,6 +4,7 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/ts-type-reader/java" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/lib/ts-type-reader/node_modules" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -12,5 +13,7 @@
     <orderEntry type="library" name="ClosureCompiler" level="project" />
     <orderEntry type="library" name="ClosureCompiler (2)" level="project" />
     <orderEntry type="library" name="commons-io-2.4" level="project" />
+    <orderEntry type="module" module-name="ts-type-reader" />
+    <orderEntry type="library" name="guava-18.0" level="project" />
   </component>
 </module>

@@ -123,10 +123,4 @@ public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
         commaExpression.getExpressions().forEach(exp -> exp.accept(this));
         return null;
     }
-
-    @Override
-    public default T visit(ArrayLiteral array) {
-        array.getExpressions().forEach(exp -> exp.accept(this));
-        return null;
-    }
 }

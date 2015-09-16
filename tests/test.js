@@ -152,7 +152,7 @@ var test = (function () {
         return new MyClass().getString();
     }
 })();
-*/
+
 var typeScriptInheritanceTest = (function () {
     var __extends = (this && this.__extends) || function (d, b) {
             for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -218,7 +218,140 @@ var typeScriptInheritanceTest = (function () {
     }
 })();
 
+ function random() {
+ return Math.random();
+ }
 
+function returnNativeNumber() {
+    return [1].length;
+}
+
+function returnArray() {
+    return [1];
+}
+
+function returnArraySlice() {
+    return [1].slice();
+}
+
+function regExp() {
+    return /ab+c/;
+} */
+
+
+// Testing doing functions in one lump, or separably.
+/*function cross1(a) {
+    return a - 1;
+}
+
+function cross2() {
+    return cross1("invalid input string");
+}
+
+function id(a) {
+    return a;
+}
+
+function number() {
+    return id(123);
+}*/
+
+// This should return string.
+/* uniqueId = function (prefix) {
+    var id = ++idCounter + '';
+    return prefix ? prefix + id : id;
+}; */
+
+/* var _ = {};
+
+function isArrayLike() {
+    return true;
+}
+
+_.each = function(obj, iteratee, context) {
+    var i, length;
+    if (isArrayLike(obj)) {
+        for (i = 0, length = obj.length; i < length; i++) {
+            iteratee(obj[i], i, obj);
+        }
+    } else {
+        var keys = Object.keys(obj);
+        for (i = 0, length = keys.length; i < length; i++) {
+            iteratee(obj[keys[i]], keys[i], obj);
+        }
+    }
+    return obj;
+};
+
+_.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'], function(name) {
+    _['is' + name] = function(obj) {
+        return toString.call(obj) === '[object ' + name + ']';
+    };
+}); */
+
+/* (function() {
+    window.range = function(start, stop, step) {
+        if (stop == null) {
+            stop = start || 0;
+            start = 0;
+        }
+        step = step || 1;
+
+        var length = Math.max(Math.ceil((stop - start) / step), 0);
+        var range = Array(length);
+
+        for (var idx = 0; idx < length; idx++, start += step) {
+            range[idx] = start;
+        }
+
+        return range;
+    };
+})();
+
+
+(function () {
+    var escapeMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#x27;',
+        '`': '&#x60;'
+    };
+
+    var createEscaper = function(map) {
+        var escaper = function(match) {
+            return map[match];
+        };
+        // Regexes for identifying a key that needs to be escaped
+        var source = '(?:' + Object.keys(map).join('|') + ')';
+        var testRegexp = RegExp(source);
+        var replaceRegexp = RegExp(source, 'g');
+        return function(string) {
+            string = string == null ? '' : '' + string;
+            string.somePropertyThatIsntThere = true;
+            return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
+        };
+    };
+
+    window.escape = createEscaper(escapeMap);
+})();*/
+
+// Just testing that it does not crash, not supposed to give anything meaningful.
+/*try {
+    throw new Error("error");
+} catch(e) {
+    window.test = e;
+}*/
+
+
+/* function primitiveToString() {
+    return (1).toString() || (true).toString() || ("string").toString();
+} */
+
+window.test = function() {
+    return Array.prototype.concat.apply(null, null);
+}
 
 
 /* Missing:

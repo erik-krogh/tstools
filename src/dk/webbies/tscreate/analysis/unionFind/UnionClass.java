@@ -16,6 +16,8 @@ public final class UnionClass {
     Map<String, UnionNode> fields = new HashMap<>();
     List<Runnable> callbacks = new ArrayList<>();
 
+    private int hasRunAtIteration = -1;
+
     UnionClass(UnionFindSolver solver, UnionNode node) {
         this.solver = solver;
         if (!(node instanceof EmptyUnionNode || node instanceof IsIndexedUnionNode || node instanceof IndexerExpUnionNode /*TODO: Do not ignore. */)) {
@@ -23,6 +25,7 @@ public final class UnionClass {
         }
         if (node instanceof UnionNodeWithFields) {
             UnionNodeWithFields fieldNode = (UnionNodeWithFields) node;
+            fieldNode.unionClass = this;
             this.takeIn(fieldNode);
         }
     }
@@ -30,27 +33,44 @@ public final class UnionClass {
     void mergeWith(UnionClass other) {
         merge(other.fields);
         this.nodes.addAll(other.nodes);
-        this.callbacks.addAll(other.callbacks);
         if (other.nodes.size() > 0 && this.nodes.size() > 0) {
-            for (Runnable callback : callbacks) {
-                solver.allDoneCallback(callback);
+            int currentIteration = solver.iteration;
+            // TODO: Test this somehow.
+            if (this.hasRunAtIteration < currentIteration || true) {
+                for (Runnable callback : callbacks) {
+                    solver.addDoneCallback(callback);
+                }
+                this.hasRunAtIteration = currentIteration;
             }
+            if (other.hasRunAtIteration < currentIteration || true) {
+                for (Runnable callback : other.callbacks) {
+                    solver.addDoneCallback(callback);
+                }
+                other.hasRunAtIteration = currentIteration;
+            }
+
         }
+
+        this.callbacks.addAll(other.callbacks);
     }
 
     void takeIn(UnionNodeWithFields node) {
-        merge(node.getFields());
+        merge(node.getUnionNodeFields());
     }
 
     private void merge(Map<String, UnionNode> fields) {
         for (Map.Entry<String, UnionNode> entry : fields.entrySet()) {
             String key = entry.getKey();
             UnionNode value = entry.getValue();
-            if (this.fields.containsKey(key)) {
-                solver.union(value, this.fields.get(key));
-            } else {
-                this.fields.put(key, value);
-            }
+            addField(key, value);
+        }
+    }
+
+    public void addField(String key, UnionNode value) {
+        if (this.fields.containsKey(key)) {
+            solver.union(value, this.fields.get(key));
+        } else {
+            this.fields.put(key, value);
         }
     }
 
@@ -64,6 +84,6 @@ public final class UnionClass {
 
     public void addChangeCallback(Runnable callback) {
         this.callbacks.add(callback);
-        solver.allDoneCallback(callback); // Run at least once.
+        solver.addDoneCallback(callback); // Run at least once.
     }
 }

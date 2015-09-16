@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis;
 
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
@@ -8,7 +9,6 @@ import dk.webbies.tscreate.jsnapconvert.Snap;
 import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 import dk.webbies.tscreate.paser.AST.AstNode;
-import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.*;
 
@@ -18,12 +18,14 @@ import java.util.*;
 public class TypeAnalysis {
     private final Snap.Obj librarySnap;
     private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
-    private final FunctionExpression program;
+    private Options options;
+    private Map<String, Snap.Value> globalValues;
 
-    public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, FunctionExpression program) {
+    public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Map<String, Snap.Value> globalValues) {
         this.librarySnap = librarySnap;
         this.libraryClasses = libraryClasses;
-        this.program = program;
+        this.options = options;
+        this.globalValues = globalValues;
     }
 
     public Map<Snap.Obj, FunctionType> getFunctionTypes() {
@@ -31,12 +33,12 @@ public class TypeAnalysis {
 
         Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
         for (Snap.Obj function : functions) {
-            functionNodes.put(function, new FunctionNode(function.function.astNode));
+            functionNodes.put(function, new FunctionNode(function));
         }
 
         Map<UnionNode, UnionClass> classes = analyseFunctions(functionNodes);
 
-        TypeConverter typeConverter = new TypeConverter(classes);
+        TypeConverter typeConverter = new TypeConverter(classes, globalValues);
 
         Map<Snap.Obj, FunctionType> result = new HashMap<>();
         for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
@@ -48,27 +50,49 @@ public class TypeAnalysis {
 
     private Map<UnionNode, UnionClass> analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
         Set<Snap.Obj> functions = functionNodes.keySet();
-        Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
-        UnionFindSolver solver = new UnionFindSolver();
-        for (Snap.Obj function : functions) {
-            analyse(function, nodes, functionNodes, solver);
+
+        if (options.separateFunctions) {
+            Map<UnionNode, UnionClass> result = new HashMap<>();
+
+            for (Snap.Obj function : functions) {
+                Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
+                UnionFindSolver solver = new UnionFindSolver();
+
+                // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
+                HashMap<Snap.Obj, FunctionNode> subFunctions = new HashMap<>();
+                subFunctions.put(function, functionNodes.get(function)); // But the one we are analysing, should still be the right one.
+
+                analyse(function, nodes, subFunctions, solver);
+
+                solver.finish();
+
+                result.putAll(solver.getUnionClasses());
+            }
+
+            return result;
+        } else {
+            Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
+            UnionFindSolver solver = new UnionFindSolver();
+            for (Snap.Obj function : functions) {
+                analyse(function, nodes, functionNodes, solver);
+            }
+
+            solver.finish();
+
+            return solver.getUnionClasses();
         }
-
-        solver.finish();
-
-        return solver.getUnionClasses();
     }
 
-    private void analyse(Snap.Obj function, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver) {
+    private void analyse(Snap.Obj closure, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver) {
         Map<String, Snap.Value> values = new HashMap<>();
-        for (Snap.Property property : function.env.properties) {
+        for (Snap.Property property : closure.env.properties) {
             values.put(property.name, property.value);
         }
 
-        new ResolveEnvironmentVisitor(function, solver, nodes, values, functionNodes).visit(function.function.astNode);
+        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, globalValues, functionNodes).visit(closure.function.astNode);
 
-        FunctionNode functionNode = functionNodes.get(function);
-        function.function.astNode.accept(new UnionConstraintVisitor(function, solver, nodes, functionNode, functionNodes, libraryClasses));
+        FunctionNode functionNode = functionNodes.get(closure);
+        closure.function.astNode.accept(new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalValues));
     }
 
     public static class ProgramPoint {

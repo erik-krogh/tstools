@@ -192,7 +192,7 @@ public class AstTransformer {
             return new NullLiteral(loc);
         } else if (tree instanceof ArrayLiteralExpressionTree) {
             ArrayLiteralExpressionTree array = (ArrayLiteralExpressionTree) tree;
-            return new ArrayLiteral(loc, cast(Expression.class, array.elements.stream().map(AstTransformer::convert).collect(Collectors.toList())));
+            return new NewExpression(loc, new Identifier(loc, "Array"), cast(Expression.class, array.elements.stream().map(AstTransformer::convert).collect(Collectors.toList())));
         } else if (tree instanceof ContinueStatementTree) {
             return new ContinueStatement(loc);
         } else if (tree instanceof BreakStatementTree) {
@@ -209,7 +209,7 @@ public class AstTransformer {
             return new ForInStatement(loc, (Statement) initializerNode, (Expression) convert(forIn.collection), (Statement) convert(forIn.body));
         } else if (tree instanceof TryStatementTree) {
             TryStatementTree tryStatement = (TryStatementTree) tree;
-            BlockStatement finallyBlock = null;
+            BlockStatement finallyBlock;
             if (tryStatement.finallyBlock != null) {
                 finallyBlock = (BlockStatement) convert(tryStatement.finallyBlock);
             } else {

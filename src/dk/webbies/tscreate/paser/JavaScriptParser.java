@@ -157,13 +157,21 @@ public class JavaScriptParser {
 
         public FunctionExpression toTSCreateAST() {
             List<Statement> body = this.programAST.sourceElements.stream().map(AstTransformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
-            SourceRange location = new SourceRange(body.get(0).location.start, body.get(body.size() - 1).location.end);
-            FunctionExpression result = new FunctionExpression(location, new Identifier(location, ":program"), new BlockStatement(location, body), Collections.EMPTY_LIST);
+            if (body.isEmpty()) {
+                SourcePosition position = new SourcePosition(new SourceFile("empty", ""), 0, 0, 0);
+                SourceRange location = new SourceRange(position, position);
+                return new FunctionExpression(location, new Identifier(location, ":program"), new BlockStatement(location, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
+            } else {
+                SourceRange location = new SourceRange(body.get(0).location.start, body.get(body.size() - 1).location.end);
+                FunctionExpression result = new FunctionExpression(location, new Identifier(location, ":program"), new BlockStatement(location, body), Collections.EMPTY_LIST);
 
-            new FillFunctionsVariableDeclarations(result).visit(result);
-            new FindVariableDeclarations(result).visit(result);
+                // For each function, mark which variables it declares in its scope.
+                new FillFunctionsVariableDeclarations(result).visit(result);
+                // For each identifier, mark where it was declared.
+                new FindVariableDeclarations(result).visit(result);
 
-            return result;
+                return result;
+            }
         }
     }
 
@@ -261,9 +269,11 @@ public class JavaScriptParser {
                 identifier.declaration = this.env.get(identifier.getName());
             } else if (this.globalEnv.containsKey(identifier.getName())) {
                 identifier.declaration = this.globalEnv.get(identifier.getName());
+                identifier.isGlobal = true;
             } else {
                 this.globalEnv.put(identifier.getName(), identifier);
                 identifier.declaration = identifier;
+                identifier.isGlobal = true;
             }
             return NodeTransverse.super.visit(identifier);
         }
@@ -276,6 +286,19 @@ public class JavaScriptParser {
                 new FindVariableDeclarations(function, env, globalEnv).visit(function);
                 return null;
             }
+        }
+
+        @Override
+        public Void visit(CatchStatement catchStatement) {
+            String exceptionName = catchStatement.getException().getName();
+            if (this.env.containsKey(exceptionName)) {
+                NodeTransverse.super.visit(catchStatement);
+            } else {
+                Map<String, Identifier> newEnv = new HashMap<>(this.env);
+                newEnv.put(exceptionName, catchStatement.getException());
+                new FindVariableDeclarations(this.function, newEnv, this.globalEnv).visit(catchStatement);
+            }
+            return null;
         }
     }
 }

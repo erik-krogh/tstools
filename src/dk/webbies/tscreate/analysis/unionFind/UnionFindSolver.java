@@ -34,10 +34,11 @@ import java.util.*; // For Map, HashMap
 public class UnionFindSolver {
     private Set<Runnable> doneCallbacks = new HashSet<>();
 
+    int iteration = 1;
     public void finish() {
-//        int counter = 1;
         while (doneCallbacks.size() > 0) {
-//            System.out.println(counter++);
+            int count = iteration++;
+            System.out.println(count + " (" + doneCallbacks.size() + ")");
             for (Runnable callback : new ArrayList<>(doneCallbacks)) {
                 doneCallbacks.remove(callback);
                 callback.run();
@@ -106,7 +107,7 @@ public class UnionFindSolver {
         elems.get(recFind(node)).unionClass.addChangeCallback(callback);
     }
 
-    void allDoneCallback(Runnable callback) {
+    void addDoneCallback(Runnable callback) {
         this.doneCallbacks.add(callback);
     }
 
@@ -186,8 +187,9 @@ public class UnionFindSolver {
      * @param one The first element to link.
      * @param two The second element to link.
      * @throws NoSuchElementException If either element does not exist.
+     * @return UnionNode, returns the first argument, for chaining.
      */
-    public void union(UnionNode one, UnionNode two) {
+    public UnionNode union(UnionNode one, UnionNode two) {
         if (one == null || two == null) {
             throw new RuntimeException("A unionNode cannot be null");
         }
@@ -204,7 +206,7 @@ public class UnionFindSolver {
         Link<UnionNode> twoLink = elems.get(find(two));
 
         /* If these are the same object, we're done. */
-        if (oneLink == twoLink) return;
+        if (oneLink == twoLink) return one;
 
         UnionNode oneParentBefore = oneLink.parent;
 
@@ -237,6 +239,6 @@ public class UnionFindSolver {
             oneLink.unionClass = null;
         }
 
-
+        return one;
     }
 }

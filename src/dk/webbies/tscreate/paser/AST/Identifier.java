@@ -9,6 +9,7 @@ import dk.webbies.tscreate.paser.ExpressionVisitor;
 public class Identifier extends Expression {
     private final String name;
     public Identifier declaration = null;
+    public boolean isGlobal = false; // TODO: Use.
 
     public Identifier(SourceRange location, String name) {
         super(location);

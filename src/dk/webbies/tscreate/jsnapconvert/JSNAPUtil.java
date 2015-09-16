@@ -5,15 +5,50 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.paser.AST.BlockStatement;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.AST.Identifier;
 import dk.webbies.tscreate.paser.AST.NodeTransverse;
+import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.util.*;
 
-public class JSNAPConverter {
+public class JSNAPUtil {
+
+    public static String getJsnapRaw(String path) throws IOException {
+        File jsFile = new File(path);
+        if (!jsFile.exists()) {
+            throw new RuntimeException("Cannot create a snapshot of a file that doesn't exist");
+        }
+        long jsLastModified = jsFile.lastModified();
+        File jsnapFile = new File(path + ".jsnap");
+        boolean recreate = false;
+        if (!jsnapFile.exists()) {
+            recreate = true;
+        } else {
+            long jsnapLastModified = jsnapFile.lastModified();
+            if (jsnapLastModified < jsLastModified) {
+                recreate = true;
+            }
+        }
+
+        if (recreate) {
+            System.out.println("Creating JSNAP from scratch. \n");
+            String jsnap = Util.runNodeScript("lib/tscheck/node_modules/jsnap/jsnap.js " + path);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(jsnapFile));
+            writer.write(jsnap);
+            writer.close();
+            return jsnap;
+        } else {
+            FileReader reader = new FileReader(jsnapFile);
+            String result = IOUtils.toString(reader);
+            reader.close();
+            return result;
+        }
+
+    }
 
     public static void main(String[] args) throws IOException {
         FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
@@ -114,6 +149,15 @@ public class JSNAPConverter {
         FunctionExtractor functionExtrator = new FunctionExtractor();
         program.accept(functionExtrator);
         return functionExtrator.getFunctions();
+    }
+
+    public static Map<String, Snap.Value> createPropertyMap(Snap.Obj obj) {
+        HashMap<String, Snap.Value> result = new HashMap<>();
+        obj.properties.forEach(prop -> result.put(prop.name, prop.value));
+        if (obj.prototype != null) {
+            result.putAll(createPropertyMap(obj.prototype));
+        }
+        return result;
     }
 
     private static class FunctionExtractor implements NodeTransverse<Void> {

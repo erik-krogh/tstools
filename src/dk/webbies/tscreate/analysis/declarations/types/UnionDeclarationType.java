@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis;
+package dk.webbies.tscreate.analysis.declarations.types;
 
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationTypeVisitor;

@@ -8,10 +8,10 @@ import dk.webbies.tscreate.paser.StatementVisitor;
  */
 public class TryStatement extends Statement {
     private final Statement tryBlock;
-    private final Statement catchBlock;
+    private final CatchStatement catchBlock;
     private final Statement finallyBlock;
 
-    public TryStatement(SourceRange loc, Statement tryBlock, Statement catchBlock, Statement finallyBlock) {
+    public TryStatement(SourceRange loc, Statement tryBlock, CatchStatement catchBlock, Statement finallyBlock) {
         super(loc);
         this.tryBlock = tryBlock;
         this.catchBlock = catchBlock;

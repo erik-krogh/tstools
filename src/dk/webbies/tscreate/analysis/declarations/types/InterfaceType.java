@@ -6,10 +6,13 @@ package dk.webbies.tscreate.analysis.declarations.types;
 public class InterfaceType implements DeclarationType {
     private int useCounter = 0;
     public FunctionType function = null;
-    private ObjectType object = null;
+    public ObjectType object = null;
 
-    public InterfaceType() {
+    public final String name;
 
+    public InterfaceType(String name) {
+        // TODO: Ensure no conflicts
+        this.name = name;
     }
 
     public void incrementUseCounter() {

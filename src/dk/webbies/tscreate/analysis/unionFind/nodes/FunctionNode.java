@@ -16,6 +16,8 @@ public class FunctionNode extends UnionNodeWithFields {
     public final UnionNode thisNode;
     public Snap.Obj closure = null;
 
+    public boolean hasAnalyzed = false; // For when analysing the functions separately.
+
     public FunctionNode(int numberOfArguments) {
         this.returnNode = new EmptyUnionNode();
         this.thisNode = new EmptyUnionNode();
@@ -35,6 +37,11 @@ public class FunctionNode extends UnionNodeWithFields {
 
     public FunctionNode(Snap.Obj closure) {
         this(closure.function.astNode);
+        this.closure = closure;
+    }
+
+    public FunctionNode(Snap.Obj closure, int numberOfArguments) {
+        this(numberOfArguments);
         this.closure = closure;
     }
 }

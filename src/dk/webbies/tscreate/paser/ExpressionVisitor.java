@@ -6,9 +6,6 @@ import dk.webbies.tscreate.paser.AST.*;
  * Created by Erik Krogh Kristensen on 07-09-2015.
  */
 public interface ExpressionVisitor<T> {
-
-    T visit(ArrayLiteral arrayLiteral);
-
     T visit(BinaryExpression binOp);
 
     T visit(BooleanLiteral bool);

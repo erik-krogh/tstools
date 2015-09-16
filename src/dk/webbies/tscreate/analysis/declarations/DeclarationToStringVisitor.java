@@ -1,9 +1,11 @@
 package dk.webbies.tscreate.analysis.declarations;
 
 import dk.webbies.tscreate.Util;
-import dk.webbies.tscreate.analysis.UnionDeclarationType;
+import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,33 +13,41 @@ import java.util.List;
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
 public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
-    private StringBuilder builder = new StringBuilder();
+    private OutputStream out;
     private int ident = 0;
 
-    public String getResult() {
-        return builder.toString();
+    private List<InterfaceType> interfacesToPrint = new ArrayList<>();
+    private boolean finishing = false;
+
+    public DeclarationToStringVisitor(OutputStream out) {
+        this.out = out;
     }
 
     private void writeln(String str) {
         ident();
-        builder.append(str);
-        builder.append("\n");
+        write(str);
+        write("\n");
     }
 
     private void ident() {
         for (int i = 0; i < ident; i++) {
-            builder.append("\t");
+            write("\t");
         }
     }
 
     private void write(String str) {
-        builder.append(str);
+        try {
+            out.write(str.getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Void visit(DeclarationBlock block) {
         if (ident == 0) {
             block.getDeclarations().forEach(dec -> dec.accept(this));
+            finish();
         } else {
             writeln("{");
             ident++;
@@ -47,6 +57,17 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
         }
 
         return null;
+    }
+
+    private void finish() {
+        finishing = true;
+        while (interfacesToPrint.size() > 0) {
+            ArrayList<InterfaceType> copy = new ArrayList<>(interfacesToPrint);
+            interfacesToPrint.clear();
+            for (InterfaceType type : copy) {
+                type.accept(new TypeVisitor());
+            }
+        }
     }
 
     @Override
@@ -108,7 +129,7 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
         }
 
         @Override
-        public Void visit(ObjectType objectType) {
+        public Void visit(UnnamedObjectType objectType) {
             List<VariableDeclaration> decs = Util.cast(VariableDeclaration.class, objectType.getBlock().getDeclarations());
             if (decs.size() == 0) {
                 write("{}");
@@ -136,13 +157,25 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
 
         @Override
         public Void visit(InterfaceType interfaceType) {
-            // TODO: Just wrong.
-            if (interfaceType.getFunction() != null) {
-                interfaceType.getFunction().accept(this);
+            if (finishing) {
+                finishing = false;
+                writeln("interface " + interfaceType.name + " {");
+                ident++;
+                // TODO: Just wrong.
+                if (interfaceType.getFunction() != null) {
+                    interfaceType.getFunction().accept(this);
+                }
+                if (interfaceType.getObject() != null) {
+                    interfaceType.getObject().accept(this);
+                }
+                ident--;
+                writeln("}");
+                finishing = true;
+            } else {
+                write(interfaceType.name);
+                interfacesToPrint.add(interfaceType);
             }
-            if (interfaceType.getObject() != null) {
-                interfaceType.getObject().accept(this);
-            }
+
             return null;
         }
 
@@ -156,6 +189,12 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
                     write(" | ");
                 }
             }
+            return null;
+        }
+
+        @Override
+        public Void visit(NamedObjectType namedObjectType) {
+            write(namedObjectType.getName());
             return null;
         }
     }
