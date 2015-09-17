@@ -6,11 +6,11 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
-public class UnionNodeObject extends UnionNodeWithFields {
-    private String typeName = null;
-    public Map<String, UnionNode> objectFields = new HashMap<>();
+public class ObjectUnionNode extends UnionNodeWithFields {
+    private Map<String, UnionNode> objectFields = new HashMap<>();
+    private String typeName;
 
-    public UnionNodeObject() {
+    public ObjectUnionNode() {
 
     }
 
@@ -18,14 +18,13 @@ public class UnionNodeObject extends UnionNodeWithFields {
         return objectFields;
     }
 
-    // For objects, that have a known type name from the standard library.
-    public UnionNodeObject(String typeName) {
-        this.typeName = typeName;
-    }
-
     public void addField(String fieldName, UnionNode node) {
         this.objectFields.put(fieldName, node);
         super.addField("field-" + fieldName, node);
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
     }
 
     public String getTypeName() {

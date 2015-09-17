@@ -349,9 +349,32 @@ _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'],
     return (1).toString() || (true).toString() || ("string").toString();
 } */
 
-window.test = function() {
-    return Array.prototype.concat.apply(null, null);
-}
+
+/* var omit = function(obj, iteratee, context) {
+    if (true) {
+        iteratee = negate(iteratee);
+    } else {
+        iteratee = function(value, key) {
+            return key === true;
+        };
+    }
+    return "constant";
+};*/
+
+var test = (function () {
+    function MyClass() {
+
+    }
+
+    MyClass.prototype.doStuff = function () {
+        var anInstance = new MyClass();
+        return 2;
+    };
+
+    return MyClass;
+})();
+
+
 
 
 /* Missing:

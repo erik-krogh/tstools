@@ -3,9 +3,7 @@ package dk.webbies.tscreate.analysis.unionFind.nodes;
 
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.jsnapconvert.Snap;
-
-import java.util.Map;
+import dk.webbies.tscreate.jsnap.Snap;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -23,17 +21,17 @@ public class PrimitiveUnionNode implements UnionNode {
 
     public static class Factory {
         private UnionFindSolver solver;
-        private Map<String, Snap.Value> globalValues;
+        private Snap.Obj globalObject;
 
-        public Factory(UnionFindSolver solver, Map<String, Snap.Value> globalValues) {
+        public Factory(UnionFindSolver solver, Snap.Obj globalObject) {
             this.solver = solver;
-            this.globalValues = globalValues;
+            this.globalObject = globalObject;
         }
 
         private UnionNode gen(PrimitiveDeclarationType type, String constructorName) {
             PrimitiveUnionNode result = new PrimitiveUnionNode(type);
             if (constructorName != null) {
-                Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalValues.get(constructorName)).getProperty("prototype").value;
+                Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
                 solver.union(result, new HasPrototypeUnionNode(prototype));
             }
             return result;

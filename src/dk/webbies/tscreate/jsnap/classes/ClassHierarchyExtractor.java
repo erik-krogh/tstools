@@ -1,6 +1,6 @@
-package dk.webbies.tscreate.jsnapconvert.classes;
+package dk.webbies.tscreate.jsnap.classes;
 
-import dk.webbies.tscreate.jsnapconvert.Snap;
+import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.*;
 
@@ -74,7 +74,7 @@ public class ClassHierarchyExtractor {
         LibraryClass libraryClass = new LibraryClass(path, prototype);
         classes.put(prototype, libraryClass);
 
-        libraryClass.superClass = protoTypeToClass(path + ".proto", classes, prototype.prototype);
+        libraryClass.superClass = protoTypeToClass(path + ".[proto]", classes, prototype.prototype);
 
         return libraryClass;
     }
@@ -83,8 +83,9 @@ public class ClassHierarchyExtractor {
         HashMap<Snap.Obj, LibraryClass> classes = new HashMap<>();
         HashSet<Snap.Obj> seen = new HashSet<>();
         // Reason for two passes: Names look prettier when we don't go through the environment.
-        List<Snap.Obj> missinEnvs = this.extractClasses("window", (Snap.Obj) this.snapshot, classes, seen);
-        for (Snap.Obj missinEnv : missinEnvs) {
+        List<Snap.Obj> missingEnvs = this.extractClasses("window", this.snapshot, classes, seen);
+
+        for (Snap.Obj missinEnv : missingEnvs) {
             for (Snap.Property property : missinEnv.properties) {
                 if (property.value instanceof Snap.Obj) {
                     Snap.Obj obj = (Snap.Obj) property.value;

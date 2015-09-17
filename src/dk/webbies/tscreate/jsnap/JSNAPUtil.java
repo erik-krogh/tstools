@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.jsnapconvert;
+package dk.webbies.tscreate.jsnap;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -62,7 +62,7 @@ public class JSNAPUtil {
 
     public static Snap.Obj extractUnique(Snap.Obj librarySnap) throws IOException {
         FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
-        Snap.Obj domSnap = getStateDumpFromFile("src/dk/webbies/tscreate/jsnapconvert/onlyDom.jsnap", emptyProgram);
+        Snap.Obj domSnap = getStateDumpFromFile("src/dk/webbies/tscreate/jsnap/onlyDom.jsnap", emptyProgram);
         return extractUnique(librarySnap, domSnap);
     }
 
@@ -173,31 +173,29 @@ public class JSNAPUtil {
         }
     }
 
-    public static List<Snap.Value> lookup(Snap.Value value, String key) {
+    public static Snap.Value lookup(Snap.Value value, String key) {
         if (key.isEmpty()) {
-            return new ArrayList<>(Arrays.asList(value));
+            return value;
         }
         if (value instanceof Snap.Obj) {
             Snap.Obj obj = (Snap.Obj) value;
             String[] split = key.split("\\.");
             String index = split[0];
-            ArrayList<Snap.Value> result = new ArrayList<>();
-            for (Snap.Property property : obj.properties) {
-                if (property.name.startsWith(index)) {
-                    StringBuilder newKey = new StringBuilder();
-                    for (int i = 1; i < split.length; i++) {
-                        newKey.append(split[i]).append(".");
-                    }
-                    if (newKey.length() > 0) {
-                        newKey.deleteCharAt(newKey.length() - 1);
-                    }
-                    result.addAll(lookup(property.value, newKey.toString()));
+            Snap.Property prop = obj.getProperty(index);
+            if (prop != null) {
+                StringBuilder newKey = new StringBuilder();
+                for (int i = 1; i < split.length; i++) {
+                    newKey.append(split[i]).append(".");
                 }
+                if (newKey.length() > 0) {
+                    newKey.deleteCharAt(newKey.length() - 1);
+                }
+                return lookup(prop.value, newKey.toString());
+            } else {
+                return null;
             }
-
-            return result;
         }
-        return new ArrayList<>();
+        return null;
     }
 
     public static List<Map.Entry<String, Snap.Value>> getSubHeap(Map<String,Snap. Value> heap, String searchString) {

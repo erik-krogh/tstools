@@ -26,4 +26,8 @@ public class VariableDeclaration implements Declaration {
     public <T> T accept(DeclarationVisitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    public void setType(DeclarationType type) {
+        this.type = type;
+    }
 }

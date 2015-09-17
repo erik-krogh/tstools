@@ -27,6 +27,10 @@ public class FunctionType implements DeclarationType {
         return visitor.visit(this);
     }
 
+    public void setReturnType(DeclarationType returnType) {
+        this.returnType = returnType;
+    }
+
     public static class Argument {
         private String name;
         private DeclarationType type;
@@ -42,6 +46,10 @@ public class FunctionType implements DeclarationType {
 
         public DeclarationType getType() {
             return type;
+        }
+
+        public void setType(DeclarationType type) {
+            this.type = type;
         }
     }
 }

@@ -15,4 +15,8 @@ public interface DeclarationTypeVisitor<T> {
     T visit(UnionDeclarationType union);
 
     T visit(NamedObjectType namedObjectType);
+
+    T visit(ClassType classType);
+
+    T visit(UnresolvedDeclarationType unresolved);
 }

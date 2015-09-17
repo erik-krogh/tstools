@@ -6,7 +6,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 public class InterfaceType implements DeclarationType {
     private int useCounter = 0;
     public FunctionType function = null;
-    public ObjectType object = null;
+    public UnnamedObjectType object = null;
 
     public final String name;
 
@@ -19,19 +19,20 @@ public class InterfaceType implements DeclarationType {
         this.useCounter++;
     }
 
+    // TODO: Use this.
     public int getUseCounter() {
         return useCounter;
     }
 
     public FunctionType getFunction() {
-        if (function == null && object == null && false) { // TODO:
+        if (function == null && object == null) {
             throw new NullPointerException("An interface must have either an object or function associated");
         }
         return function;
     }
 
-    public ObjectType getObject() {
-        if (function == null && object == null && false) {
+    public UnnamedObjectType getObject() {
+        if (function == null && object == null) {
             throw new NullPointerException("An interface must have either an object or function associated");
         }
         return object;

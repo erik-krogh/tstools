@@ -7,7 +7,9 @@ import dk.webbies.tscreate.analysis.declarations.types.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
@@ -59,12 +61,18 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
         return null;
     }
 
+    private Set<InterfaceType> printedInterfaces = new HashSet<>();
+
     private void finish() {
         finishing = true;
         while (interfacesToPrint.size() > 0) {
             ArrayList<InterfaceType> copy = new ArrayList<>(interfacesToPrint);
             interfacesToPrint.clear();
             for (InterfaceType type : copy) {
+                if (printedInterfaces.contains(type)) {
+                    continue;
+                }
+                printedInterfaces.add(type);
                 type.accept(new TypeVisitor());
             }
         }
@@ -196,6 +204,17 @@ public class DeclarationToStringVisitor implements DeclarationVisitor<Void> {
         public Void visit(NamedObjectType namedObjectType) {
             write(namedObjectType.getName());
             return null;
+        }
+
+        @Override
+        public Void visit(ClassType classType) {
+            write("Class:" + classType.getName()); // TODO: Nope, not even close.
+            return null;
+        }
+
+        @Override
+        public Void visit(UnresolvedDeclarationType unresolved) {
+            throw new RuntimeException();
         }
     }
 }

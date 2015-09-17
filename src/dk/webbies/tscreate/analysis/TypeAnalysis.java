@@ -1,13 +1,16 @@
 package dk.webbies.tscreate.analysis;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
-import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
+import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
+import dk.webbies.tscreate.analysis.unionFind.nodes.HeapValueNode;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
-import dk.webbies.tscreate.jsnapconvert.Snap;
-import dk.webbies.tscreate.jsnapconvert.classes.LibraryClass;
-import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
+import dk.webbies.tscreate.jsnap.JSNAPUtil;
+import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.AstNode;
 
 import java.util.*;
@@ -16,36 +19,49 @@ import java.util.*;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class TypeAnalysis {
-    private final Snap.Obj librarySnap;
     private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    private final Snap.Obj globalObject;
+    private final TypeFactory typeFactory;
+    private final Map<UnionNode, UnionClass> classes;
     private Options options;
-    private Map<String, Snap.Value> globalValues;
 
-    public TypeAnalysis(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Map<String, Snap.Value> globalValues) {
-        this.librarySnap = librarySnap;
+    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject) {
         this.libraryClasses = libraryClasses;
         this.options = options;
-        this.globalValues = globalValues;
+        this.globalObject = globalObject;
+        Map<Snap.Obj, FunctionNode> functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
+
+        this.classes = analyseFunctions(functionNodes);
+
+        this.typeFactory = new TypeFactory(classes, globalObject, libraryClasses, createHeapToUnionNodeMap());
     }
 
-    public Map<Snap.Obj, FunctionType> getFunctionTypes() {
-        List<Snap.Obj> functions = getAllFunctionInstances(librarySnap, new HashSet<>());
+    public TypeFactory getTypeFactory() {
+        return typeFactory;
+    }
+
+    private Map<Snap.Value, Collection<UnionNode>> createHeapToUnionNodeMap() {
+        Multimap<Snap.Value, UnionNode> result = HashMultimap.create();
+
+        Set<UnionNode> unionNodes = this.classes.keySet();
+        for (UnionNode unionNode : unionNodes) {
+            if (unionNode instanceof HeapValueNode) {
+                HeapValueNode heapValue = (HeapValueNode) unionNode;
+                result.put(heapValue.value, heapValue);
+            }
+        }
+
+        return result.asMap();
+    }
+
+    private static Map<Snap.Obj, FunctionNode> getFunctionNodes(Snap.Obj globalObject) {
+        List<Snap.Obj> functions = getAllFunctionInstances(globalObject, new HashSet<>());
 
         Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
         for (Snap.Obj function : functions) {
             functionNodes.put(function, new FunctionNode(function));
         }
-
-        Map<UnionNode, UnionClass> classes = analyseFunctions(functionNodes);
-
-        TypeConverter typeConverter = new TypeConverter(classes, globalValues);
-
-        Map<Snap.Obj, FunctionType> result = new HashMap<>();
-        for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
-            result.put(entry.getKey(), typeConverter.createFunctionType(entry.getValue()));
-        }
-
-        return result;
+        return functionNodes;
     }
 
     private Map<UnionNode, UnionClass> analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
@@ -89,10 +105,11 @@ public class TypeAnalysis {
             values.put(property.name, property.value);
         }
 
-        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, globalValues, functionNodes).visit(closure.function.astNode);
+        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver);
+        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), functionNodes, this.globalObject, heapFactory).visit(closure.function.astNode);
 
         FunctionNode functionNode = functionNodes.get(closure);
-        closure.function.astNode.accept(new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalValues));
+        closure.function.astNode.accept(new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalObject, heapFactory));
     }
 
     public static class ProgramPoint {
@@ -122,7 +139,7 @@ public class TypeAnalysis {
         }
     }
 
-    private List<Snap.Obj> getAllFunctionInstances(Snap.Obj obj, HashSet<Snap.Obj> seen) {
+    private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj obj, HashSet<Snap.Obj> seen) {
         if (seen.contains(obj)) {
             return Collections.EMPTY_LIST;
         }

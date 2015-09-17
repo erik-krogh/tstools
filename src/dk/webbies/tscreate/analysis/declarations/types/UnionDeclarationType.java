@@ -1,11 +1,8 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.analysis.declarations.types.DeclarationTypeVisitor;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.Collection;
 
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
@@ -17,7 +14,7 @@ public class UnionDeclarationType implements DeclarationType {
         this.types = new ArrayList<>(Arrays.asList(types));
     }
 
-    public UnionDeclarationType(Set<? extends DeclarationType> types) {
+    public UnionDeclarationType(Collection<? extends DeclarationType> types) {
         this.types = new ArrayList<>(types);
     }
 

@@ -3,7 +3,7 @@ package dk.webbies.tscreate.declarationReader;
 import dk.brics.tajs.envspec.typescript.SpecReader;
 import dk.brics.tajs.envspec.typescript.types.*;
 import dk.webbies.tscreate.Util;
-import dk.webbies.tscreate.jsnapconvert.Snap;
+import dk.webbies.tscreate.jsnap.Snap;
 
 import java.io.IOException;
 import java.util.*;

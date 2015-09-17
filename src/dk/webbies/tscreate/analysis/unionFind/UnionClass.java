@@ -36,13 +36,13 @@ public final class UnionClass {
         if (other.nodes.size() > 0 && this.nodes.size() > 0) {
             int currentIteration = solver.iteration;
             // TODO: Test this somehow.
-            if (this.hasRunAtIteration < currentIteration || true) {
+            if (this.hasRunAtIteration < currentIteration) {
                 for (Runnable callback : callbacks) {
                     solver.addDoneCallback(callback);
                 }
                 this.hasRunAtIteration = currentIteration;
             }
-            if (other.hasRunAtIteration < currentIteration || true) {
+            if (other.hasRunAtIteration < currentIteration) {
                 for (Runnable callback : other.callbacks) {
                     solver.addDoneCallback(callback);
                 }
