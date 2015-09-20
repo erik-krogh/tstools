@@ -6,11 +6,6 @@ package dk.webbies.tscreate.analysis.declarations.types;
 public class UnresolvedDeclarationType implements DeclarationType {
     private DeclarationType resolvedType = null;
 
-    @Override
-    public <T> T accept(DeclarationTypeVisitor<T> visitor) {
-        return visitor.visit(this);
-    }
-
     public void setResolvedType(DeclarationType resolvedType) {
         if (this.resolvedType != null) {
             throw new RuntimeException();
@@ -23,5 +18,10 @@ public class UnresolvedDeclarationType implements DeclarationType {
             throw new RuntimeException();
         }
         return resolvedType;
+    }
+
+    @Override
+    public <T> T accept(DeclarationTypeVisitor<T> visitor) {
+        throw new RuntimeException();
     }
 }

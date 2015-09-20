@@ -105,7 +105,7 @@ public class TypeAnalysis {
             values.put(property.name, property.value);
         }
 
-        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver);
+        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses);
         new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), functionNodes, this.globalObject, heapFactory).visit(closure.function.astNode);
 
         FunctionNode functionNode = functionNodes.get(closure);

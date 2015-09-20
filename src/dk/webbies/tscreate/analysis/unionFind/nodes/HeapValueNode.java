@@ -1,10 +1,15 @@
 package dk.webbies.tscreate.analysis.unionFind.nodes;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import dk.brics.tajs.envspec.typescript.types.Signature;
+import dk.webbies.tscreate.analysis.FunctionNodeFactory;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
@@ -34,10 +39,15 @@ public class HeapValueNode extends ObjectUnionNode {
         private Map<Snap.Value, HeapValueNode> cache = new HashMap<>();
         private PrimitiveUnionNode.Factory primitivesFactory;
         private UnionFindSolver solver;
+        private FunctionNodeFactory functionNodeFactory;
+        private Multimap<Snap.Obj, UnionNode> functionCache = ArrayListMultimap.create();
+        private HashMap<Snap.Obj, LibraryClass> libraryClasses;
 
-        public Factory(Snap.Obj globalObject, UnionFindSolver solver) {
+        public Factory(Snap.Obj globalObject, UnionFindSolver solver, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
+            this.libraryClasses = libraryClasses;
             this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, globalObject);
             this.solver = solver;
+            this.functionNodeFactory = new FunctionNodeFactory(primitivesFactory, solver);
         }
 
         public List<UnionNode> fromValue(Snap.Value value) {
@@ -47,11 +57,22 @@ public class HeapValueNode extends ObjectUnionNode {
             }
 
             List<UnionNode> result = new ArrayList<>();
-            result.add(new ObjectUnionNode());
+            ObjectUnionNode objectNode = new ObjectUnionNode();
+            result.add(objectNode);
 
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.prototype != null) {
-                result.add(new HasPrototypeUnionNode(obj.prototype));
+                if ((libraryClasses.get(obj.prototype) != null && libraryClasses.get(obj.prototype).isPrimitiveClass())) {
+                    // Skipping, because it is a primitive class. (Here just functions are left).
+                } else {
+                    result.add(new HasPrototypeUnionNode(obj.prototype));
+                    if (libraryClasses.get(obj.prototype) != null) {
+                        solver.union(libraryClasses.get(obj.prototype).thisNode, objectNode);
+                    }
+                }
+            }
+            if (obj.function != null) {
+                result.addAll(getFunctionNode(obj));
             }
 
             if (cache.containsKey(value)) {
@@ -59,6 +80,29 @@ public class HeapValueNode extends ObjectUnionNode {
             } else {
                 result.add(new HeapValueNode(value, this));
             }
+            return result;
+        }
+
+        private Collection<UnionNode> getFunctionNode(Snap.Obj obj) {
+            if (functionCache.containsKey(obj)) {
+                return functionCache.get(obj);
+            }
+            List<UnionNode> result = new ArrayList<>();
+            if (obj.function.astNode != null) {
+                FunctionNode functionNode = new FunctionNode(obj);
+                result.add(functionNode);
+                if (obj.getProperty("prototype") != null) {
+                    Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
+                    if (libraryClasses.containsKey(prototype)) {
+                        solver.union(functionNode, libraryClasses.get(prototype).constructorNode);
+                    }
+                }
+            } else {
+                ArrayList<Signature> signatures = new ArrayList<>(obj.function.callSignatures);
+                signatures.addAll(obj.function.constructorSignatures); // TODO: Separate constructor calls?
+                result.addAll(signatures.stream().map(signature -> functionNodeFactory.fromSignature(signature, obj, null)).collect(Collectors.toList()));
+            }
+            functionCache.putAll(obj, result);
             return result;
         }
 

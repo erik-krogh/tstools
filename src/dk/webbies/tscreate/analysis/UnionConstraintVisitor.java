@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.analysis;
 
-import com.google.common.collect.Iterables;
 import dk.brics.tajs.envspec.typescript.types.*;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
@@ -30,6 +29,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private Snap.Obj globalObject;
     private final PrimitiveUnionNode.Factory primitiveFactory;
     private HeapValueNode.Factory heapFactory;
+    private FunctionNodeFactory functionNodeFactory;
 
     public UnionConstraintVisitor(Snap.Obj function, UnionFindSolver solver, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, HeapValueNode.Factory heapFactory) {
         this.closure = function;
@@ -42,6 +42,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.options = options;
         this.globalObject = globalObject;
         this.primitiveFactory = new PrimitiveUnionNode.Factory(solver, globalObject);
+        this.functionNodeFactory = new FunctionNodeFactory(primitiveFactory, this.solver);
     }
 
     UnionNode get(AstNode node) {
@@ -444,7 +445,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             solver.union(this.thisNode, clazz.thisNode);
                             solver.union(this.thisNode, new HasPrototypeUnionNode(clazz.prototype));
 
-                            solver.union(clazz.functionNode, this.function);
+                            solver.union(clazz.constructorNode, this.function);
                         }
                         break;
                     default:
@@ -549,7 +550,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     } else {
                         signatures = closure.function.callSignatures;
                     }
-                    result.addAll(signatures.stream().map(sig -> signatureToFunctionNode(sig, closure, args)).collect(Collectors.toList()));
+                    result.addAll(signatures.stream().map(sig -> functionNodeFactory.fromSignature(sig, closure, args)).collect(Collectors.toList()));
                     break;
                 case "unknown":
                     break;
@@ -559,164 +560,5 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
 
         return result;
-    }
-
-    private Map<Signature, FunctionNode> signatureCache = new HashMap<>();
-    public FunctionNode signatureToFunctionNode(Signature signature, Snap.Obj closure, List<UnionNode> args) {
-        if (args == null) {
-            args = Collections.EMPTY_LIST;
-        }
-        if (signatureCache.containsKey(signature)) {
-            return signatureCache.get(signature);
-        }
-        List<String> argumentNames = signature.getParameters().stream().map(Parameter::getName).collect(Collectors.toList());
-        for (int i = argumentNames.size(); i < args.size(); i++) {
-            argumentNames.add("arg" + i);
-        }
-        FunctionNode functionNode = new FunctionNode(closure, argumentNames);
-        signatureCache.put(signature, functionNode);
-
-        int normalParameterCount = signature.getParameters().size();
-        if (signature.isHasRestParameter()) {
-            normalParameterCount--;
-            Type restType = Iterables.getLast(signature.getParameters()).getType();
-            List<Type> typeArguments;
-            if (restType instanceof ReferenceType) {
-                ReferenceType ref = (ReferenceType) restType;
-                typeArguments = ref.getTypeArguments();
-            } else if (restType instanceof GenericType) { // TODO: problem with DeclarationParser; RegExpExecArray.splice(start: number, deleteCount: number, ...items: string[]): string[]; Items is just an Array[AnonymousType].
-                GenericType generic = (GenericType) restType;
-                typeArguments = generic.getTypeArguments();
-            } else {
-                throw new RuntimeException();
-            }
-
-            if (typeArguments.size() != 1) {
-                throw new RuntimeException();
-            }
-
-            Type typeArgument = Iterables.getLast(typeArguments);
-            for (int i = normalParameterCount; i < args.size(); i++) {
-                solver.union(args.get(i), typeArgument.accept(new UnionNativeTypeVisitor()));
-                solver.union(functionNode.arguments.get(i), args.get(i));
-            }
-        }
-        for (int i = 0; i < normalParameterCount; i++) {
-            Type parameter = signature.getParameters().get(i).getType();
-            UnionNode argument = functionNode.arguments.get(i);
-            solver.union(argument, parameter.accept(new UnionNativeTypeVisitor()));
-        }
-        solver.union(functionNode.returnNode, signature.getResolvedReturnType().accept(new UnionNativeTypeVisitor()));
-
-        functionNode.arguments.forEach(arg -> solver.union(arg, new NonVoidNode()));
-
-        return functionNode;
-    }
-
-    private class UnionNativeTypeVisitor implements TypeVisitor<List<UnionNode>> {
-
-        @Override
-        public List<UnionNode> visit(AnonymousType t) {
-            return Collections.EMPTY_LIST;
-        }
-
-        @Override
-        public List<UnionNode> visit(ClassType t) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<UnionNode> visit(GenericType t) {
-            return t.toInterface().accept(this);
-        }
-
-        Map<InterfaceType, List<UnionNode>> cache = new HashMap<>();
-        @Override
-        public List<UnionNode> visit(InterfaceType t) {
-            if (cache.containsKey(t)) {
-                return cache.get(t);
-            }
-            ArrayList<UnionNode> result = new ArrayList<>();
-            cache.put(t, result);
-
-            ObjectUnionNode obj = new ObjectUnionNode();
-            if (t.getName() != null) {
-                obj.setTypeName(t.getName());
-            }
-            result.add(obj);
-
-            List<Map.Entry<UnionNode, List<UnionNode>>> delayedUnions = new ArrayList<>();
-            for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
-                String key = entry.getKey();
-                Type type = entry.getValue();
-
-                EmptyUnionNode fieldNode = new EmptyUnionNode();
-                obj.addField(key, fieldNode);
-                delayedUnions.add(new AbstractMap.SimpleEntry<>(fieldNode, type.accept(this)));
-            }
-
-            if (!t.getDeclaredCallSignatures().isEmpty()) {
-                List<FunctionNode> functionNodes = t.getDeclaredCallSignatures().stream().map(sig -> signatureToFunctionNode(sig, null, null)).collect(Collectors.toList());
-                result.addAll(functionNodes);
-            }
-
-            if (!t.getDeclaredConstructSignatures().isEmpty()) {
-                List<FunctionNode> functionNodes = t.getDeclaredConstructSignatures().stream().map(sig -> signatureToFunctionNode(sig, null, null)).collect(Collectors.toList());
-                result.addAll(functionNodes);
-            }
-
-            for (Map.Entry<UnionNode, List<UnionNode>> entry : delayedUnions) {
-                solver.union(entry.getKey(), entry.getValue());
-            }
-
-            return result;
-        }
-
-        @Override
-        public List<UnionNode> visit(ReferenceType t) {
-            return t.getTarget().accept(this);
-        }
-
-        @Override
-        public List<UnionNode> visit(SimpleType t) {
-            switch (t.getKind()) {
-                case Any: return Arrays.asList(primitiveFactory.any());
-                case Boolean: return Arrays.asList(primitiveFactory.bool());
-                case Enum: throw new UnsupportedOperationException();
-                case Number: return Arrays.asList(primitiveFactory.number());
-                case String: return Arrays.asList(primitiveFactory.string());
-                case Undefined: return Arrays.asList(primitiveFactory.undefined());
-                case Void: return Collections.EMPTY_LIST;
-                default:
-                    throw new UnsupportedOperationException("Unhandled type: " + t.getKind());
-            }
-        }
-
-        @Override
-        public List<UnionNode> visit(TupleType t) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<UnionNode> visit(UnionType t) {
-//            throw new UnsupportedOperationException(); // TODO:
-            return Collections.EMPTY_LIST;
-        }
-
-        @Override
-        public List<UnionNode> visit(UnresolvedType t) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<UnionNode> visit(TypeParameterType t) {
-            // Generics, doesn't do this yet.
-            return Collections.EMPTY_LIST;
-        }
-
-        @Override
-        public List<UnionNode> visit(SymbolType t) {
-            throw new UnsupportedOperationException();
-        }
     }
 }

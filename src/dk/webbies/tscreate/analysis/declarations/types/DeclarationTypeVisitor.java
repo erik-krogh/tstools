@@ -18,5 +18,5 @@ public interface DeclarationTypeVisitor<T> {
 
     T visit(ClassType classType);
 
-    T visit(UnresolvedDeclarationType unresolved);
+    T visit(ClassInstanceType instanceType);
 }

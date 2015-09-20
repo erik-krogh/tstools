@@ -19,6 +19,7 @@ package dk.webbies.tscreate.analysis.unionFind;
  * an undirected graph.
  */
 
+import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 
 import java.util.*; // For Map, HashMap
@@ -38,7 +39,7 @@ public class UnionFindSolver {
     public void finish() {
         while (doneCallbacks.size() > 0) {
             int count = iteration++;
-//            System.out.println(count + " (" + doneCallbacks.size() + ")");
+            System.out.println(count + " (" + doneCallbacks.size() + ")");
             for (Runnable callback : new ArrayList<>(doneCallbacks)) {
                 doneCallbacks.remove(callback);
                 callback.run();
@@ -207,6 +208,12 @@ public class UnionFindSolver {
 
         /* If these are the same object, we're done. */
         if (oneLink == twoLink) return one;
+
+        boolean inFirst = oneLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(node -> node.counter == 6 || node.counter == 7 || node.counter == 8).count() > 0;
+        boolean inSecond = twoLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(node -> node.counter == 6 || node.counter == 7 || node.counter == 8).count() > 0;
+        if (inFirst && inSecond) {
+            System.out.println();
+        }
 
         UnionNode oneParentBefore = oneLink.parent;
 

@@ -1,8 +1,5 @@
 package dk.webbies.tscreate.analysis;
 
-import dk.webbies.tscreate.analysis.declarations.Declaration;
-import dk.webbies.tscreate.analysis.declarations.DeclarationBlock;
-import dk.webbies.tscreate.analysis.declarations.VariableDeclaration;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.nodes.*;
@@ -70,6 +67,9 @@ public class TypeFactory {
     }
 
     private DeclarationType getType(UnionClass unionClass) {
+        if (unionClass == null) {
+            throw new NullPointerException();
+        }
         DeclarationType result = cache.get(unionClass);
         if (result != null) {
             return result;
@@ -81,7 +81,6 @@ public class TypeFactory {
         return result;
     }
 
-    // TODO: Make sure the cache is populated early.
     private DeclarationType getTypeNoCache(List<UnionNode> nodes) {
         if (nodes.isEmpty()) {
             return PrimitiveDeclarationType.VOID;
@@ -90,6 +89,9 @@ public class TypeFactory {
             return PrimitiveDeclarationType.ANY;
         }
 
+        // Removing all the any's. TODO: Is this a good idea?
+        nodes = nodes.stream().filter(node -> !(node instanceof PrimitiveUnionNode && ((PrimitiveUnionNode) node).getType() == PrimitiveDeclarationType.ANY)).collect(Collectors.toList());
+
         CategorizedNodes sortedNodes = new CategorizedNodes(nodes);
 
         Set<PrimitiveDeclarationType> primitives = sortedNodes.getNodes(PrimitiveUnionNode.class).stream().map(PrimitiveUnionNode::getType).filter(type -> type != PrimitiveDeclarationType.UNDEFINED && type != PrimitiveDeclarationType.VOID).collect(Collectors.toSet());
@@ -97,105 +99,118 @@ public class TypeFactory {
         Set<FunctionNode> functions = sortedNodes.getNodes(FunctionNode.class);
         Set<ObjectUnionNode> objects = sortedNodes.getNodes(ObjectUnionNode.class);
 
-        int numberOfNonEmptyLists = (primitives.isEmpty() ? 0 : 1) + (functions.isEmpty() ? 0 : 1);
 
-        if (numberOfNonEmptyLists > 1) {
-            return PrimitiveDeclarationType.ANY;
-        }
-
-        if (primitives.stream().anyMatch(primitive -> primitive == PrimitiveDeclarationType.ANY)) {
-            return PrimitiveDeclarationType.ANY;
-        }
-
+        DeclarationType primitiveType = null;
         if (functions.isEmpty() && (objects.isEmpty() || objectPropsMatchPrimitivePrototypes(sortedNodes, primitives))) {
-            if (primitives.isEmpty() && adds.isEmpty()) {
-                return PrimitiveDeclarationType.ANY;
-            }
-            DeclarationType addType = null;
-            if (!adds.isEmpty()) {
-                addType = getAddType(adds);
-            }
-            if (primitives.isEmpty() && addType != null) {
-                return addType;
-            }
-
-            if (primitives.size() != 1) {
-                return new UnionDeclarationType(primitives);
-            }
-            return primitives.iterator().next();
+            primitiveType = getPrimitiveType(primitives, adds);
         }
 
-        InterfaceType interfaceType = new InterfaceType("interface" + System.identityHashCode(nodes));
-
+        FunctionType functionType = null;
         if (!functions.isEmpty()) {
-            interfaceType.function = createFunctionType(functions);
+            functionType = createFunctionType(functions);
         }
 
-        if (!objects.isEmpty()) {
-            List<String> typeNames = objects.stream().filter(obj -> obj.getTypeName() != null).map(ObjectUnionNode::getTypeName).collect(Collectors.toList());
+        DeclarationType classConstructorType = null;
+        DeclarationType objectInstanceType = getObjectInstanceType(sortedNodes, objects);
 
-            if (!typeNames.isEmpty()) {
-                if (typeNames.size() > 2) {
-                    return PrimitiveDeclarationType.ANY;
-                } else if (typeNames.size() > 1) {
-                    return new UnionDeclarationType(typeNames.stream().map(NamedObjectType::new).collect(Collectors.toList()));
-                } else {
-                    return new NamedObjectType(typeNames.get(0));
-                }
-            }
+        List<LibraryClass> classDeclarations = sortedNodes.getNodes(HeapValueNode.class).stream()
+                .map(heap -> heap.value)
+                .filter(obj -> obj instanceof Snap.Obj)
+                .map(obj -> (Snap.Obj) obj)
+                .filter(obj -> obj.function != null)
+                .map(obj -> obj.getProperty("prototype").value)
+                .distinct()
+                .map(this.libraryClasses::get)
+                .collect(Collectors.toList());
 
-
-            // TODO: Use that it is an instance of classes.
-            Set<LibraryClass> classInstances = sortedNodes.getNodes(HasPrototypeUnionNode.class).stream()
-                    .map(HasPrototypeUnionNode::getPrototype)
-                    .map(this.libraryClasses::get)
-                    .filter(clazz -> clazz != null)
-                    .filter(clazz -> !clazz.isPrimitiveClass())
-                    .collect(Collectors.toSet());
-
-            List<LibraryClass> classDeclarations = sortedNodes.getNodes(HeapValueNode.class).stream()
-                    .map(heap -> heap.value)
-                    .filter(obj -> obj instanceof Snap.Obj)
-                    .map(obj -> (Snap.Obj) obj)
-                    .filter(obj -> obj.function != null)
-                    .map(obj -> obj.getProperty("prototype").value)
-                    .distinct()
-                    .map(this.libraryClasses::get)
-                    .collect(Collectors.toList());
-
-            if (classDeclarations.size() > 2) {
-                return PrimitiveDeclarationType.ANY;
-            } else if (classDeclarations.size() > 1) {
-                List<DeclarationType> classes = classDeclarations.stream().map(this::createClassType).collect(Collectors.toList());
-                return new UnionDeclarationType(classes);
-            } else if (classDeclarations.size() == 1){
-                return createClassType(classDeclarations.get(0));
-            }
-
-            interfaceType.object = new UnnamedObjectType(new DeclarationBlock(getObjectProperties(objects)));
+        if (classDeclarations.size() == 1){
+            classConstructorType = createClassType(classDeclarations.get(0));
         }
 
-        if (functions.isEmpty()) {
-            if (interfaceType.object == null) {
-                return PrimitiveDeclarationType.ANY;
-            }
-            return interfaceType.object;
+        if (objectInstanceType == null && classConstructorType == null && !objects.isEmpty()) {
+            objectInstanceType = new UnnamedObjectType(getObjectProperties(objects));
         }
 
-        if (objects.isEmpty()) {
-            if (interfaceType.function == null) {
-                return PrimitiveDeclarationType.ANY;
-            }
-            return interfaceType.function;
+        // First priority.
+        if (classConstructorType != null) {
+            return classConstructorType;
         }
 
+        List<DeclarationType> resultingTypes = Arrays.asList(primitiveType, functionType, objectInstanceType).stream().filter(type -> type != null).collect(Collectors.toList());
+        if (resultingTypes.size() == 0) {
+            throw new RuntimeException("Does not happen");
+        }
+        if (resultingTypes.size() == 1) {
+            return resultingTypes.get(0);
+        }
+        InterfaceType interfaceType = new InterfaceType("interface" + System.identityHashCode(nodes));
+        interfaceType.object = objectInstanceType;
+        // TODO: Remove the stuff from object that doesn't make sense (look at prototype).
+        if (primitiveType != null) {
 
-        return interfaceType;
+            return new UnionDeclarationType(primitiveType, functionType);
+        } else {
+            return functionType;
+        }
+    }
+
+    private DeclarationType getObjectInstanceType(CategorizedNodes sortedNodes, Set<ObjectUnionNode> objects) {
+        List<String> typeNames = objects.stream().filter(obj -> obj.getTypeName() != null).map(ObjectUnionNode::getTypeName).collect(Collectors.toList());
+
+        List<DeclarationType> result = new ArrayList<>();
+
+        if (!typeNames.isEmpty()) {
+            if (typeNames.size() > 2) {
+                result.add(PrimitiveDeclarationType.ANY);
+            } else if (typeNames.size() > 0) {
+                result.addAll(typeNames.stream().map(NamedObjectType::new).collect(Collectors.toList()));
+            }
+        }
+
+        sortedNodes.getNodes(HasPrototypeUnionNode.class).stream()
+                .map(HasPrototypeUnionNode::getPrototype)
+                .distinct()
+                .map(this.libraryClasses::get)
+                .filter(clazz -> clazz != null)
+                .filter(clazz -> !clazz.isPrimitiveClass())
+                .forEach(clazz -> result.add(new ClassInstanceType(createClassType(clazz))));
+
+        if (result.size() == 0) {
+            return null;
+        } else if (result.size() == 1) {
+            return result.get(0);
+        } else if (result.size() < 4) {
+            return new UnionDeclarationType(result);
+        } else {
+            return null;
+        }
+    }
+
+    private DeclarationType getPrimitiveType(Set<PrimitiveDeclarationType> primitives, Set<AddNode> adds) {
+        if (primitives.isEmpty() && adds.isEmpty()) {
+            return null;
+        }
+        DeclarationType addType = null;
+        if (!adds.isEmpty()) {
+            addType = getAddType(adds);
+        }
+        if (primitives.isEmpty() && addType != null) {
+            return addType;
+        }
+
+        if (primitives.size() != 1) {
+            return new UnionDeclarationType(primitives);
+        }
+        return primitives.iterator().next();
     }
 
     private Map<LibraryClass, DeclarationType> libraryClassCache = new HashMap<>();
     private DeclarationType createClassType(LibraryClass libraryClass) {
         if (libraryClass == null) {
+            return null;
+        }
+        char firstChar = libraryClass.getName().charAt(0);
+        if (!libraryClass.isUsedAsClass && firstChar == Character.toLowerCase(firstChar)) { // TODO: Nope.
             return null;
         }
         if (libraryClassCache.containsKey(libraryClass)) {
@@ -207,16 +222,39 @@ public class TypeFactory {
         switch (constructor.function.type) {
             case "native":
                 if (constructor.function.id.length() > 0) {
-                    result = new NamedObjectType(constructor.function.id);
-                } else {
+                    // TODO; Nope not right, it is the constructor, not an instance of it.
+                    // result = new NamedObjectType(constructor.function.id);
+                    throw new UnsupportedOperationException();
+                } else if (true) { // <- prevents unreachable statement for the break.
                     throw new RuntimeException();
                 }
                 break;
             case "user":
-                DeclarationType constructorType = getType(libraryClass.functionNode); // TODO: Make a createFunction, createPrimitive, createObject... And use createFunction here.
+                // TODO: Remember the static fields, also create some method for removing fields defined in the prototype.
 
-                DeclarationType propertiesType = getType(libraryClass.thisNode);  // TODO: Make a createFunction, createPrimitive, createObject... And use createObject here.
-                ClassType classType = new ClassType(constructorType, propertiesType, libraryClass.getName());
+                System.out.println(); // TODO: The constructorNode might never have been seen by the unionFindSolver.
+                // Bypassing the cache.
+                List<FunctionNode> constructorNodes = classes.get(libraryClass.constructorNode).getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).collect(Collectors.toList());
+                FunctionType constructorType = createFunctionType(constructorNodes);
+
+                Map<String, DeclarationType> objectProperties = new HashMap<>();
+                // TODO: Test that it actually has the thisNode when it should.
+                if (classes.containsKey(libraryClass.thisNode)) {
+                    // Bypassing the cache
+                    List<UnionNode> nodes = classes.get(libraryClass.thisNode).getNodes();
+                    objectProperties.putAll(getObjectProperties(new CategorizedNodes(nodes).getNodes(ObjectUnionNode.class)));
+                }
+
+                // I assume the prototype is correct, so i just overwrite whatever was before.
+                libraryClass.prototype.getPropertyValueMap().forEach((name, value) -> {
+                    if (name.equals("constructor")) {
+                        return;
+                    }
+                    objectProperties.put(name, getType(value));
+                });
+
+
+                ClassType classType = new ClassType(constructorType, objectProperties, libraryClass.getName());
                 libraryClassCache.put(libraryClass, classType);
                 classType.setSuperClass(createClassType(libraryClass.superClass));
                 result = classType;
@@ -229,14 +267,14 @@ public class TypeFactory {
         return result;
     }
 
-    private ArrayList<Declaration> getObjectProperties(Set<ObjectUnionNode> objects) {
+    private Map<String, DeclarationType> getObjectProperties(Set<ObjectUnionNode> objects) {
         // The objects come from the same UnionClass, so a given field is unioned together across all the objects. So we just pick representatives.
         Map<String, UnionNode> nodes = new HashMap<>();
         objects.forEach(obj -> obj.getObjectFields().forEach(nodes::put));
 
-        ArrayList<Declaration> result = new ArrayList<>();
+        Map<String, DeclarationType> result = new HashMap<>();
         nodes.forEach((name, node) -> {
-            result.add(new VariableDeclaration(name, getType(node)));
+            result.put(name, getType(node));
         });
 
         return result;

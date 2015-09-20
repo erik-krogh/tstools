@@ -1,7 +1,5 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import dk.webbies.tscreate.analysis.declarations.DeclarationBlock;
-
 /**
  * Created by Erik Krogh Kristensen on 06-09-2015.
  */

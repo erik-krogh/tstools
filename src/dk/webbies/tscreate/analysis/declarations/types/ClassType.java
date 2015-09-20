@@ -1,17 +1,19 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import java.util.Map;
+
 /**
  * Created by Erik Krogh Kristensen on 17-09-2015.
  */
 public class ClassType implements DeclarationType{
     public DeclarationType constructorType;
-    public DeclarationType propertiesType;
+    public Map<String, DeclarationType> propertiesType;
     private String name;
     public DeclarationType superClass;
 
-    public ClassType(DeclarationType constructorType, DeclarationType propertiesType, String name) {
+    public ClassType(DeclarationType constructorType, Map<String, DeclarationType> properties, String name) {
         this.constructorType = constructorType;
-        this.propertiesType = propertiesType;
+        this.propertiesType = properties;
         this.name = name;
     }
 
@@ -24,12 +26,12 @@ public class ClassType implements DeclarationType{
         return (FunctionType) constructorType;
     }
 
-    public ObjectType getPropertiesType() {
-        return (ObjectType) propertiesType;
+    public Map<String, DeclarationType> getProperties() {
+        return propertiesType;
     }
 
-    public DeclarationType getSuperClass() {
-        return superClass;
+    public ClassType getSuperClass() {
+        return (ClassType) superClass;
     }
 
     public String getName() {

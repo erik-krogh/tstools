@@ -1,19 +1,19 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import dk.webbies.tscreate.analysis.declarations.DeclarationBlock;
+import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 06-09-2015.
  */
 public class UnnamedObjectType implements ObjectType {
-    private DeclarationBlock block;
+    private Map<String, DeclarationType> declarations;
 
-    public UnnamedObjectType(DeclarationBlock declarationBlock) {
-        this.block = declarationBlock;
+    public UnnamedObjectType(Map<String, DeclarationType> declarations) {
+        this.declarations = declarations;
     }
 
-    public DeclarationBlock getBlock() {
-        return block;
+    public Map<String, DeclarationType> getDeclarations() {
+        return declarations;
     }
 
     @Override

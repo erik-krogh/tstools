@@ -15,7 +15,7 @@ public class LibraryClass {
     public LibraryClass superClass;
     private String name = null;
 
-    public final UnionNode functionNode = new EmptyUnionNode();
+    public final UnionNode constructorNode = new EmptyUnionNode();
 
     public final UnionNode thisNode = new EmptyUnionNode();
 

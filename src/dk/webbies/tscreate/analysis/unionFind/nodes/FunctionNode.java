@@ -23,7 +23,7 @@ public class FunctionNode extends UnionNodeWithFields {
     public boolean hasAnalyzed = false; // For when analysing the functions separately.
 
     private static int instanceCounter = 0;
-    private final int counter;
+    public final int counter;
 
     public FunctionNode(List<String> argumentNames) {
         this.counter = instanceCounter++;

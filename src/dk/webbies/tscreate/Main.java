@@ -1,9 +1,9 @@
 package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
-import dk.webbies.tscreate.analysis.declarations.DeclarationBlock;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
-import dk.webbies.tscreate.analysis.declarations.DeclarationToStringVisitor;
+import dk.webbies.tscreate.analysis.declarations.DeclarationToString;
+import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 01-09-2015.
@@ -42,11 +43,11 @@ public class Main {
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject);
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(librarySnap).extract();
 
-        DeclarationBlock declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject).buildDeclaration();
+        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject).buildDeclaration();
 
         BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(path + ".gen.d.ts")));
         TeeOutputStream out = new TeeOutputStream(fileOut, System.out);
-        new DeclarationToStringVisitor(out).visit(declaration);
+        new DeclarationToString(out).print(declaration);
         fileOut.close();
     }
 

@@ -22,20 +22,15 @@ public class DeclarationBuilder {
         this.typeFactory = typeAnalysis.getTypeFactory();
     }
 
-    public DeclarationBlock buildDeclaration() {
-        return resolveTypes(buildDeclaration(this.librarySnap));
+    public Map<String, DeclarationType> buildDeclaration() {
+        Map<String, DeclarationType> declarationBlock = buildDeclaration(this.librarySnap);
+        resolveTypes(declarationBlock);
+        return declarationBlock;
     }
 
-    private static Map<Snap.Obj, DeclarationBlock> cache = new HashMap<>();
 
-    private DeclarationBlock buildDeclaration(Snap.Obj obj) {
-        if (cache.containsKey(obj)) {
-            return cache.get(obj);
-        }
-        ArrayList<Declaration> declarations = new ArrayList<>();
-        DeclarationBlock result = new DeclarationBlock(declarations);
-
-        cache.put(obj, result);
+    private Map<String, DeclarationType> buildDeclaration(Snap.Obj obj) {
+        Map<String, DeclarationType> declarations = new HashMap<>();
 
         for (Snap.Property property : obj.properties) {
             if (obj.function != null) {
@@ -48,50 +43,38 @@ public class DeclarationBuilder {
                 continue;
             }
             if (value instanceof Snap.BooleanConstant) {
-                declarations.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.BOOLEAN));
+                declarations.put(property.name, PrimitiveDeclarationType.BOOLEAN);
             } else if (value instanceof Snap.NumberConstant) {
-                declarations.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.NUMBER));
+                declarations.put(property.name, PrimitiveDeclarationType.NUMBER);
             } else if (value instanceof Snap.StringConstant) {
-                declarations.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.STRING));
+                declarations.put(property.name, PrimitiveDeclarationType.STRING);
             } else if (value instanceof Snap.UndefinedConstant) {
-                declarations.add(new VariableDeclaration(property.name, PrimitiveDeclarationType.UNDEFINED));
+                declarations.put(property.name, PrimitiveDeclarationType.UNDEFINED);
             } else {
-                declarations.add(new VariableDeclaration(property.name, typeFactory.getType(value)));
+                declarations.put(property.name, typeFactory.getType(value));
             }
         }
 
-
-        return result;
+        return declarations;
     }
 
-    private DeclarationBlock resolveTypes(DeclarationBlock declarationBlock) {
-        declarationBlock.accept(new ResolveDeclarationBlockVisitor());
-        return declarationBlock;
+    private static void resolveTypes(Map<String, DeclarationType> types) {
+        resolveTypes(types, new HashSet<>());
     }
 
-    private static class ResolveDeclarationBlockVisitor implements DeclarationVisitor<Void> {
-        private Set<DeclarationType> seen = new HashSet<>();
-
-        @Override
-        public Void visit(DeclarationBlock block) {
-            block.getDeclarations().forEach(dec -> dec.accept(this));
-            return null;
-        }
-
-        @Override
-        public Void visit(VariableDeclaration declaration) {
-            if (declaration.getType() instanceof UnresolvedDeclarationType) {
-                declaration.setType(((UnresolvedDeclarationType) declaration.getType()).getResolvedType());
+    private static void resolveTypes(Map<String, DeclarationType> types, Set<DeclarationType> seen) {
+        for (Map.Entry<String, DeclarationType> entry : new HashSet<>(types.entrySet())) {
+            if (entry.getValue() instanceof UnresolvedDeclarationType) {
+                types.put(entry.getKey(), ((UnresolvedDeclarationType) entry.getValue()).getResolvedType());
             }
-            declaration.getType().accept(new ResolverDeclarationTypeVisitor(seen));
-            return null;
+            entry.getValue().accept(new ResolveDeclarationTypeVisitor(seen));
         }
     }
 
-    private static class ResolverDeclarationTypeVisitor implements DeclarationTypeVisitor<Void> {
+    private static class ResolveDeclarationTypeVisitor implements DeclarationTypeVisitor<Void> {
         private Set<DeclarationType> seen;
 
-        public ResolverDeclarationTypeVisitor(Set<DeclarationType> seen) {
+        public ResolveDeclarationTypeVisitor(Set<DeclarationType> seen) {
             this.seen = seen;
         }
 
@@ -132,15 +115,24 @@ public class DeclarationBuilder {
             }
             seen.add(objectType);
 
-            objectType.getBlock().accept(new ResolveDeclarationBlockVisitor());
+            resolveTypes(objectType.getDeclarations(), seen);
             return null;
         }
 
         @Override
         public Void visit(InterfaceType interfaceType) {
-            // Already resolved.
-            interfaceType.getFunction().accept(this);
-            interfaceType.getObject().accept(this);
+            if (interfaceType.function != null) {
+                if (interfaceType.function instanceof UnresolvedDeclarationType) {
+                    interfaceType.function = ((UnresolvedDeclarationType) interfaceType.function).getResolvedType();
+                }
+                interfaceType.getFunction().accept(this);
+            }
+            if (interfaceType.object != null) {
+                if (interfaceType.object instanceof UnresolvedDeclarationType) {
+                    interfaceType.object = ((UnresolvedDeclarationType) interfaceType.object).getResolvedType();
+                }
+                interfaceType.getObject().accept(this);
+            }
             return null;
         }
 
@@ -180,10 +172,12 @@ public class DeclarationBuilder {
             }
             classType.constructorType.accept(this);
 
-            if (classType.propertiesType instanceof UnresolvedDeclarationType) {
-                classType.propertiesType = ((UnresolvedDeclarationType) classType.propertiesType).getResolvedType();
-            }
-            classType.propertiesType.accept(this);
+            new HashMap<>(classType.getProperties()).forEach((name, type) -> {
+                if (type instanceof UnresolvedDeclarationType) {
+                    classType.getProperties().put(name, ((UnresolvedDeclarationType) type).getResolvedType());
+                }
+                type.accept(this);
+            });
 
             if (classType.superClass != null) {
                 if (classType.superClass instanceof UnresolvedDeclarationType) {
@@ -196,8 +190,12 @@ public class DeclarationBuilder {
         }
 
         @Override
-        public Void visit(UnresolvedDeclarationType unresolved) {
-            throw new RuntimeException();
+        public Void visit(ClassInstanceType instanceType) {
+            if (instanceType.clazz instanceof UnresolvedDeclarationType) {
+                instanceType.clazz = ((UnresolvedDeclarationType) instanceType.clazz).getResolvedType();
+            }
+            instanceType.clazz.accept(this);
+            return null;
         }
     }
 }
