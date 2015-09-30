@@ -19,10 +19,9 @@ package dk.webbies.tscreate.analysis.unionFind;
  * an undirected graph.
  */
 
-import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
 
-import java.util.*; // For Map, HashMap
+import java.util.*;
 
 
 /**
@@ -39,7 +38,7 @@ public class UnionFindSolver {
     public void finish() {
         while (doneCallbacks.size() > 0) {
             int count = iteration++;
-            System.out.println(count + " (" + doneCallbacks.size() + ")");
+//            System.out.println(count + " (" + doneCallbacks.size() + ")");
             for (Runnable callback : new ArrayList<>(doneCallbacks)) {
                 doneCallbacks.remove(callback);
                 callback.run();
@@ -108,8 +107,14 @@ public class UnionFindSolver {
         elems.get(recFind(node)).unionClass.addChangeCallback(callback);
     }
 
-    void addDoneCallback(Runnable callback) {
+    public void addDoneCallback(Runnable callback) {
         this.doneCallbacks.add(callback);
+    }
+
+    public void addDoneCallbacks(Collection<Runnable> callbacks) {
+        for (Runnable callback : callbacks) {
+            this.doneCallbacks.add(callback);
+        }
     }
 
     /**
@@ -141,7 +146,7 @@ public class UnionFindSolver {
     private UnionNode recFind(UnionNode elem) {
         /* Get the info on this object. */
         Link<UnionNode> info = elems.get(elem);
-        if (info == null) { // TODO: This happens with the TypeScript inheritance example.
+        if (info == null) { // TODO: This happens with the TypeScript inheritance example. This if null-check should not be there.
             this.add(elem);
             info = elems.get(elem);
         }
@@ -180,6 +185,11 @@ public class UnionFindSolver {
         }
     }
 
+    public void union(UnionNode one, UnionNode two, UnionNode... rest) {
+        union(one, two);
+        union(two, Arrays.asList(rest));
+    }
+
     /**
      * Given two elements, unions together the sets containing those
      * elements.  If either element is not contained in the set,
@@ -206,14 +216,29 @@ public class UnionFindSolver {
         Link<UnionNode> oneLink = elems.get(find(one));
         Link<UnionNode> twoLink = elems.get(find(two));
 
-        /* If these are the same object, we're done. */
-        if (oneLink == twoLink) return one;
+/*
+        List<Integer> oneFunctions = oneLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(func -> func.closure != null && func.closure.function.type.equals("user")).map(func -> func.closure.function.id).map(Integer::parseInt).distinct().collect(Collectors.toList());
+        List<Integer> twoFunctions = twoLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(func -> func.closure != null && func.closure.function.type.equals("user")).map(func -> func.closure.function.id).map(Integer::parseInt).distinct().collect(Collectors.toList());
 
-        boolean inFirst = oneLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(node -> node.counter == 6 || node.counter == 7 || node.counter == 8).count() > 0;
-        boolean inSecond = twoLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(node -> node.counter == 6 || node.counter == 7 || node.counter == 8).count() > 0;
-        if (inFirst && inSecond) {
+        List<Integer> both = new ArrayList<>();
+        both.addAll(oneFunctions);
+        both.addAll(twoFunctions);
+        both = both.stream().distinct().collect(Collectors.toList());
+
+        if (both.size() > oneFunctions.size() && both.size() > twoFunctions.size()) {
             System.out.println();
         }
+
+        List<UnionNode> oneObjects = oneLink.unionClass.getNodes().stream().filter(node -> node instanceof ObjectUnionNode && ((ObjectUnionNode) node).counter == 12).collect(Collectors.toList());
+        List<UnionNode> twoObjects = twoLink.unionClass.getNodes().stream().filter(node -> node instanceof ObjectUnionNode && ((ObjectUnionNode) node).counter == 12).collect(Collectors.toList());
+
+        if (!oneObjects.isEmpty() || !twoObjects.isEmpty()) {
+            System.out.println();
+        }
+*/
+
+        /* If these are the same object, we're done. */
+        if (oneLink == twoLink) return one;
 
         UnionNode oneParentBefore = oneLink.parent;
 

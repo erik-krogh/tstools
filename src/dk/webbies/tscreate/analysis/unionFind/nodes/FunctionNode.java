@@ -39,6 +39,18 @@ public class FunctionNode extends UnionNodeWithFields {
         addField("function-this", thisNode);
     }
 
+    public FunctionNode(int size) {
+        this(createArgumentNames(size));
+    }
+
+    private static List<String> createArgumentNames(int size) {
+        List<String> argNames = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            argNames.add("arg" + i);
+        }
+        return argNames;
+    }
+
     public List<String> getArgumentNames() {
         return argumentNames;
     }

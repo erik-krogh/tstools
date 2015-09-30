@@ -10,39 +10,42 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
+// TODO: Make it so every UnionNode has a pointer to a UnionClass, thus removing the need for HashMaps.
 public final class UnionClass {
-    UnionFindSolver solver;
+    public UnionFindSolver solver;
     List<UnionNode> nodes = new ArrayList<>();
     Map<String, UnionNode> fields = new HashMap<>();
-    List<Runnable> callbacks = new ArrayList<>();
+    public final List<Runnable> callbacks = new ArrayList<>();
 
     private int hasRunAtIteration = -1;
 
-    UnionClass(UnionFindSolver solver, UnionNode node) {
+    public UnionClass(UnionFindSolver solver, UnionNode... nodes) {
         this.solver = solver;
-        if (!(node instanceof EmptyUnionNode || node instanceof IsIndexedUnionNode || node instanceof IndexerExpUnionNode /*TODO: Do not ignore. */)) {
-            this.nodes.add(node);
-        }
-        if (node instanceof UnionNodeWithFields) {
-            UnionNodeWithFields fieldNode = (UnionNodeWithFields) node;
-            fieldNode.unionClass = this;
-            this.takeIn(fieldNode);
+        for (UnionNode node : nodes) {
+            if (!(node instanceof EmptyUnionNode || node instanceof IsIndexedUnionNode || node instanceof IndexerExpUnionNode /*TODO: Do not ignore. */)) {
+                this.nodes.add(node);
+            }
+            if (node instanceof UnionNodeWithFields) {
+                UnionNodeWithFields fieldNode = (UnionNodeWithFields) node;
+                fieldNode.unionClass = this;
+                this.takeIn(fieldNode);
+            }
         }
     }
 
-    void mergeWith(UnionClass other) {
+    public void mergeWith(UnionClass other) {
         merge(other.fields);
         this.nodes.addAll(other.nodes);
         if (other.nodes.size() > 0 && this.nodes.size() > 0) {
             int currentIteration = solver.iteration;
             // TODO: Test this somehow.
-            if (this.hasRunAtIteration < currentIteration) {
+            if (this.hasRunAtIteration < currentIteration || true) {
                 for (Runnable callback : callbacks) {
                     solver.addDoneCallback(callback);
                 }
                 this.hasRunAtIteration = currentIteration;
             }
-            if (other.hasRunAtIteration < currentIteration) {
+            if (other.hasRunAtIteration < currentIteration || true) {
                 for (Runnable callback : other.callbacks) {
                     solver.addDoneCallback(callback);
                 }

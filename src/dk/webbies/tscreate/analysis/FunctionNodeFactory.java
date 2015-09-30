@@ -1,7 +1,7 @@
 package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Iterables;
-import dk.brics.tajs.envspec.typescript.types.*;
+import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -16,10 +16,12 @@ public class FunctionNodeFactory {
     private Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
     private PrimitiveUnionNode.Factory primitiveFactory;
     private UnionFindSolver solver;
+    private Map<Type, String> typeNames;
 
-    public FunctionNodeFactory(PrimitiveUnionNode.Factory primitiveFactory, UnionFindSolver solver) {
+    public FunctionNodeFactory(PrimitiveUnionNode.Factory primitiveFactory, UnionFindSolver solver, Map<Type, String> typeNames) {
         this.primitiveFactory = primitiveFactory;
         this.solver = solver;
+        this.typeNames = typeNames;
     }
 
     public FunctionNode fromSignature(Signature signature, Snap.Obj closure, List<UnionNode> args) {
@@ -29,7 +31,7 @@ public class FunctionNodeFactory {
         if (signatureCache.containsKey(signature)) {
             return signatureCache.get(signature);
         }
-        List<String> argumentNames = signature.getParameters().stream().map(Parameter::getName).collect(Collectors.toList());
+        List<String> argumentNames = signature.getParameters().stream().map(Signature.Parameter::getName).collect(Collectors.toList());
         for (int i = argumentNames.size(); i < args.size(); i++) {
             argumentNames.add("arg" + i);
         }
@@ -87,7 +89,11 @@ public class FunctionNodeFactory {
 
         @Override
         public List<UnionNode> visit(GenericType t) {
-            return t.toInterface().accept(this);
+            InterfaceType interfaceType = t.toInterface();
+            if (typeNames.containsKey(t)) {
+                typeNames.put(interfaceType, typeNames.get(t));
+            }
+            return interfaceType.accept(this);
         }
 
         Map<InterfaceType, List<UnionNode>> cache = new HashMap<>();
@@ -100,8 +106,8 @@ public class FunctionNodeFactory {
             cache.put(t, result);
 
             ObjectUnionNode obj = new ObjectUnionNode();
-            if (t.getName() != null) {
-                obj.setTypeName(t.getName());
+            if (typeNames.containsKey(t)) {
+                obj.setTypeName(typeNames.get(t));
             }
             result.add(obj);
 
@@ -159,8 +165,7 @@ public class FunctionNodeFactory {
 
         @Override
         public List<UnionNode> visit(UnionType t) {
-//            throw new UnsupportedOperationException(); // TODO:
-            return Collections.EMPTY_LIST;
+            return t.getElements().stream().map(type -> type.accept(this)).reduce(new ArrayList<>(), (acc, elem) -> {acc.addAll(elem); return acc;});
         }
 
         @Override

@@ -21,12 +21,14 @@ public class TypeFactory {
     private final Snap.Obj globalObject;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Map<Snap.Value, Collection<UnionNode>> heapToUnionNodeMap;
+    private Map<Snap.Obj, FunctionNode> functionNodes;
 
-    public TypeFactory(Map<UnionNode, UnionClass> classes, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Map<Snap.Value, Collection<UnionNode>> heapToUnionNodeMap) {
+    public TypeFactory(Map<UnionNode, UnionClass> classes, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Map<Snap.Value, Collection<UnionNode>> heapToUnionNodeMap, Map<Snap.Obj, FunctionNode> functionNodes) {
         this.classes = classes;
         this.globalObject = globalObject;
         this.libraryClasses = libraryClasses;
         this.heapToUnionNodeMap = heapToUnionNodeMap;
+        this.functionNodes = functionNodes;
     }
 
     /**
@@ -36,8 +38,11 @@ public class TypeFactory {
      * @return the type.
      */
     public DeclarationType getType(Snap.Value value) {
+        if (value instanceof Snap.Obj && functionNodes.containsKey(value)) {
+            return getType(functionNodes.get(value));
+        }
         Collection<UnionNode> classRepresentatives = heapToUnionNodeMap.get(value);
-        if (classRepresentatives.size() == 0) {
+        if (classRepresentatives == null || classRepresentatives.size() == 0) {
             throw new RuntimeException();
         }
         if (classRepresentatives.size() == 1) {
@@ -45,7 +50,7 @@ public class TypeFactory {
             return getType(classes.get(unionNode));
         }
         //noinspection Convert2MethodRef
-        List<UnionNode> nodes = classRepresentatives.stream().map(this::getUnionClassNodes).map(list -> new ArrayList<>(list)).reduce((acc, elem) -> {
+        List<UnionNode> nodes = classRepresentatives.stream().map(this::getUnionClassNodes).distinct().map(list -> new ArrayList<>(list)).reduce((acc, elem) -> {
             acc.addAll(elem);
             return acc;
         }).get();
@@ -55,8 +60,6 @@ public class TypeFactory {
     private List<UnionNode> getUnionClassNodes(UnionNode unionNode) {
         if (classes.containsKey(unionNode)) {
             return classes.get(unionNode).getNodes();
-        } else if (unionNode instanceof FunctionNode) {
-            return Arrays.asList(unionNode);
         } else {
             throw new RuntimeException();
         }
@@ -117,13 +120,13 @@ public class TypeFactory {
                 .map(heap -> heap.value)
                 .filter(obj -> obj instanceof Snap.Obj)
                 .map(obj -> (Snap.Obj) obj)
-                .filter(obj -> obj.function != null)
+                .filter(obj -> obj.function != null && obj.getProperty("prototype") != null)
                 .map(obj -> obj.getProperty("prototype").value)
                 .distinct()
                 .map(this.libraryClasses::get)
                 .collect(Collectors.toList());
 
-        if (classDeclarations.size() == 1){
+        if (classDeclarations.size() == 1) {
             classConstructorType = createClassType(classDeclarations.get(0));
         }
 
@@ -141,13 +144,29 @@ public class TypeFactory {
             throw new RuntimeException("Does not happen");
         }
         if (resultingTypes.size() == 1) {
-            return resultingTypes.get(0);
+            DeclarationType result = resultingTypes.get(0);
+            if (result instanceof UnnamedObjectType) {
+                InterfaceType interfaceType = new InterfaceType("interfaceObj" + System.identityHashCode(nodes));
+                interfaceType.object = result;
+                return interfaceType;
+            }
+            return result;
         }
-        InterfaceType interfaceType = new InterfaceType("interface" + System.identityHashCode(nodes));
-        interfaceType.object = objectInstanceType;
+
+        if (objectInstanceType != null && objectInstanceType == PrimitiveDeclarationType.ANY) {
+            if (functionType != null) {
+                return functionType;
+            }
+            if (primitiveType != null) {
+                return primitiveType;
+            }
+            return PrimitiveDeclarationType.ANY;
+        }
         // TODO: Remove the stuff from object that doesn't make sense (look at prototype).
         if (primitiveType != null) {
-
+            if (functionType == null) {
+                return primitiveType;
+            }
             return new UnionDeclarationType(primitiveType, functionType);
         } else {
             return functionType;
@@ -172,8 +191,10 @@ public class TypeFactory {
                 .distinct()
                 .map(this.libraryClasses::get)
                 .filter(clazz -> clazz != null)
-                .filter(clazz -> !clazz.isPrimitiveClass())
-                .forEach(clazz -> result.add(new ClassInstanceType(createClassType(clazz))));
+                .filter(clazz -> !clazz.isNativeClass())
+                .map(this::createClassType)
+                .filter(classType -> classType != null)
+                .forEach(classType -> result.add(new ClassInstanceType(classType)));
 
         if (result.size() == 0) {
             return null;
@@ -205,26 +226,36 @@ public class TypeFactory {
     }
 
     private Map<LibraryClass, DeclarationType> libraryClassCache = new HashMap<>();
+
     private DeclarationType createClassType(LibraryClass libraryClass) {
         if (libraryClass == null) {
             return null;
         }
         char firstChar = libraryClass.getName().charAt(0);
-        if (!libraryClass.isUsedAsClass && firstChar == Character.toLowerCase(firstChar)) { // TODO: Nope.
+        if (firstChar == "_".charAt(0)) {
+            libraryClass.isUsedAsClass = true; // TODO:
+        }
+        if (!libraryClass.isUsedAsClass) { // TODO: Nope.
             return null;
         }
         if (libraryClassCache.containsKey(libraryClass)) {
             return libraryClassCache.get(libraryClass);
         }
+        UnresolvedDeclarationType unresolvedType = new UnresolvedDeclarationType();
+        libraryClassCache.put(libraryClass, unresolvedType);
         DeclarationType result;
 
-        Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
+        Snap.Property constructorProp = libraryClass.prototype.getProperty("constructor");
+        if (constructorProp == null) {
+            return null;
+        }
+        Snap.Obj constructor = (Snap.Obj) constructorProp.value;
         switch (constructor.function.type) {
             case "native":
                 if (constructor.function.id.length() > 0) {
                     // TODO; Nope not right, it is the constructor, not an instance of it.
-                    // result = new NamedObjectType(constructor.function.id);
-                    throw new UnsupportedOperationException();
+                    return null;
+//                    throw new UnsupportedOperationException();
                 } else if (true) { // <- prevents unreachable statement for the break.
                     throw new RuntimeException();
                 }
@@ -232,17 +263,17 @@ public class TypeFactory {
             case "user":
                 // TODO: Remember the static fields, also create some method for removing fields defined in the prototype.
 
-                System.out.println(); // TODO: The constructorNode might never have been seen by the unionFindSolver.
+                // TODO: The constructorNode might never have been seen by the unionFindSolver.
                 // Bypassing the cache.
                 List<FunctionNode> constructorNodes = classes.get(libraryClass.constructorNode).getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).collect(Collectors.toList());
-                FunctionType constructorType = createFunctionType(constructorNodes);
+                FunctionType constructorType = createFunctionType(constructorNodes); // TODO: Find where to many functionNodes gets unioned together.
 
-                Map<String, DeclarationType> objectProperties = new HashMap<>();
+                Map<String, DeclarationType> prototypeProperties = new HashMap<>();
                 // TODO: Test that it actually has the thisNode when it should.
                 if (classes.containsKey(libraryClass.thisNode)) {
                     // Bypassing the cache
                     List<UnionNode> nodes = classes.get(libraryClass.thisNode).getNodes();
-                    objectProperties.putAll(getObjectProperties(new CategorizedNodes(nodes).getNodes(ObjectUnionNode.class)));
+                    prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(nodes).getNodes(ObjectUnionNode.class)));
                 }
 
                 // I assume the prototype is correct, so i just overwrite whatever was before.
@@ -250,11 +281,18 @@ public class TypeFactory {
                     if (name.equals("constructor")) {
                         return;
                     }
-                    objectProperties.put(name, getType(value));
+                    prototypeProperties.put(name, getType(value));
                 });
 
+                Map<String, DeclarationType> staticFields = getObjectProperties(classes.get(libraryClass.constructorNode).getNodes().stream().filter(node -> node instanceof ObjectUnionNode).map(node -> (ObjectUnionNode) node).collect(Collectors.toSet()));
+                for (String name : Arrays.asList("prototype", "caller", "length", "name", "arguments")) {
+                    staticFields.remove(name);
+                }
 
-                ClassType classType = new ClassType(constructorType, objectProperties, libraryClass.getName());
+//                prototypeProperties.keySet().forEach(staticFields::remove); // TODO: Something clever here, because with prototype, everything just gets removed.
+
+
+                ClassType classType = new ClassType(constructorType, prototypeProperties, libraryClass.getName(), staticFields);
                 libraryClassCache.put(libraryClass, classType);
                 classType.setSuperClass(createClassType(libraryClass.superClass));
                 result = classType;
@@ -263,7 +301,7 @@ public class TypeFactory {
                 throw new UnsupportedOperationException();
         }
 
-        libraryClassCache.put(libraryClass, result);
+        unresolvedType.setResolvedType(result);
         return result;
     }
 
@@ -323,10 +361,24 @@ public class TypeFactory {
             }
         }
 
+        // TODO: There can than 1 closure. (example: "return foo || bar", where foo and bar are functions on the heap).
+        Optional<Snap.Obj> functionClosure = functions.stream().filter(func -> func.closure != null).map(func -> func.closure).findAny();
+        if (functionClosure.isPresent()) {
+            returnFunction.closure = functionClosure.get();
+        } else {
+            returnFunction.closure = null;
+        }
+
         return returnFunction;
     }
 
     public FunctionType createFunctionType(FunctionNode function, List<String> argumentNames) {
+        if (function.closure != null && function.closure.function.type.equals("user")) {
+            FunctionNode fromFunctionNodes = functionNodes.get(function.closure);
+            if (fromFunctionNodes != function) {
+                return createFunctionType(fromFunctionNodes, argumentNames);
+            }
+        }
         UnionClass returnNode = classes.get(function.returnNode);
         DeclarationType returnType;
         if (returnNode != null) {
@@ -335,7 +387,13 @@ public class TypeFactory {
             returnType = PrimitiveDeclarationType.VOID;
         }
 
-        List<DeclarationType> argumentTypes = function.arguments.stream().map(this::getType).collect(Collectors.toList());
+        List<DeclarationType> argumentTypes = function.arguments.stream().map((node) -> {
+            try {
+                return getType(node);
+            } catch (Exception e) {
+                return PrimitiveDeclarationType.ANY; // TODO: Nope.
+            }
+        }).collect(Collectors.toList());
         ArrayList<FunctionType.Argument> arguments = new ArrayList<>();
         for (int i = 0; i < argumentTypes.size(); i++) {
             DeclarationType argType = argumentTypes.get(i);

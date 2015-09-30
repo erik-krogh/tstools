@@ -21,12 +21,11 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private final Map<TypeAnalysis.ProgramPoint, UnionNode> nodes;
     private Snap.Obj globalObject;
     private Map<String, Snap.Value> globalValues;
-    private final Map<Snap.Obj, FunctionNode> functionNodes;
     private Map<String, Snap.Value> values;
     private final PrimitiveUnionNode.Factory primitivesBuilder;
     private HeapValueNode.Factory heapFactory;
 
-    public ResolveEnvironmentVisitor(Snap.Obj closure, FunctionExpression function, UnionFindSolver solver, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, Map<String, Snap.Value> values, Map<String, Snap.Value> globalValues, Map<Snap.Obj, FunctionNode> functionNodes, Snap.Obj globalObject, HeapValueNode.Factory heapFactory) {
+    public ResolveEnvironmentVisitor(Snap.Obj closure, FunctionExpression function, UnionFindSolver solver, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, Map<String, Snap.Value> values, Map<String, Snap.Value> globalValues, Snap.Obj globalObject, HeapValueNode.Factory heapFactory) {
         this.closure = closure;
         this.function = function;
         this.solver = solver;
@@ -34,7 +33,6 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
         this.globalObject = globalObject;
         this.heapFactory = heapFactory;
         this.globalValues = new HashMap<>(globalValues);
-        this.functionNodes = functionNodes;
         this.values = new HashMap<>(values);
         this.primitivesBuilder = new PrimitiveUnionNode.Factory(solver, globalObject);
         function.declarations.keySet().forEach(this.values::remove);
@@ -45,7 +43,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     @Override
     public Void visit(FunctionExpression function) {
         if (function != this.function) {
-            new ResolveEnvironmentVisitor(this.closure, function, this.solver, this.nodes, this.values, this.globalValues, this.functionNodes, globalObject, heapFactory).visit(function);
+            new ResolveEnvironmentVisitor(this.closure, function, this.solver, this.nodes, this.values, this.globalValues, globalObject, heapFactory).visit(function);
             return null;
         } else {
             return NodeTransverse.super.visit(function);
@@ -75,7 +73,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
                 }
                 solver.union(idNode, nodes);
             } else {
-                throw new RuntimeException("Unresolved global value " + name);
+                throw new RuntimeException("Unresolved global value " + name); // TODO: But stuff like "exports" and "module"...
             }
         }
 

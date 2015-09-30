@@ -2,7 +2,8 @@ package dk.webbies.tscreate.analysis.unionFind.nodes;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import dk.brics.tajs.envspec.typescript.types.Signature;
+import dk.au.cs.casa.typescript.types.Signature;
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.FunctionNodeFactory;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -43,11 +44,11 @@ public class HeapValueNode extends ObjectUnionNode {
         private Multimap<Snap.Obj, UnionNode> functionCache = ArrayListMultimap.create();
         private HashMap<Snap.Obj, LibraryClass> libraryClasses;
 
-        public Factory(Snap.Obj globalObject, UnionFindSolver solver, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
+        public Factory(Snap.Obj globalObject, UnionFindSolver solver, HashMap<Snap.Obj, LibraryClass> libraryClasses, Map<Type, String> typeNames) {
             this.libraryClasses = libraryClasses;
             this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, globalObject);
             this.solver = solver;
-            this.functionNodeFactory = new FunctionNodeFactory(primitivesFactory, solver);
+            this.functionNodeFactory = new FunctionNodeFactory(primitivesFactory, solver, typeNames);
         }
 
         public List<UnionNode> fromValue(Snap.Value value) {
@@ -62,12 +63,13 @@ public class HeapValueNode extends ObjectUnionNode {
 
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.prototype != null) {
-                if ((libraryClasses.get(obj.prototype) != null && libraryClasses.get(obj.prototype).isPrimitiveClass())) {
-                    // Skipping, because it is a primitive class. (Here just functions are left).
-                } else {
-                    result.add(new HasPrototypeUnionNode(obj.prototype));
-                    if (libraryClasses.get(obj.prototype) != null) {
-                        solver.union(libraryClasses.get(obj.prototype).thisNode, objectNode);
+                LibraryClass libraryClass = libraryClasses.get(obj.prototype);
+                result.add(new HasPrototypeUnionNode(obj.prototype));
+                if (libraryClass != null && !libraryClass.isNativeClass()) {
+                    solver.union(libraryClass.thisNode, objectNode);
+                    Snap.Property constructorProp = obj.prototype.getProperty("constructor");
+                    if (constructorProp != null) {
+                        solver.union(libraryClass.constructorNode, fromValue(constructorProp.value));
                     }
                 }
             }
@@ -94,7 +96,7 @@ public class HeapValueNode extends ObjectUnionNode {
                 if (obj.getProperty("prototype") != null) {
                     Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
                     if (libraryClasses.containsKey(prototype)) {
-                        solver.union(functionNode, libraryClasses.get(prototype).constructorNode);
+                         solver.union(functionNode, libraryClasses.get(prototype).constructorNode);
                     }
                 }
             } else {
@@ -120,7 +122,7 @@ public class HeapValueNode extends ObjectUnionNode {
                 return primitivesBuilder.undefined();
             }
             if (value == null) {
-                return new NonVoidNode();
+                return primitivesBuilder.undefined();
             }
             return null;
         }

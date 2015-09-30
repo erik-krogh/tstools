@@ -12,11 +12,13 @@ import java.util.Map;
 public class SwitchStatement extends Statement {
     private final Expression expression;
     private final List<Map.Entry<Expression, Statement>> cases;
+    private final BlockStatement defaultCase;
 
-    public SwitchStatement(SourceRange loc, Expression expression, List<Map.Entry<Expression, Statement>> cases) {
+    public SwitchStatement(SourceRange loc, Expression expression, List<Map.Entry<Expression, Statement>> cases, BlockStatement defaultCase) {
         super(loc);
         this.expression = expression;
         this.cases = cases;
+        this.defaultCase = defaultCase;
     }
 
     public Expression getExpression() {
@@ -25,6 +27,10 @@ public class SwitchStatement extends Statement {
 
     public List<Map.Entry<Expression, Statement>> getCases() {
         return cases;
+    }
+
+    public BlockStatement getDefaultCase() {
+        return defaultCase;
     }
 
     @Override

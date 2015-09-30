@@ -1,7 +1,7 @@
 package dk.webbies.tscreate.declarationReader;
 
-import dk.brics.tajs.envspec.typescript.SpecReader;
-import dk.brics.tajs.envspec.typescript.types.*;
+import dk.au.cs.casa.typescript.SpecReader;
+import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.jsnap.Snap;
 
@@ -12,12 +12,15 @@ import java.util.*;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static void markNatives(Snap.Obj global, Environment env) {
+    public static Map<Type, String> markNatives(Snap.Obj global, Environment env) {
         try {
             // TODO: Cache the JSON.
-            SpecReader spec = new SpecReader(Util.runNodeScript("lib/ts-type-reader/src/CLI.js --env " + env.cliArgument));
+            String specification = Util.runNodeScript("lib/ts-type-reader/src/CLI.js --env " + env.cliArgument);
+            SpecReader spec = new SpecReader(specification.split("\\n")[1]);
 
-            markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "");
+            Map<Type, String> typeNames = new HashMap<>();
+
+            markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
 
 
             while (global != null) {
@@ -25,26 +28,28 @@ public class DeclarationParser {
                 global = global.prototype;
             }
 
+            return typeNames;
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static void markNamedTypes(SpecReader.Node namedTypes, String prefix) {
+    private static void markNamedTypes(SpecReader.Node namedTypes, String prefix, Map<Type, String> typeNames) {
         for (Map.Entry<String, SpecReader.TypeNameTree> entry : namedTypes.getChildren().entrySet()) {
             String name = prefix + entry.getKey();
             SpecReader.TypeNameTree type = entry.getValue();
             if (type instanceof SpecReader.Leaf) {
                 SpecReader.Leaf leaf = (SpecReader.Leaf) type;
                 if (leaf.getType() instanceof InterfaceType) {
-                    ((InterfaceType) leaf.getType()).setName(name);
+                    typeNames.put(leaf.getType(), name);
                 } else if (leaf.getType() instanceof GenericType) {
-                    ((GenericType) leaf.getType()).setName(name);
+                    typeNames.put(leaf.getType(), name);
                 } else {
                     throw new RuntimeException("Dont handle marking " + leaf.getType().getClass().getName() + " yet!");
                 }
             } else {
-                markNamedTypes((SpecReader.Node) type, name + ".");
+                markNamedTypes((SpecReader.Node) type, name + ".", typeNames);
             }
         }
     }

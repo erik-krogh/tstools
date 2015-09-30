@@ -7,14 +7,16 @@ import java.util.Map;
  */
 public class ClassType implements DeclarationType{
     public DeclarationType constructorType;
-    public Map<String, DeclarationType> propertiesType;
+    public Map<String, DeclarationType> prototypeFields;
+    public Map<String, DeclarationType> staticFields;
     private String name;
     public DeclarationType superClass;
 
-    public ClassType(DeclarationType constructorType, Map<String, DeclarationType> properties, String name) {
+    public ClassType(DeclarationType constructorType, Map<String, DeclarationType> properties, String name, Map<String, DeclarationType> staticFields) {
         this.constructorType = constructorType;
-        this.propertiesType = properties;
+        this.prototypeFields = properties;
         this.name = name;
+        this.staticFields = staticFields;
     }
 
     public void setSuperClass(DeclarationType superClass) {
@@ -26,8 +28,12 @@ public class ClassType implements DeclarationType{
         return (FunctionType) constructorType;
     }
 
-    public Map<String, DeclarationType> getProperties() {
-        return propertiesType;
+    public Map<String, DeclarationType> getPrototypeFields() {
+        return prototypeFields;
+    }
+
+    public Map<String, DeclarationType> getStaticFields() {
+        return staticFields;
     }
 
     public ClassType getSuperClass() {

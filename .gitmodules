@@ -3,4 +3,4 @@
 	url = https://github.com/asgerf/tscheck.git
 [submodule "lib/ts-type-reader"]
 	path = lib/ts-type-reader
-	url = https://github.com/esbena/ts-type-reader.git
+	url = https://github.com/cs-au-dk/ts-spec-reader.git

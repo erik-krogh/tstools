@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations;
 
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.TypeFactory;
@@ -16,9 +17,9 @@ public class DeclarationBuilder {
     private final Snap.Obj librarySnap;
     private final TypeFactory typeFactory;
 
-    public DeclarationBuilder(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject) {
+    public DeclarationBuilder(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, Map<Type, String> typeNames) {
         this.librarySnap = librarySnap;
-        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject);
+        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, typeNames);
         this.typeFactory = typeAnalysis.getTypeFactory();
     }
 
@@ -172,9 +173,18 @@ public class DeclarationBuilder {
             }
             classType.constructorType.accept(this);
 
-            new HashMap<>(classType.getProperties()).forEach((name, type) -> {
+            new HashMap<>(classType.getPrototypeFields()).forEach((name, type) -> {
                 if (type instanceof UnresolvedDeclarationType) {
-                    classType.getProperties().put(name, ((UnresolvedDeclarationType) type).getResolvedType());
+                    type = ((UnresolvedDeclarationType) type).getResolvedType();
+                    classType.getPrototypeFields().put(name, type);
+                }
+                type.accept(this);
+            });
+
+            new HashMap<>(classType.getStaticFields()).forEach((name, type) -> {
+                if (type instanceof UnresolvedDeclarationType) {
+                    type = ((UnresolvedDeclarationType) type).getResolvedType();
+                    classType.getStaticFields().put(name, type);
                 }
                 type.accept(this);
             });

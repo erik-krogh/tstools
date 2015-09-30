@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.jsnap;
 
-import dk.brics.tajs.envspec.typescript.types.Signature;
+import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.*;
@@ -44,6 +44,22 @@ public class Snap {
 
         public Map<String, Value> getPropertyValueMap() {
             return getPropertyMap().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().value));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Obj obj = (Obj) o;
+
+            return key == obj.key;
+        }
+
+
+        @Override
+        public int hashCode() {
+            return key;
         }
     }
 

@@ -1,7 +1,5 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import com.google.javascript.jscomp.newtypes.Declaration;
-
 /**
  * Created by Erik Krogh Kristensen on 08-09-2015.
  */
@@ -34,11 +32,11 @@ public class InterfaceType implements DeclarationType {
         return (FunctionType) function;
     }
 
-    public ObjectType getObject() {
+    public UnnamedObjectType getObject() {
         if (function == null && object == null) {
             throw new NullPointerException("An interface must have either an object or function associated");
         }
-        return (ObjectType) object;
+        return (UnnamedObjectType) object; // TODO: Sometimes an namedObjectType.
     }
 
     @Override

@@ -1,7 +1,9 @@
 package dk.webbies.tscreate.analysis;
 
-import dk.brics.tajs.envspec.typescript.types.*;
+import dk.au.cs.casa.typescript.types.Signature;
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
+import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.nodes.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -27,11 +29,22 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private final Options options;
     private Snap.Obj globalObject;
+    private Map<Type, String> typeNames;
     private final PrimitiveUnionNode.Factory primitiveFactory;
     private HeapValueNode.Factory heapFactory;
     private FunctionNodeFactory functionNodeFactory;
 
-    public UnionConstraintVisitor(Snap.Obj function, UnionFindSolver solver, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, HeapValueNode.Factory heapFactory) {
+    public UnionConstraintVisitor(
+            Snap.Obj function,
+            UnionFindSolver solver,
+            Map<TypeAnalysis.ProgramPoint, UnionNode> nodes,
+            FunctionNode functionNode,
+            Map<Snap.Obj, FunctionNode> functionNodes,
+            HashMap<Snap.Obj, LibraryClass> libraryClasses,
+            Options options,
+            Snap.Obj globalObject,
+            HeapValueNode.Factory heapFactory,
+            Map<Type, String> typeNames) {
         this.closure = function;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -41,8 +54,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.globalObject = globalObject;
+        this.typeNames = typeNames;
         this.primitiveFactory = new PrimitiveUnionNode.Factory(solver, globalObject);
-        this.functionNodeFactory = new FunctionNodeFactory(primitiveFactory, this.solver);
+        this.functionNodeFactory = new FunctionNodeFactory(primitiveFactory, this.solver, typeNames);
     }
 
     UnionNode get(AstNode node) {
@@ -207,8 +221,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     @Override
     public UnionNode visit(Return aReturn) {
         UnionNode exp = aReturn.getExpression().accept(this);
-        solver.union(exp, functionNode.returnNode);
-        solver.union(exp, new NonVoidNode());
+        solver.union(exp, functionNode.returnNode, new NonVoidNode());
         return null;
     }
 
@@ -255,7 +268,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(get(function.getName()), functionNode);
             }
             solver.union(get(function), functionNode);
-            solver.union(functionNode, heapFactory.fromValue(this.closure));
+            solver.union(functionNode, heapFactory.fromValue(this.closure)); // TODO:
             return null;
         } else {
             FunctionNode result = new FunctionNode(function);
@@ -263,7 +276,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(get(function.getName()), result);
                 function.getName().accept(this);
             }
-            new UnionConstraintVisitor(this.closure, this.solver, this.nodes, result, this.functionNodes, libraryClasses, options, globalObject, heapFactory).visit(function.getBody());
+            new UnionConstraintVisitor(this.closure, this.solver, this.nodes, result, this.functionNodes, libraryClasses, options, globalObject, heapFactory, typeNames).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 solver.union(get(function.getArguments().get(i)), result.arguments.get(i));
                 solver.union(get(function.getArguments().get(i)), new NonVoidNode());
@@ -472,6 +485,13 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.function = function;
             this.args = args;
             this.returnNode = returnNode;
+
+            FunctionNode functionNode = new FunctionNode(args.size());
+            solver.union(function, functionNode);
+            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, pair.right, new NonVoidNode()));
+
+            solver.union(functionNode.returnNode, returnNode);
+            solver.union(functionNode.thisNode, thisNode);
         }
 
         @Override
@@ -507,7 +527,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                                 UnionConstraintVisitor.this.libraryClasses,
                                 UnionConstraintVisitor.this.options,
                                 UnionConstraintVisitor.this.globalObject,
-                                UnionConstraintVisitor.this.heapFactory).
+                                UnionConstraintVisitor.this.heapFactory, typeNames).
                                 visit(node.closure.function.astNode);
                     }
                 }

@@ -42,6 +42,16 @@ public class ClassHierarchyExtractor {
                 }
             }
         }
+
+        if (obj.prototype != null) {
+            for (Snap.Property property : obj.prototype.properties) {
+                if (property.value instanceof Snap.Obj) {
+                    missingEnvs.addAll(extractClasses(prefixPath + ".[prototype]." + property.name, (Snap.Obj) property.value, classes, seenObjects));
+                }
+            }
+        }
+
+
         if (obj.env != null) {
             missingEnvs.add(obj.env);
         }
@@ -72,6 +82,9 @@ public class ClassHierarchyExtractor {
             return classes.get(prototype);
         }
         LibraryClass libraryClass = new LibraryClass(path, prototype);
+        if (prototype.properties.size() > 1) {
+            libraryClass.isUsedAsClass = true;
+        }
         classes.put(prototype, libraryClass);
 
         libraryClass.superClass = protoTypeToClass(path + ".[proto]", classes, prototype.prototype);

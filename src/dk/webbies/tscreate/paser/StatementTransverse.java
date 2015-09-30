@@ -50,6 +50,7 @@ public interface StatementTransverse<T> extends StatementVisitor<T>  {
             entry.getKey().accept(getExpressionVisitor());
             entry.getValue().accept(this);
         }
+        switchStatement.getDefaultCase().getStatements().forEach(statement -> statement.accept(this));
         return null;
     }
 

@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.analysis.declarations;
 
-import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 
@@ -180,12 +179,18 @@ public class DeclarationToString {
                 finishing = false;
                 writeln("interface " + interfaceType.name + " {");
                 ident++;
-                // TODO: Just wrong.
                 if (interfaceType.getFunction() != null) {
+                    ident();
                     interfaceType.getFunction().accept(this);
+                    write(";\n");
                 }
                 if (interfaceType.getObject() != null) {
-                    interfaceType.getObject().accept(this);
+                    interfaceType.getObject().getDeclarations().forEach((name, type) -> {
+                        ident();
+                        write(name + ": ");
+                        type.accept(this);
+                        write(";\n");
+                    });
                 }
                 ident--;
                 writeln("}");
@@ -220,6 +225,7 @@ public class DeclarationToString {
         @Override
         public Void visit(ClassType classType) {
             if (finishing) {
+                finishing = false;
                 // First an constructor interface.
                 writeln("interface " + classType.getName() + "Constructor {");
                 ident++;
@@ -227,6 +233,14 @@ public class DeclarationToString {
                 write("new (");
                 printArguments(classType.getConstructorType().getArguments());
                 write(") : " + classType.getName() + "\n");
+
+                classType.getStaticFields().forEach((name, type) -> {
+                    ident();
+                    write(name + ": ");
+                    type.accept(this);
+                    write(";\n");
+                });
+
                 ident--;
                 writeln("}");
                 write("\n");
@@ -242,7 +256,7 @@ public class DeclarationToString {
 
 
                 ident++;
-                classType.getProperties().forEach((name, type) -> {
+                classType.getPrototypeFields().forEach((name, type) -> {
                     ident();
                     write(name + ": ");
                     type.accept(this);
@@ -251,6 +265,7 @@ public class DeclarationToString {
 
                 ident--;
                 writeln("}");
+                finishing = true;
             } else {
                 write(classType.getName() + "Constructor");
                 classesToPrint.add(classType);

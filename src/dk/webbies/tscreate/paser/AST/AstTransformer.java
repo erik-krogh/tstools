@@ -11,7 +11,7 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tscreate.Util.*;
+import static dk.webbies.tscreate.Util.cast;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
@@ -58,6 +58,8 @@ public class AstTransformer {
                 } else if (value.startsWith("/")) {
                     String regExp = value.substring(1, value.length() - 1);
                     return new NewExpression(loc, new Identifier(loc, "RegExp"), Arrays.asList(new StringLiteral(loc, regExp)));
+                } else if (value.substring(0, 1).matches("[0-9]")) {
+                    return new NumberLiteral(loc, 1); // TODO: Properly something like 1.0e-8.
                 } else {
                     throw new RuntimeException("Could not recognize literal: " + value);
                 }
@@ -153,8 +155,16 @@ public class AstTransformer {
             return new NewExpression(loc, operand, arguments);
         } else if (tree instanceof SwitchStatementTree) {
             SwitchStatementTree switchStatement = (SwitchStatementTree) tree;
-            List<Map.Entry<Expression, Statement>> cases = cast(CaseClauseTree.class, switchStatement.caseClauses).stream().map(AstTransformer::convertCaseClause).collect(Collectors.toList());
-            return new SwitchStatement(loc, (Expression) convert(switchStatement.expression), cases);
+            List<Map.Entry<Expression, Statement>> cases = switchStatement.caseClauses.stream().filter(clause -> clause instanceof CaseClauseTree).map(clause -> (CaseClauseTree) clause).map(AstTransformer::convertCaseClause).collect(Collectors.toList());
+
+            Optional<ParseTree> defaultClauseTreeOptional = switchStatement.caseClauses.stream().filter(clause -> clause instanceof DefaultClauseTree).findAny();
+            BlockStatement defaultClause = new BlockStatement(loc, Collections.EMPTY_LIST);
+            if (defaultClauseTreeOptional.isPresent()) {
+                DefaultClauseTree defaultClauseTree = (DefaultClauseTree) defaultClauseTreeOptional.get();
+                defaultClause = new BlockStatement(defaultClauseTree.location, cast(Statement.class, defaultClauseTree.statements.stream().map(AstTransformer::convert).collect(Collectors.toList())));
+            }
+
+            return new SwitchStatement(loc, (Expression) convert(switchStatement.expression), cases, defaultClause);
         } else if (tree instanceof ConditionalExpressionTree) {
             ConditionalExpressionTree cond = (ConditionalExpressionTree) tree;
             return new ConditionalExpression(loc, (Expression) convert(cond.condition), (Expression) convert(cond.left), (Expression) convert(cond.right));
@@ -225,6 +235,8 @@ public class AstTransformer {
         } else if (tree instanceof DoWhileStatementTree) {
             DoWhileStatementTree doWhile = (DoWhileStatementTree) tree;
             return new WhileStatement(loc, (Expression) convert(doWhile.condition), (Statement) convert(doWhile.body));
+        } else if (tree instanceof EmptyStatementTree) {
+            return new BlockStatement(loc, Collections.EMPTY_LIST);
         }
 
         throw new RuntimeException("Cannot yet handle that kind of expression: " + tree.getClass().getName());

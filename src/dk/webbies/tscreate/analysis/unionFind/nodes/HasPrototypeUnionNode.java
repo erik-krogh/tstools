@@ -8,7 +8,11 @@ import dk.webbies.tscreate.jsnap.Snap;
 public class HasPrototypeUnionNode implements UnionNode {
     private Snap.Obj prototype;
 
+    private static int instanceCounter = 0;
+    private final int counter;
+
     public HasPrototypeUnionNode(Snap.Obj prototype) {
+        this.counter = instanceCounter++;
         if (prototype == null) {
             throw new RuntimeException();
         }

@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
@@ -14,6 +15,7 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.AstNode;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -24,32 +26,39 @@ public class TypeAnalysis {
     private final TypeFactory typeFactory;
     private final Map<UnionNode, UnionClass> classes;
     private Options options;
+    private Map<Type, String> typeNames;
 
-    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject) {
+    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, Map<Type, String> typeNames) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.globalObject = globalObject;
+        this.typeNames = typeNames;
         Map<Snap.Obj, FunctionNode> functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
 
         this.classes = analyseFunctions(functionNodes);
 
-        this.typeFactory = new TypeFactory(classes, globalObject, libraryClasses, createHeapToUnionNodeMap());
+        this.typeFactory = new TypeFactory(classes, globalObject, libraryClasses, createHeapToUnionNodeMap(this.classes, functionNodes), functionNodes);
     }
 
     public TypeFactory getTypeFactory() {
         return typeFactory;
     }
 
-    private Map<Snap.Value, Collection<UnionNode>> createHeapToUnionNodeMap() {
+    private static Map<Snap.Value, Collection<UnionNode>> createHeapToUnionNodeMap(Map<UnionNode, UnionClass> classes, Map<Snap.Obj, FunctionNode> functionNodes) { // TODO: Get functionNodes away from here.
         Multimap<Snap.Value, UnionNode> result = HashMultimap.create();
 
-        Set<UnionNode> unionNodes = this.classes.keySet();
+        Set<UnionNode> unionNodes = classes.keySet();
         for (UnionNode unionNode : unionNodes) {
             if (unionNode instanceof HeapValueNode) {
                 HeapValueNode heapValue = (HeapValueNode) unionNode;
                 result.put(heapValue.value, heapValue);
             }
         }
+
+        functionNodes.keySet().forEach(key -> result.removeAll(key));
+
+        functionNodes.forEach(result::put);
+
 
         return result.asMap();
     }
@@ -67,30 +76,47 @@ public class TypeAnalysis {
     private Map<UnionNode, UnionClass> analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
         Set<Snap.Obj> functions = functionNodes.keySet();
 
-        if (options.separateFunctions) {
-            Map<UnionNode, UnionClass> result = new HashMap<>();
+        System.out.println("Analyzing " + functions.size() + " functions");
 
-            for (Snap.Obj function : functions) {
+        if (options.separateFunctions) {
+            // TODO: This thing?
+            Multimap<UnionNode, UnionClass> result = HashMultimap.create();
+
+            int counter = 1;
+            for (Snap.Obj functionClosure : functions) {
+//                System.out.println(counter++ + "/" + functions.size());
                 Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
                 UnionFindSolver solver = new UnionFindSolver();
 
-                // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
-                HashMap<Snap.Obj, FunctionNode> subFunctions = new HashMap<>();
-                subFunctions.put(function, functionNodes.get(function)); // But the one we are analysing, should still be the right one.
 
-                analyse(function, nodes, subFunctions, solver);
+                // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
+                FunctionNode functionNode = functionNodes.get(functionClosure);
+                HashMap<Snap.Obj, FunctionNode> subFunctions = new HashMap<>();
+                subFunctions.put(functionClosure, functionNode); // But the one we are analysing, should still be the right one.
+
+                analyse(functionClosure, nodes, subFunctions, solver, functionNode);
 
                 solver.finish();
 
-                result.putAll(solver.getUnionClasses());
+                // We only want the user functions that was put in above.
+                solver.getUnionClasses().forEach(result::put);
             }
 
-            return result;
+            return result.asMap().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, (entry) -> {
+                if (entry.getValue().size() > 1) {
+//                    System.out.println(entry.getValue().size());
+                }
+                return entry.getValue().stream().reduce((acc, elem) -> {
+                    acc.mergeWith(elem);
+                    return acc;
+                }).get();
+            }));
+
         } else {
             Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
             UnionFindSolver solver = new UnionFindSolver();
             for (Snap.Obj function : functions) {
-                analyse(function, nodes, functionNodes, solver);
+                analyse(function, nodes, functionNodes, solver, functionNodes.get(function));
             }
 
             solver.finish();
@@ -99,17 +125,19 @@ public class TypeAnalysis {
         }
     }
 
-    private void analyse(Snap.Obj closure, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver) {
+    private void analyse(Snap.Obj closure, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode) {
+        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames);
+
         Map<String, Snap.Value> values = new HashMap<>();
         for (Snap.Property property : closure.env.properties) {
             values.put(property.name, property.value);
+            // I gain some information (mapping instances to classes), just by looking at the environment, so i do that.
+//            heapFactory.fromValue(property.value); // To slow.
         }
 
-        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses);
-        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), functionNodes, this.globalObject, heapFactory).visit(closure.function.astNode);
+        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory).visit(closure.function.astNode);
 
-        FunctionNode functionNode = functionNodes.get(closure);
-        closure.function.astNode.accept(new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalObject, heapFactory));
+        new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalObject, heapFactory, typeNames).visit(closure.function.astNode);
     }
 
     public static class ProgramPoint {
@@ -151,11 +179,20 @@ public class TypeAnalysis {
         }
         if (obj.properties != null) {
             for (Snap.Property property : obj.properties) {
-                if (property != null && property.value != null && property.value instanceof Snap.Obj) {
+                if (property.value != null && property.value instanceof Snap.Obj) {
                     result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));
                 }
             }
         }
+
+        if (obj.prototype != null) {
+            for (Snap.Property property : obj.prototype.properties) {
+                if (property.value != null && property.value instanceof Snap.Obj) {
+                    result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));
+                }
+            }
+        }
+
         if (obj.env != null) {
             result.addAll(getAllFunctionInstances(obj.env, seen));
         }

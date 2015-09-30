@@ -1,6 +1,7 @@
 package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationToString;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
@@ -24,11 +25,11 @@ import java.util.Map;
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
         Options options = Options.separateFunctions();
         options.unionShortCircuitLogic = false;
-        runAnalysis("Test script", "tests/test.js", options, LanguageLevel.ES6);
+        runAnalysis("Test script", "tests/underscore.js", options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
         long end = System.currentTimeMillis();
         System.out.println("Ran in " + (end - start) + "ms");
     }
@@ -38,12 +39,12 @@ public class Main {
         FunctionExpression program = new JavaScriptParser(language.closureCompilerMode).parse(name, script).toTSCreateAST();
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(path), program);
 
-        DeclarationParser.markNatives(globalObject, language.declarationMode);
+        Map<Type, String> typeNames = DeclarationParser.markNatives(globalObject, language.declarationMode);
 
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject);
-        HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(librarySnap).extract();
+        HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
-        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject).buildDeclaration();
+        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject, typeNames).buildDeclaration();
 
         BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(path + ".gen.d.ts")));
         TeeOutputStream out = new TeeOutputStream(fileOut, System.out);

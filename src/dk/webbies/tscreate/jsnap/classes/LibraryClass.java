@@ -36,7 +36,7 @@ public class LibraryClass {
             for (int i = 1; i < pathsSeen.size(); i++) {
                 String path = pathsSeen.get(i);
                 String newName = getNameFromPath(path);
-                if (newName.equals("constructor") || newName.equals("[proto]")) {
+                if (newName.equals("constructor")) {
                     continue;
                 }
 
@@ -59,15 +59,14 @@ public class LibraryClass {
         return split[split.length - 1];
     }
 
-    public boolean isPrimitiveClass() {
-        switch (this.getName()) {
-            case "Number":
-            case "String":
-            case "Boolean":
-            case "Function":
-                return true;
-            default:
-                return false;
+    public boolean isNativeClass() {
+        Snap.Obj constructor = (Snap.Obj) this.prototype.getProperty("constructor").value;
+        if (constructor.function.type.equals("native")) {
+            return true;
+        } else {
+            return false;
         }
     }
+
 }
+
