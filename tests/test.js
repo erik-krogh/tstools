@@ -361,18 +361,165 @@ _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'],
     return "constant";
 };*/
 
-var test = (function () {
+/*var test = (function () {
     function MyClass() {
 
     }
 
-    MyClass.prototype.doStuff = function () {
-        var anInstance = new MyClass();
-        return 2;
+    MyClass.prototype.doStuff = function (a) {
+        return a - 2;
+    };
+
+    return function () {
+        return MyClass;
+    };
+})();*/
+
+/*
+var __extends = (this && this.__extends) || function (d, b) {
+        for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+        function __() {
+            this.constructor = d;
+        }
+
+        __.prototype = b.prototype;
+        d.prototype = new __();
+    };
+var Animal = (function () {
+    function Animal(name) {
+        this.name = name;
+    }
+
+    Animal.prototype.move = function (meters) {
+
+    };
+    Animal.prototype.getConstant = function () {
+        return 123;
+    };
+    return Animal;
+})();
+var Snake = (function (_super) {
+    __extends(Snake, _super);
+    function Snake(name) {
+
+    }
+
+    Snake.prototype.move = function () {
+
+    };
+    Snake.prototype.getConstant = function () {
+        return "string";
+    };
+    return Snake;
+})(Animal);
+var Horse = (function (_super) {
+    __extends(Horse, _super);
+    function Horse(name) {
+
+    }
+
+    Horse.prototype.move = function () {
+
+    };
+    return Horse;
+})(Animal);
+
+var snake = new Snake("Sammy the Python");
+function expectString() {
+    return snake.getConstant();
+}
+
+var horse = new Horse("Tommy the Palomino");
+function expectNumber() {
+    return horse.getConstant();
+}*/
+
+/*var test = (function () {
+    var MyUnderscore = function(obj) {
+        this._wrapped = obj;
+    };
+
+// Return a random integer between min and max (inclusive).
+    MyUnderscore.prototype.random = function(min, max) {
+        if (max == null) {
+            max = min;
+            min = 0;
+        }
+        return min + Math.floor(Math.random() * (max - min + 1));
+    };
+
+    return MyUnderscore;
+})();*/
+
+/*(function (root) {
+    function MyClass() {
+        this.something = "test";
+    }
+
+    root.MyClass = MyClass;
+
+    MyClass.prototype.doStuff = function (a) {
+        return a - 2;
+    };
+
+    MyClass.random = function(min, max) {
+        if (max == null) {
+            max = min;
+            min = 0;
+        }
+        return min + Math.floor(Math.random() * (max - min + 1));
     };
 
     return MyClass;
-})();
+})(window);*/
+
+/*var property = function(key) {
+    return function(obj) {
+        return obj == null ? void 0 : obj[key];
+    };
+};
+
+var pluck = function(obj, key) {
+    return map(obj, property(key));
+};
+
+var map = function () {
+    return [];
+};
+
+function _() {
+
+}
+_.prototype.stuff = function () {
+    return "strings";
+};
+
+
+// Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError.
+each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'], function(name) {
+    _['is' + name] = function(obj) {
+        return Object.prototype.toString.call(obj) === '[object ' + name + ']';
+    };
+});
+
+function each(arr, callback) {
+    for (var i = 0; i < arr.length; i++) {
+        callback(arr[i]);
+    }
+}*/
+
+/*var after = function(times, func) {
+    func.apply(this, arguments);
+    return "something";
+};*/
+
+var tmp = function () {
+    function inner() {
+        return 2;
+    }
+
+    return inner();
+};
 
 
 
