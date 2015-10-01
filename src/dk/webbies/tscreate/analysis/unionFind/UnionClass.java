@@ -1,7 +1,5 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
-import dk.webbies.tscreate.analysis.unionFind.nodes.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,10 +8,9 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
-// TODO: Make it so every UnionNode has a pointer to a UnionClass, thus removing the need for HashMaps.
 public final class UnionClass {
     public UnionFindSolver solver;
-    List<UnionNode> nodes = new ArrayList<>();
+    List<UnionNode> nodes = new ArrayList<>(); // TODO: Some nodes are added twice.
     Map<String, UnionNode> fields = new HashMap<>();
     public final List<Runnable> callbacks = new ArrayList<>();
 

@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.unionFind.nodes;
+package dk.webbies.tscreate.analysis.unionFind;
 
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.

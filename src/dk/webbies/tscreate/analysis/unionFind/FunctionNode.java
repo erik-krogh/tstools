@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.unionFind.nodes;
+package dk.webbies.tscreate.analysis.unionFind;
 
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;

@@ -132,4 +132,19 @@ public class Util {
                                          Stream<? extends B> b) {
         return zip(a, b, Pair::new);
     }
+
+    public static<E> List<E> reduceList(List<E> acc, List<E> elem) {
+        acc.addAll(elem);
+        return acc;
+    };
+
+    public static<E> ArrayList<E> reduceList(ArrayList<E> acc, ArrayList<E> elem) {
+        acc.addAll(elem);
+        return acc;
+    };
+
+    public static<E> Set<E> reduceSet(Set<E> acc, Set<E> elem) {
+        acc.addAll(elem);
+        return acc;
+    };
 }

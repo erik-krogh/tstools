@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import dk.webbies.tscreate.Util;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,7 +29,7 @@ public class UnionDeclarationType implements DeclarationType {
                 acc.add(dec);
             }
             return acc;
-        }, (acc1, acc2) -> {acc1.addAll(acc2);return acc1;});
+        }, Util::reduceList);
     }
 
     public UnionDeclarationType(Collection<? extends DeclarationType> types) {

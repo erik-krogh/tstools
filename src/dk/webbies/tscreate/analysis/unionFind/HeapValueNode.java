@@ -1,11 +1,10 @@
-package dk.webbies.tscreate.analysis.unionFind.nodes;
+package dk.webbies.tscreate.analysis.unionFind;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.FunctionNodeFactory;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
@@ -66,10 +65,10 @@ public class HeapValueNode extends ObjectUnionNode {
                 LibraryClass libraryClass = libraryClasses.get(obj.prototype);
                 result.add(new HasPrototypeUnionNode(obj.prototype));
                 if (libraryClass != null && !libraryClass.isNativeClass()) {
-                    solver.union(libraryClass.thisNode, objectNode);
+                    solver.union(libraryClass.getNewThisNode(), objectNode);
                     Snap.Property constructorProp = obj.prototype.getProperty("constructor");
                     if (constructorProp != null) {
-                        solver.union(libraryClass.constructorNode, fromValue(constructorProp.value));
+                        solver.union(libraryClass.getNewConstructorNode(), fromValue(constructorProp.value));
                     }
                 }
             }
@@ -96,7 +95,7 @@ public class HeapValueNode extends ObjectUnionNode {
                 if (obj.getProperty("prototype") != null) {
                     Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
                     if (libraryClasses.containsKey(prototype)) {
-                         solver.union(functionNode, libraryClasses.get(prototype).constructorNode);
+                         solver.union(functionNode, libraryClasses.get(prototype).getNewConstructorNode());
                     }
                 }
             } else {

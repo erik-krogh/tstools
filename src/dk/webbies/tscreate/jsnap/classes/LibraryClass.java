@@ -1,7 +1,7 @@
 package dk.webbies.tscreate.jsnap.classes;
 
-import dk.webbies.tscreate.analysis.unionFind.nodes.EmptyUnionNode;
-import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
+import dk.webbies.tscreate.analysis.unionFind.EmptyUnionNode;
+import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.ArrayList;
@@ -15,9 +15,8 @@ public class LibraryClass {
     public LibraryClass superClass;
     private String name = null;
 
-    public final UnionNode constructorNode = new EmptyUnionNode();
-
-    public final UnionNode thisNode = new EmptyUnionNode();
+    public final List<UnionNode> constructorNodes = new ArrayList<>();
+    public final List<UnionNode> thisNodes = new ArrayList<>();
 
     public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class.
 
@@ -26,6 +25,18 @@ public class LibraryClass {
     public LibraryClass(String pathSeen, Snap.Obj prototype) {
         this.pathsSeen.add(pathSeen);
         this.prototype = prototype;
+    }
+
+    public UnionNode getNewConstructorNode() {
+        EmptyUnionNode result = new EmptyUnionNode();
+        constructorNodes.add(result);
+        return result;
+    }
+
+    public UnionNode getNewThisNode() {
+        EmptyUnionNode result = new EmptyUnionNode();
+        thisNodes.add(result);
+        return result;
     }
 
     // TODO: Somehow make sure that this doesn't conflict.
@@ -60,12 +71,12 @@ public class LibraryClass {
     }
 
     public boolean isNativeClass() {
-        Snap.Obj constructor = (Snap.Obj) this.prototype.getProperty("constructor").value;
-        if (constructor.function.type.equals("native")) {
-            return true;
-        } else {
+        Snap.Property constructorProp = this.prototype.getProperty("constructor");
+        if (constructorProp == null) {
             return false;
         }
+        Snap.Obj constructor = (Snap.Obj) constructorProp.value;
+        return constructor.function.type.equals("native");
     }
 
 }

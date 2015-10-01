@@ -1,8 +1,8 @@
 package dk.webbies.tscreate.analysis;
 
+import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.analysis.declarations.types.*;
-import dk.webbies.tscreate.analysis.unionFind.UnionClass;
-import dk.webbies.tscreate.analysis.unionFind.nodes.*;
+import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
@@ -16,15 +16,13 @@ import static dk.webbies.tscreate.Util.cast;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class TypeFactory {
-    private final Map<UnionNode, UnionClass> classes;
     private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
     private final Snap.Obj globalObject;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Map<Snap.Value, Collection<UnionNode>> heapToUnionNodeMap;
     private Map<Snap.Obj, FunctionNode> functionNodes;
 
-    public TypeFactory(Map<UnionNode, UnionClass> classes, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Map<Snap.Value, Collection<UnionNode>> heapToUnionNodeMap, Map<Snap.Obj, FunctionNode> functionNodes) {
-        this.classes = classes;
+    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Map<Snap.Value, Collection<UnionNode>> heapToUnionNodeMap, Map<Snap.Obj, FunctionNode> functionNodes) {
         this.globalObject = globalObject;
         this.libraryClasses = libraryClasses;
         this.heapToUnionNodeMap = heapToUnionNodeMap;
@@ -47,26 +45,23 @@ public class TypeFactory {
         }
         if (classRepresentatives.size() == 1) {
             UnionNode unionNode = classRepresentatives.iterator().next();
-            return getType(classes.get(unionNode));
+            return getType(unionNode.getUnionClass());
         }
         //noinspection Convert2MethodRef
-        List<UnionNode> nodes = classRepresentatives.stream().map(this::getUnionClassNodes).distinct().map(list -> new ArrayList<>(list)).reduce((acc, elem) -> {
-            acc.addAll(elem);
-            return acc;
-        }).get();
+        List<UnionNode> nodes = classRepresentatives.stream().map(this::getUnionClassNodes).distinct().map(list -> new ArrayList<>(list)).reduce(Util::reduceList).get();
         return getTypeNoCache(nodes);
     }
 
     private List<UnionNode> getUnionClassNodes(UnionNode unionNode) {
-        if (classes.containsKey(unionNode)) {
-            return classes.get(unionNode).getNodes();
+        if (unionNode.getUnionClass() != null) {
+            return unionNode.getUnionClass().getNodes();
         } else {
             throw new RuntimeException();
         }
     }
 
     DeclarationType getType(UnionNode node) {
-        return getType(classes.get(node));
+        return getType(node.getUnionClass());
     }
 
     private DeclarationType getType(UnionClass unionClass) {
@@ -265,16 +260,15 @@ public class TypeFactory {
 
                 // TODO: The constructorNode might never have been seen by the unionFindSolver.
                 // Bypassing the cache.
-                List<FunctionNode> constructorNodes = classes.get(libraryClass.constructorNode).getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).collect(Collectors.toList());
+                List<UnionNode> unfilteredConstructorNodes = libraryClass.constructorNodes.stream().map(UnionNode::getUnionClass).distinct().map(UnionClass::getNodes).reduce(new ArrayList<>(), Util::reduceList);
+                List<FunctionNode> constructorNodes = unfilteredConstructorNodes.stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).collect(Collectors.toList());
                 FunctionType constructorType = createFunctionType(constructorNodes); // TODO: Find where to many functionNodes gets unioned together.
 
                 Map<String, DeclarationType> prototypeProperties = new HashMap<>();
-                // TODO: Test that it actually has the thisNode when it should.
-                if (classes.containsKey(libraryClass.thisNode)) {
-                    // Bypassing the cache
-                    List<UnionNode> nodes = classes.get(libraryClass.thisNode).getNodes();
-                    prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(nodes).getNodes(ObjectUnionNode.class)));
-                }
+
+                // Bypassing the cache
+                List<UnionNode> nodes = libraryClass.thisNodes.stream().map(UnionNode::getUnionClass).map(UnionClass::getNodes).reduce(new ArrayList<>(), Util::reduceList);
+                prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(nodes).getNodes(ObjectUnionNode.class)));
 
                 // I assume the prototype is correct, so i just overwrite whatever was before.
                 libraryClass.prototype.getPropertyValueMap().forEach((name, value) -> {
@@ -284,12 +278,12 @@ public class TypeFactory {
                     prototypeProperties.put(name, getType(value));
                 });
 
-                Map<String, DeclarationType> staticFields = getObjectProperties(classes.get(libraryClass.constructorNode).getNodes().stream().filter(node -> node instanceof ObjectUnionNode).map(node -> (ObjectUnionNode) node).collect(Collectors.toSet()));
+                Map<String, DeclarationType> staticFields = getObjectProperties(unfilteredConstructorNodes.stream().filter(node -> node instanceof ObjectUnionNode).map(node -> (ObjectUnionNode) node).distinct().collect(Collectors.toList()));
                 for (String name : Arrays.asList("prototype", "caller", "length", "name", "arguments")) {
                     staticFields.remove(name);
                 }
 
-//                prototypeProperties.keySet().forEach(staticFields::remove); // TODO: Something clever here, because with prototype, everything just gets removed.
+//                prototypeProperties.keySet().forEach(staticFields::remove); // TODO: Something clever here, because with in underscore.js, everything just gets removed.
 
 
                 ClassType classType = new ClassType(constructorType, prototypeProperties, libraryClass.getName(), staticFields);
@@ -305,7 +299,7 @@ public class TypeFactory {
         return result;
     }
 
-    private Map<String, DeclarationType> getObjectProperties(Set<ObjectUnionNode> objects) {
+    private Map<String, DeclarationType> getObjectProperties(Collection<ObjectUnionNode> objects) {
         // The objects come from the same UnionClass, so a given field is unioned together across all the objects. So we just pick representatives.
         Map<String, UnionNode> nodes = new HashMap<>();
         objects.forEach(obj -> obj.getObjectFields().forEach(nodes::put));
@@ -379,7 +373,7 @@ public class TypeFactory {
                 return createFunctionType(fromFunctionNodes, argumentNames);
             }
         }
-        UnionClass returnNode = classes.get(function.returnNode);
+        UnionClass returnNode = function.returnNode.getUnionClass();
         DeclarationType returnType;
         if (returnNode != null) {
             returnType = getType(returnNode);
@@ -420,8 +414,8 @@ public class TypeFactory {
         Set<PrimitiveDeclarationType> lhsTypes = new HashSet<>();
         Set<PrimitiveDeclarationType> rhsTypes = new HashSet<>();
         for (AddNode add : adds) {
-            lhsTypes.addAll(getPrimitives(classes.get(add.getLhs()).getNodes()));
-            rhsTypes.addAll(getPrimitives(classes.get(add.getRhs()).getNodes()));
+            lhsTypes.addAll(getPrimitives(add.getLhs().getUnionClass().getNodes()));
+            rhsTypes.addAll(getPrimitives(add.getRhs().getUnionClass().getNodes()));
         }
 
         Set<PrimitiveDeclarationType> both = Stream.concat(lhsTypes.stream(), rhsTypes.stream()).collect(Collectors.toSet());
@@ -483,10 +477,7 @@ public class TypeFactory {
                 }
             }
 
-            return cast(clazz, keys.stream().map(this.nodes::get).reduce(new HashSet<>(), (acc, elem) -> {
-                acc.addAll(elem);
-                return acc;
-            }));
+            return cast(clazz, keys.stream().map(this.nodes::get).reduce(new HashSet<>(), Util::reduceSet));
         }
     }
 }

@@ -1,14 +1,13 @@
-package dk.webbies.tscreate.analysis.unionFind.nodes;
+package dk.webbies.tscreate.analysis.unionFind;
 
 
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.jsnap.Snap;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-public class PrimitiveUnionNode implements UnionNode {
+public class PrimitiveUnionNode extends UnionNode {
     private PrimitiveDeclarationType type;
 
     private PrimitiveUnionNode(PrimitiveDeclarationType type) {

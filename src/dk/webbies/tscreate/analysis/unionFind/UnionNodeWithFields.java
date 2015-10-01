@@ -1,6 +1,4 @@
-package dk.webbies.tscreate.analysis.unionFind.nodes;
-
-import dk.webbies.tscreate.analysis.unionFind.UnionClass;
+package dk.webbies.tscreate.analysis.unionFind;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +6,7 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-public abstract class UnionNodeWithFields implements UnionNode {
+public abstract class UnionNodeWithFields extends UnionNode {
     public UnionClass unionClass;
 
     protected Map<String, UnionNode> fields = new HashMap<>();

@@ -1,9 +1,9 @@
-package dk.webbies.tscreate.analysis.unionFind.nodes;
+package dk.webbies.tscreate.analysis.unionFind;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
-public class AddNode implements UnionNode {
+public class AddNode extends UnionNode {
     private final UnionNode lhs;
     private final UnionNode rhs;
 

@@ -514,11 +514,7 @@ function each(arr, callback) {
 };*/
 
 var tmp = function () {
-    function inner() {
-        return 2;
-    }
-
-    return inner();
+    return 2;
 };
 
 

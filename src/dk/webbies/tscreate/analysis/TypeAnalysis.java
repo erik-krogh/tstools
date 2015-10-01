@@ -4,18 +4,16 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.nodes.FunctionNode;
-import dk.webbies.tscreate.analysis.unionFind.nodes.HeapValueNode;
-import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
+import dk.webbies.tscreate.analysis.unionFind.FunctionNode;
+import dk.webbies.tscreate.analysis.unionFind.HeapValueNode;
+import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.AstNode;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -24,7 +22,6 @@ public class TypeAnalysis {
     private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private final Snap.Obj globalObject;
     private final TypeFactory typeFactory;
-    private final Map<UnionNode, UnionClass> classes;
     private Options options;
     private Map<Type, String> typeNames;
 
@@ -35,27 +32,26 @@ public class TypeAnalysis {
         this.typeNames = typeNames;
         Map<Snap.Obj, FunctionNode> functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
 
-        this.classes = analyseFunctions(functionNodes);
+        Collection<UnionNode> nodes = analyseFunctions(functionNodes);
 
-        this.typeFactory = new TypeFactory(classes, globalObject, libraryClasses, createHeapToUnionNodeMap(this.classes, functionNodes), functionNodes);
+        this.typeFactory = new TypeFactory(globalObject, libraryClasses, createHeapToUnionNodeMap(nodes, functionNodes), functionNodes);
     }
 
     public TypeFactory getTypeFactory() {
         return typeFactory;
     }
 
-    private static Map<Snap.Value, Collection<UnionNode>> createHeapToUnionNodeMap(Map<UnionNode, UnionClass> classes, Map<Snap.Obj, FunctionNode> functionNodes) { // TODO: Get functionNodes away from here.
+    private static Map<Snap.Value, Collection<UnionNode>> createHeapToUnionNodeMap(Collection<UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes) { // TODO: Get functionNodes away from here.
         Multimap<Snap.Value, UnionNode> result = HashMultimap.create();
 
-        Set<UnionNode> unionNodes = classes.keySet();
-        for (UnionNode unionNode : unionNodes) {
+        for (UnionNode unionNode : nodes) {
             if (unionNode instanceof HeapValueNode) {
                 HeapValueNode heapValue = (HeapValueNode) unionNode;
                 result.put(heapValue.value, heapValue);
             }
         }
 
-        functionNodes.keySet().forEach(key -> result.removeAll(key));
+        functionNodes.keySet().forEach(result::removeAll);
 
         functionNodes.forEach(result::put);
 
@@ -73,18 +69,18 @@ public class TypeAnalysis {
         return functionNodes;
     }
 
-    private Map<UnionNode, UnionClass> analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
+    private Collection<UnionNode> analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
         Set<Snap.Obj> functions = functionNodes.keySet();
 
         System.out.println("Analyzing " + functions.size() + " functions");
 
         if (options.separateFunctions) {
             // TODO: This thing?
-            Multimap<UnionNode, UnionClass> result = HashMultimap.create();
+            List<UnionNode> result = new ArrayList<>();
 
             int counter = 1;
             for (Snap.Obj functionClosure : functions) {
-//                System.out.println(counter++ + "/" + functions.size());
+                System.out.println(counter++ + "/" + functions.size());
                 Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
                 UnionFindSolver solver = new UnionFindSolver();
 
@@ -99,19 +95,11 @@ public class TypeAnalysis {
                 solver.finish();
 
                 // We only want the user functions that was put in above.
-                solver.getUnionClasses().forEach(result::put);
+                result.addAll(solver.getUnionNodes());
             }
 
-            return result.asMap().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, (entry) -> {
-                if (entry.getValue().size() > 1) {
-//                    System.out.println(entry.getValue().size());
-                }
-                return entry.getValue().stream().reduce((acc, elem) -> {
-                    acc.mergeWith(elem);
-                    return acc;
-                }).get();
-            }));
-
+            // TODO; Make sure only library classes are affected here... That is indeed the case.
+            return result;
         } else {
             Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
             UnionFindSolver solver = new UnionFindSolver();
@@ -121,7 +109,7 @@ public class TypeAnalysis {
 
             solver.finish();
 
-            return solver.getUnionClasses();
+            return solver.getUnionNodes();
         }
     }
 

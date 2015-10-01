@@ -19,8 +19,6 @@ package dk.webbies.tscreate.analysis.unionFind;
  * an undirected graph.
  */
 
-import dk.webbies.tscreate.analysis.unionFind.nodes.UnionNode;
-
 import java.util.*;
 
 
@@ -35,40 +33,18 @@ public class UnionFindSolver {
     private Set<Runnable> doneCallbacks = new HashSet<>();
 
     int iteration = 1;
+    private final List<UnionNode> nodes = new ArrayList<>();
+
     public void finish() {
         while (doneCallbacks.size() > 0) {
             int count = iteration++;
-//            System.out.println(count + " (" + doneCallbacks.size() + ")");
+            System.out.println(count + " (" + doneCallbacks.size() + ")");
             for (Runnable callback : new ArrayList<>(doneCallbacks)) {
                 doneCallbacks.remove(callback);
                 callback.run();
             }
         }
     }
-
-    /**
-     * A utility struct holding an an object's parent and rank.
-     */
-    private static final class Link<T> {
-        public T parent;
-        public int rank = 0;
-        public UnionClass unionClass;
-
-        /**
-         * Creates a new Link object with the specified parent.
-         *
-         * @param parent The initial value of the parent field.
-         */
-        Link(T parent) {
-            this.parent = parent;
-        }
-    }
-
-    /**
-     * A map from objects in the UnionFindSolver structure to their associated
-     * rank and parent.
-     */
-    private final Map<UnionNode, Link<UnionNode>> elems = new HashMap<>();
 
     /**
      * Creates a new UnionFindSolver structure that is initially empty.
@@ -92,19 +68,21 @@ public class UnionFindSolver {
             throw new NullPointerException("UnionFind does not support null.");
 
         /* Check whether this entry exists; fail if it does. */
-        if (elems.containsKey(elem))
+        if (elem.parent != null) {
             return false;
+        }
+
+        this.nodes.add(elem);
 
         /* Otherwise add the element as its own parent. */
-        Link<UnionNode> link = new Link<>(elem);
-        elems.put(elem, link);
+        elem.parent = elem;
 
-        link.unionClass = new UnionClass(this, elem);
+        elem.unionClass = new UnionClass(this, elem);
         return true;
     }
 
     public void runWhenChanged(UnionNode node, Runnable callback) {
-        elems.get(recFind(node)).unionClass.addChangeCallback(callback);
+        recFind(node).unionClass.addChangeCallback(callback);
     }
 
     public void addDoneCallback(Runnable callback) {
@@ -128,7 +106,7 @@ public class UnionFindSolver {
      */
     public UnionNode find(UnionNode elem) {
         /* Check whether the element exists; fail if it doesn't. */
-        if (!elems.containsKey(elem))
+        if (elem.parent == null)
             throw new NoSuchElementException(elem + " is not an element.");
 
         /* Recursively search the structure and return the result. */
@@ -145,38 +123,30 @@ public class UnionFindSolver {
      */
     private UnionNode recFind(UnionNode elem) {
         /* Get the info on this object. */
-        Link<UnionNode> info = elems.get(elem);
-        if (info == null) { // TODO: This happens with the TypeScript inheritance example. This if null-check should not be there.
+        if (elem.parent == null) { // TODO: This happens with the TypeScript inheritance example. This if null-check should not be there.
             this.add(elem);
-            info = elems.get(elem);
         }
 
         /* If the element is its own parent, it's the representative of its
          * class and we should say so.
          */
-        if (info.parent.equals(elem))
+        if (elem.parent == elem)
             return elem;
 
         /* Otherwise, look up the parent of this element, then compress the
          * path.
          */
-        info.parent = recFind(info.parent);
-        return info.parent;
+        elem.parent = recFind(elem.parent);
+        return elem.parent;
     }
 
-    public Map<UnionNode, UnionClass> getUnionClasses() {
-        Map<UnionNode, UnionClass> classes = new HashMap<>();
-
-        for (UnionNode node : elems.keySet()) {
-            UnionClass UnionClass = elems.get(recFind(node)).unionClass;
-            classes.put(node, UnionClass);
-        }
-
-        return classes;
+    public Collection<UnionNode> getUnionNodes() {
+        // TODO: I want to get rid of this thing. For garbage collection.
+        return this.nodes;
     }
 
     public UnionClass getUnionClass(UnionNode node) {
-        return elems.get(recFind(node)).unionClass;
+        return recFind(node).unionClass;
     }
 
     public void union(UnionNode one, List<UnionNode> list) {
@@ -204,71 +174,50 @@ public class UnionFindSolver {
         if (one == null || two == null) {
             throw new RuntimeException("A unionNode cannot be null");
         }
-        if (!elems.containsKey(one)) {
+        if (one.parent == null) {
             add(one);
         }
-        if (!elems.containsKey(two)) {
+        if (two.parent == null) {
             add(two);
         }
         /* Get the link info for the parents.  This also handles the exception
          * guarantee.
          */
-        Link<UnionNode> oneLink = elems.get(find(one));
-        Link<UnionNode> twoLink = elems.get(find(two));
-
-/*
-        List<Integer> oneFunctions = oneLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(func -> func.closure != null && func.closure.function.type.equals("user")).map(func -> func.closure.function.id).map(Integer::parseInt).distinct().collect(Collectors.toList());
-        List<Integer> twoFunctions = twoLink.unionClass.getNodes().stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).filter(func -> func.closure != null && func.closure.function.type.equals("user")).map(func -> func.closure.function.id).map(Integer::parseInt).distinct().collect(Collectors.toList());
-
-        List<Integer> both = new ArrayList<>();
-        both.addAll(oneFunctions);
-        both.addAll(twoFunctions);
-        both = both.stream().distinct().collect(Collectors.toList());
-
-        if (both.size() > oneFunctions.size() && both.size() > twoFunctions.size()) {
-            System.out.println();
-        }
-
-        List<UnionNode> oneObjects = oneLink.unionClass.getNodes().stream().filter(node -> node instanceof ObjectUnionNode && ((ObjectUnionNode) node).counter == 12).collect(Collectors.toList());
-        List<UnionNode> twoObjects = twoLink.unionClass.getNodes().stream().filter(node -> node instanceof ObjectUnionNode && ((ObjectUnionNode) node).counter == 12).collect(Collectors.toList());
-
-        if (!oneObjects.isEmpty() || !twoObjects.isEmpty()) {
-            System.out.println();
-        }
-*/
+        one = recFind(one);
+        two = recFind(two);
 
         /* If these are the same object, we're done. */
-        if (oneLink == twoLink) return one;
+        if (one == two) return one;
 
-        UnionNode oneParentBefore = oneLink.parent;
+        UnionNode oneParentBefore = one.parent;
 
         /* Otherwise, link the two.  We'll do a union-by-rank, where the parent
          * with the lower rank will merge with the parent with higher rank.
          */
-        if (oneLink.rank > twoLink.rank) {
+        if (one.rank > two.rank) {
             /* Since each parent must link to itself, the value of oneLink.parent
              * is the representative of one.
              */
-            twoLink.parent = oneLink.parent;
-        } else if (oneLink.rank < twoLink.rank) {
+            two.parent = one.parent;
+        } else if (one.rank < two.rank) {
             /* Same logic as above. */
-            oneLink.parent = twoLink.parent;
+            one.parent = two.parent;
         } else {
             /* Arbitrarily wire one to be the parent of two. */
-            twoLink.parent = oneLink.parent;
+            two.parent = one.parent;
 
             /* Bump up the representative of one to the next rank. */
-            oneLink.rank++;
+            one.rank++;
         }
 
-        if (twoLink.parent == oneParentBefore) {
+        if (one.parent == oneParentBefore) {
             // OneLink is the representative.
-            oneLink.unionClass.mergeWith(twoLink.unionClass);
-            twoLink.unionClass = null;
+            one.unionClass.mergeWith(two.unionClass);
+            two.unionClass = null;
         } else {
             // TwoLink is the representative.
-            twoLink.unionClass.mergeWith(oneLink.unionClass);
-            oneLink.unionClass = null;
+            two.unionClass.mergeWith(one.unionClass);
+            one.unionClass = null;
         }
 
         return one;

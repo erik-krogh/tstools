@@ -1,7 +1,6 @@
 package dk.webbies.tscreate.analysis;
 
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.nodes.*;
+import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.AST.Identifier;

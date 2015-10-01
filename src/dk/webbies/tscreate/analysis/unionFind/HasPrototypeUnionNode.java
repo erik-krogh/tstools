@@ -1,11 +1,11 @@
-package dk.webbies.tscreate.analysis.unionFind.nodes;
+package dk.webbies.tscreate.analysis.unionFind;
 
 import dk.webbies.tscreate.jsnap.Snap;
 
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
  */
-public class HasPrototypeUnionNode implements UnionNode {
+public class HasPrototypeUnionNode extends UnionNode {
     private Snap.Obj prototype;
 
     private static int instanceCounter = 0;

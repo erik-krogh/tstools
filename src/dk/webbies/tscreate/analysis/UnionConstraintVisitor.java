@@ -4,8 +4,7 @@ import dk.au.cs.casa.typescript.types.Signature;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Util;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.nodes.*;
+import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.*;
@@ -455,10 +454,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         LibraryClass clazz = libraryClasses.get((Snap.Obj) node.closure.getProperty("prototype").value);
                         if (clazz != null) {
                             clazz.isUsedAsClass = true;
-                            solver.union(this.thisNode, clazz.thisNode);
+                            solver.union(this.thisNode, clazz.getNewThisNode());
                             solver.union(this.thisNode, new HasPrototypeUnionNode(clazz.prototype));
 
-                            solver.union(clazz.constructorNode, this.function);
+                            solver.union(clazz.getNewConstructorNode(), this.function);
                         }
                         break;
                     default:

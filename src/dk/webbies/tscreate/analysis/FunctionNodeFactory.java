@@ -2,8 +2,8 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.nodes.*;
+import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.*;
@@ -165,7 +165,7 @@ public class FunctionNodeFactory {
 
         @Override
         public List<UnionNode> visit(UnionType t) {
-            return t.getElements().stream().map(type -> type.accept(this)).reduce(new ArrayList<>(), (acc, elem) -> {acc.addAll(elem); return acc;});
+            return t.getElements().stream().map(type -> type.accept(this)).reduce(new ArrayList<>(), Util::reduceList);
         }
 
         @Override
