@@ -453,7 +453,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         @SuppressWarnings("RedundantCast")
                         LibraryClass clazz = libraryClasses.get((Snap.Obj) node.closure.getProperty("prototype").value);
                         if (clazz != null) {
-                            clazz.isUsedAsClass = true;
+//                            clazz.isUsedAsClass = true; // This is useless after changing to "eager type resolution".
                             solver.union(this.thisNode, clazz.getNewThisNode());
                             solver.union(this.thisNode, new HasPrototypeUnionNode(clazz.prototype));
 

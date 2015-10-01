@@ -31,32 +31,13 @@ public class TypeAnalysis {
         this.globalObject = globalObject;
         this.typeNames = typeNames;
         Map<Snap.Obj, FunctionNode> functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
+        this.typeFactory = new TypeFactory(globalObject, libraryClasses, functionNodes);
 
-        Collection<UnionNode> nodes = analyseFunctions(functionNodes);
-
-        this.typeFactory = new TypeFactory(globalObject, libraryClasses, createHeapToUnionNodeMap(nodes, functionNodes), functionNodes);
+        analyseFunctions(functionNodes);
     }
 
     public TypeFactory getTypeFactory() {
         return typeFactory;
-    }
-
-    private static Map<Snap.Value, Collection<UnionNode>> createHeapToUnionNodeMap(Collection<UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes) { // TODO: Get functionNodes away from here.
-        Multimap<Snap.Value, UnionNode> result = HashMultimap.create();
-
-        for (UnionNode unionNode : nodes) {
-            if (unionNode instanceof HeapValueNode) {
-                HeapValueNode heapValue = (HeapValueNode) unionNode;
-                result.put(heapValue.value, heapValue);
-            }
-        }
-
-        functionNodes.keySet().forEach(result::removeAll);
-
-        functionNodes.forEach(result::put);
-
-
-        return result.asMap();
     }
 
     private static Map<Snap.Obj, FunctionNode> getFunctionNodes(Snap.Obj globalObject) {
@@ -69,21 +50,17 @@ public class TypeAnalysis {
         return functionNodes;
     }
 
-    private Collection<UnionNode> analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
+    private void analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
         Set<Snap.Obj> functions = functionNodes.keySet();
 
         System.out.println("Analyzing " + functions.size() + " functions");
 
         if (options.separateFunctions) {
-            // TODO: This thing?
-            List<UnionNode> result = new ArrayList<>();
-
             int counter = 1;
             for (Snap.Obj functionClosure : functions) {
                 System.out.println(counter++ + "/" + functions.size());
                 Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
                 UnionFindSolver solver = new UnionFindSolver();
-
 
                 // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
                 FunctionNode functionNode = functionNodes.get(functionClosure);
@@ -93,13 +70,12 @@ public class TypeAnalysis {
                 analyse(functionClosure, nodes, subFunctions, solver, functionNode);
 
                 solver.finish();
-
-                // We only want the user functions that was put in above.
-                result.addAll(solver.getUnionNodes());
+                typeFactory.finishedFunctionNodes.add(functionNode);
+                typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getType(functionNode));
             }
 
-            // TODO; Make sure only library classes are affected here... That is indeed the case.
-            return result;
+            typeFactory.resolveClassTypes();
+
         } else {
             Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
             UnionFindSolver solver = new UnionFindSolver();
@@ -109,7 +85,12 @@ public class TypeAnalysis {
 
             solver.finish();
 
-            return solver.getUnionNodes();
+            for (Snap.Obj function : functions) {
+                typeFactory.putResolvedFunctionType(function, typeFactory.getType(functionNodes.get(function)));
+            }
+
+            typeFactory.resolveClassTypes();
+
         }
     }
 

@@ -7,17 +7,4 @@ package dk.webbies.tscreate.analysis.unionFind;
  */
 public class EmptyUnionNode extends UnionNode{
 
-    private static int instanceCounter = 0;
-    private final int counter;
-
-    public EmptyUnionNode() {
-        this.counter = instanceCounter++;
-        if (this.counter == 2605) { // TODO:
-            doNothing();
-        }
-    }
-
-    private void doNothing() {
-
-    }
 }

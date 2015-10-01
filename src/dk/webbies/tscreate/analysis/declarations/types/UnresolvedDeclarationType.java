@@ -6,8 +6,19 @@ package dk.webbies.tscreate.analysis.declarations.types;
 public class UnresolvedDeclarationType implements DeclarationType {
     private DeclarationType resolvedType = null;
 
+    public UnresolvedDeclarationType() {
+    }
+
+    public UnresolvedDeclarationType(DeclarationType resolvedType) {
+        this();
+        this.resolvedType = resolvedType;
+    }
+
     public void setResolvedType(DeclarationType resolvedType) {
         if (this.resolvedType != null) {
+            throw new RuntimeException();
+        }
+        if (resolvedType == this) {
             throw new RuntimeException();
         }
         this.resolvedType = resolvedType;
@@ -16,6 +27,9 @@ public class UnresolvedDeclarationType implements DeclarationType {
     public DeclarationType getResolvedType() {
         if (this.resolvedType == null) {
             throw new RuntimeException();
+        }
+        while (resolvedType instanceof UnresolvedDeclarationType) {
+            resolvedType = ((UnresolvedDeclarationType) resolvedType).getResolvedType();
         }
         return resolvedType;
     }

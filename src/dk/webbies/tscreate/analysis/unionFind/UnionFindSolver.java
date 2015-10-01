@@ -33,7 +33,6 @@ public class UnionFindSolver {
     private Set<Runnable> doneCallbacks = new HashSet<>();
 
     int iteration = 1;
-    private final List<UnionNode> nodes = new ArrayList<>();
 
     public void finish() {
         while (doneCallbacks.size() > 0) {
@@ -71,8 +70,6 @@ public class UnionFindSolver {
         if (elem.parent != null) {
             return false;
         }
-
-        this.nodes.add(elem);
 
         /* Otherwise add the element as its own parent. */
         elem.parent = elem;
@@ -138,11 +135,6 @@ public class UnionFindSolver {
          */
         elem.parent = recFind(elem.parent);
         return elem.parent;
-    }
-
-    public Collection<UnionNode> getUnionNodes() {
-        // TODO: I want to get rid of this thing. For garbage collection.
-        return this.nodes;
     }
 
     public UnionClass getUnionClass(UnionNode node) {

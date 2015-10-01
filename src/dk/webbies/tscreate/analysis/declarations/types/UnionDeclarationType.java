@@ -33,7 +33,7 @@ public class UnionDeclarationType implements DeclarationType {
     }
 
     public UnionDeclarationType(Collection<? extends DeclarationType> types) {
-        this.types = new ArrayList<>(types);
+        this(types.toArray(new DeclarationType[types.size()]));
     }
 
     public ArrayList<DeclarationType> getTypes() {

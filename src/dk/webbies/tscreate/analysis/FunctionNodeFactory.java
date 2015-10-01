@@ -75,6 +75,9 @@ public class FunctionNodeFactory {
         return functionNode;
     }
 
+    private Map<GenericType, List<UnionNode>> genericTypeCache = new HashMap<>();
+    private Map<InterfaceType, List<UnionNode>> interfaceCache = new HashMap<>();
+
     private class UnionNativeTypeVisitor implements TypeVisitor<List<UnionNode>> {
 
         @Override
@@ -89,21 +92,27 @@ public class FunctionNodeFactory {
 
         @Override
         public List<UnionNode> visit(GenericType t) {
+            if (genericTypeCache.containsKey(t)) {
+                return genericTypeCache.get(t);
+            }
+            ArrayList<UnionNode> result = new ArrayList<>();
+            genericTypeCache.put(t, result);
+
             InterfaceType interfaceType = t.toInterface();
             if (typeNames.containsKey(t)) {
                 typeNames.put(interfaceType, typeNames.get(t));
             }
-            return interfaceType.accept(this);
+            result.addAll(interfaceType.accept(this));
+            return result;
         }
 
-        Map<InterfaceType, List<UnionNode>> cache = new HashMap<>();
         @Override
         public List<UnionNode> visit(InterfaceType t) {
-            if (cache.containsKey(t)) {
-                return cache.get(t);
+            if (interfaceCache.containsKey(t)) {
+                return interfaceCache.get(t);
             }
             ArrayList<UnionNode> result = new ArrayList<>();
-            cache.put(t, result);
+            interfaceCache.put(t, result);
 
             ObjectUnionNode obj = new ObjectUnionNode();
             if (typeNames.containsKey(t)) {

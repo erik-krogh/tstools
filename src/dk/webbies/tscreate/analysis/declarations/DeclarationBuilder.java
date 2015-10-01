@@ -43,17 +43,7 @@ public class DeclarationBuilder {
             if (value == null) {
                 continue;
             }
-            if (value instanceof Snap.BooleanConstant) {
-                declarations.put(property.name, PrimitiveDeclarationType.BOOLEAN);
-            } else if (value instanceof Snap.NumberConstant) {
-                declarations.put(property.name, PrimitiveDeclarationType.NUMBER);
-            } else if (value instanceof Snap.StringConstant) {
-                declarations.put(property.name, PrimitiveDeclarationType.STRING);
-            } else if (value instanceof Snap.UndefinedConstant) {
-                declarations.put(property.name, PrimitiveDeclarationType.UNDEFINED);
-            } else {
-                declarations.put(property.name, typeFactory.getType(value));
-            }
+            declarations.put(property.name, typeFactory.getHeapValueType(value));
         }
 
         return declarations;

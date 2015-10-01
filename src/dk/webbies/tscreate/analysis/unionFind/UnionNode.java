@@ -8,9 +8,18 @@ public abstract class UnionNode {
     int rank = 0;
     UnionClass unionClass;
 
+    private static int instanceCounter = 0;
+    private final int counter;
+    public UnionNode() {
+        this.counter = instanceCounter++;
+        if (this.counter == -1) {
+            throw new RuntimeException(); // Just so i have a breakPoint.
+        }
+    }
+
     public UnionClass getUnionClass() {
         if (parent == null) {
-            throw new NullPointerException();
+            return null;
         }
         return findParent().unionClass;
     }
