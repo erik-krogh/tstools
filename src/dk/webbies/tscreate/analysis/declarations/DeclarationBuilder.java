@@ -20,6 +20,7 @@ public class DeclarationBuilder {
     public DeclarationBuilder(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, Map<Type, String> typeNames) {
         this.librarySnap = librarySnap;
         TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, typeNames);
+        typeAnalysis.analyseFunctions();
         this.typeFactory = typeAnalysis.getTypeFactory();
     }
 

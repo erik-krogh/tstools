@@ -22,6 +22,7 @@ public class TypeAnalysis {
     private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private final Snap.Obj globalObject;
     private final TypeFactory typeFactory;
+    private final Map<Snap.Obj, FunctionNode> functionNodes;
     private Options options;
     private Map<Type, String> typeNames;
 
@@ -30,10 +31,8 @@ public class TypeAnalysis {
         this.options = options;
         this.globalObject = globalObject;
         this.typeNames = typeNames;
-        Map<Snap.Obj, FunctionNode> functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
+        this.functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
         this.typeFactory = new TypeFactory(globalObject, libraryClasses, functionNodes);
-
-        analyseFunctions(functionNodes);
     }
 
     public TypeFactory getTypeFactory() {
@@ -50,7 +49,7 @@ public class TypeAnalysis {
         return functionNodes;
     }
 
-    private void analyseFunctions(Map<Snap.Obj, FunctionNode> functionNodes) {
+    public void analyseFunctions() {
         Set<Snap.Obj> functions = functionNodes.keySet();
 
         System.out.println("Analyzing " + functions.size() + " functions");
