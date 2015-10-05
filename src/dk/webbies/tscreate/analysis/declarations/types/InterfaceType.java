@@ -4,7 +4,6 @@ package dk.webbies.tscreate.analysis.declarations.types;
  * Created by Erik Krogh Kristensen on 08-09-2015.
  */
 public class InterfaceType implements DeclarationType {
-    private int useCounter = 0;
     public DeclarationType function = null;
     public DeclarationType object = null;
 
@@ -13,15 +12,6 @@ public class InterfaceType implements DeclarationType {
     public InterfaceType(String name) {
         // TODO: Ensure no conflicts
         this.name = name;
-    }
-
-    public void incrementUseCounter() {
-        this.useCounter++;
-    }
-
-    // TODO: Use this.
-    public int getUseCounter() {
-        return useCounter;
     }
 
     // TODO: Unresolved.

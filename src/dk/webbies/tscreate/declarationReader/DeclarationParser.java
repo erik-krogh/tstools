@@ -13,26 +13,35 @@ import java.util.*;
  */
 public class DeclarationParser {
     public static Map<Type, String> markNatives(Snap.Obj global, Environment env) {
+        // TODO: Cache the JSON.
+        SpecReader spec = getTypeSpecification(env);
+
+        Map<Type, String> typeNames = new HashMap<>();
+
+        markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
+
+
+        while (global != null) {
+            spec.getGlobal().accept(new MarkNativesVisitor(), global);
+            global = global.prototype;
+        }
+
+        return typeNames;
+    }
+
+    public static SpecReader getTypeSpecification(Environment env, String... declarationFilePaths) {
+        String runString = "lib/ts-type-reader/src/CLI.js --env " + env.cliArgument;
+        for (String declarationFile : declarationFilePaths) {
+            runString += " \"" + declarationFile + "\"";
+        }
+
+        String specification = null;
         try {
-            // TODO: Cache the JSON.
-            String specification = Util.runNodeScript("lib/ts-type-reader/src/CLI.js --env " + env.cliArgument);
-            SpecReader spec = new SpecReader(specification.split("\\n")[1]);
-
-            Map<Type, String> typeNames = new HashMap<>();
-
-            markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
-
-
-            while (global != null) {
-                spec.getGlobal().accept(new MarkNativesVisitor(), global);
-                global = global.prototype;
-            }
-
-            return typeNames;
-
+            specification = Util.runNodeScript(runString);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return new SpecReader(specification.split("\\n")[1]);
     }
 
     private static void markNamedTypes(SpecReader.Node namedTypes, String prefix, Map<Type, String> typeNames) {

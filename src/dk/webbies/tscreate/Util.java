@@ -4,8 +4,12 @@ package dk.webbies.tscreate;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -14,6 +18,7 @@ import java.util.stream.StreamSupport;
  * Created by erik1 on 01-09-2015.
  */
 public class Util {
+
     public static String runNodeScript(String args) throws IOException {
         Process process = Runtime.getRuntime().exec("node " + args);
 
@@ -28,10 +33,36 @@ public class Util {
         }
 
         if (!errGobbler.getResult().isEmpty()) {
-            throw new RuntimeException("Got an error while creating the Snapshot of the library: " + errGobbler.getResult());
+            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
         }
 
         return inputGobbler.getResult();
+    }
+
+
+    private static final ExecutorService threadPool = Executors.newCachedThreadPool();
+    public static void runAll(Runnable... runs) throws Throwable {
+        CountDownLatch latch = new CountDownLatch(runs.length);
+        final Throwable[] exception = {null};
+        for (Runnable run : runs) {
+            threadPool.submit(() -> {
+                try {
+                    run.run();
+                } catch (Throwable e) {
+                    exception[0] = e;
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        if (exception[0] != null) {
+            throw exception[0];
+        }
     }
 
     private static class StreamGobbler extends Thread {
@@ -73,10 +104,7 @@ public class Util {
     }
 
     public static String readFile(String path) throws IOException {
-        FileReader reader = new FileReader(new File(path));
-        String result = IOUtils.toString(reader);
-        reader.close();
-        return result;
+        return new String(Files.readAllBytes(Paths.get(path)));
     }
 
     // http://stackoverflow.com/questions/17640754/zipping-streams-using-jdk8-with-lambda-java-util-stream-streams-zip#answer-23529010
@@ -125,6 +153,28 @@ public class Util {
         public Pair(A left, B right) {
             this.left = left;
             this.right = right;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Pair<?, ?> pair = (Pair<?, ?>) o;
+            return Objects.equals(left, pair.left) &&
+                    Objects.equals(right, pair.right);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(left, right);
+        }
+
+        @Override
+        public String toString() {
+            return "Pair{" +
+                    "left=" + left +
+                    ", right=" + right +
+                    '}';
         }
     }
 

@@ -6,6 +6,7 @@ import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationToString;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
@@ -29,27 +30,34 @@ public class Main {
         long start = System.currentTimeMillis();
         Options options = Options.separateFunctions();
         options.unionShortCircuitLogic = false;
-        runAnalysis("Test script", "tests/underscore.js", options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
+        runAnalysis("Test script", "tests/underscore.js", "tests/underscore.d.ts", options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
         long end = System.currentTimeMillis();
         System.out.println("Ran in " + (end - start) + "ms");
+        System.exit(0);
     }
 
-    public static void runAnalysis(String name, String path, Options options, LanguageLevel language) throws IOException {
-        String script = Util.readFile(path);
-        FunctionExpression program = new JavaScriptParser(language.closureCompilerMode).parse(name, script).toTSCreateAST();
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(path), program);
+    public static void runAnalysis(String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) throws IOException {
+        String resultDeclarationFilePath = scriptPath + ".gen.d.ts";
 
-        Map<Type, String> typeNames = DeclarationParser.markNatives(globalObject, language.declarationMode);
+        String script = Util.readFile(scriptPath);
+        FunctionExpression program = new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST();
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath), program);
+
+        Map<Type, String> typeNames = DeclarationParser.markNatives(globalObject, languageLevel.environment);
 
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject);
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject, typeNames).buildDeclaration();
 
-        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(path + ".gen.d.ts")));
+        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(resultDeclarationFilePath)));
         TeeOutputStream out = new TeeOutputStream(fileOut, System.out);
         new DeclarationToString(out).print(declaration);
         fileOut.close();
+
+        DeclarationEvaluator.Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, declarationPath, languageLevel.environment).createEvaluation();
+
+        System.out.println(evaluation.toString());
     }
 
     public enum LanguageLevel {
@@ -57,11 +65,11 @@ public class Main {
         ES6(Parser.Config.Mode.ES6, DeclarationParser.Environment.ES6DOM);
 
         public final Parser.Config.Mode closureCompilerMode;
-        public final DeclarationParser.Environment declarationMode;
+        public final DeclarationParser.Environment environment;
 
         LanguageLevel(Parser.Config.Mode closure, DeclarationParser.Environment declaration) {
             this.closureCompilerMode = closure;
-            this.declarationMode = declaration;
+            this.environment = declaration;
         }
     }
 }

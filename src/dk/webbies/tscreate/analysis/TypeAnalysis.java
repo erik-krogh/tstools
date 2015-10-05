@@ -84,6 +84,10 @@ public class TypeAnalysis {
 
             solver.finish();
 
+            for (FunctionNode functionNode : functionNodes.values()) {
+                typeFactory.finishedFunctionNodes.add(functionNode);
+            }
+
             for (Snap.Obj function : functions) {
                 typeFactory.putResolvedFunctionType(function, typeFactory.getType(functionNodes.get(function)));
             }

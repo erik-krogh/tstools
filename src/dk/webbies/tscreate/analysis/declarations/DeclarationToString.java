@@ -42,6 +42,14 @@ public class DeclarationToString {
         }
     }
 
+    private void writeName(String str) {
+        if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*")) {
+            write(str);
+        } else {
+            write("\"" + str + "\"");
+        }
+    }
+
     private Set<InterfaceType> printedInterfaces = new HashSet<>();
     private Set<ClassType> printedClasses = new HashSet<>();
 
@@ -69,6 +77,10 @@ public class DeclarationToString {
                     type.accept(new TypeVisitor());
                 }
             }
+        }
+
+        if (interfacesToPrint.size() > 0 || classesToPrint.size() > 0) {
+            finish();
         }
     }
 
@@ -157,7 +169,7 @@ public class DeclarationToString {
                 for (int i = 0; i < declarationList.size(); i++) {
                     Map.Entry<String, DeclarationType> dec = declarationList.get(i);
                     ident();
-                    write(dec.getKey());
+                    writeName(dec.getKey());
                     write(": ");
                     dec.getValue().accept(this);
                     if (i != decs.size() - 1) {
@@ -187,7 +199,8 @@ public class DeclarationToString {
                 if (interfaceType.getObject() != null) {
                     interfaceType.getObject().getDeclarations().forEach((name, type) -> {
                         ident();
-                        write(name + ": ");
+                        writeName(name);
+                        write(": ");
                         type.accept(this);
                         write(";\n");
                     });
@@ -218,7 +231,14 @@ public class DeclarationToString {
 
         @Override
         public Void visit(NamedObjectType namedObjectType) {
-            write(namedObjectType.getName());
+            // TODO: This is ugly ugly hack, but it works. For now.
+            if (namedObjectType.getName().equals("Array")) {
+                write("Array<any>");
+            } else if (namedObjectType.getName().equals("NodeListOf")) {
+                write("NodeListOf<any>");
+            } else {
+                write(namedObjectType.getName());
+            }
             return null;
         }
 
@@ -236,7 +256,8 @@ public class DeclarationToString {
 
                 classType.getStaticFields().forEach((name, type) -> {
                     ident();
-                    write(name + ": ");
+                    writeName(name);
+                    write(": ");
                     type.accept(this);
                     write(";\n");
                 });

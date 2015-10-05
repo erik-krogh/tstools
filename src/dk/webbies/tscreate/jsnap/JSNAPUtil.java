@@ -133,7 +133,6 @@ public class JSNAPUtil {
     }
 
     public static Snap.Obj getStateDump(String jsnapRaw, FunctionExpression program) {
-        // TODO: MarkNatives.
         GsonBuilder builder = new GsonBuilder();
         List<FunctionExpression> functions = getFunctions(program);
         builder.registerTypeAdapterFactory(new KeyTypeFactory());
