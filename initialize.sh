@@ -1,6 +1,6 @@
 #!/bin/bash
 git submodule update --init --recursive;
-cd lib/tscheck/;
+cd lib/jsnap/;
 npm install;
 cd ../../;
 cd lib/ts-type-reader/;

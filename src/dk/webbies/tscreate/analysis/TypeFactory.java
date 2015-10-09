@@ -307,6 +307,8 @@ public class TypeFactory {
             return PrimitiveDeclarationType.STRING;
         } else if (value instanceof Snap.UndefinedConstant) {
             return PrimitiveDeclarationType.UNDEFINED;
+        } else if (value instanceof Snap.NullConstant) {
+            return PrimitiveDeclarationType.ANY;
         } else {
             if ((value instanceof Snap.Obj && ((Snap.Obj) value).function != null)) {
                 return getFunctionType((Snap.Obj) value);

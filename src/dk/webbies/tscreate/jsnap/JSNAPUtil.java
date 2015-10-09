@@ -36,7 +36,7 @@ public class JSNAPUtil {
 
         if (recreate) {
             System.out.println("Creating JSNAP from scratch. \n");
-            String jsnap = Util.runNodeScript("lib/tscheck/node_modules/jsnap/jsnap.js " + path);
+            String jsnap = Util.runNodeScript("lib/jsnap/jsnap.js " + path);
             BufferedWriter writer = new BufferedWriter(new FileWriter(jsnapFile));
             writer.write(jsnap);
             writer.close();
@@ -50,16 +50,7 @@ public class JSNAPUtil {
 
     }
 
-    public static void main(String[] args) throws IOException {
-        FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
-        Snap.Obj pixiSnap = getStateDumpFromFile("lib/tscheck/tests/pixi.js.jsnap", emptyProgram);
-
-        Snap.Obj pixiUnique = extractUnique(pixiSnap);
-
-        Map<String, Snap.Value> heap = makePrettyHeap("", pixiSnap, new HashSet<Snap.Obj>());
-        System.out.println(pixiSnap);
-    }
-
+    // TODO: This properly doesn't work after introducing PhantomJS2
     public static Snap.Obj extractUnique(Snap.Obj librarySnap) throws IOException {
         FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
         Snap.Obj domSnap = getStateDumpFromFile("src/dk/webbies/tscreate/jsnap/onlyDom.jsnap", emptyProgram);
@@ -315,7 +306,7 @@ public class JSNAPUtil {
                 public T read(JsonReader reader) throws IOException {
                     if (reader.peek() == JsonToken.NULL) {
                         reader.nextNull();
-                        return null;
+                        return (T) new Snap.NullConstant();
                     }
                     if (reader.peek() == JsonToken.STRING) {
                         return (T) new Snap.StringConstant(reader.nextString());

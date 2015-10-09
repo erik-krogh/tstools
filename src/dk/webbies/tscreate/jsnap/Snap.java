@@ -113,4 +113,8 @@ public class Snap {
     public static class UndefinedConstant extends Value {
 
     }
+
+    public static class NullConstant extends Value {
+
+    }
 }

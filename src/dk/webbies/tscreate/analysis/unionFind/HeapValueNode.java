@@ -120,10 +120,10 @@ public class HeapValueNode extends ObjectUnionNode {
             if (value instanceof Snap.UndefinedConstant) {
                 return primitivesBuilder.undefined();
             }
-            if (value == null) {
+            if (value instanceof Snap.NullConstant) {
                 return primitivesBuilder.undefined();
             }
-            return null;
+            throw new RuntimeException();
         }
     }
 }

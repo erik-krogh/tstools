@@ -1,6 +1,6 @@
-[submodule "lib/tscheck"]
-	path = lib/tscheck
-	url = https://github.com/asgerf/tscheck.git
+[submodule "lib/jsnap"]
+	path = lib/jsnap
+	url = https://github.com/webbiesdk/jsnap.git
 [submodule "lib/ts-type-reader"]
 	path = lib/ts-type-reader
 	url = https://github.com/cs-au-dk/ts-spec-reader.git
