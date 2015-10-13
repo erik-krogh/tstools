@@ -30,7 +30,7 @@ public class Main {
         long start = System.currentTimeMillis();
         Options options = Options.separateFunctions();
         options.unionShortCircuitLogic = false;
-        runAnalysis("Test script", "tests/underscore.js", "tests/underscore.d.ts", options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
+        runAnalysis("Test script", "tests/underscore.js", null, options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
         long end = System.currentTimeMillis();
         System.out.println("Ran in " + (end - start) + "ms");
         System.exit(0);
@@ -55,9 +55,12 @@ public class Main {
         new DeclarationToString(out).print(declaration);
         fileOut.close();
 
-        DeclarationEvaluator.Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, declarationPath, languageLevel.environment).createEvaluation();
+        if (declarationPath != null) {
+            DeclarationEvaluator.Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, declarationPath, languageLevel.environment).createEvaluation();
 
-        System.out.println(evaluation.toString());
+            System.out.println(evaluation.toString());
+        }
+
     }
 
     public enum LanguageLevel {

@@ -63,12 +63,19 @@ public class TypeFactory {
         }
         UnresolvedDeclarationType unresolvedType = new UnresolvedDeclarationType();
         cache.put(unionClass, unresolvedType);
-        result = getTypeNoCache(unionClass.getNodes());
+        result = getTypeNoCache(new HashSet<>(unionClass.getNodes()));
         unresolvedType.setResolvedType(result);
         return result;
     }
 
-    private DeclarationType getTypeNoCache(List<UnionNode> nodes) {
+    private DeclarationType getTypeNoCache(Set<UnionNode> nodes) {
+        // First unpacking the GreatestCommonOfUnionNode
+        Set<GreatestCommonOfUnionNode> greatestCommons = nodes.stream().filter(node -> node instanceof GreatestCommonOfUnionNode).map(node -> (GreatestCommonOfUnionNode) node).collect(Collectors.toSet());
+        if (!greatestCommons.isEmpty()) {
+            Set<UnionNode> newNodeSet = getCombinedNodeSet(nodes, greatestCommons);
+            return getTypeNoCache(newNodeSet); // This could be done without recursion. But it is a good sanity check, since it is supposed to not go in an infinite loop.
+        }
+
         if (nodes.isEmpty()) {
             return PrimitiveDeclarationType.VOID;
         }
@@ -77,19 +84,18 @@ public class TypeFactory {
         }
 
         // Removing all the any's. TODO: Is this a good idea?
-        nodes = nodes.stream().filter(node -> !(node instanceof PrimitiveUnionNode && ((PrimitiveUnionNode) node).getType() == PrimitiveDeclarationType.ANY)).collect(Collectors.toList());
+        nodes = nodes.stream().filter(node -> !(node instanceof PrimitiveUnionNode && ((PrimitiveUnionNode) node).getType() == PrimitiveDeclarationType.ANY)).collect(Collectors.toSet());
 
         CategorizedNodes sortedNodes = new CategorizedNodes(nodes);
 
         Set<PrimitiveDeclarationType> primitives = sortedNodes.getNodes(PrimitiveUnionNode.class).stream().map(PrimitiveUnionNode::getType).filter(type -> type != PrimitiveDeclarationType.UNDEFINED && type != PrimitiveDeclarationType.VOID).collect(Collectors.toSet());
-        Set<AddNode> adds = sortedNodes.getNodes(AddNode.class);
         Set<FunctionNode> functions = sortedNodes.getNodes(FunctionNode.class);
         Set<ObjectUnionNode> objects = sortedNodes.getNodes(ObjectUnionNode.class);
 
 
         DeclarationType primitiveType = null;
         if (functions.isEmpty() && (objects.isEmpty() || objectPropsMatchPrimitivePrototypes(sortedNodes, primitives))) {
-            primitiveType = getPrimitiveType(primitives, adds);
+            primitiveType = getPrimitiveType(primitives);
         }
 
         DeclarationType functionType = null;
@@ -130,7 +136,7 @@ public class TypeFactory {
         if (resultingTypes.size() == 1) {
             DeclarationType result = resultingTypes.get(0);
             if (result instanceof UnnamedObjectType) {
-                InterfaceType interfaceType = new InterfaceType("interfaceObj" + System.identityHashCode(nodes));
+                InterfaceType interfaceType = new InterfaceType("interfaceObj" + System.identityHashCode(nodes)); // TODO: That name is ugly-sauce
                 interfaceType.object = result;
                 return interfaceType;
             }
@@ -155,6 +161,43 @@ public class TypeFactory {
         } else {
             return functionType;
         }
+    }
+
+    private Set<UnionNode> getCombinedNodeSet(Set<UnionNode> nodes, Set<GreatestCommonOfUnionNode> greatestCommons) {
+        Set<UnionNode> newNodeSet = new HashSet<>();
+        newNodeSet.addAll(nodes);
+
+        List<GreatestCommonOfUnionNode> toAdd = new ArrayList<>(greatestCommons);
+
+        while (!toAdd.isEmpty()) {
+            Set<UnionClass> classesToAdd = new HashSet<>();
+            for (GreatestCommonOfUnionNode greatestCommon : toAdd) {
+                for (UnionNode node : greatestCommon.getNodes()) {
+                    if (!nodes.contains(node)) {
+                        classesToAdd.add(node.getUnionClass());
+                    }
+                }
+            }
+            toAdd.clear();
+
+            newNodeSet.removeAll(greatestCommons);
+            for (UnionClass unionClass : classesToAdd) {
+                for (UnionNode unionNode : unionClass.getNodes()) {
+                    if (unionNode instanceof GreatestCommonOfUnionNode) {
+                        if (greatestCommons.contains(unionNode)) {
+                            // Do nothing, we already have it.
+                        } else {
+                            toAdd.add((GreatestCommonOfUnionNode) unionNode);
+                            greatestCommons.add((GreatestCommonOfUnionNode) unionNode);
+                        }
+
+                    } else {
+                        newNodeSet.add(unionNode);
+                    }
+                }
+            }
+        }
+        return newNodeSet;
     }
 
     private DeclarationType getObjectInstanceType(CategorizedNodes sortedNodes, Set<ObjectUnionNode> objects) {
@@ -191,18 +234,10 @@ public class TypeFactory {
         }
     }
 
-    private DeclarationType getPrimitiveType(Set<PrimitiveDeclarationType> primitives, Set<AddNode> adds) {
-        if (primitives.isEmpty() && adds.isEmpty()) {
+    private DeclarationType getPrimitiveType(Set<PrimitiveDeclarationType> primitives) {
+        if (primitives.isEmpty()) {
             return null;
         }
-        DeclarationType addType = null;
-        if (!adds.isEmpty()) {
-            addType = getAddType(adds);
-        }
-        if (primitives.isEmpty() && addType != null) {
-            return addType;
-        }
-
         if (primitives.size() != 1) {
             return new UnionDeclarationType(primitives);
         }
@@ -424,44 +459,6 @@ public class TypeFactory {
 
     private List<String> getArgumentNames(Collection<FunctionNode> functionNodes) {
         return Collections.max(functionNodes, (o1, o2) -> o1.getArgumentNames().size() - o2.getArgumentNames().size()).getArgumentNames();
-    }
-
-    private DeclarationType getAddType(Collection<AddNode> adds) {
-        Set<PrimitiveDeclarationType> lhsTypes = new HashSet<>();
-        Set<PrimitiveDeclarationType> rhsTypes = new HashSet<>();
-        for (AddNode add : adds) {
-            lhsTypes.addAll(getPrimitives(add.getLhs().getUnionClass().getNodes()));
-            rhsTypes.addAll(getPrimitives(add.getRhs().getUnionClass().getNodes()));
-        }
-
-        Set<PrimitiveDeclarationType> both = Stream.concat(lhsTypes.stream(), rhsTypes.stream()).collect(Collectors.toSet());
-        if (both.size() == 1) {
-            return both.iterator().next();
-        }
-
-        boolean hasNumber = both.contains(PrimitiveDeclarationType.NUMBER);
-        boolean hasString = both.contains(PrimitiveDeclarationType.STRING);
-
-        if (lhsTypes.size() == 1 && rhsTypes.size() == 1) {
-            if (hasNumber && hasString) {
-                return PrimitiveDeclarationType.STRING;
-            }
-            PrimitiveDeclarationType lhs = lhsTypes.iterator().next();
-            PrimitiveDeclarationType rhs = rhsTypes.iterator().next();
-            if (lhs == rhs) {
-                return lhs;
-            } else {
-                return new UnionDeclarationType(lhs, rhs);
-            }
-        }
-
-        if (hasString && hasNumber) {
-            return new UnionDeclarationType(PrimitiveDeclarationType.STRING, PrimitiveDeclarationType.NUMBER);
-        }
-        if (hasNumber) {
-            return PrimitiveDeclarationType.NUMBER;
-        }
-        return PrimitiveDeclarationType.STRING;
     }
 
     private Set<PrimitiveDeclarationType> getPrimitives(Collection<UnionNode> nodes) {

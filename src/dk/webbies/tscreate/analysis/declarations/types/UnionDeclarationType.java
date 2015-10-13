@@ -15,6 +15,9 @@ public class UnionDeclarationType implements DeclarationType {
     private final ArrayList<DeclarationType> types;
 
     public UnionDeclarationType(DeclarationType ...types) {
+        if (types.length == 0) {
+            throw new IllegalArgumentException();
+        }
         // This does 2 things: filters out nulls, and flattens 1-level nested UnionDeclarations.
         for (DeclarationType type : types) {
             if (type == null) {
@@ -24,7 +27,7 @@ public class UnionDeclarationType implements DeclarationType {
 
         this.types = Arrays.asList(types).stream().filter(type -> type != null).reduce(new ArrayList<>(), (acc, dec) -> {
             if (dec instanceof UnionDeclarationType) {
-                acc.addAll(((UnionDeclarationType)dec).types);
+                acc.addAll(((UnionDeclarationType) dec).types);
             } else {
                 acc.add(dec);
             }

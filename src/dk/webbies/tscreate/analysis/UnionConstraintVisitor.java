@@ -90,7 +90,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case PLUS: {
                 solver.add(lhs);
                 solver.add(rhs);
-                result = new AddNode(lhs, rhs);
+                result = new GreatestCommonOfUnionNode(lhs, rhs);
                 break;
             }
 
@@ -110,9 +110,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case OR: // ||
                 if (options.unionShortCircuitLogic) {
                     solver.union(lhs, rhs);
-                    return lhs;
+                    result = lhs;
                 } else {
-                    result = new EmptyUnionNode(); // && and || is used to often for other things.
+                    result = new GreatestCommonOfUnionNode(lhs, rhs);
                 }
                 break;
             case MINUS: // -
