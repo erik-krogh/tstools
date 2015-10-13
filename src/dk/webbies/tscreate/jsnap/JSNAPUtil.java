@@ -18,42 +18,17 @@ import java.util.*;
 public class JSNAPUtil {
 
     public static String getJsnapRaw(String path) throws IOException {
-        File jsFile = new File(path);
-        if (!jsFile.exists()) {
-            throw new RuntimeException("Cannot create a snapshot of a file that doesn't exist");
-        }
-        long jsLastModified = jsFile.lastModified();
-        File jsnapFile = new File(path + ".jsnap");
-        boolean recreate = false;
-        if (!jsnapFile.exists()) {
-            recreate = true;
-        } else {
-            long jsnapLastModified = jsnapFile.lastModified();
-            if (jsnapLastModified < jsLastModified) {
-                recreate = true;
-            }
-        }
-
-        if (recreate) {
-            System.out.println("Creating JSNAP from scratch. \n");
-            String jsnap = Util.runNodeScript("lib/jsnap/jsnap.js " + path);
-            BufferedWriter writer = new BufferedWriter(new FileWriter(jsnapFile));
-            writer.write(jsnap);
-            writer.close();
-            return jsnap;
-        } else {
-            FileReader reader = new FileReader(jsnapFile);
-            String result = IOUtils.toString(reader);
-            reader.close();
-            return result;
-        }
-
+        return Util.getCachedOrRun(path + ".jsnap", new File(path), "lib/jsnap/jsnap.js " + path);
     }
 
-    // TODO: This properly doesn't work after introducing PhantomJS2
+    private static String getEmptyJSNAP() throws IOException {
+        File checkAgainst = new File("lib/jsnap/node_modules/phantomjs/lib/phantom");
+        return Util.getCachedOrRun("onlyDom.jsnap", checkAgainst, "lib/jsnap/jsnap.js");
+    }
+
     public static Snap.Obj extractUnique(Snap.Obj librarySnap) throws IOException {
         FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
-        Snap.Obj domSnap = getStateDumpFromFile("src/dk/webbies/tscreate/jsnap/onlyDom.jsnap", emptyProgram);
+        Snap.Obj domSnap = JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAP(), emptyProgram);
         return extractUnique(librarySnap, domSnap);
     }
 
@@ -61,9 +36,7 @@ public class JSNAPUtil {
         // Keys for the objects in the library, that are also in the DOM.
         Set<Integer> libraryKeysInDom = getKeysSharedWithDom(librarySnap, domSnap, new HashSet<>());
 
-        Snap.Obj result = extractUnique(librarySnap, domSnap, libraryKeysInDom, new Snap.Obj(), new HashMap<>());
-
-        return result;
+        return extractUnique(librarySnap, domSnap, libraryKeysInDom, new Snap.Obj(), new HashMap<>());
     }
 
     private static Snap.Obj extractUnique(Snap.Obj librarySnap, Snap.Obj domSnap, Set<Integer> libraryKeysInDom, Snap.Obj result, Map<Integer, Snap.Obj> alreadyCreated) {

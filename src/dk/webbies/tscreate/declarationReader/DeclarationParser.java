@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.jsnap.Snap;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -13,7 +14,6 @@ import java.util.*;
  */
 public class DeclarationParser {
     public static Map<Type, String> markNatives(Snap.Obj global, Environment env) {
-        // TODO: Cache the JSON.
         SpecReader spec = getTypeSpecification(env);
 
         Map<Type, String> typeNames = new HashMap<>();
@@ -35,13 +35,14 @@ public class DeclarationParser {
             runString += " \"" + declarationFile + "\"";
         }
 
-        String specification = null;
+        String cachePath = "declaration-" + env.cliArgument + "-" + runString.hashCode() + ".json";
+
         try {
-            specification = Util.runNodeScript(runString);
+            String specification = Util.getCachedOrRun(cachePath, new File("lib/ts-type-reader"), runString);
+            return new SpecReader(specification.split("\\n")[1]);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return new SpecReader(specification.split("\\n")[1]);
     }
 
     private static void markNamedTypes(SpecReader.Node namedTypes, String prefix, Map<Type, String> typeNames) {

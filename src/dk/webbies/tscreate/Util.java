@@ -18,8 +18,7 @@ import java.util.stream.StreamSupport;
  * Created by erik1 on 01-09-2015.
  */
 public class Util {
-
-    public static String runNodeScript(String args) throws IOException {
+    private static String runNodeScript(String args) throws IOException {
         Process process = Runtime.getRuntime().exec("node " + args);
 
         CountDownLatch latch = new CountDownLatch(2);
@@ -37,6 +36,63 @@ public class Util {
         }
 
         return inputGobbler.getResult();
+    }
+
+    public static String getCachedOrRun(String cachePath, File checkAgainst, String nodeArgs) throws IOException {
+        cachePath = cachePath.replaceAll("/", "");
+
+        if (checkAgainst != null && !checkAgainst.exists()) {
+            throw new RuntimeException("I cannot check against something that doesn't exist.");
+        }
+
+        File cache = new File("cache/" + cachePath);
+
+        boolean recreate = false;
+        if (!cache.exists()) {
+            recreate = true;
+        } else {
+            long jsnapLastModified = getLastModified(cache);
+            long jsLastModified = getLastModified(checkAgainst);
+            if (jsnapLastModified < jsLastModified) {
+                recreate = true;
+            }
+        }
+
+        if (recreate) {
+            System.out.println("Creating " + cache.getPath() + " from scratch.");
+            String jsnap = Util.runNodeScript(nodeArgs);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(cache));
+            writer.write(jsnap);
+            writer.close();
+            return jsnap;
+        } else {
+            FileReader reader = new FileReader(cache);
+            String result = IOUtils.toString(reader);
+            reader.close();
+            return result;
+        }
+    }
+
+    // http://stackoverflow.com/questions/12249155/how-to-get-the-last-modified-date-and-time-of-a-directory-in-java#answer-12249411
+    private static long getLastModified(File file) {
+        if (file == null) {
+            return 0;
+        }
+        if (!file.exists()) {
+            return 0;
+        }
+        if (!file.isDirectory()) {
+            return file.lastModified();
+        } else {
+            File[] files = file.listFiles();
+            assert files != null;
+            if (files.length == 0) return file.lastModified();
+            Arrays.sort(files, (o1, o2) -> {
+                return Long.valueOf(o2.lastModified()).compareTo(o1.lastModified()); //latest 1st
+            });
+
+            return files[0].lastModified();
+        }
     }
 
 
@@ -197,4 +253,6 @@ public class Util {
         acc.addAll(elem);
         return acc;
     };
+
+
 }
