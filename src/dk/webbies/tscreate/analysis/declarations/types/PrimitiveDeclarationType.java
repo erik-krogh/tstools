@@ -22,6 +22,12 @@ public enum PrimitiveDeclarationType implements DeclarationType {
         return visitor.visit(this);
     }
 
+    @Override
+    public <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument) {
+        return visitor.visit(this, argument);
+    }
+
+
     public String getPrettyString() {
         return prettyString;
     }

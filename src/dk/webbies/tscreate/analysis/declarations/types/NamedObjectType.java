@@ -18,4 +18,9 @@ public class NamedObjectType implements ObjectType {
     public <T> T accept(DeclarationTypeVisitor<T> visitor) {
         return visitor.visit(this);
     }
+
+    @Override
+    public <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument) {
+        return visitor.visit(this, argument);
+    }
 }

@@ -5,4 +5,6 @@ package dk.webbies.tscreate.analysis.declarations.types;
  */
 public interface DeclarationType {
     <T> T accept(DeclarationTypeVisitor<T> visitor);
+
+    <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument);
 }
