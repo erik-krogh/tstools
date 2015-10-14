@@ -555,24 +555,24 @@ var func = (function () {
         return test;
     };
 })();*/
-// 1
-var Klass = function () {
 
-};
-// 2
-Klass.prototype.doNormalStuff = function () {
-    return true;
-};
-
-Object.defineProperties(Klass.prototype, {
-    doFancyStuff: {
-        get: function () {
-            return function () {
-                return "string";
-            }
-        },
-        set: function () {
-            console.log("blabl");
-        }
+/*
+var MyModule = {
+    str: "string",
+    num: 123,
+    Klass: function () {
+        this.stuff = 123;
+    },
+    subModule : {
+        subStr : "string"
     }
-});
+};
+MyModule.Klass.prototype.doStuff = function () {
+    return true;
+};*/
+
+var MyModule = {
+    testFunc: (function (a) {
+        return a;
+    }).bind(MyModule, 5)
+};

@@ -259,13 +259,23 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(FunctionExpression function) {
-        if (function == this.closure.function.astNode) {
+        if (closureMatch(function, this.closure)) {
             // TODO: If a prototype-method, union this-node with libraryClass this-node.
             function.getBody().accept(this);
-            function.getArguments().forEach(arg -> arg.accept(this));
-            function.getArguments().forEach(arg -> solver.union(get(arg), new NonVoidNode()));
-            for (int i = 0; i < functionNode.arguments.size(); i++) {
-                solver.union(get(function.getArguments().get(i)), functionNode.arguments.get(i));
+            function.getArguments().forEach(arg -> solver.union(arg.accept(this), new NonVoidNode()));
+
+            if (this.closure.function.type.equals("user")) {
+                for (int i = 0; i < functionNode.arguments.size(); i++) {
+                    solver.union(get(function.getArguments().get(i)), functionNode.arguments.get(i));
+                }
+            } else {
+                int boundArguments = this.closure.function.arguments.size() - 1;
+                for (int i = 0; i < functionNode.arguments.size(); i++) {
+                    solver.union(get(function.getArguments().get(i + boundArguments)), functionNode.arguments.get(i));
+                }
+                for (int i = 0; i < boundArguments; i++) {
+                    solver.union(get(function.getArguments().get(i)), heapFactory.fromValue(this.closure.function.arguments.get(i + 1))); // Plus 1, because the first argment is the "this" node.
+                }
             }
             if (function.getName() != null) {
                 solver.union(get(function.getName()), functionNode);
@@ -286,6 +296,17 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             }
             return solver.union(get(function), result);
         }
+    }
+
+    private static boolean closureMatch(FunctionExpression function, Snap.Obj closure) {
+        String type = closure.function.type;
+        if (type.equals("user")) {
+            return function == closure.function.astNode;
+        }
+        if (type.equals("bind")) {
+            return function == closure.function.target.function.astNode;
+        }
+        throw new RuntimeException("Unknown type: " + type);
     }
 
     @Override

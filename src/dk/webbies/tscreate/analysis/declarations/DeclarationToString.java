@@ -98,19 +98,35 @@ public class DeclarationToString {
     }
 
     private void printDeclaration(String name, DeclarationType type) {
+        printDeclaration(name, type, "declare");
+    }
+
+    private void printDeclaration(String name, DeclarationType type, String prefix) {
         if (type instanceof FunctionType) {
             FunctionType functionType = (FunctionType) type;
             ident();
-            write("declare function " + name + "(");
+            write(prefix + " function " + name + "(");
             List<FunctionType.Argument> args = functionType.getArguments();
             printArguments(args);
             write("): ");
             functionType.getReturnType().accept(new TypeVisitor());
 
             write(";\n");
+        } else if (type instanceof ModuleType) {
+            ModuleType module = (ModuleType) type;
+            ident();
+            write(prefix + " module " + name + " {\n");
+            ident++;
+
+            for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet()) {
+                printDeclaration(entry.getKey(), entry.getValue(), "export");
+            }
+
+            ident--;
+            writeln("}");
         } else {
             ident();
-            write("declare var ");
+            write(prefix + " var ");
             write(name);
             write(": ");
             type.accept(new TypeVisitor());
@@ -300,6 +316,11 @@ public class DeclarationToString {
             write(instanceType.getClazz().getName());
             classesToPrint.add(instanceType.getClazz());
             return null;
+        }
+
+        @Override
+        public Void visit(ModuleType module) {
+            throw new IllegalArgumentException("Module type should only happen inside a declaration, and in that case, printDeclaration is called");
         }
     }
 }

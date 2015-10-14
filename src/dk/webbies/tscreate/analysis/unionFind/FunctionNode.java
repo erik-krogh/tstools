@@ -71,6 +71,14 @@ public class FunctionNode extends UnionNodeWithFields {
             FunctionNode result = create(0);
             result.closure = closure;
             return result;
+        } else if (type.equals("bind")) {
+            int boundArguments = closure.function.arguments.size() - 1;
+            List<Identifier> allArguments = closure.function.target.function.astNode.getArguments();
+            List<Identifier> freeArguments = allArguments.subList(boundArguments, allArguments.size());
+            FunctionNode result = create(freeArguments.stream().map(Identifier::getName).collect(Collectors.toList()));
+            result.astFunction = closure.function.target.function.astNode;
+            result.closure = closure;
+            return result;
         }
         throw new RuntimeException();
     }

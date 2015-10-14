@@ -21,7 +21,6 @@ public class GreatestCommonOfUnionNode extends UnionNodeWithFields {
         for (UnionNode node : this.nodes) {
             addField("GC-Of-" + counter++, node);
         }
-
     }
 
     public List<UnionNode> getNodes() {

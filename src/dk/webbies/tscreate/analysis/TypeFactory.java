@@ -9,9 +9,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static dk.webbies.tscreate.Util.cast;
 
@@ -344,7 +342,7 @@ public class TypeFactory {
         }
     }
 
-    private DeclarationType getHeapPropType(Snap.Property prop) {
+    public DeclarationType getHeapPropType(Snap.Property prop) {
         if (prop.value != null) {
             return getHeapValueType(prop.value);
         } else {
@@ -368,14 +366,25 @@ public class TypeFactory {
             return PrimitiveDeclarationType.UNDEFINED;
         } else if (value instanceof Snap.NullConstant) {
             return PrimitiveDeclarationType.ANY;
-        } else {
-            if ((value instanceof Snap.Obj && ((Snap.Obj) value).function != null)) {
+        } else if ((value instanceof Snap.Obj)) {
+            if (((Snap.Obj) value).function != null) {
                 return getFunctionType((Snap.Obj) value);
             } else {
-                // TODO:
-                throw new RuntimeException("I don't handle this yet");
+                return getModuleType((Snap.Obj) value);
             }
+        } else {
+            throw new RuntimeException("I don't know what to do with a " + value);
         }
+
+    }
+
+    private ModuleType getModuleType(Snap.Obj value) {
+        HashMap<String, DeclarationType> declarations = new HashMap<>();
+        for (Map.Entry<String, Snap.Property> entry : value.getPropertyMap().entrySet()) {
+            declarations.put(entry.getKey(), getHeapPropType(entry.getValue()));
+        }
+
+        return new ModuleType(declarations);
     }
 
     private Map<String, DeclarationType> getObjectProperties(Collection<ObjectUnionNode> objects) {
@@ -446,7 +455,7 @@ public class TypeFactory {
     }
 
     public DeclarationType createFunctionType(FunctionNode function, List<String> argumentNames, Collection<FunctionNode> functionNodes) {
-        if (function.closure != null && function.closure.function.type.equals("user")) {
+        if (function.closure != null && (function.closure.function.type.equals("user") || function.closure.function.type.equals("bind"))) {
             boolean inFinishedNodes = functionNodes.stream().anyMatch(finishedFunctionNodes::contains);
             if (!inFinishedNodes) {
                 return getFunctionType(function.closure);

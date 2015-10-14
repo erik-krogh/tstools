@@ -36,6 +36,6 @@ public class UnresolvedDeclarationType implements DeclarationType {
 
     @Override
     public <T> T accept(DeclarationTypeVisitor<T> visitor) {
-        throw new RuntimeException();
+        return this.getResolvedType().accept(visitor);
     }
 }

@@ -10,6 +10,7 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.AstNode;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.*;
 
@@ -102,6 +103,15 @@ public class TypeAnalysis {
         if (closure.function.type.equals("unknown")) {
             return;
         }
+
+        if (closure.function.type.equals("bind")) {
+            if (!closure.function.arguments.isEmpty()) {
+                solver.union(functionNode.thisNode, heapFactory.fromValue(closure.function.arguments.get(0)));
+            }
+            closure.env = closure.function.target.env;
+            closure.function.astNode = closure.function.target.function.astNode;
+        }
+
         Map<String, Snap.Value> values = new HashMap<>();
         for (Snap.Property property : closure.env.properties) {
             values.put(property.name, property.value);
@@ -146,7 +156,7 @@ public class TypeAnalysis {
         seen.add(obj);
 
         ArrayList<Snap.Obj> result = new ArrayList<>();
-        if (obj.function != null && obj.function.type.equals("user")) {
+        if (obj.function != null && (obj.function.type.equals("user") || obj.function.type.equals("bind"))) {
             result.add(obj);
         }
         if (obj.properties != null) {

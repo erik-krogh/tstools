@@ -144,6 +144,11 @@ public class JSNAPUtil {
             if (function.type.equals("user")) {
                 int id = Integer.parseInt(function.id);
                 function.astNode = functions.get(id);
+            } else if (function.type.equals("bind")) {
+                function.target = stateDump.heap.get((function.target).key);
+                if (!function.target.function.type.equals("user")) {
+                    throw new RuntimeException();
+                }
             }
         }
     }

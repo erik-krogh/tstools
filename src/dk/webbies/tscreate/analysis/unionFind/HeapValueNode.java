@@ -171,11 +171,7 @@ public class HeapValueNode extends ObjectUnionNode {
             Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
             functionNodes.put(closure, functionNode);
 
-            try {
-                this.typeAnalysis.analyse(closure, new HashMap<>(), functionNodes, this.solver, functionNode, this);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            this.typeAnalysis.analyse(closure, new HashMap<>(), functionNodes, this.solver, functionNode, this);
 
             this.getterSetterCache.put(closure, functionNode);
             return functionNode;

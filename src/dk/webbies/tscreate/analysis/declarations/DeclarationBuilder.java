@@ -40,11 +40,7 @@ public class DeclarationBuilder {
                     continue;
                 }
             }
-            Snap.Value value = property.value;
-            if (value == null) {
-                continue;
-            }
-            declarations.put(property.name, typeFactory.getHeapValueType(value));
+            declarations.put(property.name, typeFactory.getHeapPropType(property));
         }
 
         return declarations;
@@ -196,6 +192,16 @@ public class DeclarationBuilder {
                 instanceType.clazz = ((UnresolvedDeclarationType) instanceType.clazz).getResolvedType();
             }
             instanceType.clazz.accept(this);
+            return null;
+        }
+
+        @Override
+        public Void visit(ModuleType moduleType) {
+            for (Map.Entry<String, DeclarationType> entry : moduleType.getDeclarations().entrySet()) {
+                if (entry.getValue() instanceof UnresolvedDeclarationType) {
+                    moduleType.getDeclarations().put(entry.getKey(), ((UnresolvedDeclarationType) entry.getValue()).getResolvedType());
+                }
+            }
             return null;
         }
     }

@@ -19,4 +19,6 @@ public interface DeclarationTypeVisitor<T> {
     T visit(ClassType classType);
 
     T visit(ClassInstanceType instanceType);
+
+    T visit(ModuleType moduleType);
 }
