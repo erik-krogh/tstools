@@ -1,7 +1,5 @@
 package dk.webbies.tscreate.analysis;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
@@ -32,7 +30,7 @@ public class TypeAnalysis {
         this.globalObject = globalObject;
         this.typeNames = typeNames;
         this.functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
-        this.typeFactory = new TypeFactory(globalObject, libraryClasses, functionNodes);
+        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, typeNames);
     }
 
     public TypeFactory getTypeFactory() {
@@ -44,7 +42,7 @@ public class TypeAnalysis {
 
         Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
         for (Snap.Obj function : functions) {
-            functionNodes.put(function, new FunctionNode(function));
+            functionNodes.put(function, FunctionNode.create(function));
         }
         return functionNodes;
     }
@@ -66,7 +64,9 @@ public class TypeAnalysis {
                 HashMap<Snap.Obj, FunctionNode> subFunctions = new HashMap<>();
                 subFunctions.put(functionClosure, functionNode); // But the one we are analysing, should still be the right one.
 
-                analyse(functionClosure, nodes, subFunctions, solver, functionNode);
+                HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this);
+
+                analyse(functionClosure, nodes, subFunctions, solver, functionNode, heapFactory);
 
                 solver.finish();
                 typeFactory.finishedFunctionNodes.add(functionNode);
@@ -78,8 +78,9 @@ public class TypeAnalysis {
         } else {
             Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
             UnionFindSolver solver = new UnionFindSolver();
+            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this);
             for (Snap.Obj function : functions) {
-                analyse(function, nodes, functionNodes, solver, functionNodes.get(function));
+                analyse(function, nodes, functionNodes, solver, functionNodes.get(function), heapFactory);
             }
 
             solver.finish();
@@ -97,14 +98,13 @@ public class TypeAnalysis {
         }
     }
 
-    private void analyse(Snap.Obj closure, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode) {
-        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames);
-
+    public void analyse(Snap.Obj closure, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueNode.Factory heapFactory) {
+        if (closure.function.type.equals("unknown")) {
+            return;
+        }
         Map<String, Snap.Value> values = new HashMap<>();
         for (Snap.Property property : closure.env.properties) {
             values.put(property.name, property.value);
-            // I gain some information (mapping instances to classes), just by looking at the environment, so i do that.
-//            heapFactory.fromValue(property.value); // To slow.
         }
 
         new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory).visit(closure.function.astNode);
@@ -157,7 +157,7 @@ public class TypeAnalysis {
             }
         }
 
-        if (obj.prototype != null) {
+        if (obj.prototype != null && obj.prototype.properties != null) {
             for (Snap.Property property : obj.prototype.properties) {
                 if (property.value != null && property.value instanceof Snap.Obj) {
                     result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));

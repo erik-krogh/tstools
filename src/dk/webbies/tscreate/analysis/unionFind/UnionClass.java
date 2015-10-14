@@ -60,9 +60,7 @@ public final class UnionClass {
 
     private void merge(Map<String, UnionNode> fields) {
         for (Map.Entry<String, UnionNode> entry : fields.entrySet()) {
-            String key = entry.getKey();
-            UnionNode value = entry.getValue();
-            addField(key, value);
+            addField(entry.getKey(), entry.getValue());
         }
     }
 
@@ -70,16 +68,13 @@ public final class UnionClass {
         if (this.fields.containsKey(key)) {
             solver.union(value, this.fields.get(key));
         } else {
+            solver.add(value);
             this.fields.put(key, value);
         }
     }
 
     public List<UnionNode> getNodes() {
         return nodes;
-    }
-
-    public Map<String, UnionNode> getFields() {
-        return fields;
     }
 
     public void addChangeCallback(Runnable callback) {

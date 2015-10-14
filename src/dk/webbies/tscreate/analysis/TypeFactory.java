@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis;
 
+import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.unionFind.*;
@@ -7,6 +9,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,11 +22,15 @@ public class TypeFactory {
     private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
     private final Snap.Obj globalObject;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    private Options options;
+    private Map<Type, String> typeNames;
     public final Set<FunctionNode> finishedFunctionNodes = new HashSet<>();
 
-    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Map<Snap.Obj, FunctionNode> functionNodes) {
+    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Map<Type, String> typeNames) {
         this.globalObject = globalObject;
         this.libraryClasses = libraryClasses;
+        this.options = options;
+        this.typeNames = typeNames;
     }
 
 
@@ -70,11 +77,7 @@ public class TypeFactory {
 
     private DeclarationType getTypeNoCache(Set<UnionNode> nodes) {
         // First unpacking the GreatestCommonOfUnionNode
-        Set<GreatestCommonOfUnionNode> greatestCommons = nodes.stream().filter(node -> node instanceof GreatestCommonOfUnionNode).map(node -> (GreatestCommonOfUnionNode) node).collect(Collectors.toSet());
-        if (!greatestCommons.isEmpty()) {
-            Set<UnionNode> newNodeSet = getCombinedNodeSet(nodes, greatestCommons);
-            return getTypeNoCache(newNodeSet); // This could be done without recursion. But it is a good sanity check, since it is supposed to not go in an infinite loop.
-        }
+        nodes = getUnfoldedNodes(nodes);
 
         if (nodes.isEmpty()) {
             return PrimitiveDeclarationType.VOID;
@@ -163,7 +166,9 @@ public class TypeFactory {
         }
     }
 
-    private Set<UnionNode> getCombinedNodeSet(Set<UnionNode> nodes, Set<GreatestCommonOfUnionNode> greatestCommons) {
+    private static Set<UnionNode> getUnfoldedNodes(Collection<UnionNode> nodes) {
+        Set<GreatestCommonOfUnionNode> greatestCommons = nodes.stream().filter(node -> node instanceof GreatestCommonOfUnionNode).map(node -> (GreatestCommonOfUnionNode) node).collect(Collectors.toSet());
+
         Set<UnionNode> newNodeSet = new HashSet<>();
         newNodeSet.addAll(nodes);
 
@@ -174,6 +179,9 @@ public class TypeFactory {
             for (GreatestCommonOfUnionNode greatestCommon : toAdd) {
                 for (UnionNode node : greatestCommon.getNodes()) {
                     if (!nodes.contains(node)) {
+                        if (node.getUnionClass() == null) {
+                            throw new NullPointerException();
+                        }
                         classesToAdd.add(node.getUnionClass());
                     }
                 }
@@ -197,6 +205,7 @@ public class TypeFactory {
                 }
             }
         }
+
         return newNodeSet;
     }
 
@@ -299,22 +308,24 @@ public class TypeFactory {
 
                 // TODO: The constructorNode might never have been seen by the unionFindSolver.
                 // Bypassing the cache.
-                List<UnionNode> unfilteredConstructorNodes = libraryClass.constructorNodes.stream().map(UnionNode::getUnionClass).distinct().map(UnionClass::getNodes).reduce(new ArrayList<>(), Util::reduceList);
+                Collection<UnionNode> unfilteredConstructorNodes = TypeFactory.getUnfoldedNodes(libraryClass.constructorNodes.stream().map(node -> node.getUnionClass().getNodes()).reduce(new ArrayList<>(), Util::reduceList));
                 List<FunctionNode> constructorNodes = unfilteredConstructorNodes.stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).collect(Collectors.toList());
                 DeclarationType constructorType = createFunctionType(constructorNodes);
 
                 Map<String, DeclarationType> prototypeProperties = new HashMap<>();
 
                 // Bypassing the cache
-                List<UnionNode> nodes = libraryClass.thisNodes.stream().map(UnionNode::getUnionClass).map(UnionClass::getNodes).reduce(new ArrayList<>(), Util::reduceList);
-                prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(nodes).getNodes(ObjectUnionNode.class)));
+                List<UnionNode> thisNodes = libraryClass.thisNodes.stream().map(UnionNode::getUnionClass).map(UnionClass::getNodes).reduce(new ArrayList<>(), Util::reduceList);
+                constructorNodes.forEach(node -> thisNodes.addAll(node.thisNode.getUnionClass().getNodes()));
+
+                prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(thisNodes).getNodes(ObjectUnionNode.class)));
 
                 // I assume the prototype is correct, so i just overwrite whatever was before.
-                libraryClass.prototype.getPropertyValueMap().forEach((name, value) -> {
+                libraryClass.prototype.getPropertyMap().forEach((name, prop) -> {
                     if (name.equals("constructor")) {
                         return;
                     }
-                    prototypeProperties.put(name, getHeapValueType(value));
+                    prototypeProperties.put(name, getHeapPropType(prop));
                 });
 
                 Map<String, DeclarationType> staticFields = getObjectProperties(unfilteredConstructorNodes.stream().filter(node -> node instanceof ObjectUnionNode).map(node -> (ObjectUnionNode) node).distinct().collect(Collectors.toList()));
@@ -333,6 +344,19 @@ public class TypeFactory {
         }
     }
 
+    private DeclarationType getHeapPropType(Snap.Property prop) {
+        if (prop.value != null) {
+            return getHeapValueType(prop.value);
+        } else {
+            TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, typeNames);
+            UnionFindSolver solver = new UnionFindSolver();
+            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, typeAnalysis);
+            UnionNode unionNode = heapFactory.fromProperty(prop);
+            solver.finish();
+            return getType(unionNode);
+        }
+    }
+
     public DeclarationType getHeapValueType(Snap.Value value) {
         if (value instanceof Snap.BooleanConstant) {
             return PrimitiveDeclarationType.BOOLEAN;
@@ -348,6 +372,7 @@ public class TypeFactory {
             if ((value instanceof Snap.Obj && ((Snap.Obj) value).function != null)) {
                 return getFunctionType((Snap.Obj) value);
             } else {
+                // TODO:
                 throw new RuntimeException("I don't handle this yet");
             }
         }

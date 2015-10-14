@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.FunctionNodeFactory;
+import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
@@ -24,30 +25,62 @@ public class HeapValueNode extends ObjectUnionNode {
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    List<UnionNode> fieldNodes = factory.fromValue(property.value);
-                    EmptyUnionNode fieldNode = new EmptyUnionNode();
-                    for (UnionNode node : fieldNodes) {
-                        factory.solver.union(node, fieldNode);
-                    }
-                    addField(property.name, fieldNode);
+                    addField(property.name, factory.fromProperty(property));
                 }
             }
         }
     }
 
     public static class Factory {
+        private final Snap.Obj globalObject;
+        private final Map<Type, String> typeNames;
         private Map<Snap.Value, HeapValueNode> cache = new HashMap<>();
         private PrimitiveUnionNode.Factory primitivesFactory;
         private UnionFindSolver solver;
         private FunctionNodeFactory functionNodeFactory;
         private Multimap<Snap.Obj, UnionNode> functionCache = ArrayListMultimap.create();
-        private HashMap<Snap.Obj, LibraryClass> libraryClasses;
+        private Map<Snap.Obj, LibraryClass> libraryClasses;
 
-        public Factory(Snap.Obj globalObject, UnionFindSolver solver, HashMap<Snap.Obj, LibraryClass> libraryClasses, Map<Type, String> typeNames) {
+        private final Map<Snap.Obj, FunctionNode> getterSetterCache = new HashMap<>();
+        private final TypeAnalysis typeAnalysis;
+
+        public Factory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, Map<Type, String> typeNames, TypeAnalysis typeAnalysis) {
             this.libraryClasses = libraryClasses;
-            this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, globalObject);
+            this.globalObject = globalObject;
+            this.typeAnalysis = typeAnalysis;
+            this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, this.globalObject);
             this.solver = solver;
-            this.functionNodeFactory = new FunctionNodeFactory(primitivesFactory, solver, typeNames);
+            this.typeNames = typeNames;
+            this.functionNodeFactory = new FunctionNodeFactory(primitivesFactory, solver, this.typeNames);
+        }
+
+        public UnionNode fromProperty(Snap.Property property) {
+            if (property.value == null) {
+                if (property.get == null || property.set == null) {
+                    throw new NullPointerException();
+                }
+                UnionNode getter = new EmptyUnionNode();
+                if (!(property.get instanceof Snap.UndefinedConstant)) {
+                    getter = getGetterSetterNode((Snap.Obj) property.get).returnNode;
+                }
+                UnionNode setter = new EmptyUnionNode();
+                if (!(property.set instanceof Snap.UndefinedConstant)) {
+                    FunctionNode setterFunctionNode = getGetterSetterNode((Snap.Obj) property.set);
+                    if (!setterFunctionNode.arguments.isEmpty()) {
+                        setter = setterFunctionNode.arguments.get(0);
+                    }
+                }
+                GreatestCommonOfUnionNode fieldNode = new GreatestCommonOfUnionNode(getter, setter);
+                solver.add(fieldNode);
+                solver.add(getter);
+                solver.add(setter);
+                return fieldNode;
+            } else {
+                List<UnionNode> fieldNodes = fromValue(property.value);
+                EmptyUnionNode fieldNode = new EmptyUnionNode();
+                solver.union(fieldNode, fieldNodes);
+                return fieldNode;
+            }
         }
 
         public List<UnionNode> fromValue(Snap.Value value) {
@@ -90,7 +123,7 @@ public class HeapValueNode extends ObjectUnionNode {
             }
             List<UnionNode> result = new ArrayList<>();
             if (obj.function.astNode != null) {
-                FunctionNode functionNode = new FunctionNode(obj);
+                FunctionNode functionNode = FunctionNode.create(obj);
                 result.add(functionNode);
                 if (obj.getProperty("prototype") != null) {
                     Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
@@ -127,6 +160,25 @@ public class HeapValueNode extends ObjectUnionNode {
                 return null;
             }
             throw new RuntimeException();
+        }
+
+        private FunctionNode getGetterSetterNode(Snap.Obj closure) {
+            if (this.getterSetterCache.containsKey(closure)) {
+                return this.getterSetterCache.get(closure);
+            }
+
+            FunctionNode functionNode = FunctionNode.create(closure);
+            Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
+            functionNodes.put(closure, functionNode);
+
+            try {
+                this.typeAnalysis.analyse(closure, new HashMap<>(), functionNodes, this.solver, functionNode, this);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            this.getterSetterCache.put(closure, functionNode);
+            return functionNode;
         }
     }
 }

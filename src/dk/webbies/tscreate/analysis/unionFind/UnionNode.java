@@ -12,8 +12,8 @@ public abstract class UnionNode {
     private final int counter;
     public UnionNode() {
         this.counter = instanceCounter++;
-        if (this.counter == -1) {
-            throw new RuntimeException(); // Just so i have a breakPoint.
+        if (this.counter == 118215) {
+            System.out.println();
         }
     }
 

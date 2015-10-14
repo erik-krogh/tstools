@@ -137,10 +137,6 @@ public class UnionFindSolver {
         return elem.parent;
     }
 
-    public UnionClass getUnionClass(UnionNode node) {
-        return recFind(node).unionClass;
-    }
-
     public void union(UnionNode one, List<UnionNode> list) {
         for (UnionNode unionNode : list) {
             this.union(one, unionNode);

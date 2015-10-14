@@ -513,19 +513,66 @@ function each(arr, callback) {
     return "something";
 };*/
 
-var tmp = function () {
-    return 2;
+/*
+var func = (function () {
+    var test = {};
+
+    Object.defineProperties(test, {
+        blur: {
+            get: function () {
+                return 2;
+            },
+            set: function (value) {
+                value == "test";
+            }
+        }
+    });
+
+    return function () {
+        return test;
+    };
+})();*/
+
+/*var func = (function () {
+    var test = {};
+
+    var blab = 2;
+
+    Object.defineProperties(test, {
+        blur: {
+            get: function () {
+                test && 3;
+                return blab;
+
+            },
+            set: function (value) {
+
+            }
+        }
+    });
+
+    return function () {
+        return test;
+    };
+})();*/
+// 1
+var Klass = function () {
+
+};
+// 2
+Klass.prototype.doNormalStuff = function () {
+    return true;
 };
 
-
-
-
-/* Missing:
- - Loops (for/while)
- - For in.
- - Arrays
- - Indexers (String and Number).
- - instanceof
- - typeof
-
-  */
+Object.defineProperties(Klass.prototype, {
+    doFancyStuff: {
+        get: function () {
+            return function () {
+                return "string";
+            }
+        },
+        set: function () {
+            console.log("blabl");
+        }
+    }
+});

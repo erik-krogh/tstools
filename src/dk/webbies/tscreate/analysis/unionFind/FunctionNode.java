@@ -22,7 +22,7 @@ public class FunctionNode extends UnionNodeWithFields {
 
     public boolean hasAnalyzed = false; // For when analysing the functions separately.
 
-    public FunctionNode(List<String> argumentNames) {
+    private FunctionNode(List<String> argumentNames) {
         this.argumentNames = argumentNames;
         this.returnNode = new EmptyUnionNode();
         this.thisNode = new EmptyUnionNode();
@@ -35,8 +35,12 @@ public class FunctionNode extends UnionNodeWithFields {
         addField("function-this", thisNode);
     }
 
-    public FunctionNode(int size) {
-        this(createArgumentNames(size));
+    public static  FunctionNode create(List<String> argumentNames) {
+        return new FunctionNode(argumentNames);
+    }
+
+    public static FunctionNode create(int size) {
+        return new FunctionNode(createArgumentNames(size));
     }
 
     private static List<String> createArgumentNames(int size) {
@@ -51,18 +55,29 @@ public class FunctionNode extends UnionNodeWithFields {
         return argumentNames;
     }
 
-    public FunctionNode(FunctionExpression function) {
-        this(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()));
-        this.astFunction = function;
+    public static FunctionNode create(FunctionExpression function) {
+        FunctionNode result = new FunctionNode(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()));
+        result.astFunction = function;
+        return result;
     }
 
-    public FunctionNode(Snap.Obj closure) {
-        this(closure.function.astNode);
-        this.closure = closure;
+    public static FunctionNode create(Snap.Obj closure) {
+        String type = closure.function.type;
+        if (type.equals("user")) {
+            FunctionNode result = create(closure.function.astNode);
+            result.closure = closure;
+            return result;
+        } else if (type.equals("unknown")) {
+            FunctionNode result = create(0);
+            result.closure = closure;
+            return result;
+        }
+        throw new RuntimeException();
     }
 
-    public FunctionNode(Snap.Obj closure, List<String> argumentNames) {
-        this(argumentNames);
-        this.closure = closure;
+    public static FunctionNode create(Snap.Obj closure, List<String> argumentNames) {
+        FunctionNode result = create(argumentNames);
+        result.closure = closure;
+        return result;
     }
 }

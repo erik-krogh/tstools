@@ -35,7 +35,7 @@ public class FunctionNodeFactory {
         for (int i = argumentNames.size(); i < args.size(); i++) {
             argumentNames.add("arg" + i);
         }
-        FunctionNode functionNode = new FunctionNode(closure, argumentNames);
+        FunctionNode functionNode = FunctionNode.create(closure, argumentNames);
         signatureCache.put(signature, functionNode);
 
         int normalParameterCount = signature.getParameters().size();

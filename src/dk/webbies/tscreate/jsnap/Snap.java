@@ -42,10 +42,6 @@ public class Snap {
             return propertyMap;
         }
 
-        public Map<String, Value> getPropertyValueMap() {
-            return getPropertyMap().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().value));
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

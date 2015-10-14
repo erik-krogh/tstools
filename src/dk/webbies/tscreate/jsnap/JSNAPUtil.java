@@ -10,7 +10,6 @@ import dk.webbies.tscreate.paser.AST.BlockStatement;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.AST.Identifier;
 import dk.webbies.tscreate.paser.AST.NodeTransverse;
-import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.util.*;
@@ -136,78 +135,6 @@ public class JSNAPUtil {
         }
     }
 
-    public static Snap.Value lookup(Snap.Value value, String key) {
-        if (key.isEmpty()) {
-            return value;
-        }
-        if (value instanceof Snap.Obj) {
-            Snap.Obj obj = (Snap.Obj) value;
-            String[] split = key.split("\\.");
-            String index = split[0];
-            Snap.Property prop = obj.getProperty(index);
-            if (prop != null) {
-                StringBuilder newKey = new StringBuilder();
-                for (int i = 1; i < split.length; i++) {
-                    newKey.append(split[i]).append(".");
-                }
-                if (newKey.length() > 0) {
-                    newKey.deleteCharAt(newKey.length() - 1);
-                }
-                return lookup(prop.value, newKey.toString());
-            } else {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    public static List<Map.Entry<String, Snap.Value>> getSubHeap(Map<String,Snap. Value> heap, String searchString) {
-        ArrayList<Map.Entry<String, Snap.Value>> entries = new ArrayList<>(getSubHeapMap(heap, searchString).entrySet());
-        entries.sort((o1, o2) -> o1.getKey().length() - o2.getKey().length());
-        return entries;
-    }
-
-    private static Map<String, Snap.Value> getSubHeapMap(Map<String, Snap.Value> heap, String searchString) {
-        HashMap<String, Snap.Value> result = new HashMap<>();
-        heap.entrySet().stream().filter(entry -> entry.getKey().contains(searchString)).forEach(entry -> {
-            result.put(entry.getKey(), entry.getValue());
-        });
-
-        return result;
-    }
-
-    private static Map<String, Snap.Value> makePrettyHeap(String prefix, Snap.Obj obj, Set<Snap.Obj> seen) {
-        HashMap<String, Snap.Value> map = new HashMap<>();
-        if (seen.contains(obj)) { // Yep, no equals or hashCode. That is because everything is cyclic, so that stuff doesn't work well.
-            return new HashMap<>();
-        }
-        seen.add(obj);
-
-        obj.properties.forEach(property -> {
-            map.put(prefix + property.name, property.value);
-        });
-
-
-        obj.properties.forEach(property -> {
-            if (property.value instanceof Snap.Obj) {
-                Snap.Obj subValue = (Snap.Obj) property.value;
-
-                if (subValue.env != null) {
-                    map.put(prefix + property.name + ".[ENV]", subValue.env);
-                    map.putAll(makePrettyHeap(prefix + property.name + ".[ENV].", subValue.env, seen));
-                }
-                if (subValue.prototype != null) {
-                    map.put(prefix + property.name + ".prototype", subValue.prototype);
-                    map.putAll(makePrettyHeap(prefix + property.name + ".prototype.", subValue.prototype, seen));
-                }
-
-                map.putAll(makePrettyHeap(prefix + property.name + ".", subValue, seen));
-            }
-        });
-
-        return map;
-    }
-
     private static void resolveFunctions(Snap.StateDump stateDump, List<FunctionExpression> functions) {
         for (Snap.Obj obj : stateDump.heap) {
             if (obj == null || obj.function == null) {
@@ -226,31 +153,31 @@ public class JSNAPUtil {
             Snap.Obj obj = stateDump.heap.get(i);
             obj.key = i;
         }
-        stateDump.heap.forEach(obj -> {
+        for (Snap.Obj obj : stateDump.heap) {
             if (obj == null || obj.properties == null) {
-                return;
+                continue;
             }
-            obj.properties.forEach(prop -> {
+            for (Snap.Property prop : obj.properties) {
                 if (prop.value instanceof Snap.Obj) {
-                    int key = ((Snap.Obj) prop.value).key;
-                    Snap.Obj real = stateDump.heap.get(key);
-                    prop.value = real;
-                }
-                if (prop.value instanceof Snap.Obj) {
+                    prop.value = stateDump.heap.get(((Snap.Obj) prop.value).key);
+
                     Snap.Obj propValue = (Snap.Obj) prop.value;
                     if (propValue.env != null) {
-                        int key = (propValue.env).key;
-                        Snap.Obj real = stateDump.heap.get(key);
-                        propValue.env = real;
+                        propValue.env = stateDump.heap.get((propValue.env).key);
                     }
                     if (propValue.prototype != null) {
-                        int key = (propValue.prototype).key;
-                        Snap.Obj real = stateDump.heap.get(key);
-                        propValue.prototype = real;
+                        propValue.prototype = stateDump.heap.get((propValue.prototype).key);
                     }
                 }
-            });
-        });
+                if (prop.get != null && prop.get instanceof Snap.Obj) {
+                    prop.get = stateDump.heap.get(((Snap.Obj) prop.get).key);
+                }
+                if (prop.set != null && prop.set instanceof Snap.Obj) {
+                    prop.set = stateDump.heap.get(((Snap.Obj) prop.set).key);
+                }
+            }
+        }
+
     }
 
     private static String readFile(String path) throws IOException {

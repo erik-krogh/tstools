@@ -25,7 +25,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private final Map<TypeAnalysis.ProgramPoint, UnionNode> nodes;
     private final FunctionNode functionNode;
     private final Map<Snap.Obj, FunctionNode> functionNodes;
-    private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    private final Map<Snap.Obj, LibraryClass> libraryClasses;
     private final Options options;
     private Snap.Obj globalObject;
     private Map<Type, String> typeNames;
@@ -39,7 +39,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             Map<TypeAnalysis.ProgramPoint, UnionNode> nodes,
             FunctionNode functionNode,
             Map<Snap.Obj, FunctionNode> functionNodes,
-            HashMap<Snap.Obj, LibraryClass> libraryClasses,
+            Map<Snap.Obj, LibraryClass> libraryClasses,
             Options options,
             Snap.Obj globalObject,
             HeapValueNode.Factory heapFactory,
@@ -133,6 +133,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case LEFT_SHIFT: // <<
             case RIGHT_SHIFT: // >>
             case UNSIGNED_RIGHT_SHIFT: // >>>
+            case LEFT_SHIFT_EQUAL: // <<=
+            case RIGHT_SHIFT_EQUAL: // >>=
+            case UNSIGNED_RIGHT_SHIFT_EQUAL: // >>>=
                 solver.union(primitiveFactory.number(), lhs);
                 solver.union(primitiveFactory.number(), rhs);
                 result = primitiveFactory.number();
@@ -257,6 +260,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     @Override
     public UnionNode visit(FunctionExpression function) {
         if (function == this.closure.function.astNode) {
+            // TODO: If a prototype-method, union this-node with libraryClass this-node.
             function.getBody().accept(this);
             function.getArguments().forEach(arg -> arg.accept(this));
             function.getArguments().forEach(arg -> solver.union(get(arg), new NonVoidNode()));
@@ -267,10 +271,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(get(function.getName()), functionNode);
             }
             solver.union(get(function), functionNode);
-            solver.union(functionNode, heapFactory.fromValue(this.closure)); // TODO:
+            solver.union(functionNode, heapFactory.fromValue(this.closure));
             return null;
         } else {
-            FunctionNode result = new FunctionNode(function);
+            FunctionNode result = FunctionNode.create(function);
             if (function.getName() != null) {
                 solver.union(get(function.getName()), result);
                 function.getName().accept(this);
@@ -379,7 +383,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            List<UnionNode> unionNodes = solver.getUnionClass(get(member.getExpression())).getNodes();
+            List<UnionNode> unionNodes = get(member.getExpression()).getUnionClass().getNodes();
 
             Set<ObjectUnionNode> objects = unionNodes.stream().filter(node -> node instanceof ObjectUnionNode).map(obj -> ((ObjectUnionNode) obj)).filter(obj -> !seenObjects.contains(obj)).collect(Collectors.toSet());
             seenObjects.addAll(objects);
@@ -394,22 +398,19 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             Set<Snap.Obj> prototypes = unionNodes.stream().filter(node -> node instanceof HasPrototypeUnionNode).map(hasProto -> ((HasPrototypeUnionNode) hasProto).getPrototype()).filter(proto -> !seenPrototypes.contains(proto)).collect(Collectors.toSet());
             seenPrototypes.addAll(prototypes);
             for (Snap.Obj prototype : prototypes) {
-                List<UnionNode> nodes = lookupProperty(prototype, member.getProperty());
-                solver.union(get(member), nodes);
+                UnionNode propertyNode = lookupProperty(prototype, member.getProperty());
+                solver.union(get(member), propertyNode);
             }
         }
 
-        private List<UnionNode> lookupProperty(Snap.Value value, String name) {
-            if (value == null) {
-                return Collections.EMPTY_LIST;
-            }
-            if (!(value instanceof Snap.Obj)) {
-                return Collections.EMPTY_LIST;
+        private UnionNode lookupProperty(Snap.Value value, String name) {
+            if (value == null || !(value instanceof Snap.Obj)) {
+                return new EmptyUnionNode();
             }
             Snap.Obj obj = (Snap.Obj) value;
             Snap.Property property = obj.getProperty(name);
             if (property != null) {
-                return heapFactory.fromValue(property.value);
+                return heapFactory.fromProperty(property);
             }
 
             return lookupProperty(obj.prototype, name);
@@ -485,7 +486,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.args = args;
             this.returnNode = returnNode;
 
-            FunctionNode functionNode = new FunctionNode(args.size());
+            FunctionNode functionNode = FunctionNode.create(args.size());
             solver.union(function, functionNode);
             Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, pair.right, new NonVoidNode()));
 
@@ -535,7 +536,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     private List<FunctionNode> getFunctionNodes(UnionNode function, Set<HeapValueNode> seenHeap, boolean constructorCalls, List<UnionNode> args) {
-        List<UnionNode> nodes = solver.getUnionClass(function).getNodes();
+        List<UnionNode> nodes = function.getUnionClass().getNodes();
         List<FunctionNode> result = cast(FunctionNode.class, nodes.stream().filter(node -> node instanceof FunctionNode).collect(Collectors.toList()));
 
         List<HeapValueNode> heapValues = cast(HeapValueNode.class, nodes.stream().filter(node ->
@@ -557,7 +558,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         if (!options.separateFunctions) {
                             throw new RuntimeException("All closures should have a functionNode at this point");
                         }
-                        functionNode = new FunctionNode(closure);
+                        functionNode = FunctionNode.create(closure);
                         UnionConstraintVisitor.this.functionNodes.put(closure, functionNode);
                     }
                     result.add(functionNode);
