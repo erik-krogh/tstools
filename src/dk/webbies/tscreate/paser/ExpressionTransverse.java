@@ -80,7 +80,7 @@ public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
 
     @Override
     public default T visit(ObjectLiteral object) {
-        object.getProperties().values().forEach(value -> value.accept(this));
+        object.getProperties().forEach((name, value) -> value.accept(this));
         return null;
     }
 

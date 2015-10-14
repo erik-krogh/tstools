@@ -123,7 +123,7 @@ public class AstTransformer {
             return new IfStatement(loc, (Expression) convert(ifTree.condition), (Statement) convert(ifTree.ifClause), elseBranch);
         } else if (tree instanceof ObjectLiteralExpressionTree) {
             ObjectLiteralExpressionTree object = (ObjectLiteralExpressionTree) tree;
-            Map<String, Expression> properties = new HashMap<>();
+            LinkedHashMap<String, Expression> properties = new LinkedHashMap<>();
             cast(PropertyNameAssignmentTree.class, object.propertyNameAndValues).stream().forEach(prop -> {
                 Token name = prop.name;
                 if (name.type == TokenType.IDENTIFIER) {
@@ -292,6 +292,10 @@ public class AstTransformer {
             case LEFT_SHIFT: return Operator.LEFT_SHIFT;
             case RIGHT_SHIFT: return Operator.RIGHT_SHIFT;
             case UNSIGNED_RIGHT_SHIFT: return Operator.UNSIGNED_RIGHT_SHIFT;
+            case LEFT_SHIFT_EQUAL: return Operator.LEFT_SHIFT_EQUAL;
+            case RIGHT_SHIFT_EQUAL: return Operator.RIGHT_SHIFT_EQUAL;
+            case UNSIGNED_RIGHT_SHIFT_EQUAL: return Operator.UNSIGNED_RIGHT_SHIFT_EQUAL;
+
 
             default:
                 throw new RuntimeException("Dont know the operator: " + operator.type);
