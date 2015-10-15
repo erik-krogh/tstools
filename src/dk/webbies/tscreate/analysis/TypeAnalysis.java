@@ -117,9 +117,9 @@ public class TypeAnalysis {
             values.put(property.name, property.value);
         }
 
-        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory).visit(closure.function.astNode);
+        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
 
-        new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalObject, heapFactory, typeNames).visit(closure.function.astNode);
+        new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalObject, heapFactory, typeNames, this).visit(closure.function.astNode);
     }
 
     public static class ProgramPoint {

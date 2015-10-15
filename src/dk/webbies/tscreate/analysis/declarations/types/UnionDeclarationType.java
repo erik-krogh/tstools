@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * Created by Erik Krogh Kristensen on 09-09-2015.
  */
 public class UnionDeclarationType implements DeclarationType {
-    private final ArrayList<DeclarationType> types;
+    private final List<DeclarationType> types;
 
     public UnionDeclarationType(DeclarationType ...types) {
         if (types.length == 0) {
@@ -39,7 +39,7 @@ public class UnionDeclarationType implements DeclarationType {
         this(types.toArray(new DeclarationType[types.size()]));
     }
 
-    public ArrayList<DeclarationType> getTypes() {
+    public List<DeclarationType> getTypes() {
         return types;
     }
 

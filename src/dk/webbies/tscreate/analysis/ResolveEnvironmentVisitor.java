@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.AST.Identifier;
 import dk.webbies.tscreate.paser.AST.NodeTransverse;
@@ -23,17 +24,28 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private Map<String, Snap.Value> values;
     private final PrimitiveUnionNode.Factory primitivesBuilder;
     private HeapValueNode.Factory heapFactory;
+    private Map<Snap.Obj, LibraryClass> libraryClasses;
 
-    public ResolveEnvironmentVisitor(Snap.Obj closure, FunctionExpression function, UnionFindSolver solver, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, Map<String, Snap.Value> values, Map<String, Snap.Value> globalValues, Snap.Obj globalObject, HeapValueNode.Factory heapFactory) {
+    public ResolveEnvironmentVisitor(
+            Snap.Obj closure,
+            FunctionExpression function,
+            UnionFindSolver solver,
+            Map<TypeAnalysis.ProgramPoint, UnionNode> nodes,
+            Map<String, Snap.Value> values,
+            Map<String, Snap.Value> globalValues,
+            Snap.Obj globalObject,
+            HeapValueNode.Factory heapFactory,
+            Map<Snap.Obj, LibraryClass> libraryClasses) {
         this.closure = closure;
         this.function = function;
         this.solver = solver;
         this.nodes = nodes;
         this.globalObject = globalObject;
         this.heapFactory = heapFactory;
+        this.libraryClasses = libraryClasses;
         this.globalValues = new HashMap<>(globalValues);
         this.values = new HashMap<>(values);
-        this.primitivesBuilder = new PrimitiveUnionNode.Factory(solver, globalObject);
+        this.primitivesBuilder = new PrimitiveUnionNode.Factory(solver, globalObject, libraryClasses);
         function.declarations.keySet().forEach(this.values::remove);
         function.declarations.keySet().forEach(this.globalValues::remove);
 
@@ -42,7 +54,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     @Override
     public Void visit(FunctionExpression function) {
         if (function != this.function) {
-            new ResolveEnvironmentVisitor(this.closure, function, this.solver, this.nodes, this.values, this.globalValues, globalObject, heapFactory).visit(function);
+            new ResolveEnvironmentVisitor(this.closure, function, this.solver, this.nodes, this.values, this.globalValues, globalObject, heapFactory, libraryClasses).visit(function);
             return null;
         } else {
             return NodeTransverse.super.visit(function);

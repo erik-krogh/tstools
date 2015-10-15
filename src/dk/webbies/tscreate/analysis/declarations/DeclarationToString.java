@@ -11,15 +11,34 @@ import java.util.*;
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
 public class DeclarationToString {
-    private OutputStream out;
+    private final Map<DeclarationType, Integer> countMap;
+    private final OutputStream out;
+    private final Map<String, DeclarationType> declarations;
+
+    private final List<InterfaceType> interfacesToPrint = new ArrayList<>();
+    private final List<ClassType> classesToPrint = new ArrayList<>();
+    private boolean finishing = false;
     private int ident = 0;
 
-    private List<InterfaceType> interfacesToPrint = new ArrayList<>();
-    private List<ClassType> classesToPrint = new ArrayList<>();
-    private boolean finishing = false;
+    // This is the functions that are somehow recursive (or shows up in multiple locations).
+    // That we therefore print as an interface instead.
+    private final Map<FunctionType, InterfaceType> functionsAsInterfaceMap = new HashMap<>();
 
-    public DeclarationToString(OutputStream out) {
+    public DeclarationToString(OutputStream out, Map<String, DeclarationType> declarations) {
         this.out = out;
+        this.declarations = declarations;
+        DeclarationTypeUseCounter useCounter = new DeclarationTypeUseCounter();
+        for (DeclarationType type : declarations.values()) {
+            type.accept(useCounter);
+        }
+        this.countMap = useCounter.getCountMap();
+        this.countMap.forEach((type, count) -> {
+            if (count > 1 && type instanceof FunctionType) {
+                InterfaceType interfaceType = new InterfaceType("function_" + System.identityHashCode(type));
+                interfaceType.function = type;
+                functionsAsInterfaceMap.put((FunctionType)type, interfaceType);
+            }
+        });
     }
 
     private void writeln(String str) {
@@ -84,17 +103,12 @@ public class DeclarationToString {
         }
     }
 
-    public void print(Map<String, DeclarationType> declarations) {
-        if (ident == 0) {
-            declarations.forEach(this::printDeclaration);
-            finish();
-        } else {
-            writeln("{");
-            ident++;
-            declarations.forEach(this::printDeclaration);
-            ident--;
-            writeln("}");
+    public void print() {
+        if (ident != 0) {
+            throw new RuntimeException("Can only print top-level declarations with this method");
         }
+        this.declarations.forEach(this::printDeclaration);
+        finish();
     }
 
     private void printDeclaration(String name, DeclarationType type) {
@@ -150,20 +164,28 @@ public class DeclarationToString {
 
         @Override
         public Void visit(FunctionType functionType) {
-            write("(");
-            List<FunctionType.Argument> args = functionType.getArguments();
-            for (int i = 0; i < args.size(); i++) {
-                FunctionType.Argument arg = args.get(i);
-                write(arg.getName());
-                write(": ");
-                arg.getType().accept(this);
-                if (i != args.size() - 1) {
-                    write(", ");
-                }
-            }
-            write(") => ");
-            functionType.getReturnType().accept(this);
+            printFunction(functionType, false);
             return null;
+        }
+
+        private void printFunction(FunctionType functionType, boolean insideInterface) {
+            if (!insideInterface && functionsAsInterfaceMap.containsKey(functionType)) {
+                functionsAsInterfaceMap.get(functionType).accept(this);
+            } else {
+                write("(");
+                List<FunctionType.Argument> args = functionType.getArguments();
+                for (int i = 0; i < args.size(); i++) {
+                    FunctionType.Argument arg = args.get(i);
+                    write(arg.getName());
+                    write(": ");
+                    arg.getType().accept(this);
+                    if (i != args.size() - 1) {
+                        write(", ");
+                    }
+                }
+                write(") => ");
+                functionType.getReturnType().accept(this);
+            }
         }
 
         @Override
@@ -209,7 +231,7 @@ public class DeclarationToString {
                 ident++;
                 if (interfaceType.getFunction() != null) {
                     ident();
-                    interfaceType.getFunction().accept(this);
+                    printFunction(interfaceType.getFunction(), true);
                     write(";\n");
                 }
                 if (interfaceType.getObject() != null) {
@@ -234,7 +256,7 @@ public class DeclarationToString {
 
         @Override
         public Void visit(UnionDeclarationType union) {
-            ArrayList<DeclarationType> types = union.getTypes();
+            List<DeclarationType> types = union.getTypes();
             for (int i = 0; i < types.size(); i++) {
                 DeclarationType type = types.get(i);
                 type.accept(this);

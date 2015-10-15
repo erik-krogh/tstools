@@ -30,7 +30,7 @@ public class Main {
         long start = System.currentTimeMillis();
         Options options = Options.separateFunctions();
         options.unionShortCircuitLogic = false;
-        runAnalysis("Test script", "tests/underscore.js", null, options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
+        runAnalysis("Test script", "tests/test.js", null, options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
         long end = System.currentTimeMillis();
         System.out.println("Ran in " + (end - start) + "ms");
         System.exit(0);
@@ -52,7 +52,7 @@ public class Main {
 
         BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(resultDeclarationFilePath)));
         TeeOutputStream out = new TeeOutputStream(fileOut, System.out);
-        new DeclarationToString(out).print(declaration);
+        new DeclarationToString(out, declaration).print();
         fileOut.close();
 
         if (declarationPath != null) {

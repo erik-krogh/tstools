@@ -131,7 +131,7 @@ public class DeclarationBuilder {
             }
             seen.add(union);
 
-            ArrayList<DeclarationType> types = union.getTypes();
+            List<DeclarationType> types = union.getTypes();
             for (int i = 0; i < types.size(); i++) {
                 DeclarationType type = types.get(i);
                 if (type instanceof UnresolvedDeclarationType) {

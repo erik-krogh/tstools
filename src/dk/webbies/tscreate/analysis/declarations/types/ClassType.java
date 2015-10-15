@@ -6,10 +6,10 @@ import java.util.Map;
  * Created by Erik Krogh Kristensen on 17-09-2015.
  */
 public class ClassType implements DeclarationType{
-    public DeclarationType constructorType;
-    public Map<String, DeclarationType> prototypeFields;
-    public Map<String, DeclarationType> staticFields;
-    private String name;
+    public DeclarationType constructorType; // TODO: Consider making private final, if i simplify the handeling of unresolved type.
+    private final Map<String, DeclarationType> prototypeFields;
+    private final Map<String, DeclarationType> staticFields;
+    private final String name;
     public DeclarationType superClass;
 
     public ClassType(DeclarationType constructorType, Map<String, DeclarationType> properties, String name, Map<String, DeclarationType> staticFields) {

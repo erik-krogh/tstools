@@ -34,6 +34,7 @@ public class HeapValueNode extends ObjectUnionNode {
     public static class Factory {
         private final Snap.Obj globalObject;
         private final Map<Type, String> typeNames;
+        private final HasPrototypeUnionNode.Factory hasProtoFactory;
         private Map<Snap.Value, HeapValueNode> cache = new HashMap<>();
         private PrimitiveUnionNode.Factory primitivesFactory;
         private UnionFindSolver solver;
@@ -48,10 +49,11 @@ public class HeapValueNode extends ObjectUnionNode {
             this.libraryClasses = libraryClasses;
             this.globalObject = globalObject;
             this.typeAnalysis = typeAnalysis;
-            this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, this.globalObject);
+            this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, this.globalObject, libraryClasses);
             this.solver = solver;
             this.typeNames = typeNames;
             this.functionNodeFactory = new FunctionNodeFactory(primitivesFactory, solver, this.typeNames);
+            this.hasProtoFactory = new HasPrototypeUnionNode.Factory(libraryClasses);
         }
 
         public UnionNode fromProperty(Snap.Property property) {
@@ -96,7 +98,7 @@ public class HeapValueNode extends ObjectUnionNode {
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.prototype != null) {
                 LibraryClass libraryClass = libraryClasses.get(obj.prototype);
-                result.add(new HasPrototypeUnionNode(obj.prototype));
+                result.add(hasProtoFactory.create(obj.prototype));
                 if (libraryClass != null && !libraryClass.isNativeClass()) {
                     solver.union(libraryClass.getNewThisNode(), objectNode);
                     Snap.Property constructorProp = obj.prototype.getProperty("constructor");

@@ -29,6 +29,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private final Options options;
     private Snap.Obj globalObject;
     private Map<Type, String> typeNames;
+    private TypeAnalysis typeAnalysis;
     private final PrimitiveUnionNode.Factory primitiveFactory;
     private HeapValueNode.Factory heapFactory;
     private FunctionNodeFactory functionNodeFactory;
@@ -43,7 +44,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             Options options,
             Snap.Obj globalObject,
             HeapValueNode.Factory heapFactory,
-            Map<Type, String> typeNames) {
+            Map<Type, String> typeNames,
+            TypeAnalysis typeAnalysis) {
         this.closure = function;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -54,7 +56,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.options = options;
         this.globalObject = globalObject;
         this.typeNames = typeNames;
-        this.primitiveFactory = new PrimitiveUnionNode.Factory(solver, globalObject);
+        this.typeAnalysis = typeAnalysis;
+        this.primitiveFactory = new PrimitiveUnionNode.Factory(solver, globalObject, libraryClasses);
         this.functionNodeFactory = new FunctionNodeFactory(primitiveFactory, this.solver, typeNames);
     }
 
@@ -289,7 +292,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(get(function.getName()), result);
                 function.getName().accept(this);
             }
-            new UnionConstraintVisitor(this.closure, this.solver, this.nodes, result, this.functionNodes, libraryClasses, options, globalObject, heapFactory, typeNames).visit(function.getBody());
+            new UnionConstraintVisitor(this.closure, this.solver, this.nodes, result, this.functionNodes, libraryClasses, options, globalObject, heapFactory, typeNames, typeAnalysis).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 solver.union(get(function.getArguments().get(i)), result.arguments.get(i));
                 solver.union(get(function.getArguments().get(i)), new NonVoidNode());
@@ -447,6 +450,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final CallGraphResolver callResolver;
         private final HashSet<HeapValueNode> seenHeap = new HashSet<>();
         private final Set<FunctionNode> seenFunctions = new HashSet<>();
+        private final HasPrototypeUnionNode.Factory hasProtoFactory;
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode) {
             this.function = function;
@@ -454,6 +458,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.thisNode = thisNode;
             this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyUnionNode());
             this.callResolver.constructorCalls = true;
+            this.hasProtoFactory = new HasPrototypeUnionNode.Factory(UnionConstraintVisitor.this.libraryClasses);
         }
 
         @Override
@@ -467,7 +472,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     case "native":
                         Snap.Property prototypeProp = node.closure.getProperty("prototype");
                         if (prototypeProp != null) {
-                            solver.union(this.thisNode, new HasPrototypeUnionNode((Snap.Obj) prototypeProp.value));
+                            solver.union(this.thisNode, hasProtoFactory.create((Snap.Obj) prototypeProp.value));
                         }
                         solver.union(node.returnNode, thisNode);
                         break;
@@ -477,7 +482,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         if (clazz != null) {
 //                            clazz.isUsedAsClass = true; // This is useless after changing to "eager type resolution".
                             solver.union(this.thisNode, clazz.getNewThisNode());
-                            solver.union(this.thisNode, new HasPrototypeUnionNode(clazz.prototype));
+                            solver.union(this.thisNode, hasProtoFactory.create(clazz.prototype));
 
                             solver.union(clazz.getNewConstructorNode(), this.function);
                         }
@@ -548,7 +553,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                                 UnionConstraintVisitor.this.libraryClasses,
                                 UnionConstraintVisitor.this.options,
                                 UnionConstraintVisitor.this.globalObject,
-                                UnionConstraintVisitor.this.heapFactory, typeNames).
+                                UnionConstraintVisitor.this.heapFactory, typeNames, typeAnalysis).
                                 visit(node.closure.function.astNode);
                     }
                 }
@@ -574,6 +579,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             String type = closure.function.type;
             switch (type) {
                 case "user":
+                case "bind":
                     FunctionNode functionNode = UnionConstraintVisitor.this.functionNodes.get(closure);
                     if (functionNode == null) {
                         if (!options.separateFunctions) {
