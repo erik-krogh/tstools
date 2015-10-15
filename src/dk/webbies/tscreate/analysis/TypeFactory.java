@@ -132,6 +132,7 @@ public class TypeFactory {
 
         List<DeclarationType> resultingTypes = Arrays.asList(primitiveType, functionType, objectInstanceType).stream().filter(type -> type != null).collect(Collectors.toList());
         if (resultingTypes.size() == 0) {
+            getObjectInstanceType(sortedNodes, objects);
             throw new RuntimeException("Does not happen");
         }
         if (resultingTypes.size() == 1) {
@@ -164,6 +165,7 @@ public class TypeFactory {
         }
     }
 
+    // TODO: Call this all the time with getUnionClass?
     private static Set<UnionNode> getUnfoldedNodes(Collection<UnionNode> nodes) {
         Set<GreatestCommonOfUnionNode> greatestCommons = nodes.stream().filter(node -> node instanceof GreatestCommonOfUnionNode).map(node -> (GreatestCommonOfUnionNode) node).collect(Collectors.toSet());
 
@@ -176,7 +178,7 @@ public class TypeFactory {
             Set<UnionClass> classesToAdd = new HashSet<>();
             for (GreatestCommonOfUnionNode greatestCommon : toAdd) {
                 for (UnionNode node : greatestCommon.getNodes()) {
-                    if (!nodes.contains(node)) {
+                    if (!newNodeSet.contains(node)) {
                         if (node.getUnionClass() == null) {
                             throw new NullPointerException();
                         }
@@ -306,15 +308,18 @@ public class TypeFactory {
 
                 // TODO: The constructorNode might never have been seen by the unionFindSolver.
                 // Bypassing the cache.
-                Collection<UnionNode> unfilteredConstructorNodes = TypeFactory.getUnfoldedNodes(libraryClass.constructorNodes.stream().map(node -> node.getUnionClass().getNodes()).reduce(new ArrayList<>(), Util::reduceList));
+                Collection<UnionNode> unfilteredConstructorNodes = TypeFactory.getUnfoldedNodes(libraryClass.constructorNodes.stream().map(node -> new ArrayList<>(node.getUnionClass().getNodes())).reduce(new ArrayList<>(), Util::reduceList));
                 List<FunctionNode> constructorNodes = unfilteredConstructorNodes.stream().filter(node -> node instanceof FunctionNode).map(node -> (FunctionNode) node).collect(Collectors.toList());
                 DeclarationType constructorType = createFunctionType(constructorNodes);
 
                 Map<String, DeclarationType> prototypeProperties = new HashMap<>();
 
                 // Bypassing the cache
-                List<UnionNode> thisNodes = libraryClass.thisNodes.stream().map(UnionNode::getUnionClass).map(UnionClass::getNodes).reduce(new ArrayList<>(), Util::reduceList);
-                constructorNodes.forEach(node -> thisNodes.addAll(node.thisNode.getUnionClass().getNodes()));
+                Collection<UnionNode> thisNodes = libraryClass.thisNodes.stream().map(UnionNode::getUnionClass).map(unionClass -> new ArrayList<>(unionClass.getNodes())).reduce(new ArrayList<>(), Util::reduceList);
+                thisNodes = TypeFactory.getUnfoldedNodes(thisNodes);
+                for (FunctionNode node : constructorNodes) {
+                    thisNodes.addAll(TypeFactory.getUnfoldedNodes(node.thisNode.getUnionClass().getNodes()));
+                }
 
                 prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(thisNodes).getNodes(ObjectUnionNode.class)));
 
@@ -494,12 +499,6 @@ public class TypeFactory {
     private List<String> getArgumentNames(Collection<FunctionNode> functionNodes) {
         return Collections.max(functionNodes, (o1, o2) -> o1.getArgumentNames().size() - o2.getArgumentNames().size()).getArgumentNames();
     }
-
-    private Set<PrimitiveDeclarationType> getPrimitives(Collection<UnionNode> nodes) {
-        List<PrimitiveUnionNode> primitives = cast(PrimitiveUnionNode.class, nodes.stream().filter(node -> node instanceof PrimitiveUnionNode).collect(Collectors.toList()));
-        return primitives.stream().map(PrimitiveUnionNode::getType).collect(Collectors.toSet());
-    }
-
     private static class CategorizedNodes {
         HashMap<Class<?>, Set<UnionNode>> nodes = new HashMap<>();
 

@@ -6,6 +6,7 @@ import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -87,5 +88,26 @@ public class FunctionNode extends UnionNodeWithFields {
         FunctionNode result = create(argumentNames);
         result.closure = closure;
         return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FunctionNode that = (FunctionNode) o;
+        if (this.closure != null) {
+            return that.closure != null && Objects.equals(closure, that.closure);
+        } else {
+            return this == that;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        if (this.closure != null) {
+            return Objects.hash(closure);
+        } else {
+            return System.identityHashCode(this);
+        }
     }
 }

@@ -1,16 +1,13 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
 public final class UnionClass {
     public UnionFindSolver solver;
-    List<UnionNode> nodes = new ArrayList<>(); // TODO: Some nodes are added twice.
+    Set<UnionNode> nodes = new HashSet<>();
     Map<String, UnionNode> fields = new HashMap<>();
     public final List<Runnable> callbacks = new ArrayList<>();
 
@@ -73,7 +70,7 @@ public final class UnionClass {
         }
     }
 
-    public List<UnionNode> getNodes() {
+    public Collection<UnionNode> getNodes() {
         return nodes;
     }
 

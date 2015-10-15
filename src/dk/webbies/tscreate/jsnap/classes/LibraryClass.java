@@ -27,15 +27,25 @@ public class LibraryClass {
         this.prototype = prototype;
     }
 
+    private static int largestSeen = 0;
+
     public UnionNode getNewConstructorNode() {
         EmptyUnionNode result = new EmptyUnionNode();
         constructorNodes.add(result);
+        if (constructorNodes.size() > largestSeen) {
+            largestSeen = constructorNodes.size();
+            System.out.println("Largest seen: " + largestSeen);
+        }
         return result;
     }
 
     public UnionNode getNewThisNode() {
         EmptyUnionNode result = new EmptyUnionNode();
         thisNodes.add(result);
+        if (thisNodes.size() > largestSeen) {
+            largestSeen = thisNodes.size();
+            System.out.println("Largest seen: " + largestSeen);
+        }
         return result;
     }
 

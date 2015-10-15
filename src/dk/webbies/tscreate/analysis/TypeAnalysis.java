@@ -10,7 +10,6 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.AstNode;
-import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.*;
 
@@ -18,12 +17,13 @@ import java.util.*;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class TypeAnalysis {
-    private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
-    private final Snap.Obj globalObject;
+    final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    final Snap.Obj globalObject;
+    final Map<Type, String> typeNames;
+    final Options options;
+
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, FunctionNode> functionNodes;
-    private Options options;
-    private Map<Type, String> typeNames;
 
     public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, Map<Type, String> typeNames) {
         this.libraryClasses = libraryClasses;
@@ -57,7 +57,6 @@ public class TypeAnalysis {
             int counter = 1;
             for (Snap.Obj functionClosure : functions) {
                 System.out.println(counter++ + "/" + functions.size());
-                Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
                 UnionFindSolver solver = new UnionFindSolver();
 
                 // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
@@ -67,7 +66,20 @@ public class TypeAnalysis {
 
                 HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this);
 
-                analyse(functionClosure, nodes, subFunctions, solver, functionNode, heapFactory);
+                // TODO: Very tmp, for testing underscore.
+                if (functionClosure.function.id.equals("145") || functionClosure.function.id.equals("3") || true) {
+                    if (functionClosure.function.id.equals("145")) {
+                        System.out.println();
+                    }
+                    analyse(functionClosure, subFunctions, solver, functionNode, heapFactory);
+                } else {
+                    solver.add(functionNode);
+                    solver.add(functionNode.returnNode);
+                    solver.add(functionNode.thisNode);
+                    functionNode.arguments.forEach(solver::add);
+                }
+
+
 
                 solver.finish();
                 typeFactory.finishedFunctionNodes.add(functionNode);
@@ -81,7 +93,7 @@ public class TypeAnalysis {
             UnionFindSolver solver = new UnionFindSolver();
             HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this);
             for (Snap.Obj function : functions) {
-                analyse(function, nodes, functionNodes, solver, functionNodes.get(function), heapFactory);
+                analyse(function, functionNodes, solver, functionNodes.get(function), heapFactory);
             }
 
             solver.finish();
@@ -99,7 +111,7 @@ public class TypeAnalysis {
         }
     }
 
-    public void analyse(Snap.Obj closure, Map<ProgramPoint, UnionNode> nodes, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueNode.Factory heapFactory) {
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueNode.Factory heapFactory) {
         if (closure.function.type.equals("unknown")) {
             return;
         }
@@ -113,13 +125,15 @@ public class TypeAnalysis {
         }
 
         Map<String, Snap.Value> values = new HashMap<>();
-        for (Snap.Property property : closure.env.properties) {
+        for (Snap.Property property : closure.env.properties) { // TODO: Look at properties instead, to include getters and setters.
             values.put(property.name, property.value);
         }
 
-        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, nodes, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
+        HashMap<ProgramPoint, UnionNode> programPoints = new HashMap<>();
 
-        new UnionConstraintVisitor(closure, solver, nodes, functionNode, functionNodes, libraryClasses, options, globalObject, heapFactory, typeNames, this).visit(closure.function.astNode);
+        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, programPoints, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
+
+        new UnionConstraintVisitor(closure, solver, programPoints, functionNode, functionNodes, heapFactory, this).visit(closure.function.astNode);
     }
 
     public static class ProgramPoint {

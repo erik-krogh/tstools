@@ -571,8 +571,30 @@ MyModule.Klass.prototype.doStuff = function () {
     return true;
 };*/
 
+/*
 var MyModule = {
     testFunc: (function (a) {
         return a;
     }).bind(MyModule, 5)
-};
+};*/
+
+/*
+var test = (function () {
+    var bounded = (function (bound, free) {
+        return bound - free;
+    }).bind({}, 1);
+
+    return function test(arg) {
+        return bounded(arg);
+    };
+})();
+
+*/
+
+function Klass() {
+
+}
+
+Klass.prototype.random = function (min, max) {
+    return min - max;
+}

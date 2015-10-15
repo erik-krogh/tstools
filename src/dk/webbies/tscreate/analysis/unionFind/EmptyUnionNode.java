@@ -6,5 +6,13 @@ package dk.webbies.tscreate.analysis.unionFind;
  * This UnionNode is used everywhere to combine UnionNodes.
  */
 public class EmptyUnionNode extends UnionNode{
+    @Override
+    public int hashCode() {
+        return 31;
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof EmptyUnionNode;
+    }
 }

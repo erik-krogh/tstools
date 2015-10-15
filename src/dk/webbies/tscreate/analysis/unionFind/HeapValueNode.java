@@ -31,6 +31,19 @@ public class HeapValueNode extends ObjectUnionNode {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HeapValueNode that = (HeapValueNode) o;
+        return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
+    }
+
     public static class Factory {
         private final Snap.Obj globalObject;
         private final Map<Type, String> typeNames;
@@ -173,7 +186,7 @@ public class HeapValueNode extends ObjectUnionNode {
             Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
             functionNodes.put(closure, functionNode);
 
-            this.typeAnalysis.analyse(closure, new HashMap<>(), functionNodes, this.solver, functionNode, this);
+            this.typeAnalysis.analyse(closure, functionNodes, this.solver, functionNode, this);
 
             this.getterSetterCache.put(closure, functionNode);
             return functionNode;

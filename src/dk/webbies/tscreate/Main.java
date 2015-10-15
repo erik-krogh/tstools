@@ -30,7 +30,7 @@ public class Main {
         long start = System.currentTimeMillis();
         Options options = Options.separateFunctions();
         options.unionShortCircuitLogic = false;
-        runAnalysis("Test script", "tests/test.js", null, options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
+        runAnalysis("Test script", "tests/smallUnderscore.js", null, options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
         long end = System.currentTimeMillis();
         System.out.println("Ran in " + (end - start) + "ms");
         System.exit(0);

@@ -222,7 +222,8 @@ public class JavaScriptParser {
 
         @Override
         public Void visit(VariableNode variableNode) {
-            if (variableNode.getlValue() instanceof Identifier) {
+            boolean isTopLevelProgram = this.function.getName() != null && this.function.getName().getName().equals(":program");
+            if (variableNode.getlValue() instanceof Identifier && !isTopLevelProgram) {
                 Identifier id = (Identifier) variableNode.getlValue();
                 this.function.declarations.put(id.getName(), id);
             }

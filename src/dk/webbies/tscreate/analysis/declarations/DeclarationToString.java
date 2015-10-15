@@ -183,7 +183,11 @@ public class DeclarationToString {
                         write(", ");
                     }
                 }
-                write(") => ");
+                if (insideInterface) {
+                    write(") : ");
+                } else {
+                    write(") => ");
+                }
                 functionType.getReturnType().accept(this);
             }
         }

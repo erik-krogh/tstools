@@ -6,6 +6,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -19,6 +20,19 @@ public class PrimitiveUnionNode extends UnionNode {
 
     public PrimitiveDeclarationType getType() {
         return this.type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PrimitiveUnionNode that = (PrimitiveUnionNode) o;
+        return Objects.equals(type, that.type);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type);
     }
 
     public static class Factory {
