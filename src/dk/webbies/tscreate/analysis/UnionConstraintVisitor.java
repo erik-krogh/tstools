@@ -531,7 +531,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         continue;
                     }
                     node.hasAnalyzed = true;
-                    boolean newMethod = true;
+                    boolean newMethod = false; // TODO: Make into options
                     if (newMethod) {
                         if (node.closure != null && node.closure.function != null && (node.closure.function.type.equals("user") || node.closure.function.type.equals("bind"))) {
                             typeAnalysis.analyse(node.closure, UnionConstraintVisitor.this.functionNodes, solver, node, heapFactory);

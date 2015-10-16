@@ -7,7 +7,7 @@ import java.util.*;
  */
 public final class UnionClass {
     public UnionFindSolver solver;
-    Set<UnionNode> nodes = new HashSet<>();
+    List<UnionNode> nodes = new ArrayList<>();
     Map<String, UnionNode> fields = new HashMap<>();
     public final List<Runnable> callbacks = new ArrayList<>();
 

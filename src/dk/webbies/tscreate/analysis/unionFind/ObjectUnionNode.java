@@ -32,22 +32,4 @@ public class ObjectUnionNode extends UnionNodeWithFields {
     public String getTypeName() {
         return typeName;
     }
-
-    @Override
-    public int hashCode() {
-        if (objectFields.size() == 0) {
-            return 31;
-        } else {
-            return System.identityHashCode(this);
-        }
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof ObjectUnionNode && ((ObjectUnionNode) obj).objectFields.size() == 0) {
-            return true;
-        } else {
-            return this == obj;
-        }
-    }
 }

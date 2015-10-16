@@ -318,10 +318,12 @@ public class TypeFactory {
                 Collection<UnionNode> thisNodes = libraryClass.thisNodes.stream().map(UnionNode::getUnionClass).map(unionClass -> new ArrayList<>(unionClass.getNodes())).reduce(new ArrayList<>(), Util::reduceList);
                 thisNodes = TypeFactory.getUnfoldedNodes(thisNodes);
                 for (FunctionNode node : constructorNodes) {
-                    thisNodes.addAll(TypeFactory.getUnfoldedNodes(node.thisNode.getUnionClass().getNodes()));
+                    // TODO: Option whehter this should happen or not.
+//                    thisNodes.addAll(TypeFactory.getUnfoldedNodes(node.thisNode.getUnionClass().getNodes()));
                 }
 
-                prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(thisNodes).getNodes(ObjectUnionNode.class)));
+                // TODO: Option whehter this should happen or not.
+//                prototypeProperties.putAll(getObjectProperties(new CategorizedNodes(thisNodes).getNodes(ObjectUnionNode.class)));
 
                 // I assume the prototype is correct, so i just overwrite whatever was before.
                 libraryClass.prototype.getPropertyMap().forEach((name, prop) -> {

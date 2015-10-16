@@ -15,6 +15,7 @@ public class LibraryClass {
     public LibraryClass superClass;
     private String name = null;
 
+    // TODO: These two need to be "unified"
     public final List<UnionNode> constructorNodes = new ArrayList<>();
     public final List<UnionNode> thisNodes = new ArrayList<>();
 
@@ -27,25 +28,15 @@ public class LibraryClass {
         this.prototype = prototype;
     }
 
-    private static int largestSeen = 0;
-
     public UnionNode getNewConstructorNode() {
         EmptyUnionNode result = new EmptyUnionNode();
         constructorNodes.add(result);
-        if (constructorNodes.size() > largestSeen) {
-            largestSeen = constructorNodes.size();
-            System.out.println("Largest seen: " + largestSeen);
-        }
         return result;
     }
 
     public UnionNode getNewThisNode() {
         EmptyUnionNode result = new EmptyUnionNode();
         thisNodes.add(result);
-        if (thisNodes.size() > largestSeen) {
-            largestSeen = thisNodes.size();
-            System.out.println("Largest seen: " + largestSeen);
-        }
         return result;
     }
 

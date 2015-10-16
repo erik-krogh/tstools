@@ -31,19 +31,6 @@ public class HeapValueNode extends ObjectUnionNode {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        HeapValueNode that = (HeapValueNode) o;
-        return Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
-    }
-
     public static class Factory {
         private final Snap.Obj globalObject;
         private final Map<Type, String> typeNames;

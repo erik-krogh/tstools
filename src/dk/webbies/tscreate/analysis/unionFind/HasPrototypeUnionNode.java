@@ -37,17 +37,4 @@ public class HasPrototypeUnionNode extends UnionNode {
             return new HasPrototypeUnionNode(prototype);
         }
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        HasPrototypeUnionNode that = (HasPrototypeUnionNode) o;
-        return Objects.equals(prototype, that.prototype);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(prototype);
-    }
 }
