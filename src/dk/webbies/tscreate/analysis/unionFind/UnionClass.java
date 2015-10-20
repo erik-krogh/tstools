@@ -37,9 +37,7 @@ public final class UnionClass {
         this.feature.takeIn(other.feature);
 
         for (UnionClass includesOther : other.includesUs) {
-            if (!includesOther.includes.remove(other)) {
-                throw new RuntimeException(); // TODO: Remove this throw.
-            }
+            includesOther.includes.remove(other);
             includesOther.includes.add(this);
         }
 

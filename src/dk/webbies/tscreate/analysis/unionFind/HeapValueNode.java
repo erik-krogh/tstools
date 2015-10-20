@@ -143,7 +143,7 @@ public class HeapValueNode extends ObjectUnionNode {
                 }
             } else {
                 ArrayList<Signature> signatures = new ArrayList<>(obj.function.callSignatures);
-                signatures.addAll(obj.function.constructorSignatures); // TODO: Separate constructor calls?
+                signatures.addAll(obj.function.constructorSignatures);
                 result.addAll(signatures.stream().map(signature -> functionNodeFactory.fromSignature(signature, obj, null)).collect(Collectors.toList()));
             }
             functionCache.putAll(obj, result);

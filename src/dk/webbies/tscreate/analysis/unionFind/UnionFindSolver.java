@@ -118,11 +118,6 @@ public class UnionFindSolver {
      * @return The representative of the set containing it.
      */
     private UnionNode recFind(UnionNode elem) {
-        /* Get the info on this object. */
-        if (elem.parent == null) { // TODO: This happens with the TypeScript inheritance example. This if null-check should not be there.
-            this.add(elem);
-        }
-
         /* If the element is its own parent, it's the representative of its
          * class and we should say so.
          */

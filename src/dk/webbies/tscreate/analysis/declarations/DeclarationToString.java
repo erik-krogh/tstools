@@ -32,6 +32,8 @@ public class DeclarationToString {
         for (DeclarationType type : declarations.values()) {
             type.accept(useCounter);
         }
+
+        // This countmap mostly exists so that every type is visisted, and thus resolved (as in, resolving CombinationTypes and UnresolvedDeclarationsTypes).
         this.countMap = useCounter.getCountMap();
         this.countMap.forEach((type, count) -> {
             if (count > 1 && type instanceof FunctionType) {
@@ -133,7 +135,7 @@ public class DeclarationToString {
 
             write(";\n");
         } else if (type instanceof UnnamedObjectType) {
-            // TODO: Use this, when typing globally accessible stuff. 
+            // TODO: Use this, when typing globally accessible stuff. (Right now this if is never hit).
             UnnamedObjectType module = (UnnamedObjectType) type;
             ident();
             write(prefix + " module " + name + " {\n");
@@ -215,31 +217,6 @@ public class DeclarationToString {
                 printsAsInterface.put(objectType, interfaceType);
                 return interfaceType.accept(this);
             }
-            // TODO: Every print directly?
-            /*Map<String, DeclarationType> decs = objectType.getDeclarations();
-            if (decs.size() == 0) {
-                write("{}");
-            } else {
-                write("{ \n");
-                ident++;
-
-                ArrayList<Map.Entry<String, DeclarationType>> declarationList = new ArrayList<>(decs.entrySet());
-                for (int i = 0; i < declarationList.size(); i++) {
-                    Map.Entry<String, DeclarationType> dec = declarationList.get(i);
-                    ident();
-                    writeName(dec.getKey());
-                    write(": ");
-                    dec.getValue().accept(this);
-                    if (i != decs.size() - 1) {
-                        write(",");
-                    }
-                    write("\n");
-                }
-                ident--;
-                ident();
-                write("}");
-            }
-            return null;*/
         }
 
         @Override
@@ -289,7 +266,6 @@ public class DeclarationToString {
 
         @Override
         public Void visit(NamedObjectType namedObjectType) {
-            // TODO: This is ugly ugly hack, but it works. For now.
             if (namedObjectType.getName().equals("Array")) {
                 write("Array<any>");
             } else if (namedObjectType.getName().equals("NodeListOf")) {
