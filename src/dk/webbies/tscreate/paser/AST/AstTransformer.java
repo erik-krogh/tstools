@@ -59,7 +59,7 @@ public class AstTransformer {
                     String regExp = value.substring(1, value.length() - 1);
                     return new NewExpression(loc, new Identifier(loc, "RegExp"), Arrays.asList(new StringLiteral(loc, regExp)));
                 } else if (value.substring(0, 1).matches("[0-9]")) {
-                    return new NumberLiteral(loc, 1); // TODO: Properly something like 1.0e-8.
+                    return new NumberLiteral(loc, Double.valueOf(value));
                 } else {
                     throw new RuntimeException("Could not recognize literal: " + value);
                 }

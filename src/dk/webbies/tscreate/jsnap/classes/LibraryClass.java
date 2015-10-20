@@ -15,7 +15,6 @@ public class LibraryClass {
     public LibraryClass superClass;
     private String name = null;
 
-    // TODO: These two need to be "unified"
     public final List<UnionNode> constructorNodes = new ArrayList<>();
     public final List<UnionNode> thisNodes = new ArrayList<>();
 
