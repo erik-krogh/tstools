@@ -20,20 +20,9 @@ public class JSNAPUtil {
         return Util.getCachedOrRun(path + ".jsnap", new File(path), "lib/jsnap/jsnap.js " + path);
     }
 
-        if (recreate) {
-            System.out.println("Creating JSNAP from scratch. \n");
-            String jsnap = Util.runNodeScript("lib/jsnap/jsnap.js " + path);
-            BufferedWriter writer = new BufferedWriter(new FileWriter(jsnapFile));
-            writer.write(jsnap);
-            writer.close();
-            return jsnap;
-        } else {
-            FileReader reader = new FileReader(jsnapFile);
-            String result = IOUtils.toString(reader);
-            reader.close();
-            return result;
-        }
-
+    private static String getEmptyJSNAP() throws IOException {
+        File checkAgainst = new File("lib/jsnap/node_modules/phantomjs/lib/phantom");
+        return Util.getCachedOrRun("onlyDom.jsnap", checkAgainst, "lib/jsnap/jsnap.js");
     }
 
     public static Snap.Obj extractUnique(Snap.Obj librarySnap) throws IOException {

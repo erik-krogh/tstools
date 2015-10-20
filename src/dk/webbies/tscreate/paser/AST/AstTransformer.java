@@ -298,7 +298,6 @@ public class AstTransformer {
             case LEFT_SHIFT: return Operator.LEFT_SHIFT;
             case RIGHT_SHIFT: return Operator.RIGHT_SHIFT;
             case UNSIGNED_RIGHT_SHIFT: return Operator.UNSIGNED_RIGHT_SHIFT;
-            case LEFT_SHIFT_EQUAL: return Operator.LEFT_SHIFT_EQUAL;
             case RIGHT_SHIFT_EQUAL: return Operator.RIGHT_SHIFT_EQUAL;
             case UNSIGNED_RIGHT_SHIFT_EQUAL: return Operator.UNSIGNED_RIGHT_SHIFT_EQUAL;
 
