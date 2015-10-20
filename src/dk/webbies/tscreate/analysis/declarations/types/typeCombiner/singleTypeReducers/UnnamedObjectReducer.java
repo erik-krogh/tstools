@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.declarations.types.typeCombiner.typeHandlers;
+package dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
