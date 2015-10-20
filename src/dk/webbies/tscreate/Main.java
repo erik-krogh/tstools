@@ -6,13 +6,14 @@ import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationToString;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
-import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
+
+import dk.webbies.tscreate.paser.SSA;
 import org.apache.commons.io.output.TeeOutputStream;
 
 import java.io.BufferedOutputStream;
@@ -49,7 +50,7 @@ public class Main {
         String resultDeclarationFilePath = scriptPath + ".gen.d.ts";
 
         String script = Util.readFile(scriptPath);
-        FunctionExpression program = new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST();
+        FunctionExpression program = SSA.toSSA(new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST());
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath), program);
 
         Map<Type, String> typeNames = DeclarationParser.markNatives(globalObject, languageLevel.environment);
