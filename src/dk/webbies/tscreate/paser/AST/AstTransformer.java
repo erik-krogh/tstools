@@ -261,7 +261,6 @@ public class AstTransformer {
             case PLUS: return Operator.PLUS;
 
             case MINUS_EQUAL: return Operator.MINUS_EQUAL;
-            case LEFT_SHIFT_EQUAL: return Operator.MINUS_EQUAL; // TODO:
             case STAR_EQUAL: return Operator.MULT_EQUAL;
             case SLASH_EQUAL: return Operator.DIV_EQUAL;
             case PERCENT_EQUAL: return Operator.MOD_EQUAL;
@@ -298,6 +297,7 @@ public class AstTransformer {
             case LEFT_SHIFT: return Operator.LEFT_SHIFT;
             case RIGHT_SHIFT: return Operator.RIGHT_SHIFT;
             case UNSIGNED_RIGHT_SHIFT: return Operator.UNSIGNED_RIGHT_SHIFT;
+            case LEFT_SHIFT_EQUAL: return Operator.LEFT_SHIFT_EQUAL;
             case RIGHT_SHIFT_EQUAL: return Operator.RIGHT_SHIFT_EQUAL;
             case UNSIGNED_RIGHT_SHIFT_EQUAL: return Operator.UNSIGNED_RIGHT_SHIFT_EQUAL;
 
