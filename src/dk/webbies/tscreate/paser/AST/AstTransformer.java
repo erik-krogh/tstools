@@ -256,6 +256,7 @@ public class AstTransformer {
             case PLUS: return Operator.PLUS;
 
             case MINUS_EQUAL: return Operator.MINUS_EQUAL;
+            case LEFT_SHIFT_EQUAL: return Operator.MINUS_EQUAL; // TODO:
             case STAR_EQUAL: return Operator.MULT_EQUAL;
             case SLASH_EQUAL: return Operator.DIV_EQUAL;
             case PERCENT_EQUAL: return Operator.MOD_EQUAL;

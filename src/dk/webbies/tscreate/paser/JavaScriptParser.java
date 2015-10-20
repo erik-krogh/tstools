@@ -165,11 +165,13 @@ public class JavaScriptParser {
                 SourceRange location = new SourceRange(body.get(0).location.start, body.get(body.size() - 1).location.end);
                 FunctionExpression result = new FunctionExpression(location, new Identifier(location, ":program"), new BlockStatement(location, body), Collections.EMPTY_LIST);
 
+                System.out.println("* " +result.getBody().getStatements().size());
                 // For each function, mark which variables it declares in its scope.
                 new FillFunctionsVariableDeclarations(result).visit(result);
+                System.out.println("**  " +result.getBody().getStatements().size());
                 // For each identifier, mark where it was declared.
                 new FindVariableDeclarations(result).visit(result);
-
+                System.out.println("***  " +result.getBody().getStatements().size());
                 return result;
             }
         }

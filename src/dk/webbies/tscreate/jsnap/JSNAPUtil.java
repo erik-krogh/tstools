@@ -34,7 +34,7 @@ public class JSNAPUtil {
             }
         }
 
-        if (recreate) {
+        if (true || recreate) {
             System.out.println("Creating JSNAP from scratch. \n");
             String jsnap = Util.runNodeScript("lib/jsnap/jsnap.js " + path);
             BufferedWriter writer = new BufferedWriter(new FileWriter(jsnapFile));

@@ -72,7 +72,8 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
                 }
                 solver.union(idNode, nodes);
             } else {
-                throw new RuntimeException("Unresolved global value " + name); // TODO: But stuff like "exports" and "module"...
+//                throw new RuntimeException("Unresolved global value " + name); // TODO: But stuff like "exports" and "module"...
+                solver.union(idNode, primitivesBuilder.any());
             }
         }
 
