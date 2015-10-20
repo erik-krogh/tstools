@@ -46,7 +46,7 @@ public class FunctionNodeFactory {
             if (restType instanceof ReferenceType) {
                 ReferenceType ref = (ReferenceType) restType;
                 typeArguments = ref.getTypeArguments();
-            } else if (restType instanceof GenericType) { // TODO: problem with DeclarationParser; RegExpExecArray.splice(start: number, deleteCount: number, ...items: string[]): string[]; Items is just an Array[AnonymousType].
+            } else if (restType instanceof GenericType) {
                 GenericType generic = (GenericType) restType;
                 typeArguments = generic.getTypeArguments();
             } else {
