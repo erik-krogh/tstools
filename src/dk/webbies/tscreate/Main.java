@@ -28,14 +28,15 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         Options options = new Options();
-        options.unionShortCircuitLogic = false;
         options.includeThisNodeFromHeap = true;
         options.includeThisNodeFromConstructor = false;
         options.includeThisNodeFromPrototypeMethods = false;
 
+        options.interProceduralAnalysisWithHeap = false;
+
         long start = System.currentTimeMillis();
 
-        runAnalysis("Test script", "tests/pixi.js", null, options, LanguageLevel.ES5);
+        runAnalysis("Test script", "tests/underscore.js", null, options, LanguageLevel.ES5);
 
         long end = System.currentTimeMillis();
 

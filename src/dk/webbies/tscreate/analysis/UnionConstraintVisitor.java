@@ -98,12 +98,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 break;
             case AND: // &&
             case OR: // ||
-                if (typeAnalysis.options.unionShortCircuitLogic) {
-                    solver.union(lhs, rhs);
-                    result = lhs;
-                } else {
-                    result = new IncludeNode(lhs, rhs);
-                }
+                result = new IncludeNode(lhs, rhs);
                 break;
             case MINUS: // -
             case MULT: // *
@@ -530,8 +525,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         UnionConstraintVisitor.this.analyzedFunction.add(closure);
 
-                        boolean newMethod = false; // TODO: Make into options
-                        if (newMethod) {
+                        if (typeAnalysis.options.interProceduralAnalysisWithHeap) {
                             typeAnalysis.analyse(closure, UnionConstraintVisitor.this.functionNodes, solver, functionNode, heapFactory, analyzedFunction);
                         } else {
                             new UnionConstraintVisitor(
