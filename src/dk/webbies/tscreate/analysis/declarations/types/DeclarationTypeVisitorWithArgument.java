@@ -19,6 +19,4 @@ public interface DeclarationTypeVisitorWithArgument<T, A> {
     T visit(ClassType classType, A argument);
 
     T visit(ClassInstanceType instanceType, A argument);
-
-    T visit(ModuleType moduleType, A argument);
 }

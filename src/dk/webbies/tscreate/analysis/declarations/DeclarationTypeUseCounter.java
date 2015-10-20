@@ -50,7 +50,14 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
         if (increment(objectType)) {
             return null;
         }
-        objectType.getDeclarations().values().forEach(type -> type.accept(this));
+        for (Map.Entry<String, DeclarationType> entry : objectType.getDeclarations().entrySet()) {
+            DeclarationType type = entry.getValue();
+            if (countMap.containsKey(type)) {
+                increment(objectType); // TODO: Hacky, better way to avoid recursion?
+            }
+            type.accept(this);
+        }
+
         return null;
     }
 
@@ -73,7 +80,9 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
         if (increment(union)) {
             return null;
         }
-        union.getTypes().forEach(type -> type.accept(this));
+        for (DeclarationType type : union.getTypes()) {
+            type.accept(this);
+        }
         return null;
     }
 
@@ -105,15 +114,6 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
             return null;
         }
         instanceType.getClazz().accept(this);
-        return null;
-    }
-
-    @Override
-    public Void visit(ModuleType moduleType) {
-        if (increment(moduleType)) {
-            return null;
-        }
-        moduleType.getDeclarations().values().forEach(type -> type.accept(this));
         return null;
     }
 }

@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
@@ -18,6 +17,7 @@ public class UnionDeclarationType implements DeclarationType {
         if (types.length == 0) {
             throw new IllegalArgumentException();
         }
+
         // This does 2 things: filters out nulls, and flattens 1-level nested UnionDeclarations.
         for (DeclarationType type : types) {
             if (type == null) {
@@ -26,13 +26,21 @@ public class UnionDeclarationType implements DeclarationType {
         }
 
         this.types = Arrays.asList(types).stream().filter(type -> type != null).reduce(new ArrayList<>(), (acc, dec) -> {
-            if (dec instanceof UnionDeclarationType) {
-                acc.addAll(((UnionDeclarationType) dec).types);
-            } else {
-                acc.add(dec);
-            }
+            unfoldDeclaration(acc, dec);
             return acc;
         }, Util::reduceList);
+    }
+
+    private void unfoldDeclaration(ArrayList<DeclarationType> acc, DeclarationType type) {
+        if (type instanceof UnionDeclarationType) {
+            List<DeclarationType> types = ((UnionDeclarationType) type).types;
+            for (DeclarationType subType : types) {
+                unfoldDeclaration(acc, subType);
+            }
+
+        } else {
+            acc.add(type);
+        }
     }
 
     public UnionDeclarationType(Collection<? extends DeclarationType> types) {

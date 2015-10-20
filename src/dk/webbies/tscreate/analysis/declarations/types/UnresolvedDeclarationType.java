@@ -6,7 +6,11 @@ package dk.webbies.tscreate.analysis.declarations.types;
 public class UnresolvedDeclarationType implements DeclarationType {
     private DeclarationType resolvedType = null;
 
+    private static int instanceCounter = 0;
+    private final int counter;
+
     public UnresolvedDeclarationType() {
+        this.counter = instanceCounter++;
     }
 
     public UnresolvedDeclarationType(DeclarationType resolvedType) {
@@ -22,6 +26,10 @@ public class UnresolvedDeclarationType implements DeclarationType {
             throw new RuntimeException();
         }
         this.resolvedType = resolvedType;
+    }
+
+    public boolean isResolved() {
+        return this.resolvedType != null;
     }
 
     public DeclarationType getResolvedType() {

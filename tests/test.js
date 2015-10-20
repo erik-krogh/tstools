@@ -590,11 +590,14 @@ var test = (function () {
 })();
 
 */
-
-function Klass() {
-
+function minusOne(a) {
+    return a - 1;
 }
 
-Klass.prototype.random = function (min, max) {
-    return min - max;
+function divideByTwo(a) {
+    return a / 2;
+}
+
+function test(argument) {
+    return (minusOne && divideByTwo)(argument);
 }

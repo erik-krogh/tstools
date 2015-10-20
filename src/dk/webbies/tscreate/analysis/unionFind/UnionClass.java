@@ -7,18 +7,22 @@ import java.util.*;
  */
 public final class UnionClass {
     public UnionFindSolver solver;
-    List<UnionNode> nodes = new ArrayList<>();
     Map<String, UnionNode> fields = new HashMap<>();
     public final List<Runnable> callbacks = new ArrayList<>();
 
+    private UnionFeature feature = new UnionFeature(this);
+
+    public final Set<UnionClass> includes = new HashSet<>();
+    public final Set<UnionClass> includesUs = new HashSet<>();
+
     private int hasRunAtIteration = -1;
+    private boolean waitingForCallback = false;
 
     public UnionClass(UnionFindSolver solver, UnionNode... nodes) {
         this.solver = solver;
         for (UnionNode node : nodes) {
-            if (!(node instanceof EmptyUnionNode || node instanceof IsIndexedUnionNode || node instanceof IndexerExpUnionNode /*TODO: Do not ignore. */)) {
-                this.nodes.add(node);
-            }
+            node.addTo(this);
+
             if (node instanceof UnionNodeWithFields) {
                 UnionNodeWithFields fieldNode = (UnionNodeWithFields) node;
                 fieldNode.unionClass = this;
@@ -27,28 +31,29 @@ public final class UnionClass {
         }
     }
 
-    public void mergeWith(UnionClass other) {
+    public void takeIn(UnionClass other) {
         merge(other.fields);
-        this.nodes.addAll(other.nodes);
-        if (other.nodes.size() > 0 && this.nodes.size() > 0) {
-            int currentIteration = solver.iteration;
-            // TODO: Test this somehow.
-            if (this.hasRunAtIteration < currentIteration || true) {
-                for (Runnable callback : callbacks) {
-                    solver.addDoneCallback(callback);
-                }
-                this.hasRunAtIteration = currentIteration;
-            }
-            if (other.hasRunAtIteration < currentIteration || true) {
-                for (Runnable callback : other.callbacks) {
-                    solver.addDoneCallback(callback);
-                }
-                other.hasRunAtIteration = currentIteration;
-            }
 
+        this.feature.takeIn(other.feature);
+
+        for (UnionClass includesOther : other.includesUs) {
+            if (!includesOther.includes.remove(other)) {
+                throw new RuntimeException(); // TODO: Remove this throw.
+            }
+            includesOther.includes.add(this);
+        }
+
+        this.includes.addAll(other.includes);
+
+        if (other.callbacks.size() > 0) {
+            solver.removeDoneCallback(other);
         }
 
         this.callbacks.addAll(other.callbacks);
+
+        if (this.callbacks.size() > 0 && !waitingForCallback) {
+            solver.addDoneCallback(this);
+        }
     }
 
     void takeIn(UnionNodeWithFields node) {
@@ -70,12 +75,28 @@ public final class UnionClass {
         }
     }
 
-    public Collection<UnionNode> getNodes() {
-        return nodes;
-    }
-
     public void addChangeCallback(Runnable callback) {
         this.callbacks.add(callback);
-        solver.addDoneCallback(callback); // Run at least once.
+        if (!waitingForCallback) {
+            solver.addDoneCallback(this);
+        }
+    }
+
+    public UnionFeature getFeature() {
+        return feature;
+    }
+
+    public void doneCallback(int iteration) {
+        if (iteration == hasRunAtIteration) {
+            return;
+        }
+        hasRunAtIteration = iteration;
+        waitingForCallback = false;
+        for (Runnable callback : new ArrayList<>(this.callbacks)) {
+            callback.run();
+        }
+        for (UnionClass includesUs : this.includesUs) {
+            includesUs.doneCallback(iteration);
+        }
     }
 }

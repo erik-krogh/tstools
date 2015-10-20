@@ -7,9 +7,10 @@ public enum PrimitiveDeclarationType implements DeclarationType {
     NUMBER("number"),
     BOOLEAN("boolean"),
     STRING("string"),
+    STRING_OR_NUMBER("string | number"),
     VOID("void"),
-    UNDEFINED("void"),
-    ANY("any");
+    ANY("any"),
+    NON_VOID("any");
 
     private String prettyString;
 

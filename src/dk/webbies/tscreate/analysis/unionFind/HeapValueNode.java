@@ -31,6 +31,12 @@ public class HeapValueNode extends ObjectUnionNode {
         }
     }
 
+    @Override
+    public void addTo(UnionClass unionClass) {
+        super.addTo(unionClass);
+        unionClass.getFeature().heapValues.add(this.value);
+    }
+
     public static class Factory {
         private final Snap.Obj globalObject;
         private final Map<Type, String> typeNames;
@@ -44,11 +50,13 @@ public class HeapValueNode extends ObjectUnionNode {
 
         private final Map<Snap.Obj, FunctionNode> getterSetterCache = new HashMap<>();
         private final TypeAnalysis typeAnalysis;
+        private Set<Snap.Obj> analyzedFunctions;
 
-        public Factory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, Map<Type, String> typeNames, TypeAnalysis typeAnalysis) {
+        public Factory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, Map<Type, String> typeNames, TypeAnalysis typeAnalysis, Set<Snap.Obj> analyzedFunctions) {
             this.libraryClasses = libraryClasses;
             this.globalObject = globalObject;
             this.typeAnalysis = typeAnalysis;
+            this.analyzedFunctions = analyzedFunctions;
             this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, this.globalObject, libraryClasses);
             this.solver = solver;
             this.typeNames = typeNames;
@@ -72,7 +80,7 @@ public class HeapValueNode extends ObjectUnionNode {
                         setter = setterFunctionNode.arguments.get(0);
                     }
                 }
-                GreatestCommonOfUnionNode fieldNode = new GreatestCommonOfUnionNode(getter, setter);
+                IncludeNode fieldNode = new IncludeNode(getter, setter);
                 solver.add(fieldNode);
                 solver.add(getter);
                 solver.add(setter);
@@ -173,7 +181,7 @@ public class HeapValueNode extends ObjectUnionNode {
             Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
             functionNodes.put(closure, functionNode);
 
-            this.typeAnalysis.analyse(closure, functionNodes, this.solver, functionNode, this);
+            this.typeAnalysis.analyse(closure, functionNodes, this.solver, functionNode, this, analyzedFunctions);
 
             this.getterSetterCache.put(closure, functionNode);
             return functionNode;

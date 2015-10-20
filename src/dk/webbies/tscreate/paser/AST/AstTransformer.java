@@ -202,7 +202,12 @@ public class AstTransformer {
             return new NullLiteral(loc);
         } else if (tree instanceof ArrayLiteralExpressionTree) {
             ArrayLiteralExpressionTree array = (ArrayLiteralExpressionTree) tree;
-            return new NewExpression(loc, new Identifier(loc, "Array"), cast(Expression.class, array.elements.stream().map(AstTransformer::convert).collect(Collectors.toList())));
+            List<AstNode> arguments = array.elements.stream().map(AstTransformer::convert).collect(Collectors.toList());
+
+            // Adding this special to the arguments, so that the further analysis doesn't think that the arguments are actual arguments to the Array Constructor.
+            arguments.add(0, new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0)));
+
+            return new NewExpression(loc, new Identifier(loc, "Array"), cast(Expression.class, arguments));
         } else if (tree instanceof ContinueStatementTree) {
             return new ContinueStatement(loc);
         } else if (tree instanceof BreakStatementTree) {

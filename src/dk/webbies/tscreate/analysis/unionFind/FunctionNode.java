@@ -6,7 +6,6 @@ import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -15,13 +14,10 @@ import java.util.stream.Collectors;
 public class FunctionNode extends UnionNodeWithFields {
     public final UnionNode returnNode;
     public final List<UnionNode> arguments = new ArrayList<>();
-    public FunctionExpression astFunction;
     public final UnionNode thisNode;
     public Snap.Obj closure = null;
 
     private final List<String> argumentNames;
-
-    public boolean hasAnalyzed = false; // For when analysing the functions separately.
 
     private FunctionNode(List<String> argumentNames) {
         this.argumentNames = argumentNames;
@@ -58,7 +54,6 @@ public class FunctionNode extends UnionNodeWithFields {
 
     public static FunctionNode create(FunctionExpression function) {
         FunctionNode result = new FunctionNode(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()));
-        result.astFunction = function;
         return result;
     }
 
@@ -77,7 +72,6 @@ public class FunctionNode extends UnionNodeWithFields {
             List<Identifier> allArguments = closure.function.target.function.astNode.getArguments();
             List<Identifier> freeArguments = allArguments.subList(boundArguments, allArguments.size());
             FunctionNode result = create(freeArguments.stream().map(Identifier::getName).collect(Collectors.toList()));
-            result.astFunction = closure.function.target.function.astNode;
             result.closure = closure;
             return result;
         }
@@ -88,5 +82,23 @@ public class FunctionNode extends UnionNodeWithFields {
         FunctionNode result = create(argumentNames);
         result.closure = closure;
         return result;
+    }
+
+    @Override
+    public void addTo(UnionClass unionClass) {
+        ArrayList<UnionFeature.FunctionFeature.Argument> arguments = new ArrayList<>();
+        for (int i = 0; i < this.arguments.size(); i++) {
+            UnionNode node = this.arguments.get(i);
+            String name = this.argumentNames.get(i);
+            arguments.add(new UnionFeature.FunctionFeature.Argument(name, node));
+        }
+
+        UnionFeature.FunctionFeature functionFeature = new UnionFeature.FunctionFeature(this.thisNode, this.returnNode, arguments, this.closure);
+        UnionFeature feature = unionClass.getFeature();
+        if (feature.functionFeature == null) {
+            feature.functionFeature = functionFeature;
+        } else {
+            feature.functionFeature.takeIn(functionFeature);
+        }
     }
 }

@@ -4,7 +4,6 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
@@ -21,6 +20,11 @@ public class HasPrototypeUnionNode extends UnionNode {
 
     public Snap.Obj getPrototype() {
         return prototype;
+    }
+
+    @Override
+    public void addTo(UnionClass unionClass) {
+        unionClass.getFeature().prototypes.add(this.prototype);
     }
 
     public static class Factory {

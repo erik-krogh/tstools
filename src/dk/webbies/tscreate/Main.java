@@ -27,12 +27,20 @@ import java.util.Map;
  */
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        long start = System.currentTimeMillis();
-        Options options = Options.separateFunctions();
+        Options options = new Options();
         options.unionShortCircuitLogic = false;
-        runAnalysis("Test script", "tests/smallUnderscore.js", null, options, LanguageLevel.ES5); // TODO: Get PIXI.js to work.
+        options.includeThisNodeFromHeap = true;
+        options.includeThisNodeFromConstructor = false;
+        options.includeThisNodeFromPrototypeMethods = false;
+
+        long start = System.currentTimeMillis();
+
+        runAnalysis("Test script", "tests/pixi.js", null, options, LanguageLevel.ES5);
+
         long end = System.currentTimeMillis();
+
         System.out.println("Ran in " + (end - start) + "ms");
+
         System.exit(0);
     }
 

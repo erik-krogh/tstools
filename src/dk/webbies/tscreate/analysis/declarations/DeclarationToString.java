@@ -20,13 +20,14 @@ public class DeclarationToString {
     private boolean finishing = false;
     private int ident = 0;
 
-    // This is the functions that are somehow recursive (or shows up in multiple locations).
+    // This is the functions or objects that are somehow recursive (or shows up in multiple locations).
     // That we therefore print as an interface instead.
-    private final Map<FunctionType, InterfaceType> functionsAsInterfaceMap = new HashMap<>();
+    private final Map<DeclarationType, InterfaceType> printsAsInterface = new HashMap<>();
 
     public DeclarationToString(OutputStream out, Map<String, DeclarationType> declarations) {
         this.out = out;
         this.declarations = declarations;
+
         DeclarationTypeUseCounter useCounter = new DeclarationTypeUseCounter();
         for (DeclarationType type : declarations.values()) {
             type.accept(useCounter);
@@ -36,7 +37,12 @@ public class DeclarationToString {
             if (count > 1 && type instanceof FunctionType) {
                 InterfaceType interfaceType = new InterfaceType("function_" + System.identityHashCode(type));
                 interfaceType.function = type;
-                functionsAsInterfaceMap.put((FunctionType)type, interfaceType);
+                printsAsInterface.put(type, interfaceType);
+            }
+            if (type instanceof UnnamedObjectType) {
+                InterfaceType interfaceType = new InterfaceType();
+                interfaceType.object = type;
+                printsAsInterface.put(type, interfaceType);
             }
         });
     }
@@ -126,8 +132,9 @@ public class DeclarationToString {
             functionType.getReturnType().accept(new TypeVisitor());
 
             write(";\n");
-        } else if (type instanceof ModuleType) {
-            ModuleType module = (ModuleType) type;
+        } else if (type instanceof UnnamedObjectType) {
+            // TODO: Use this, when typing globally accessible stuff. 
+            UnnamedObjectType module = (UnnamedObjectType) type;
             ident();
             write(prefix + " module " + name + " {\n");
             ident++;
@@ -169,8 +176,8 @@ public class DeclarationToString {
         }
 
         private void printFunction(FunctionType functionType, boolean insideInterface) {
-            if (!insideInterface && functionsAsInterfaceMap.containsKey(functionType)) {
-                functionsAsInterfaceMap.get(functionType).accept(this);
+            if (!insideInterface && printsAsInterface.containsKey(functionType)) {
+                printsAsInterface.get(functionType).accept(this);
             } else {
                 write("(");
                 List<FunctionType.Argument> args = functionType.getArguments();
@@ -200,7 +207,16 @@ public class DeclarationToString {
 
         @Override
         public Void visit(UnnamedObjectType objectType) {
-            Map<String, DeclarationType> decs = objectType.getDeclarations();
+            if (printsAsInterface.containsKey(objectType)) {
+                return printsAsInterface.get(objectType).accept(this);
+            } else {
+                InterfaceType interfaceType = new InterfaceType();
+                interfaceType.object = objectType;
+                printsAsInterface.put(objectType, interfaceType);
+                return interfaceType.accept(this);
+            }
+            // TODO: Every print directly?
+            /*Map<String, DeclarationType> decs = objectType.getDeclarations();
             if (decs.size() == 0) {
                 write("{}");
             } else {
@@ -223,7 +239,7 @@ public class DeclarationToString {
                 ident();
                 write("}");
             }
-            return null;
+            return null;*/
         }
 
         @Override
@@ -342,11 +358,6 @@ public class DeclarationToString {
             write(instanceType.getClazz().getName());
             classesToPrint.add(instanceType.getClazz());
             return null;
-        }
-
-        @Override
-        public Void visit(ModuleType module) {
-            throw new IllegalArgumentException("Module type should only happen inside a declaration, and in that case, printDeclaration is called");
         }
     }
 }

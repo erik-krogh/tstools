@@ -11,22 +11,29 @@ public class InterfaceType implements DeclarationType {
 
     public InterfaceType(String name) {
         // TODO: Ensure no conflicts
-        this.name = name;
+        if (name != null) {
+            this.name = name;
+        } else {
+            this.name = "interface_" + System.identityHashCode(this);
+        }
     }
 
-    // TODO: Unresolved.
+    public InterfaceType() {
+        this(null);
+    }
+
     public FunctionType getFunction() {
         if (function == null && object == null) {
             throw new NullPointerException("An interface must have either an object or function associated");
         }
-        return (FunctionType) function;
+        return (FunctionType) resolve(function);
     }
 
     public UnnamedObjectType getObject() {
         if (function == null && object == null) {
             throw new NullPointerException("An interface must have either an object or function associated");
         }
-        return (UnnamedObjectType) object; // TODO: Sometimes an namedObjectType.
+        return (UnnamedObjectType) resolve(object);
     }
 
     @Override

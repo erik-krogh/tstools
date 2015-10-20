@@ -7,4 +7,14 @@ public interface DeclarationType {
     <T> T accept(DeclarationTypeVisitor<T> visitor);
 
     <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument);
+
+    default DeclarationType resolve(DeclarationType type) {
+        if (type instanceof UnresolvedDeclarationType) {
+            return resolve(((UnresolvedDeclarationType) type).getResolvedType());
+        } else if (type instanceof CombinationType) {
+            return ((CombinationType) type).getCombined();
+        } else {
+            return type;
+        }
+    }
 }

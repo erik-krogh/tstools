@@ -23,9 +23,9 @@ public class ClassType implements DeclarationType{
         this.superClass = superClass;
     }
 
-    // Typecasting these two, because they are unresolvedType for a while.
+    // Typecasting this, because it is unresolvedType for a while.
     public FunctionType getConstructorType() {
-        return (FunctionType) constructorType;
+        return (FunctionType) resolve(constructorType);
     }
 
     public Map<String, DeclarationType> getPrototypeFields() {
@@ -37,7 +37,7 @@ public class ClassType implements DeclarationType{
     }
 
     public ClassType getSuperClass() {
-        return (ClassType) superClass;
+        return (ClassType) resolve(superClass);
     }
 
     public String getName() {

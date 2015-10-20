@@ -16,6 +16,17 @@ public class ObjectUnionNode extends UnionNodeWithFields {
         this.counter = instanceCounter++;
     }
 
+    @Override
+    public void addTo(UnionClass unionClass) {
+        UnionFeature feature = unionClass.getFeature();
+        this.objectFields.forEach((name, node) -> {
+            if (!feature.objectFields.containsKey(name)) {
+                feature.objectFields.put(name, node);
+            }
+        });
+        feature.typeNames.add(this.typeName);
+    }
+
     public Map<String, UnionNode> getObjectFields() {
         return objectFields;
     }

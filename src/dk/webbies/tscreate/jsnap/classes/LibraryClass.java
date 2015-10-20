@@ -21,7 +21,7 @@ public class LibraryClass {
 
     public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class.
 
-    public Snap.Obj prototype;
+    public final Snap.Obj prototype;
 
     public LibraryClass(String pathSeen, Snap.Obj prototype) {
         this.pathsSeen.add(pathSeen);
@@ -51,9 +51,12 @@ public class LibraryClass {
                 if (newName.equals("constructor")) {
                     continue;
                 }
+                if (newName.equals("[proto]")) {
+                    continue;
+                }
 
                 boolean newIsUpper = newName.charAt(0) == Character.toUpperCase(newName.charAt(0));
-                boolean oldIsUpper = name.charAt(0) == Character.toUpperCase(name.charAt(0));
+                boolean oldIsUpper = name.charAt(0) == Character.toUpperCase(name.charAt(0)) && !(name.charAt(0) == "[".charAt(0));
 
                 if (newIsUpper && !oldIsUpper) {
                     name = newName;
@@ -64,6 +67,10 @@ public class LibraryClass {
             }
         }
         return name;
+    }
+
+    private boolean containsShader() {
+        return pathsSeen.stream().anyMatch(str -> str.contains("Shader"));
     }
 
     private String getNameFromPath(String path) {

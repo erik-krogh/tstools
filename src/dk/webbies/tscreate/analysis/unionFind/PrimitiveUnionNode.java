@@ -6,7 +6,6 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -20,6 +19,11 @@ public class PrimitiveUnionNode extends UnionNode {
 
     public PrimitiveDeclarationType getType() {
         return this.type;
+    }
+
+    @Override
+    public void addTo(UnionClass unionClass) {
+        unionClass.getFeature().primitives.add(this.type);
     }
 
     public static class Factory {
@@ -51,7 +55,7 @@ public class PrimitiveUnionNode extends UnionNode {
         }
 
         public UnionNode undefined() {
-            return gen(PrimitiveDeclarationType.UNDEFINED, null);
+            return gen(PrimitiveDeclarationType.VOID, null);
         }
 
         public UnionNode bool() {
@@ -64,6 +68,10 @@ public class PrimitiveUnionNode extends UnionNode {
 
         public UnionNode any() {
             return gen(PrimitiveDeclarationType.ANY, null);
+        }
+
+        public UnionNode stringOrNumber() {
+            return new PrimitiveUnionNode(PrimitiveDeclarationType.STRING_OR_NUMBER);
         }
     }
 }

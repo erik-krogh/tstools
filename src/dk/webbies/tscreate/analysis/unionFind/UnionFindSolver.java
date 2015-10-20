@@ -30,7 +30,7 @@ import java.util.*;
  * Modified by Erik Krogh Kristensen, for use in TSCreate (working title).
  */
 public class UnionFindSolver {
-    private Set<Runnable> doneCallbacks = new HashSet<>();
+    private Set<UnionClass> doneCallbacks = new HashSet<>();
 
     int iteration = 1;
 
@@ -38,9 +38,10 @@ public class UnionFindSolver {
         while (doneCallbacks.size() > 0) {
             int count = iteration++;
             System.out.println(count + " (" + doneCallbacks.size() + ")");
-            for (Runnable callback : new ArrayList<>(doneCallbacks)) {
-                doneCallbacks.remove(callback);
-                callback.run();
+            ArrayList<UnionClass> copy = new ArrayList<>(doneCallbacks);
+            doneCallbacks.clear();
+            for (UnionClass unionClass : copy) {
+                unionClass.doneCallback(iteration);
             }
         }
     }
@@ -82,14 +83,12 @@ public class UnionFindSolver {
         recFind(node).unionClass.addChangeCallback(callback);
     }
 
-    public void addDoneCallback(Runnable callback) {
-        this.doneCallbacks.add(callback);
+    public void addDoneCallback(UnionClass unionClass) {
+        this.doneCallbacks.add(unionClass);
     }
 
-    public void addDoneCallbacks(Collection<Runnable> callbacks) {
-        for (Runnable callback : callbacks) {
-            this.doneCallbacks.add(callback);
-        }
+    public void removeDoneCallback(UnionClass unionClass) {
+        this.doneCallbacks.remove(unionClass);
     }
 
     /**
@@ -200,11 +199,11 @@ public class UnionFindSolver {
 
         if (one.parent == oneParentBefore) {
             // OneLink is the representative.
-            one.unionClass.mergeWith(two.unionClass);
+            one.unionClass.takeIn(two.unionClass);
             two.unionClass = null;
         } else {
             // TwoLink is the representative.
-            two.unionClass.mergeWith(one.unionClass);
+            two.unionClass.takeIn(one.unionClass);
             one.unionClass = null;
         }
 

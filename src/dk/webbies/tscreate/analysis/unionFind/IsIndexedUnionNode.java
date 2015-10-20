@@ -21,4 +21,9 @@ public class IsIndexedUnionNode extends UnionNodeWithFields {
     public UnionNode getLookupExp() {
         return lookupExp;
     }
+
+    @Override
+    public void addTo(UnionClass unionClass) {
+        // TODO: Mark it or something here.
+    }
 }

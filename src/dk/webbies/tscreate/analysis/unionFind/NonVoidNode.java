@@ -5,4 +5,8 @@ package dk.webbies.tscreate.analysis.unionFind;
  */
 public class NonVoidNode extends UnionNode {
 
+    @Override
+    public void addTo(UnionClass unionClass) {
+        unionClass.getFeature().nonVoid = true;
+    }
 }

@@ -53,65 +53,29 @@ public class TypeAnalysis {
 
         System.out.println("Analyzing " + functions.size() + " functions");
 
-        if (options.separateFunctions) {
-            int counter = 1;
-            for (Snap.Obj functionClosure : functions) {
-                System.out.println(counter++ + "/" + functions.size());
-                UnionFindSolver solver = new UnionFindSolver();
-
-                // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
-                FunctionNode functionNode = functionNodes.get(functionClosure);
-                HashMap<Snap.Obj, FunctionNode> subFunctions = new HashMap<>();
-                subFunctions.put(functionClosure, functionNode); // But the one we are analysing, should still be the right one.
-
-                HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this);
-
-                // TODO: Very tmp, for testing underscore.
-                if (functionClosure.function.id.equals("145") || functionClosure.function.id.equals("3") || true) {
-                    if (functionClosure.function.id.equals("145")) {
-                        System.out.println();
-                    }
-                    analyse(functionClosure, subFunctions, solver, functionNode, heapFactory);
-                } else {
-                    solver.add(functionNode);
-                    solver.add(functionNode.returnNode);
-                    solver.add(functionNode.thisNode);
-                    functionNode.arguments.forEach(solver::add);
-                }
-
-
-
-                solver.finish();
-                typeFactory.finishedFunctionNodes.add(functionNode);
-                typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getType(functionNode));
-            }
-
-            typeFactory.resolveClassTypes();
-
-        } else {
-            Map<ProgramPoint, UnionNode> nodes = new HashMap<>();
+        int counter = 1;
+        for (Snap.Obj functionClosure : functions) {
+            System.out.println(counter++ + "/" + functions.size());
             UnionFindSolver solver = new UnionFindSolver();
-            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this);
-            for (Snap.Obj function : functions) {
-                analyse(function, functionNodes, solver, functionNodes.get(function), heapFactory);
-            }
+
+            Map<Snap.Obj, FunctionNode> subFunctionNodes = new HashMap<>();
+            FunctionNode functionNode = functionNodes.get(functionClosure);
+            subFunctionNodes.put(functionClosure, functionNode);
+
+            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this, new HashSet<>());
+
+            analyse(functionClosure, subFunctionNodes, solver, functionNode, heapFactory, new HashSet<>());
 
             solver.finish();
-
-            for (FunctionNode functionNode : functionNodes.values()) {
-                typeFactory.finishedFunctionNodes.add(functionNode);
-            }
-
-            for (Snap.Obj function : functions) {
-                typeFactory.putResolvedFunctionType(function, typeFactory.getType(functionNodes.get(function)));
-            }
-
-            typeFactory.resolveClassTypes();
-
+            typeFactory.finishedFunctionClosures.add(functionClosure);
+            typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(functionNode.getFeature()));
         }
+
+        typeFactory.resolveClassTypes();
+
     }
 
-    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueNode.Factory heapFactory) {
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueNode.Factory heapFactory, Set<Snap.Obj> analyzedFunctions) {
         if (closure.function.type.equals("unknown")) {
             return;
         }
@@ -133,7 +97,7 @@ public class TypeAnalysis {
 
         new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, programPoints, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
 
-        new UnionConstraintVisitor(closure, solver, programPoints, functionNode, functionNodes, heapFactory, this).visit(closure.function.astNode);
+        new UnionConstraintVisitor(closure, solver, programPoints, functionNode, functionNodes, heapFactory, this, analyzedFunctions).visit(closure.function.astNode);
     }
 
     public static class ProgramPoint {
