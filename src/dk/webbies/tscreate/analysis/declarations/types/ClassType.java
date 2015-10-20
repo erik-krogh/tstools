@@ -6,7 +6,7 @@ import java.util.Map;
  * Created by Erik Krogh Kristensen on 17-09-2015.
  */
 public class ClassType implements DeclarationType{
-    public DeclarationType constructorType; // TODO: Consider making private final, if i simplify the handeling of unresolved type.
+    public DeclarationType constructorType;
     private final Map<String, DeclarationType> prototypeFields;
     private final Map<String, DeclarationType> staticFields;
     private final String name;

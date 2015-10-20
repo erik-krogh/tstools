@@ -148,7 +148,7 @@ public class TypeFactory {
         if (firstChar == "_".charAt(0)) {
             libraryClass.isUsedAsClass = true; // TODO:
         }
-        if (!libraryClass.isUsedAsClass) { // TODO: Nope.
+        if (!libraryClass.isUsedAsClass) {
             return null;
         }
         Snap.Property constructorProp = libraryClass.prototype.getProperty("constructor");
@@ -160,13 +160,9 @@ public class TypeFactory {
         Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
         switch (constructor.function.type) {
             case "native":
-                if (constructor.function.id.length() > 0) {
-                    // TODO; Nope not right, it is the constructor, not an instance of it.
-                    return null;
-//                    throw new UnsupportedOperationException();
-                } else {
-                    throw new RuntimeException();
-                }
+                // We cant produce the "Constructor" of a native class, because we don't know what to call it.
+                // I could produce something like "interface NumberConstructor { new () : Number;}", but that just seems stupid.
+                return null;
         }
 
         if (libraryClassCache.containsKey(libraryClass)) {
@@ -208,7 +204,9 @@ public class TypeFactory {
                 Map<String, DeclarationType> staticFields = new HashMap<>();
                 if (true) {
                     for (Map.Entry<String, Snap.Property> entry : constructor.getPropertyMap().entrySet()) {
-                        staticFields.put(entry.getKey(), getHeapPropType(entry.getValue()));
+                        if (Arrays.asList("prototype", "caller", "length", "name", "arguments").stream().noneMatch(str -> str.equals(entry.getKey()))) {
+                            staticFields.put(entry.getKey(), getHeapPropType(entry.getValue()));
+                        }
                     }
                 } else {
                     // Other approach
@@ -235,7 +233,9 @@ public class TypeFactory {
 
                 Map<String, DeclarationType> prototypeProperties = new HashMap<>();
                 libraryClass.prototype.getPropertyMap().forEach((name, prop) -> {
-                    prototypeProperties.put(name, getHeapPropType(prop));
+                    if (!name.equals("constructor")) {
+                        prototypeProperties.put(name, getHeapPropType(prop));
+                    }
                 });
 
 

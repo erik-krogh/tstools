@@ -59,7 +59,7 @@ public class CombinationType implements DeclarationType {
             } else if (unfolded.size() == 1) {
                 result = unfolded.iterator().next();
             } else {
-                result = unfolded.stream().reduce(combiner::combineTypes).get();
+                result = combiner.combineTypes(unfolded);
             }
             this.types.clear();
             this.types.add(result);

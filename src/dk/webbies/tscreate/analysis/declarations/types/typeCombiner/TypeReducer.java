@@ -1,16 +1,13 @@
 package dk.webbies.tscreate.analysis.declarations.types.typeCombiner;
 
 import dk.webbies.tscreate.Util;
-import dk.webbies.tscreate.analysis.declarations.types.ClassType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
-import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.typeHandlers.*;
+import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers.*;
 import dk.webbies.tscreate.jsnap.Snap;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -47,6 +44,7 @@ public class TypeReducer {
         register(new InterfaceFunctionReducer(this));
         register(new InterfaceUnnamedObjectReducer(this));
         register(new UnnamedObjectReducer(this));
+        register(new ClassInterfaceReducer(globalObject, this));
     }
 
     private static Map<PrimitiveDeclarationType, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
@@ -64,20 +62,10 @@ public class TypeReducer {
 
 
 
-    // TODO: Something better in the end?
-    // TODO: Make sure UnionTypes are unfolded before this step.
-    public DeclarationType combineTypes(DeclarationType one, DeclarationType two) {
+    private DeclarationType combineTypes(DeclarationType one, DeclarationType two) throws CantReduceException {
         if (one == two) {
             return one;
         }
-
-        // TODO: Ugly.... Instead find out why the Underscore class is being unified with "any".
-        /*if (one instanceof ClassType) {
-            return one;
-        }
-        if (two instanceof ClassType) {
-            return two;
-        }*/
 
         if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(one)) {
             return specialPrimitives.get(one).apply(two);
@@ -88,16 +76,39 @@ public class TypeReducer {
 
         Util.Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Util.Pair<>(one.getClass(), two.getClass());
         if (!handlers.containsKey(typePair)) {
-            // TODO: This need to be better.
-            return new UnionDeclarationType(one, two);
+            throw new CantReduceException();
         }
 
 
-        try {
-            return handlers.get(typePair).reduce(one, two);
-        } catch (CantReduceException e) {
-            // TODO: Throw it further, and do some more.
-            return new UnionDeclarationType(one, two);
+        return handlers.get(typePair).reduce(one, two);
+    }
+
+    public DeclarationType combineTypes(Collection<DeclarationType> typeCollection) {
+        // Copy, because i modify the list.
+        ArrayList<DeclarationType> types = new ArrayList<>(typeCollection);
+
+        for (int i = 0; i < types.size(); i++) {
+            DeclarationType one = types.get(i);
+            for (int j = i + 1; j < types.size(); j++) {
+                DeclarationType two = types.get(j);
+                try {
+                    DeclarationType combinedType = combineTypes(one, two);
+                    types.set(i, combinedType);
+                    types.remove(j);
+                    i--;
+                    break;
+                } catch (CantReduceException e) {
+                    // Do nothing, try the next one
+                }
+            }
+        }
+
+        if (types.size() == 0) {
+            return PrimitiveDeclarationType.VOID;
+        } else if (types.size() == 1) {
+            return types.get(0);
+        } else {
+            return new UnionDeclarationType(types);
         }
     }
 }

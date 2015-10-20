@@ -2,10 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.FunctionNode;
-import dk.webbies.tscreate.analysis.unionFind.HeapValueNode;
-import dk.webbies.tscreate.analysis.unionFind.UnionNode;
+import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -24,6 +21,7 @@ public class TypeAnalysis {
 
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, FunctionNode> functionNodes;
+    private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
 
     public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, Map<Type, String> typeNames) {
         this.libraryClasses = libraryClasses;
@@ -32,6 +30,20 @@ public class TypeAnalysis {
         this.typeNames = typeNames;
         this.functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
         this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, typeNames);
+        this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
+    }
+
+    private static Map<Snap.Obj, LibraryClass> createPrototypeFunctionMap(HashMap<Snap.Obj, LibraryClass> libraryClasses) {
+        HashMap<Snap.Obj, LibraryClass> result = new HashMap<>();
+        for (LibraryClass libraryClass : libraryClasses.values()) {
+            for (Snap.Property prop : libraryClass.prototype.getPropertyMap().values()) {
+                if (!prop.name.equals("constructor") && prop.value instanceof Snap.Obj && ((Snap.Obj) prop.value).function != null) {
+                    result.put((Snap.Obj) prop.value, libraryClass);
+                }
+            }
+        }
+
+        return result;
     }
 
     public TypeFactory getTypeFactory() {
@@ -91,6 +103,11 @@ public class TypeAnalysis {
         Map<String, Snap.Value> values = new HashMap<>();
         for (Snap.Property property : closure.env.properties) { // TODO: Look at properties instead, to include getters and setters.
             values.put(property.name, property.value);
+        }
+
+        if (prototypeFunctions.containsKey(closure)) {
+            LibraryClass libraryClass = prototypeFunctions.get(closure);
+            solver.union(functionNode.thisNode, new HasPrototypeUnionNode.Factory(libraryClasses).create(libraryClass.prototype));
         }
 
         HashMap<ProgramPoint, UnionNode> programPoints = new HashMap<>();

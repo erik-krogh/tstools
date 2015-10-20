@@ -36,7 +36,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        runAnalysis("Test script", "tests/underscore.js", null, options, LanguageLevel.ES5);
+        runAnalysis("Test script", "tests/pixi.js", null, options, LanguageLevel.ES5);
 
         long end = System.currentTimeMillis();
 

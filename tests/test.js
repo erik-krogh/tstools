@@ -590,6 +590,7 @@ var test = (function () {
 })();
 
 */
+/*
 function minusOne(a) {
     return a - 1;
 }
@@ -600,4 +601,12 @@ function divideByTwo(a) {
 
 function test(argument) {
     return (minusOne && divideByTwo)(argument);
+}*/
+
+function MyKlass() {
+
 }
+
+MyKlass.prototype.equals = function (other) {
+    return other == this;
+};
