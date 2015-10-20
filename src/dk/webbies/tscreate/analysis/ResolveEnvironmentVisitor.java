@@ -21,7 +21,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private final Map<TypeAnalysis.ProgramPoint, UnionNode> nodes;
     private Snap.Obj globalObject;
     private Map<String, Snap.Value> globalValues;
-    private Map<String, Snap.Value> values;
+    private Map<String, Snap.Property> values;
     private final PrimitiveUnionNode.Factory primitivesBuilder;
     private HeapValueNode.Factory heapFactory;
     private Map<Snap.Obj, LibraryClass> libraryClasses;
@@ -31,7 +31,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
             FunctionExpression function,
             UnionFindSolver solver,
             Map<TypeAnalysis.ProgramPoint, UnionNode> nodes,
-            Map<String, Snap.Value> values,
+            Map<String, Snap.Property> values,
             Map<String, Snap.Value> globalValues,
             Snap.Obj globalObject,
             HeapValueNode.Factory heapFactory,
@@ -66,11 +66,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
         String name = identifier.getName();
         UnionNode idNode = UnionConstraintVisitor.getUnionNode(identifier, this.closure, this.nodes);
         if (this.values.containsKey(name)) {
-            List<UnionNode> nodes = heapFactory.fromValue(this.values.get(name));
-            if (nodes.isEmpty()) {
-                throw new RuntimeException("Cannot have an identifier be nothing");
-            }
-            solver.union(idNode, nodes);
+            solver.union(idNode, heapFactory.fromProperty(this.values.get(name)));
         } else if (identifier.isGlobal) {
             if (name.equals("arguments")) {
                 solver.union(idNode, new IsIndexedUnionNode(primitivesBuilder.any(), primitivesBuilder.number()));

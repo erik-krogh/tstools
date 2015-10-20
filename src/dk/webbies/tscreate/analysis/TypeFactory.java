@@ -144,9 +144,8 @@ public class TypeFactory {
         if (libraryClass == null) {
             return null;
         }
-        char firstChar = libraryClass.getName().charAt(0);
-        if (firstChar == "_".charAt(0)) {
-            libraryClass.isUsedAsClass = true; // TODO:
+        if (options.isClassNames.stream().anyMatch(str -> str.equals(libraryClass.getName()))) {
+            libraryClass.isUsedAsClass = true;
         }
         if (!libraryClass.isUsedAsClass) {
             return null;

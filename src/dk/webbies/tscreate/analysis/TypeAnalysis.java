@@ -100,9 +100,9 @@ public class TypeAnalysis {
             closure.function.astNode = closure.function.target.function.astNode;
         }
 
-        Map<String, Snap.Value> values = new HashMap<>();
-        for (Snap.Property property : closure.env.properties) { // TODO: Look at properties instead, to include getters and setters.
-            values.put(property.name, property.value);
+        Map<String, Snap.Property> values = new HashMap<>();
+        for (Snap.Property property : closure.env.properties) {
+            values.put(property.name, property);
         }
 
         if (prototypeFunctions.containsKey(closure)) {
