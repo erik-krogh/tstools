@@ -36,10 +36,12 @@ public final class UnionClass {
 
         this.feature.takeIn(other.feature);
 
+        // TODO: If include == this, skip?
         for (UnionClass includesOther : other.includesUs) {
             includesOther.includes.remove(other);
             includesOther.includes.add(this);
         }
+        // TODO: Find cycles?
 
         this.includes.addAll(other.includes);
 
