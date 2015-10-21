@@ -603,10 +603,6 @@ function test(argument) {
     return (minusOne && divideByTwo)(argument);
 }*/
 
-function MyKlass() {
-
+function test(x) {
+    return document.getElementById(x);
 }
-
-MyKlass.prototype.equals = function (other) {
-    return other == this;
-};

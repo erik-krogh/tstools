@@ -481,23 +481,19 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     private class CallGraphResolver implements Runnable {
-        UnionNode thisNode;
-        UnionNode function;
         List<UnionNode> args;
-        EmptyUnionNode returnNode;
         private final Expression callExpression; // Useful for debugging.
         boolean constructorCalls;
         private HashSet<Snap.Obj> seenHeap = new HashSet<>();
+        private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, EmptyUnionNode returnNode, Expression callExpression) {
-            this.thisNode = thisNode;
-            this.function = function;
             this.args = args;
-            this.returnNode = returnNode;
             this.callExpression = callExpression;
 
-            FunctionNode functionNode = FunctionNode.create(args.size());
+            functionNode = FunctionNode.create(args.size());
             solver.union(function, functionNode);
+
             Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, pair.right, new NonVoidNode()));
 
             solver.union(functionNode.returnNode, returnNode);
@@ -506,7 +502,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functions = getFunctionNodes(function, seenHeap);
+            Collection<Snap.Obj> functions = getFunctionNodes(functionNode, seenHeap);
 
             for (Snap.Obj closure : functions) {
                 switch (closure.function.type) {
@@ -519,7 +515,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             functionNode = FunctionNode.create(closure);
                             UnionConstraintVisitor.this.functionNodes.put(closure, functionNode);
                         }
-                        unifyWithFunctionNode(functionNode);
+                        solver.union(functionNode, this.functionNode);
                         if (UnionConstraintVisitor.this.analyzedFunction.contains(closure)) {
                             break;
                         }
@@ -543,30 +539,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     }
                     case "native": {
                         boolean constructorCalls = this.constructorCalls;
-                        List<FunctionNode> signatureNodes = createNativeSignatureNodes(closure, args, constructorCalls);
-                        for (FunctionNode signatureNode : signatureNodes) {
-                            unifyWithFunctionNode(signatureNode);
-                        }
-
+                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, args, constructorCalls);
+                        solver.union(functionNode, signatures);
                         break;
                     }
                     case "unknown":
-
                         break;
                     default:
                         throw new RuntimeException("What?");
                 }
             }
-        }
-
-        private void unifyWithFunctionNode(FunctionNode functionNode) {
-            for (int i = 0; i < functionNode.arguments.size() && i < this.args.size(); i++) {
-                UnionNode parameter = functionNode.arguments.get(i);
-                UnionNode argument = this.args.get(i);
-                solver.union(parameter, argument);
-            }
-            solver.union(functionNode.returnNode, this.returnNode);
-            solver.union(functionNode.thisNode, this.thisNode);
         }
     }
 

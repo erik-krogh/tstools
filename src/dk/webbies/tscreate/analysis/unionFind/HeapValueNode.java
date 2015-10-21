@@ -142,9 +142,8 @@ public class HeapValueNode extends ObjectUnionNode {
                     }
                 }
             } else {
-                ArrayList<Signature> signatures = new ArrayList<>(obj.function.callSignatures);
-                signatures.addAll(obj.function.constructorSignatures);
-                result.addAll(signatures.stream().map(signature -> functionNodeFactory.fromSignature(signature, obj, null)).collect(Collectors.toList()));
+                // We could parse the signatures here, but we don't know if it is a constructorCall or not.
+                // So signature parsing is done in UnionConstraintVisitor.CallGraphResolver. 
             }
             functionCache.putAll(obj, result);
             return result;

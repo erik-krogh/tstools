@@ -56,7 +56,7 @@ public class DeclarationParser {
                 } else if (leaf.getType() instanceof GenericType) {
                     typeNames.put(leaf.getType(), name);
                 } else {
-                    throw new RuntimeException("Dont handle marking " + leaf.getType().getClass().getName() + " yet!");
+                    throw new RuntimeException("I don't handle marking " + leaf.getType().getClass().getName() + " yet!");
                 }
             } else {
                 markNamedTypes((SpecReader.Node) type, name + ".", typeNames);
@@ -75,6 +75,16 @@ public class DeclarationParser {
             }
         }
 
+        private Snap.Value lookUp(Snap.Obj obj, String key) {
+            if (obj == null) {
+                return null;
+            } else if (obj.getProperty(key) != null) {
+                return obj.getProperty(key).value;
+            } else {
+                return lookUp(obj.prototype, key);
+            }
+        }
+
         @Override
         public Void visit(GenericType t, Snap.Obj obj) {
             if (seen.contains(t)) {
@@ -88,8 +98,9 @@ public class DeclarationParser {
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                 String key = entry.getKey();
                 Type value = entry.getValue();
-                if (obj.getProperty(key) != null && obj.getProperty(key).value instanceof Snap.Obj) {
-                    value.accept(this, (Snap.Obj) obj.getProperty(key).value);
+                Snap.Value propValue = lookUp(obj, key);
+                if (propValue != null && propValue instanceof Snap.Obj) {
+                    value.accept(this, (Snap.Obj) propValue);
                 }
             }
             return null;
@@ -108,8 +119,9 @@ public class DeclarationParser {
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                 String key = entry.getKey();
                 Type value = entry.getValue();
-                if (obj.getProperty(key) != null && obj.getProperty(key).value instanceof Snap.Obj) {
-                    value.accept(this, (Snap.Obj) obj.getProperty(key).value);
+                Snap.Value propValue = lookUp(obj, key);
+                if (propValue != null && propValue instanceof Snap.Obj) {
+                    value.accept(this, (Snap.Obj) propValue);
                 }
             }
 
@@ -124,37 +136,37 @@ public class DeclarationParser {
 
         @Override
         public Void visit(SimpleType t, Snap.Obj obj) {
-            throw new UnsupportedOperationException("none");
+            return null;
         }
 
         @Override
         public Void visit(TupleType t, Snap.Obj obj) {
-            throw new UnsupportedOperationException("of");
+            return null;
         }
 
         @Override
         public Void visit(UnionType t, Snap.Obj obj) {
-            throw new UnsupportedOperationException("these");
+            return null;
         }
 
         @Override
         public Void visit(UnresolvedType t, Snap.Obj obj) {
-            throw new UnsupportedOperationException("happens");
+            return null;
         }
 
         @Override
         public Void visit(TypeParameterType t, Snap.Obj obj) {
-            throw new UnsupportedOperationException("in");
+            return null;
         }
 
         @Override
         public Void visit(SymbolType t, Snap.Obj obj) {
-            throw new UnsupportedOperationException("this");
+            return null;
         }
 
         @Override
         public Void visit(ClassType t, Snap.Obj obj) {
-            throw new UnsupportedOperationException("visitor.");
+            return null;
         }
     }
 

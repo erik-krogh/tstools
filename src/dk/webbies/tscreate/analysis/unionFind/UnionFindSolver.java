@@ -131,7 +131,7 @@ public class UnionFindSolver {
         return elem.parent;
     }
 
-    public void union(UnionNode one, List<UnionNode> list) {
+    public void union(UnionNode one, Collection<? extends UnionNode> list) {
         for (UnionNode unionNode : list) {
             this.union(one, unionNode);
         }

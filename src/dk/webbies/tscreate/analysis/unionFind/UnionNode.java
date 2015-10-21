@@ -13,9 +13,6 @@ public abstract class UnionNode {
     private final int counter;
     public UnionNode() {
         this.counter = instanceCounter++;
-        if (this.counter == 3) {
-            System.out.println();
-        }
     }
 
     public UnionClass getUnionClass() {
