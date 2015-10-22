@@ -29,7 +29,6 @@ import java.util.Map;
  */
 public class Main {
     // TODO: In full underscore.js, the "_" object is unified with any, string, and other weird things.
-    // TODO: document.getElementById() return a union of 73 type names.
     public static void main(String[] args) throws IOException, InterruptedException {
         Options options = new Options();
         options.includeThisNodeFromHeap = true;

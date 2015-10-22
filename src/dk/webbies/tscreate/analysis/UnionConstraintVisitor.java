@@ -245,7 +245,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     @Override
     public UnionNode visit(FunctionExpression function) {
         if (closureMatch(function, this.closure)) {
-            // TODO: If a prototype-method, union this-node with libraryClass this-node.
             function.getBody().accept(this);
             function.getArguments().forEach(arg -> solver.union(arg.accept(this), new NonVoidNode()));
 
