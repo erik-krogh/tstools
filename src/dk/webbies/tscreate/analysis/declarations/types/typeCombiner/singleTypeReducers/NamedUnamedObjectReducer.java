@@ -26,7 +26,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
     }
 
     @Override
-    public DeclarationType reduce(UnnamedObjectType unnamedObjectType, NamedObjectType named) throws CantReduceException {
+    public DeclarationType reduce(UnnamedObjectType unnamedObjectType, NamedObjectType named) {
         Snap.Property prop = global.getProperty(named.getName());
         if (prop == null) {
             // Can't say anything, so we assume that the object does contain it.
@@ -35,7 +35,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
         if (objectMatchPrototype(unnamedObjectType, (Snap.Obj) prop.value)) {
             return named;
         } else {
-            throw new CantReduceException();
+            return null;
         }
     }
 

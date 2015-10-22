@@ -131,15 +131,23 @@ public class UnionFindSolver {
         return elem.parent;
     }
 
+    public void union(UnionNode... nodes) {
+        union(Arrays.asList(nodes));
+    }
+
+    public void union(List<UnionNode> nodes) {
+        if (nodes.size() >= 2) {
+            UnionNode first = nodes.get(0);
+            for (int i = 1; i < nodes.size(); i++) {
+                union(first, nodes.get(i));
+            }
+        }
+    }
+
     public void union(UnionNode one, Collection<? extends UnionNode> list) {
         for (UnionNode unionNode : list) {
             this.union(one, unionNode);
         }
-    }
-
-    public void union(UnionNode one, UnionNode two, UnionNode... rest) {
-        union(one, two);
-        union(two, Arrays.asList(rest));
     }
 
     /**
@@ -193,11 +201,13 @@ public class UnionFindSolver {
         }
 
         if (one.parent == oneParentBefore) {
-            // OneLink is the representative.
+            // One is the representative.
+            one.unionClass.representative = one;
             one.unionClass.takeIn(two.unionClass);
             two.unionClass = null;
         } else {
-            // TwoLink is the representative.
+            // Two is the representative.
+            two.unionClass.representative = two;
             two.unionClass.takeIn(one.unionClass);
             one.unionClass = null;
         }

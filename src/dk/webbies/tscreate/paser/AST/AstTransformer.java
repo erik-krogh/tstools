@@ -11,7 +11,7 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tscreate.Util.cast;
+import static dk.webbies.tscreate.util.Util.cast;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.

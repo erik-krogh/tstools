@@ -30,7 +30,7 @@ public class ClassObjectReducer implements SingleTypeReducer<ClassType, UnnamedO
     }
 
     @Override
-    public DeclarationType reduce(ClassType clazz, UnnamedObjectType object) throws CantReduceException {
+    public DeclarationType reduce(ClassType clazz, UnnamedObjectType object) {
         if (true) {
             return clazz; // TODO:
         }

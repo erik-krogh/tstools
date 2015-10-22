@@ -22,7 +22,7 @@ public class ReverseReducer<A extends DeclarationType, B extends DeclarationType
     }
 
     @Override
-    public DeclarationType reduce(A a, B b) throws CantReduceException {
+    public DeclarationType reduce(A a, B b) {
         return original.reduce(b, a);
     }
 }

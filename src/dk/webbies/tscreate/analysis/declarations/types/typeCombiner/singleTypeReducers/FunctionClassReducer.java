@@ -27,7 +27,7 @@ public class FunctionClassReducer implements SingleTypeReducer<FunctionType, Cla
     }
 
     @Override
-    public DeclarationType reduce(FunctionType functionType, ClassType classType) throws CantReduceException {
+    public DeclarationType reduce(FunctionType functionType, ClassType classType) {
         // Adding the function to the constructor
         CombinationType newConstrctor = new CombinationType(combiner);
         newConstrctor.addType(classType.constructorType);

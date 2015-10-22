@@ -27,7 +27,7 @@ public class InterfaceUnnamedObjectReducer implements SingleTypeReducer<Interfac
     }
 
     @Override
-    public DeclarationType reduce(InterfaceType interfaceType, UnnamedObjectType unnamedObjectType) throws CantReduceException {
+    public DeclarationType reduce(InterfaceType interfaceType, UnnamedObjectType unnamedObjectType) {
         CombinationType newObjectType = new CombinationType(combiner, interfaceType.object, unnamedObjectType);
         interfaceType.object = newObjectType;
         return interfaceType;

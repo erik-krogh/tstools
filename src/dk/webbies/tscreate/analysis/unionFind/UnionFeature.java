@@ -132,24 +132,7 @@ public class UnionFeature {
         }
     }
 
-    // TODO: Collapse if cycles (and not in TypeFactory).
-    public static Set<UnionFeature> getIncludedSet(UnionFeature feature) {
-        Set<UnionFeature> withIncludes = new HashSet<>();
-
-        List<UnionFeature> toAdd = new ArrayList<>();
-        toAdd.add(feature);
-        while (!toAdd.isEmpty()) {
-            ArrayList<UnionFeature> toAddCopy = new ArrayList<>(toAdd);
-            toAdd.clear();
-
-            for (UnionFeature featureToAdd : toAddCopy) {
-                if (!withIncludes.contains(featureToAdd)) {
-                    withIncludes.add(featureToAdd);
-                    featureToAdd.unionClass.includes.forEach(include -> toAdd.add(include.getFeature()));
-                }
-            }
-        }
-
-        return withIncludes;
+    public static List<UnionFeature> getReachable(UnionFeature feature) {
+        return feature.unionClass.getReachable(UnionClass::getFeature);
     }
 }

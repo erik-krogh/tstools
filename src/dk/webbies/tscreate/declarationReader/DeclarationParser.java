@@ -2,7 +2,7 @@ package dk.webbies.tscreate.declarationReader;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.jsnap.Snap;
 
 import java.io.File;

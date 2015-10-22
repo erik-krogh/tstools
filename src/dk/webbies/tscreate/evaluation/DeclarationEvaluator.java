@@ -2,8 +2,9 @@ package dk.webbies.tscreate.evaluation;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 
@@ -50,10 +51,10 @@ public class DeclarationEvaluator {
         private int signatureMismatches = 0;
         private int parameterCountMismatches = 0;
         private int missingSignatures = 0;
-        public final Map<Util.Pair<Class<? extends Type>, Class<? extends Type>>, Integer> typeMisMatch = new HashMap<>();
+        public final Map<Pair<Class<? extends Type>, Class<? extends Type>>, Integer> typeMisMatch = new HashMap<>();
 
         private void addTypeMismatch(Type shouldBe, Type was) {
-            Util.Pair<Class<? extends Type>, Class<? extends Type>> pair = new Util.Pair<>(shouldBe.getClass(), was.getClass());
+            Pair<Class<? extends Type>, Class<? extends Type>> pair = new Pair<>(shouldBe.getClass(), was.getClass());
             if (typeMisMatch.containsKey(pair)) {
                 typeMisMatch.put(pair, typeMisMatch.get(pair) + 1);
             } else {

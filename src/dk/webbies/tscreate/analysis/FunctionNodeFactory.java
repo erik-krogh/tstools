@@ -2,7 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 

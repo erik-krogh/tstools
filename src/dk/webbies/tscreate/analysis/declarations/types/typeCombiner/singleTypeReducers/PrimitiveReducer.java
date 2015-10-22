@@ -1,8 +1,8 @@
 package dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers;
 
-import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
+import dk.webbies.tscreate.util.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,17 +24,17 @@ public class PrimitiveReducer implements SingleTypeReducer<PrimitiveDeclarationT
     }
 
     private static void register(PrimitiveDeclarationType one, PrimitiveDeclarationType two, PrimitiveDeclarationType result) {
-        PrimitiveDeclarationType prev = reductionRules.put(new Util.Pair<>(one, two), result);
+        PrimitiveDeclarationType prev = reductionRules.put(new Pair<>(one, two), result);
         if (prev != null) {
             throw new RuntimeException();
         }
-        prev = reductionRules.put(new Util.Pair<>(two, one), result);
+        prev = reductionRules.put(new Pair<>(two, one), result);
         if (prev != null) {
             throw new RuntimeException();
         }
     }
 
-    private static final Map<Util.Pair<PrimitiveDeclarationType, PrimitiveDeclarationType>, PrimitiveDeclarationType> reductionRules = new HashMap<>();
+    private static final Map<Pair<PrimitiveDeclarationType, PrimitiveDeclarationType>, PrimitiveDeclarationType> reductionRules = new HashMap<>();
     static {
         register(STRING_OR_NUMBER, STRING, STRING);
         register(STRING_OR_NUMBER, NUMBER, NUMBER);
@@ -47,12 +47,9 @@ public class PrimitiveReducer implements SingleTypeReducer<PrimitiveDeclarationT
     }
 
     @Override
-    public DeclarationType reduce(PrimitiveDeclarationType one, PrimitiveDeclarationType two) throws CantReduceException {
-        if (reductionRules.containsKey(new Util.Pair<>(one, two))) {
-            PrimitiveDeclarationType result = reductionRules.get(new Util.Pair<>(one, two));
-            if (result == null) {
-                throw new CantReduceException();
-            }
+    public DeclarationType reduce(PrimitiveDeclarationType one, PrimitiveDeclarationType two) {
+        if (reductionRules.containsKey(new Pair<>(one, two))) {
+            PrimitiveDeclarationType result = reductionRules.get(new Pair<>(one, two));
             return result;
         } else {
             throw new RuntimeException("Dont know how to reduce primitive " + one + " with " + two);

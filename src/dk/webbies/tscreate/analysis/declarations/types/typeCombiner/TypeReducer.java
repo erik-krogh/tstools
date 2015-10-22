@@ -1,11 +1,11 @@
 package dk.webbies.tscreate.analysis.declarations.types.typeCombiner;
 
-import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers.*;
 import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
@@ -14,18 +14,18 @@ import java.util.function.Function;
  * Created by Erik Krogh Kristensen on 16-10-2015.
  */
 public class TypeReducer {
-    private Map<Util.Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
+    private Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
 
     public HashMap<Set<DeclarationType>, DeclarationType> combinationTypeCache = new HashMap<>(); // Used inside combinationType.
 
     private void register(SingleTypeReducer handler) {
-        Util.Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> key1 = new Util.Pair<>(handler.getAClass(), handler.getBClass());
+        Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> key1 = new Pair<>(handler.getAClass(), handler.getBClass());
         if (this.handlers.containsKey(key1)) {
             throw new RuntimeException("Duplicate handler registration, " + key1);
         }
         this.handlers.put(key1, handler);
         if (handler.getAClass() != handler.getBClass()) {
-            Util.Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> key2 = new Util.Pair<>(handler.getBClass(), handler.getAClass());
+            Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> key2 = new Pair<>(handler.getBClass(), handler.getAClass());
             if (this.handlers.containsKey(key2)) {
                 throw new RuntimeException("Duplicate handler registration, " + key2);
             }
@@ -62,7 +62,7 @@ public class TypeReducer {
 
 
 
-    private DeclarationType combineTypes(DeclarationType one, DeclarationType two) throws CantReduceException {
+    private DeclarationType combineTypes(DeclarationType one, DeclarationType two) {
         if (one == two) {
             return one;
         }
@@ -74,9 +74,9 @@ public class TypeReducer {
             return specialPrimitives.get(two).apply(one);
         }
 
-        Util.Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Util.Pair<>(one.getClass(), two.getClass());
+        Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Pair<>(one.getClass(), two.getClass());
         if (!handlers.containsKey(typePair)) {
-            throw new CantReduceException();
+            return null;
         }
 
 
@@ -91,15 +91,14 @@ public class TypeReducer {
             DeclarationType one = types.get(i);
             for (int j = i + 1; j < types.size(); j++) {
                 DeclarationType two = types.get(j);
-                try {
-                    DeclarationType combinedType = combineTypes(one, two);
-                    types.set(i, combinedType);
-                    types.remove(j);
-                    i--;
-                    break;
-                } catch (CantReduceException e) {
-                    // Do nothing, try the next one
+                DeclarationType combinedType = combineTypes(one, two);
+                if (combinedType == null) {
+                    continue;
                 }
+                types.set(i, combinedType);
+                types.remove(j);
+                i--;
+                break;
             }
         }
 

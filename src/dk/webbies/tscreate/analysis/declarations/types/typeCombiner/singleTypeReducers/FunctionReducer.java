@@ -28,7 +28,7 @@ public class FunctionReducer implements SingleTypeReducer<FunctionType, Function
     }
 
     @Override
-    public DeclarationType reduce(FunctionType one, FunctionType two) throws CantReduceException {
+    public DeclarationType reduce(FunctionType one, FunctionType two) {
         CombinationType returnType = new CombinationType(combiner);
         returnType.addType(one.getReturnType());
         returnType.addType(two.getReturnType());

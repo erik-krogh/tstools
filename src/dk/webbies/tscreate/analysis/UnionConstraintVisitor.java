@@ -1,7 +1,7 @@
 package dk.webbies.tscreate.analysis;
 
 import dk.au.cs.casa.typescript.types.Signature;
-import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -388,7 +388,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            Set<UnionFeature> features = UnionFeature.getIncludedSet(get(member.getExpression()).getFeature());
+            Collection<UnionFeature> features = UnionFeature.getReachable(get(member.getExpression()).getFeature());
             for (UnionFeature feature : features) {
                 Map<String, UnionNode> fields = feature.getObjectFields();
                 if (fields.containsKey(name)) {
@@ -568,7 +568,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     private Collection<Snap.Obj> getFunctionNodes(UnionNode function, HashSet<Snap.Obj> seenHeap) {
         Set<Snap.Obj> result = new HashSet<>();
-        for (UnionFeature feature : UnionFeature.getIncludedSet(function.getFeature())) {
+        for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             for (Snap.Value value : feature.getHeapValues()) {
                 if (!(value instanceof Snap.Obj)) {
                     continue;

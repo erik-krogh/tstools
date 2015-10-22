@@ -4,7 +4,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.unionFind.*;
@@ -192,7 +192,7 @@ public class TypeFactory {
         Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
         switch (constructor.function.type) {
             case "user":
-                Set<UnionFeature> constructorFeatures = libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getIncludedSet).reduce(new HashSet<>(), Util::reduceSet);
+                Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
 
                 List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
                 CombinationType constructorType = new CombinationType(combiner);

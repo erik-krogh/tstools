@@ -32,7 +32,7 @@ public class UnnamedObjectReducer implements SingleTypeReducer<UnnamedObjectType
     }
 
     @Override
-    public DeclarationType reduce(UnnamedObjectType one, UnnamedObjectType two) throws CantReduceException {
+    public DeclarationType reduce(UnnamedObjectType one, UnnamedObjectType two) {
 
         Multimap<String, DeclarationType> declarations = ArrayListMultimap.create();
         for (Map.Entry<String, DeclarationType> entry : one.getDeclarations().entrySet()) {

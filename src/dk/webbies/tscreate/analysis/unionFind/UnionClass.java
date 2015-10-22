@@ -1,6 +1,11 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
+import dk.webbies.tscreate.util.MappedCollection;
+import dk.webbies.tscreate.util.Tarjan;
+
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
@@ -18,16 +23,17 @@ public final class UnionClass {
     private int hasRunAtIteration = -1;
     private boolean waitingForCallback = false;
 
-    public UnionClass(UnionFindSolver solver, UnionNode... nodes) {
-        this.solver = solver;
-        for (UnionNode node : nodes) {
-            node.addTo(this);
+    public UnionNode representative;
 
-            if (node instanceof UnionNodeWithFields) {
-                UnionNodeWithFields fieldNode = (UnionNodeWithFields) node;
-                fieldNode.unionClass = this;
-                this.takeIn(fieldNode);
-            }
+    public UnionClass(UnionFindSolver solver, UnionNode node) {
+        this.representative = node;
+        this.solver = solver;
+        node.addTo(this);
+
+        if (node instanceof UnionNodeWithFields) {
+            UnionNodeWithFields fieldNode = (UnionNodeWithFields) node;
+            fieldNode.unionClass = this;
+            this.takeIn(fieldNode);
         }
     }
 
@@ -36,12 +42,15 @@ public final class UnionClass {
 
         this.feature.takeIn(other.feature);
 
-        // TODO: If include == this, skip?
         for (UnionClass includesOther : other.includesUs) {
             includesOther.includes.remove(other);
             includesOther.includes.add(this);
+            this.includesUs.add(includesOther);
         }
-        // TODO: Find cycles?
+        this.includes.remove(this);
+        this.includes.remove(other);
+        this.includesUs.remove(this);
+        this.includesUs.remove(other);
 
         this.includes.addAll(other.includes);
 
@@ -53,6 +62,19 @@ public final class UnionClass {
 
         if (this.callbacks.size() > 0 && !waitingForCallback) {
             solver.addDoneCallback(this);
+        }
+
+        collapseCycles();
+    }
+
+
+    private void collapseCycles() {
+        Tarjan<TarjanNode> tarjan = new Tarjan<>();
+        List<List<TarjanNode>> components = tarjan.getSCComponents(this.tarjanNode);
+        for (List<TarjanNode> component : components) {
+            if (component.size() > 1) {
+                solver.union(component.stream().map(node -> node.getUnionClass().representative).collect(Collectors.toList()));
+            }
         }
     }
 
@@ -97,6 +119,26 @@ public final class UnionClass {
         }
         for (UnionClass includesUs : this.includesUs) {
             includesUs.doneCallback(iteration);
+        }
+    }
+
+    public <T> List<T> getReachable(Function<UnionClass, T> mapFunc) {
+        if (mapFunc == null) {
+            mapFunc = (x) -> (T)x;
+        }
+        return new Tarjan<TarjanNode>().getReachableSet(this.tarjanNode).stream().map(TarjanNode::getUnionClass).map(mapFunc).collect(Collectors.toList());
+    }
+
+
+    private TarjanNode tarjanNode = new TarjanNode();
+    private class TarjanNode extends Tarjan.Node<TarjanNode> {
+        @Override
+        public Collection<TarjanNode> getEdges() {
+            return new MappedCollection<>(UnionClass.this.includes, unionClass -> unionClass.tarjanNode);
+        }
+
+        private UnionClass getUnionClass() {
+            return UnionClass.this;
         }
     }
 }

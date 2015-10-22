@@ -13,8 +13,8 @@ import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
-
 import dk.webbies.tscreate.paser.SSA;
+import dk.webbies.tscreate.util.Util;
 import org.apache.commons.io.output.TeeOutputStream;
 
 import java.io.BufferedOutputStream;
@@ -28,13 +28,15 @@ import java.util.Map;
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
 public class Main {
+    // TODO: In full underscore.js, the "_" object is unified with any, string, and other weird things.
+    // TODO: document.getElementById() return a union of 73 type names.
     public static void main(String[] args) throws IOException, InterruptedException {
         Options options = new Options();
         options.includeThisNodeFromHeap = true;
         options.includeThisNodeFromConstructor = false;
         options.includeThisNodeFromPrototypeMethods = false;
 
-        options.interProceduralAnalysisWithHeap = false;
+        options.interProceduralAnalysisWithHeap = true;
 
         long start = System.currentTimeMillis();
 

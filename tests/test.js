@@ -603,6 +603,25 @@ function test(argument) {
     return (minusOne && divideByTwo)(argument);
 }*/
 
-function test(x) {
+/*function test(x) {
     return document.getElementById(x);
+}*/
+
+function minusOne(a) {
+    return a - 1;
+}
+
+function divideByTwo(a) {
+    return a / 2;
+}
+
+function test(argument) {
+    var node1 = true,
+        node2 = 123,
+        node3 = "string";
+
+    node1 = node2 && "1";
+    node2 = node1 && "1";
+    node1 = node3 && "1";
+    return number;
 }

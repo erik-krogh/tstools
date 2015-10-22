@@ -1,4 +1,4 @@
-package dk.webbies.tscreate;
+package dk.webbies.tscreate.util;
 
 
 import org.apache.commons.io.IOUtils;
@@ -36,6 +36,34 @@ public class Util {
         }
 
         return inputGobbler.getResult();
+    }
+
+    private static class StreamGobbler extends Thread {
+        BufferedInputStream is;
+        private CountDownLatch latch;
+        private String result;
+
+        private StreamGobbler(InputStream is, CountDownLatch latch) {
+            this.is = new BufferedInputStream(is);
+            this.latch = latch;
+            this.start();
+        }
+
+        public String getResult() {
+            return result;
+        }
+
+        @Override
+        public void run() {
+            try {
+                result = IOUtils.toString(is);
+                is.close();
+                latch.countDown();
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
     }
 
     public static String getCachedOrRun(String cachePath, File checkAgainst, String nodeArgs) throws IOException {
@@ -121,34 +149,6 @@ public class Util {
         }
     }
 
-    private static class StreamGobbler extends Thread {
-        BufferedInputStream is;
-        private CountDownLatch latch;
-        private String result;
-
-        private StreamGobbler(InputStream is, CountDownLatch latch) {
-            this.is = new BufferedInputStream(is);
-            this.latch = latch;
-            this.start();
-        }
-
-        public String getResult() {
-            return result;
-        }
-
-        @Override
-        public void run() {
-            try {
-                result = IOUtils.toString(is);
-                is.close();
-                latch.countDown();
-            }
-            catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-        }
-    }
-
     // I would really like to force ColT and ColS to be the same subtype of Collection. But I don't think Java generics can handle that.
     public static <T, S, ColT extends Collection<T>, ColS extends Collection<S>> ColS cast(Class<S> clazz, ColT list) {
         for (T t : list) {
@@ -202,37 +202,7 @@ public class Util {
                 : StreamSupport.stream(split, false);
     }
 
-    public static final class Pair<A, B> {
-        public final A left;
-        public final B right;
 
-        public Pair(A left, B right) {
-            this.left = left;
-            this.right = right;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Pair<?, ?> pair = (Pair<?, ?>) o;
-            return Objects.equals(left, pair.left) &&
-                    Objects.equals(right, pair.right);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(left, right);
-        }
-
-        @Override
-        public String toString() {
-            return "Pair{" +
-                    "left=" + left +
-                    ", right=" + right +
-                    '}';
-        }
-    }
 
     public static<A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a,
                                          Stream<? extends B> b) {

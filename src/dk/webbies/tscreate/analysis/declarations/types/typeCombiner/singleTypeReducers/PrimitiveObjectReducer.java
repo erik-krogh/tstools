@@ -26,11 +26,11 @@ public class PrimitiveObjectReducer implements SingleTypeReducer<PrimitiveDeclar
     }
 
     @Override
-    public DeclarationType reduce(PrimitiveDeclarationType primitive, UnnamedObjectType object) throws CantReduceException {
+    public DeclarationType reduce(PrimitiveDeclarationType primitive, UnnamedObjectType object) {
         if (objectPropsMatchPrimitivePrototypes(primitive, object)) {
             return primitive;
         } else {
-            throw new CantReduceException("The fields didn't match the primitive, so didn't do anything");
+            return null;
         }
     }
 

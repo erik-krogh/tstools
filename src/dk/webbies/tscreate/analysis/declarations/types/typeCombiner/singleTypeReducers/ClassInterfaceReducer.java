@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers;
 
 import dk.webbies.tscreate.analysis.declarations.types.ClassType;
+import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
 import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.TypeReducer;
@@ -29,10 +30,11 @@ public class ClassInterfaceReducer implements SingleTypeReducer<ClassType, Inter
     }
 
     @Override
-    public DeclarationType reduce(ClassType classType, InterfaceType interfaceType) throws CantReduceException {
+    public DeclarationType reduce(ClassType classType, InterfaceType interfaceType) {
         if (interfaceType.object != null) {
             return new ClassObjectReducer(globalObject, combiner).reduce(classType, interfaceType.getObject());
         } else {
+            classType.constructorType = new CombinationType(combiner, classType.constructorType, interfaceType.function);
             return classType;
         }
     }

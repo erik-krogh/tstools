@@ -27,7 +27,7 @@ public class InterfaceFunctionReducer implements SingleTypeReducer<FunctionType,
     }
 
     @Override
-    public DeclarationType reduce(FunctionType functionType, InterfaceType interfaceType) throws CantReduceException {
+    public DeclarationType reduce(FunctionType functionType, InterfaceType interfaceType) {
         CombinationType newFunction = new CombinationType(combiner, functionType, interfaceType.function);
         interfaceType.function = newFunction;
         return interfaceType;

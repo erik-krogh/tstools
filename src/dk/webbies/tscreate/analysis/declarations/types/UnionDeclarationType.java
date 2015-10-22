@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import dk.webbies.tscreate.Util;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;

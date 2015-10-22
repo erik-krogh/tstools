@@ -24,7 +24,7 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
     }
 
     @Override
-    public DeclarationType reduce(FunctionType function, UnnamedObjectType object) throws CantReduceException {
+    public DeclarationType reduce(FunctionType function, UnnamedObjectType object) {
         if (objectMatchFunctionPrototype(object, globalObject)) {
             return function;
         } else {
