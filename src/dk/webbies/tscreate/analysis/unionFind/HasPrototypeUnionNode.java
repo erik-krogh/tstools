@@ -1,9 +1,6 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
 import dk.webbies.tscreate.jsnap.Snap;
-import dk.webbies.tscreate.jsnap.classes.LibraryClass;
-
-import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
@@ -27,18 +24,7 @@ public class HasPrototypeUnionNode extends UnionNode {
         unionClass.getFeature().prototypes.add(this.prototype);
     }
 
-    public static class Factory {
-        private final Map<Snap.Obj, LibraryClass> libraryClasses;
-
-        public Factory(Map<Snap.Obj, LibraryClass> libraryClasses) {
-            this.libraryClasses = libraryClasses;
-        }
-
-        public HasPrototypeUnionNode create(Snap.Obj prototype) {
-            if (libraryClasses.containsKey(prototype)) {
-                libraryClasses.get(prototype).isUsedAsClass = true;
-            }
-            return new HasPrototypeUnionNode(prototype);
-        }
+    public static HasPrototypeUnionNode create(Snap.Obj prototype) {
+        return new HasPrototypeUnionNode(prototype);
     }
 }

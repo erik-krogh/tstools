@@ -8,10 +8,10 @@ import java.util.*;
  * Created by webbies on 31-08-2015.
  */
 public class ClassHierarchyExtractor {
-    private Snap.Obj snapshot;
+    private Snap.Obj globalObject;
 
-    public ClassHierarchyExtractor(Snap.Obj librarySnapshot) {
-        this.snapshot = librarySnapshot;
+    public ClassHierarchyExtractor(Snap.Obj globalObject) {
+        this.globalObject = globalObject;
     }
 
     private List<Snap.Obj> extractClasses(String prefixPath, Snap.Obj obj, Map<Snap.Obj, LibraryClass> classes, Set<Snap.Obj> seenObjects) {
@@ -93,20 +93,73 @@ public class ClassHierarchyExtractor {
     }
 
     public HashMap<Snap.Obj, LibraryClass> extract() {
-        HashMap<Snap.Obj, LibraryClass> classes = new HashMap<>();
+        HashMap<Snap.Obj, LibraryClass> libraryClasses = new HashMap<>();
         HashSet<Snap.Obj> seen = new HashSet<>();
         // Reason for two passes: Names look prettier when we don't go through the environment.
-        List<Snap.Obj> missingEnvs = this.extractClasses("window", this.snapshot, classes, seen);
+        List<Snap.Obj> missingEnvs = this.extractClasses("window", this.globalObject, libraryClasses, seen);
 
         for (Snap.Obj missinEnv : missingEnvs) {
             for (Snap.Property property : missinEnv.properties) {
                 if (property.value instanceof Snap.Obj) {
                     Snap.Obj obj = (Snap.Obj) property.value;
-                    extractClasses("[ENV]." + property.name, obj, classes, seen);
+                    extractClasses("[ENV]." + property.name, obj, libraryClasses, seen);
                 }
             }
         }
 
-        return classes;
+        new MarkClassUsage(libraryClasses).visit(this.globalObject);
+
+        return libraryClasses;
+    }
+
+    private static final class MarkClassUsage {
+        private final HashSet<Snap.Obj> seen = new HashSet<>();
+        private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+
+        public MarkClassUsage(HashMap<Snap.Obj, LibraryClass> libraryClasses) {
+            this.libraryClasses = libraryClasses;
+        }
+
+
+        public void visit(Snap.Obj obj) {
+            if (seen.contains(obj)) {
+                return;
+            }
+            seen.add(obj);
+            if (obj.prototype != null) {
+                LibraryClass libraryClass = libraryClasses.get(obj.prototype);
+                if (libraryClass != null) {
+                    libraryClass.isUsedAsClass = true;
+                }
+            }
+
+            for (Snap.Property prop : obj.getPropertyMap().values()) {
+                visitProp(prop);
+            }
+
+            if (obj.env != null) {
+                for (Snap.Property prop : obj.env.getPropertyMap().values()) {
+                    visitProp(prop);
+                }
+            }
+
+            if (obj.prototype != null) {
+                for (Snap.Property prop : obj.prototype.getPropertyMap().values()) {
+                    visitProp(prop);
+                }
+            }
+        }
+
+        private void visitProp(Snap.Property prop) {
+            if (prop.value instanceof Snap.Obj) {
+                visit((Snap.Obj) prop.value);
+            }
+            if (prop.get != null) {
+                visit((Snap.Obj) prop.get);
+            }
+            if (prop.set != null) {
+                visit((Snap.Obj) prop.set);
+            }
+        }
     }
 }

@@ -45,7 +45,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
         this.libraryClasses = libraryClasses;
         this.globalValues = new HashMap<>(globalValues);
         this.values = new HashMap<>(values);
-        this.primitivesBuilder = new PrimitiveUnionNode.Factory(solver, globalObject, libraryClasses);
+        this.primitivesBuilder = new PrimitiveUnionNode.Factory(solver, globalObject);
         function.declarations.keySet().forEach(this.values::remove);
         function.declarations.keySet().forEach(this.globalValues::remove);
 

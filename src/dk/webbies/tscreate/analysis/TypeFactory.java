@@ -65,7 +65,6 @@ public class TypeFactory {
         if (unionClass == null) {
             throw new NullPointerException();
         }
-        // TODO: What if the unionClass changed from last time a type was gotten.
         DeclarationType result = cache.get(unionClass);
         if (result != null) {
             return result;

@@ -44,7 +44,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.analyzedFunction = analyzedFunction;
-        this.primitiveFactory = new PrimitiveUnionNode.Factory(solver, typeAnalysis.globalObject, typeAnalysis.libraryClasses);
+        this.primitiveFactory = new PrimitiveUnionNode.Factory(solver, typeAnalysis.globalObject);
         this.functionNodeFactory = new FunctionNodeFactory(primitiveFactory, this.solver, typeAnalysis.typeNames);
     }
 
@@ -431,7 +431,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final UnionNode thisNode;
         private final CallGraphResolver callResolver;
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
-        private final HasPrototypeUnionNode.Factory hasProtoFactory;
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode, Expression callExpression) {
             this.function = function;
@@ -439,7 +438,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.thisNode = thisNode;
             this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyUnionNode(), callExpression);
             this.callResolver.constructorCalls = true;
-            this.hasProtoFactory = new HasPrototypeUnionNode.Factory(UnionConstraintVisitor.this.typeAnalysis.libraryClasses);
         }
 
         @Override
@@ -449,7 +447,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     case "native":
                         Snap.Property prototypeProp = closure.getProperty("prototype");
                         if (prototypeProp != null) {
-                            solver.union(this.thisNode, hasProtoFactory.create((Snap.Obj) prototypeProp.value));
+                            solver.union(this.thisNode, HasPrototypeUnionNode.create((Snap.Obj) prototypeProp.value));
                         }
                         List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true);
                         for (FunctionNode signature : signatures) {
@@ -462,7 +460,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         if (clazz != null) {
 //                            clazz.isUsedAsClass = true; // This is useless after changing to "eager type resolution".
                             solver.union(this.thisNode, clazz.getNewThisNode());
-                            solver.union(this.thisNode, hasProtoFactory.create(clazz.prototype));
+                            solver.union(this.thisNode, HasPrototypeUnionNode.create(clazz.prototype));
 
                             solver.union(clazz.getNewConstructorNode(), this.function);
                         }

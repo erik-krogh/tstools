@@ -27,14 +27,12 @@ public class PrimitiveUnionNode extends UnionNode {
     }
 
     public static class Factory {
-        private final HasPrototypeUnionNode.Factory hasProtoFactory;
         private UnionFindSolver solver;
         private Snap.Obj globalObject;
 
-        public Factory(UnionFindSolver solver, Snap.Obj globalObject, Map<Snap.Obj, LibraryClass> libraryClasses) {
+        public Factory(UnionFindSolver solver, Snap.Obj globalObject) {
             this.solver = solver;
             this.globalObject = globalObject;
-            this.hasProtoFactory = new HasPrototypeUnionNode.Factory(libraryClasses);
         }
 
         private UnionNode gen(PrimitiveDeclarationType type, String constructorName) {
@@ -42,7 +40,7 @@ public class PrimitiveUnionNode extends UnionNode {
             if (constructorName != null) {
                 try {
                     Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
-                    solver.union(result, hasProtoFactory.create(prototype));
+                    solver.union(result, HasPrototypeUnionNode.create(prototype));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
