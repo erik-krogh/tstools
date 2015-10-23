@@ -143,7 +143,7 @@ public class ClassHierarchyExtractor {
                 }
             }
 
-            if (obj.prototype != null) {
+            if (obj.prototype != null && obj.prototype.properties != null) {
                 for (Snap.Property prop : obj.prototype.getPropertyMap().values()) {
                     visitProp(prop);
                 }
@@ -154,10 +154,10 @@ public class ClassHierarchyExtractor {
             if (prop.value instanceof Snap.Obj) {
                 visit((Snap.Obj) prop.value);
             }
-            if (prop.get != null) {
+            if (prop.get != null && !(prop.get instanceof Snap.UndefinedConstant)) {
                 visit((Snap.Obj) prop.get);
             }
-            if (prop.set != null) {
+            if (prop.set != null && !(prop.set instanceof Snap.UndefinedConstant)) {
                 visit((Snap.Obj) prop.set);
             }
         }
