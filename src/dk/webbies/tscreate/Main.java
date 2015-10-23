@@ -38,7 +38,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        runAnalysis("Test script", "tests/pixi.js", null, options, LanguageLevel.ES5);
+        runAnalysis("Test script", "tests/t.js", null, options, LanguageLevel.ES5);
 
         long end = System.currentTimeMillis();
 
@@ -51,7 +51,7 @@ public class Main {
         String resultDeclarationFilePath = scriptPath + ".gen.d.ts";
 
         String script = Util.readFile(scriptPath);
-        FunctionExpression program = SSA.toSSA(new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST());
+        FunctionExpression program = SSA.toSSA_(new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST()); System.exit(0);
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath), program);
 
         Map<Type, String> typeNames = DeclarationParser.markNatives(globalObject, languageLevel.environment);

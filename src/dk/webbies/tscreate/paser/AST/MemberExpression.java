@@ -28,4 +28,9 @@ public class MemberExpression extends Expression {
     public Expression getExpression() {
         return expression;
     }
+    @Override
+    public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {
+        return visitor.visit(this, aux);
+    }
+
 }

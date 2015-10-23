@@ -4,19 +4,16 @@ import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 
 /**
- * Created by erik1 on 01-09-2015.
+ * Created by hamid on 10/20/15.
  */
-public class StringLiteral extends Expression {
-    private String string;
-
-    public StringLiteral(SourceRange location, String string) {
-        super(location);
-        this.string = string;
+public class PhiNodeExpression extends Expression {
+    PhiNodeExpression() {
+        super(null);
     }
 
     @Override
     public <T> T accept(ExpressionVisitor<T> visitor) {
-        return visitor.visit(this);
+        throw new RuntimeException();
     }
     @Override
     public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {

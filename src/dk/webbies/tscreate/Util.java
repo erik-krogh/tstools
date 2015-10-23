@@ -18,6 +18,7 @@ import java.util.stream.StreamSupport;
  * Created by erik1 on 01-09-2015.
  */
 public class Util {
+    private static final boolean alwaysRecreate = true;
     private static String runNodeScript(String args) throws IOException {
         Process process = Runtime.getRuntime().exec("node " + args);
 
@@ -58,7 +59,7 @@ public class Util {
             }
         }
 
-        if (recreate) {
+        if (recreate || alwaysRecreate) {
             System.out.println("Creating " + cache.getPath() + " from scratch.");
             String jsnap = Util.runNodeScript(nodeArgs);
             BufferedWriter writer = new BufferedWriter(new FileWriter(cache));

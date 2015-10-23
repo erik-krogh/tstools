@@ -12,4 +12,5 @@ public abstract class Expression extends AstNode {
     }
 
     public abstract <T> T accept(ExpressionVisitor<T> visitor);
+    public abstract <T> T accept(CFGExpressionVisitor<T> visitor, T aux);
 }
