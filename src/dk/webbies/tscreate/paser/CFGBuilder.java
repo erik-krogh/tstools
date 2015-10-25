@@ -27,6 +27,9 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(BinaryExpression binOp, CFGEnv aux) {
             printAstNode(binOp);
+            binOp.getLhs().accept(exprVisitor, null);
+            binOp.getRhs().accept(exprVisitor,null);
+
             return null;
         }
 
@@ -39,24 +42,34 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(CallExpression callExpression, CFGEnv aux) {
             printAstNode(callExpression);
+            callExpression.getFunction().accept(exprVisitor,null);
+            for (Expression arg : callExpression.getArgs()) {
+                arg.accept(exprVisitor,null);
+            }
             return null;
         }
 
         @Override
         public CFGEnv visit(CommaExpression commaExpression, CFGEnv aux) {
             printAstNode(commaExpression);
+            for (Expression expr : commaExpression.getExpressions()) {
+                expr.accept(exprVisitor,null);
+            }
             return null;
         }
 
         @Override
         public CFGEnv visit(ConditionalExpression conditionalExpression, CFGEnv aux) {
             printAstNode(conditionalExpression);
+            conditionalExpression.getCondition().accept(exprVisitor,null);
+            conditionalExpression.getLeft().accept(exprVisitor,null);
+            conditionalExpression.getRight().accept(exprVisitor,null);
             return null;
         }
 
         @Override
         public CFGEnv visit(FunctionExpression functionExpression, CFGEnv aux) {
-            // aux == null: means this is the main function
+            // aux == null --> this is the main function
             printAstNode(functionExpression);
             CFGEnv inCfgEnv = CFGEnv.createInCfgEnv();
             CFGNode entry = inCfgEnv.getAppendNode();
@@ -67,30 +80,44 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(Identifier identifier, CFGEnv aux) {
             printAstNode(identifier);
+
             return null;
         }
 
         @Override
         public CFGEnv visit(MemberExpression memberExpression, CFGEnv aux) {
             printAstNode(memberExpression);
+            h.Helper.printDebug("property", memberExpression.getProperty());
+            memberExpression.getExpression().accept(exprVisitor,null);
             return null;
         }
 
         @Override
         public CFGEnv visit(MemberLookupExpression memberLookupExpression, CFGEnv aux) {
             printAstNode(memberLookupExpression);
+            memberLookupExpression.getOperand().accept(exprVisitor,null);
+            memberLookupExpression.getLookupKey().accept(exprVisitor,null);
             return null;
         }
 
         @Override
         public CFGEnv visit(MethodCallExpression methodCallExpression, CFGEnv aux) {
             printAstNode(methodCallExpression);
+            methodCallExpression.getMemberExpression().accept(exprVisitor,null);
+            for (Expression arg : methodCallExpression.getArgs()) {
+                arg.accept(exprVisitor, null);
+            }
+
             return null;
         }
 
         @Override
         public CFGEnv visit(NewExpression newExpression, CFGEnv aux) {
             printAstNode(newExpression);
+            newExpression.getOperand().accept(exprVisitor, null);
+            for (Expression arg : newExpression.getArgs()) {
+                arg.accept(exprVisitor, null);
+            }
             return null;
         }
 
@@ -127,6 +154,7 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(UnaryExpression unaryExpression, CFGEnv aux) {
             printAstNode(unaryExpression);
+            unaryExpression.getExpression().accept(exprVisitor,null);
             return null;
         }
 
@@ -200,20 +228,34 @@ public class CFGBuilder {
         public CFGEnv visit(SwitchStatement switchStatement, CFGEnv aux) {
             printAstNode(switchStatement);
             switchStatement.getExpression().accept(exprVisitor, null);
-            //for (Map)
+            for (Map.Entry<Expression, Statement> entry : switchStatement.getCases()) {
+                entry.getKey().accept(exprVisitor, null);
+                entry.getValue().accept(stmtVisitor,null);
+            }
             return null;
         }
 
         @Override
         public CFGEnv visit(ThrowStatement throwStatement, CFGEnv aux) {
             printAstNode(throwStatement);
+            throwStatement.getExpression().accept(exprVisitor,null);
             return null;
         }
 
         @Override
         public CFGEnv visit(VariableNode variableNode, CFGEnv aux) {
             printAstNode(variableNode);
-            variableNode.getlValue().accept(exprVisitor, null);
+            Expression var = variableNode.getlValue();
+            if (!(var instanceof Identifier)) throw new RuntimeException();
+            Identifier id = (Identifier) var;
+
+            /*
+            CFGNode defNode = new CFGDef(variableNode, id);
+            aux.getAppendNode().getSuccessors().add(defNode);
+            CFGEnv.createOutCfgEnv(defNode);*/
+
+            var.accept(exprVisitor, null);
+
             variableNode.getInit().accept(exprVisitor, null);
             return null;
         }
@@ -221,7 +263,8 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(WhileStatement whileStatement, CFGEnv aux) {
             printAstNode(whileStatement);
-
+            whileStatement.getCondition().accept(exprVisitor,null);
+            whileStatement.getBody().accept(stmtVisitor,null);
             return null;
         }
 
@@ -247,7 +290,6 @@ public class CFGBuilder {
     }
 
     public void processMain(FunctionExpression mainFunction) {
-        //processFunction(mainFunction);
         exprVisitor.visit(mainFunction, null);
     }
 

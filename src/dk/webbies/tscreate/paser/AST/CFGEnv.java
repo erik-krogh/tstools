@@ -21,7 +21,7 @@ public class CFGEnv {
         this.appendNode = appendNode;
     }
     public static final CFGEnv createInCfgEnv() {
-        CFGNode appendNode = new CFGNode(null);
+        CFGNode appendNode = new CFGNop();
         CFGEnv ret = new CFGEnv(appendNode);
         ret.type = CFGEnvType.In;
         return ret;
