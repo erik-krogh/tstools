@@ -18,8 +18,13 @@ public abstract class CFGNode {
     CFGNode(AstNode astNode) {
         this.astNode = astNode;
     }
+
     void addSuccessor(CFGNode succ) {
         successors.add(succ);
+    }
+
+    public AstNode getAstNode() {
+        return astNode;
     }
     public Collection<CFGNode> getSuccessors() {
         return Collections.unmodifiableList(successors);

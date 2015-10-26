@@ -9,11 +9,13 @@ import java.util.Map;
  * Created by hamid on 10/16/15.
  */
 public class CFGBuilder {
-    private   CFGStatementVisitor stmtVisitor = new CFGStmtVisitor();
+    private CFGStatementVisitor stmtVisitor = new CFGStmtVisitor();
     private CFGExpressionVisitor exprVisitor = new CFGExprVisitor();
 
     public Map<FunctionExpression, CFGNode> functionExpression2CFGNode = new HashMap<>();
     public Map<CFGNode, FunctionExpression> callNode2functionExpr = new HashMap<>(); // the node containing callsite --> FunctionExpression
+
+    //public CFGEnv DUMMY_ENV;
 
     static int count = 0;
     private void printAstNode(AstNode stmt) {
@@ -176,9 +178,9 @@ public class CFGBuilder {
         public CFGEnv visit(BlockStatement block, CFGEnv aux) {
             printAstNode(block);
             for (Statement stmt : block.getStatements()) {
-                stmt.accept(stmtVisitor, null);
+                aux = stmt.accept(stmtVisitor, aux);
             }
-            return null;
+            return aux;
         }
 
         @Override
@@ -243,21 +245,30 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(VariableNode variableNode, CFGEnv aux) {
+        public CFGEnv visit(VariableNode variableNode, CFGEnv au) {
+            if (au == null) {
+                //throw new RuntimeException();
+                au = DUMMY_ENV;
+            }
             printAstNode(variableNode);
             Expression var = variableNode.getlValue();
             if (!(var instanceof Identifier)) throw new RuntimeException();
             Identifier id = (Identifier) var;
 
-            /*
+            // first process init, as it is evaluated first
+            CFGEnv aux = variableNode.getInit().accept(exprVisitor, au);
+            if (aux == null) {
+                //throw new RuntimeException();
+                aux = DUMMY_ENV;
+            }
+
             CFGNode defNode = new CFGDef(variableNode, id);
-            aux.getAppendNode().getSuccessors().add(defNode);
-            CFGEnv.createOutCfgEnv(defNode);*/
+            //aux.getAppendNode().getSuccessors().add(defNode);
+            CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode);
 
-            var.accept(exprVisitor, null);
+            var.accept(exprVisitor, null); // debug purposes only
 
-            variableNode.getInit().accept(exprVisitor, null);
-            return null;
+            return outEnv;
         }
 
         @Override
@@ -288,9 +299,11 @@ public class CFGBuilder {
             return null;
         }
     }
-
+    public CFGBuilder() {
+        //DUMMY_ENV  = CFGEnv.createInCfgEnv();
+    }
     public void processMain(FunctionExpression mainFunction) {
         exprVisitor.visit(mainFunction, null);
     }
-
+    public static CFGEnv DUMMY_ENV = CFGEnv.createInCfgEnv(); // should be removed
 }

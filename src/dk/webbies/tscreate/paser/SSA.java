@@ -12,6 +12,13 @@ public class SSA {
     public static FunctionExpression toSSA_(FunctionExpression functionExpression) {
         CFGBuilder cfgbuilder = new CFGBuilder();
         cfgbuilder.processMain(functionExpression);
+        h.Helper.printDebug("DEFS", "");
+        for (CFGDef d : CFGDef.defNodes) {
+            h.Helper.printDebug("ID", d.getDefinition().getName());
+            h.Helper.printDebug("AST", h.Helper.getText(d.getAstNode()));
+            h.Helper.printDebug("", "");
+
+        }
         return null;
     }
 
