@@ -27,8 +27,29 @@ public class CFGBuilder {
 
     class CFGExprVisitor implements  CFGExpressionVisitor<CFGEnv> {
         @Override
-        public CFGEnv visit(BinaryExpression binOp, CFGEnv aux) {
+        public CFGEnv visit(BinaryExpression binOp, CFGEnv au) {
+            if (au == null) {
+                //throw new RuntimeException();
+                au = DUMMY_ENV;
+            }
             printAstNode(binOp);
+            if (binOp.getOperator() == Operator.EQUAL) {
+                Expression var = binOp.getLhs();
+                if (!(var instanceof Identifier)) throw new RuntimeException();
+                Identifier id = (Identifier)var;
+                // process rhs first
+                CFGEnv aux = binOp.getRhs().accept(exprVisitor, au);
+                if (aux == null) {
+                    //throw new RuntimeException();
+                    aux = DUMMY_ENV;
+                }
+                CFGNode defNode = new CFGDef(binOp, id);
+                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode);
+                var.accept(exprVisitor, null); // debug purposes only
+
+                return outEnv;
+            }
+
             binOp.getLhs().accept(exprVisitor, null);
             binOp.getRhs().accept(exprVisitor,null);
 
