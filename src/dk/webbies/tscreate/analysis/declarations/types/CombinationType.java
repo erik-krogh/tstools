@@ -19,6 +19,7 @@ public class CombinationType implements DeclarationType {
 
     public CombinationType(TypeReducer combiner, Collection<DeclarationType> types) {
         this.combiner = combiner;
+        this.combiner.registerUnresolved(this);
         addType(types);
     }
 
@@ -39,18 +40,23 @@ public class CombinationType implements DeclarationType {
         }
     }
 
-    public DeclarationType getCombined() {
+    private DeclarationType combined = null;
+    public DeclarationType createCombined() {
         this.hasBeenUnfolded = true;
 
         if (this.types.size() == 0) {
+            combined = PrimitiveDeclarationType.VOID;
             return PrimitiveDeclarationType.VOID;
         } else if (this.types.size() == 1 && !(this.types.get(0) instanceof CombinationType)) {
+            combined = this.types.get(0);
             return this.types.get(0);
         } else {
             Set<DeclarationType> unfolded = unfold(this, new HashSet<>());
 
             if (combiner.combinationTypeCache.containsKey(unfolded)) {
-                return combiner.combinationTypeCache.get(unfolded);
+                DeclarationType result = combiner.combinationTypeCache.get(unfolded);
+                this.combined = result;
+                return result;
             }
 
             DeclarationType result;
@@ -63,6 +69,8 @@ public class CombinationType implements DeclarationType {
             }
             this.types.clear();
             this.types.add(result);
+
+            combined = result;
 
             combiner.combinationTypeCache.put(unfolded, result);
 
@@ -87,7 +95,7 @@ public class CombinationType implements DeclarationType {
 
             return result;
         } else if (type instanceof UnresolvedDeclarationType) {
-            return unfold(((UnresolvedDeclarationType)type).getResolvedType(), seen);
+            return unfold(((UnresolvedDeclarationType) type).getResolvedType(), seen);
         } else if (type instanceof UnionDeclarationType) {
             Set<DeclarationType> result = new HashSet<>();
             for (DeclarationType subType : ((UnionDeclarationType) type).getTypes()) {
@@ -98,6 +106,13 @@ public class CombinationType implements DeclarationType {
         } else {
             return new HashSet<>(Arrays.asList(type));
         }
+    }
+
+    public DeclarationType getCombined() {
+        if (this.combined == null) {
+            throw new NullPointerException();
+        }
+        return this.combined;
     }
 
     @Override

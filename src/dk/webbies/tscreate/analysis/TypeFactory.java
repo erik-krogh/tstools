@@ -4,12 +4,12 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,16 +22,16 @@ public class TypeFactory {
     private final Snap.Obj globalObject;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
-    private Map<Type, String> typeNames;
     public final Set<Snap.Obj> finishedFunctionClosures = new HashSet<>();
-    private TypeReducer combiner;
+    public final TypeReducer typeReducer;
+    private Map<Type, String> typeNames;
 
     public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Map<Type, String> typeNames) {
         this.globalObject = globalObject;
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.typeNames = typeNames;
-        this.combiner = new TypeReducer(globalObject);
+        this.typeReducer = new TypeReducer(globalObject);
     }
 
 
@@ -78,13 +78,9 @@ public class TypeFactory {
 
     public CombinationType getTypeNoCache(UnionFeature feature) {
         // First unpacking the IncludeNode
-        CombinationType result = new CombinationType(combiner);
+        CombinationType result = new CombinationType(typeReducer);
         for (UnionClass include : feature.unionClass.includes) {
             result.addType(getType(include));
-        }
-
-        if (feature.getNonVoid()) {
-            result.addType(PrimitiveDeclarationType.NON_VOID);
         }
 
         // Adding primitives
@@ -194,7 +190,7 @@ public class TypeFactory {
                 Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
 
                 List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
-                CombinationType constructorType = new CombinationType(combiner);
+                CombinationType constructorType = new CombinationType(typeReducer);
                 constructorFunctionFeatures.forEach(constructorFeature -> {
                     constructorType.addType(createFunctionType(constructorFeature));
                 });
@@ -220,7 +216,7 @@ public class TypeFactory {
                     }
 
                     staticFieldsNodes.asMap().forEach((name, nodes) -> {
-                        CombinationType combinationType = new CombinationType(combiner);
+                        CombinationType combinationType = new CombinationType(typeReducer);
                         staticFields.put(name, combinationType);
                         for (UnionNode node : nodes) {
                             combinationType.addType(getType(node));
@@ -250,15 +246,16 @@ public class TypeFactory {
         if (prop.value != null) {
             return getHeapValueType(prop.value);
         } else {
-            TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, typeNames);
+            TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, this, typeNames);
             UnionFindSolver solver = new UnionFindSolver();
-            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, typeAnalysis, new HashSet<>());
+            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeAnalysis, new HashSet<>());
             UnionNode unionNode = heapFactory.fromProperty(prop);
             solver.finish();
             return getType(unionNode);
         }
     }
 
+    // TODO: Can this be deleted, and just use HeapValueNode and get a type from that?
     public DeclarationType getHeapValueType(Snap.Value value) {
         if (value instanceof Snap.BooleanConstant) {
             return PrimitiveDeclarationType.BOOLEAN;

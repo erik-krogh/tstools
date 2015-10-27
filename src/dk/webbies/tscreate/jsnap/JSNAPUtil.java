@@ -113,9 +113,9 @@ public class JSNAPUtil {
         return functionExtrator.getFunctions();
     }
 
-    public static Map<String, Snap.Value> createPropertyMap(Snap.Obj obj) {
-        HashMap<String, Snap.Value> result = new HashMap<>();
-        obj.properties.forEach(prop -> result.put(prop.name, prop.value));
+    public static Map<String, Snap.Property> createPropertyMap(Snap.Obj obj) {
+        HashMap<String, Snap.Property> result = new HashMap<>();
+        obj.properties.forEach(prop -> result.put(prop.name, prop));
         if (obj.prototype != null) {
             result.putAll(createPropertyMap(obj.prototype));
         }

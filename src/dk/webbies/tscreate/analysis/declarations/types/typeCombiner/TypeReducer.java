@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.types.typeCombiner;
 
+import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
@@ -45,6 +46,23 @@ public class TypeReducer {
         register(new InterfaceUnnamedObjectReducer(this));
         register(new UnnamedObjectReducer(this));
         register(new ClassInterfaceReducer(globalObject, this));
+        register(new ClassInstanceUnnamedObjectReducer());
+        register(new ClassInstanceReducer());
+    }
+
+    private List<CombinationType> unresolvedTypes = new ArrayList<>();
+
+    public void registerUnresolved(CombinationType type) {
+        this.unresolvedTypes.add(type);
+    }
+
+    public void resolveCombinationTypes() {
+        while (!this.unresolvedTypes.isEmpty()) {
+            List<CombinationType> copy = new ArrayList<>(this.unresolvedTypes);
+            this.unresolvedTypes.clear();
+
+            copy.forEach(CombinationType::createCombined);
+        }
     }
 
     private static Map<PrimitiveDeclarationType, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();

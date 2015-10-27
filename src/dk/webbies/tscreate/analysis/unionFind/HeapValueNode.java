@@ -1,9 +1,5 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tscreate.analysis.FunctionNodeFactory;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -16,14 +12,14 @@ import java.util.*;
 public class HeapValueNode extends ObjectUnionNode {
     public final Snap.Value value;
 
-    private HeapValueNode(Snap.Value value, Factory factory) {
+    private HeapValueNode(Snap.Value value, Factory factory, Map<Snap.Value, HeapValueNode> cache) {
         this.value = value;
-        factory.cache.put(value, this);
+        cache.put(value, this);
         if (value instanceof Snap.Obj) {
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    addField(property.name, factory.fromProperty(property));
+                    addField(property.name, factory.fromProperty(property, cache));
                 }
             }
         }
@@ -35,32 +31,31 @@ public class HeapValueNode extends ObjectUnionNode {
         unionClass.getFeature().heapValues.add(this.value);
     }
 
+    // TODO: Make ResolveEnvironmentVisitor have some cache, and make this cache-less (except for recursive stuff).
     public static class Factory {
         private final Snap.Obj globalObject;
-        private final Map<Type, String> typeNames;
-        private Map<Snap.Value, HeapValueNode> cache = new HashMap<>();
         private PrimitiveUnionNode.Factory primitivesFactory;
         private UnionFindSolver solver;
-        private FunctionNodeFactory functionNodeFactory;
-        private Multimap<Snap.Obj, UnionNode> functionCache = ArrayListMultimap.create();
         private Map<Snap.Obj, LibraryClass> libraryClasses;
 
         private final Map<Snap.Obj, FunctionNode> getterSetterCache = new HashMap<>();
         private final TypeAnalysis typeAnalysis;
         private Set<Snap.Obj> analyzedFunctions;
 
-        public Factory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, Map<Type, String> typeNames, TypeAnalysis typeAnalysis, Set<Snap.Obj> analyzedFunctions) {
+        public Factory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, TypeAnalysis typeAnalysis, Set<Snap.Obj> analyzedFunctions) {
             this.libraryClasses = libraryClasses;
             this.globalObject = globalObject;
             this.typeAnalysis = typeAnalysis;
             this.analyzedFunctions = analyzedFunctions;
             this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, this.globalObject);
             this.solver = solver;
-            this.typeNames = typeNames;
-            this.functionNodeFactory = new FunctionNodeFactory(primitivesFactory, solver, this.typeNames);
         }
 
         public UnionNode fromProperty(Snap.Property property) {
+            return fromProperty(property, new HashMap<>());
+        }
+
+        private UnionNode fromProperty(Snap.Property property, Map<Snap.Value, HeapValueNode> cache) {
             if (property.value == null) {
                 if (property.get == null || property.set == null) {
                     throw new NullPointerException();
@@ -82,7 +77,7 @@ public class HeapValueNode extends ObjectUnionNode {
                 solver.add(setter);
                 return fieldNode;
             } else {
-                List<UnionNode> fieldNodes = fromValue(property.value);
+                List<UnionNode> fieldNodes = fromValue(property.value, cache);
                 EmptyUnionNode fieldNode = new EmptyUnionNode();
                 solver.union(fieldNode, fieldNodes);
                 return fieldNode;
@@ -90,6 +85,10 @@ public class HeapValueNode extends ObjectUnionNode {
         }
 
         public List<UnionNode> fromValue(Snap.Value value) {
+            return fromValue(value, new HashMap<>());
+        }
+
+        private List<UnionNode> fromValue(Snap.Value value, Map<Snap.Value, HeapValueNode> cache) {
             UnionNode primitive = getPrimitiveValue(value, primitivesFactory);
             if (primitive != null) {
                 return Arrays.asList(primitive);
@@ -107,7 +106,7 @@ public class HeapValueNode extends ObjectUnionNode {
                     solver.union(libraryClass.getNewThisNode(), objectNode);
                     Snap.Property constructorProp = obj.prototype.getProperty("constructor");
                     if (constructorProp != null) {
-                        solver.union(libraryClass.getNewConstructorNode(), fromValue(constructorProp.value));
+                        solver.union(libraryClass.getNewConstructorNode(), fromProperty(constructorProp, cache));
                     }
                 }
             }
@@ -118,17 +117,14 @@ public class HeapValueNode extends ObjectUnionNode {
             if (cache.containsKey(value)) {
                 result.add(cache.get(value));
             } else {
-                result.add(new HeapValueNode(value, this));
+                result.add(new HeapValueNode(value, this, cache));
             }
             return result;
         }
 
         private Collection<UnionNode> getFunctionNode(Snap.Obj obj) {
-            if (functionCache.containsKey(obj)) {
-                return functionCache.get(obj);
-            }
             List<UnionNode> result = new ArrayList<>();
-            if (obj.function.astNode != null) {
+            if (obj.function != null) {
                 FunctionNode functionNode = FunctionNode.create(obj);
                 result.add(functionNode);
                 if (obj.getProperty("prototype") != null) {
@@ -141,7 +137,6 @@ public class HeapValueNode extends ObjectUnionNode {
                 // We could parse the signatures here, but we don't know if it is a constructorCall or not.
                 // So signature parsing is done in UnionConstraintVisitor.CallGraphResolver. 
             }
-            functionCache.putAll(obj, result);
             return result;
         }
 

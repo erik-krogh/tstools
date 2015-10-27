@@ -16,20 +16,20 @@ import java.util.*;
 public class TypeAnalysis {
     final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
-    final Map<Type, String> typeNames;
     final Options options;
 
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, FunctionNode> functionNodes;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
+    public final Map<Type, String> typeNames;
 
-    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, Map<Type, String> typeNames) {
+    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, TypeFactory typeFactory, Map<Type, String> typeNames) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.globalObject = globalObject;
         this.typeNames = typeNames;
         this.functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
-        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, typeNames);
+        this.typeFactory = typeFactory;
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
     }
 
@@ -44,10 +44,6 @@ public class TypeAnalysis {
         }
 
         return result;
-    }
-
-    public TypeFactory getTypeFactory() {
-        return typeFactory;
     }
 
     private static Map<Snap.Obj, FunctionNode> getFunctionNodes(Snap.Obj globalObject) {
@@ -67,20 +63,28 @@ public class TypeAnalysis {
 
         int counter = 1;
         for (Snap.Obj functionClosure : functions) {
+            if (functionClosure.function.id.equals("2")) {
+                System.out.println();
+            }
             System.out.println(counter++ + "/" + functions.size());
             UnionFindSolver solver = new UnionFindSolver();
 
-            Map<Snap.Obj, FunctionNode> subFunctionNodes = new HashMap<>();
             FunctionNode functionNode = functionNodes.get(functionClosure);
-            subFunctionNodes.put(functionClosure, functionNode);
 
-            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeNames, this, new HashSet<>());
+            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this, new HashSet<>());
+
+            Map<Snap.Obj, FunctionNode> subFunctionNodes = new HashMap<>();
+            subFunctionNodes.put(functionClosure, FunctionNode.create(functionClosure));
 
             analyse(functionClosure, subFunctionNodes, solver, functionNode, heapFactory, new HashSet<>());
 
+            solver.add(functionNode);
             solver.finish();
+
             typeFactory.finishedFunctionClosures.add(functionClosure);
-            typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(functionNode.getFeature()));
+            UnionFeature feature = functionNode.getFeature();
+            feature.getHeapValues().add(functionClosure);
+            typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));
         }
 
         typeFactory.resolveClassTypes();

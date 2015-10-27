@@ -14,13 +14,10 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.paser.SSA;
+import dk.webbies.tscreate.util.MultiOutputStream;
 import dk.webbies.tscreate.util.Util;
-import org.apache.commons.io.output.TeeOutputStream;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +25,6 @@ import java.util.Map;
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
 public class Main {
-    // TODO: In full underscore.js, the "_" object is unified with any, string, and other weird things.
     public static void main(String[] args) throws IOException, InterruptedException {
         Options options = new Options();
         options.includeThisNodeFromHeap = true;
@@ -63,7 +59,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject, typeNames).buildDeclaration();
 
         BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(resultDeclarationFilePath)));
-        TeeOutputStream out = new TeeOutputStream(fileOut, System.out);
+        OutputStream out = new MultiOutputStream(fileOut, System.out);
         new DeclarationToString(out, declaration).print();
         fileOut.close();
 

@@ -48,10 +48,6 @@ public class FunctionNode extends UnionNodeWithFields {
         return argNames;
     }
 
-    public List<String> getArgumentNames() {
-        return argumentNames;
-    }
-
     public static FunctionNode create(FunctionExpression function) {
         FunctionNode result = new FunctionNode(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()));
         return result;
@@ -63,7 +59,7 @@ public class FunctionNode extends UnionNodeWithFields {
             FunctionNode result = create(closure.function.astNode);
             result.closure = closure;
             return result;
-        } else if (type.equals("unknown")) {
+        } else if (type.equals("native") || type.equals("unknown")) {
             FunctionNode result = create(0);
             result.closure = closure;
             return result;

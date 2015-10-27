@@ -269,7 +269,8 @@ public class JavaScriptParser {
             if (this.env.containsKey(identifier.getName())) {
                 identifier.declaration = this.env.get(identifier.getName());
             } else if (this.globalEnv.containsKey(identifier.getName())) {
-                identifier.declaration = this.globalEnv.get(identifier.getName());
+//                identifier.declaration = this.globalEnv.get(identifier.getName());
+                identifier.declaration = identifier; // TODO: Mention this, global variables are not unified. Because then anytime an instance of an array is unified wrongly with something, it might propagate.
                 identifier.isGlobal = true;
             } else {
                 this.globalEnv.put(identifier.getName(), identifier);

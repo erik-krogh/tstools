@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 18-09-2015.
  */
-public class FunctionNodeFactory {
+public class FunctionSignatureFactory {
     private Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
     private PrimitiveUnionNode.Factory primitiveFactory;
     private UnionFindSolver solver;
     private Map<Type, String> typeNames;
 
-    public FunctionNodeFactory(PrimitiveUnionNode.Factory primitiveFactory, UnionFindSolver solver, Map<Type, String> typeNames) {
+    public FunctionSignatureFactory(PrimitiveUnionNode.Factory primitiveFactory, UnionFindSolver solver, Map<Type, String> typeNames) {
         this.primitiveFactory = primitiveFactory;
         this.solver = solver;
         this.typeNames = typeNames;
@@ -59,18 +59,18 @@ public class FunctionNodeFactory {
 
             Type typeArgument = Iterables.getLast(typeArguments);
             for (int i = normalParameterCount; i < args.size(); i++) {
-                solver.union(args.get(i), typeArgument.accept(new UnionNativeTypeVisitor()));
+                solver.union(args.get(i), typeArgument.accept(new UnionNativeTypeVisitor(true)));
                 solver.union(functionNode.arguments.get(i), args.get(i));
             }
         }
         for (int i = 0; i < normalParameterCount; i++) {
             Type parameter = signature.getParameters().get(i).getType();
             UnionNode argument = functionNode.arguments.get(i);
-            solver.union(argument, parameter.accept(new UnionNativeTypeVisitor()));
+            solver.union(argument, parameter.accept(new UnionNativeTypeVisitor(true)));
         }
-        solver.union(functionNode.returnNode, signature.getResolvedReturnType().accept(new UnionNativeTypeVisitor()));
+        solver.union(functionNode.returnNode, signature.getResolvedReturnType().accept(new UnionNativeTypeVisitor(false)));
 
-        functionNode.arguments.forEach(arg -> solver.union(arg, new NonVoidNode()));
+        functionNode.arguments.forEach(arg -> solver.union(arg, primitiveFactory.nonVoid()));
 
         return functionNode;
     }
@@ -79,6 +79,11 @@ public class FunctionNodeFactory {
     private Map<InterfaceType, List<UnionNode>> interfaceCache = new HashMap<>();
 
     private class UnionNativeTypeVisitor implements TypeVisitor<List<UnionNode>> {
+        private final boolean isArgument;
+
+        private UnionNativeTypeVisitor(boolean isArgument) {
+            this.isArgument = isArgument;
+        }
 
         @Override
         public List<UnionNode> visit(AnonymousType t) {
@@ -155,7 +160,12 @@ public class FunctionNodeFactory {
         @Override
         public List<UnionNode> visit(SimpleType t) {
             switch (t.getKind()) {
-                case Any: return Arrays.asList(primitiveFactory.any());
+                case Any:
+                    if (this.isArgument) {
+                        return Arrays.asList(primitiveFactory.nonVoid()); // TODO: Mention somewhere, also option.
+                    } else {
+                        return Arrays.asList(primitiveFactory.any());
+                    }
                 case Boolean: return Arrays.asList(primitiveFactory.bool());
                 case Enum: throw new UnsupportedOperationException();
                 case Number: return Arrays.asList(primitiveFactory.number());
