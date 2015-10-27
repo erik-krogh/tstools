@@ -3,9 +3,6 @@ package dk.webbies.tscreate.analysis.unionFind;
 
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.jsnap.Snap;
-import dk.webbies.tscreate.jsnap.classes.LibraryClass;
-
-import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -70,6 +67,10 @@ public class PrimitiveUnionNode extends UnionNode {
 
         public UnionNode stringOrNumber() {
             return new PrimitiveUnionNode(PrimitiveDeclarationType.STRING_OR_NUMBER);
+        }
+
+        public UnionNode nonVoid() {
+            return gen(PrimitiveDeclarationType.NON_VOID, null);
         }
     }
 }

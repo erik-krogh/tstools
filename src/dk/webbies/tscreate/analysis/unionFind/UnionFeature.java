@@ -14,7 +14,6 @@ public class UnionFeature {
     Set<Snap.Obj> prototypes = new HashSet<>();
     Set<Snap.Value> heapValues = new HashSet<>();
     Set<PrimitiveDeclarationType> primitives = new HashSet<>();
-    boolean nonVoid = false;
     FunctionFeature functionFeature = null;
     Map<String, UnionNode> objectFields = new HashMap<>();
     public Set<String> typeNames = new HashSet<>();
@@ -32,7 +31,6 @@ public class UnionFeature {
         } else if (other.functionFeature != null) {
             this.functionFeature.takeIn(other.functionFeature);
         }
-        this.nonVoid = this.nonVoid || other.nonVoid;
 
         other.objectFields.forEach((name, node) -> {
             if (!this.objectFields.containsKey(name)) {
@@ -65,10 +63,6 @@ public class UnionFeature {
 
     public Set<Snap.Obj> getPrototypes() {
         return prototypes;
-    }
-
-    public boolean getNonVoid() {
-        return nonVoid;
     }
 
     public static class FunctionFeature {
