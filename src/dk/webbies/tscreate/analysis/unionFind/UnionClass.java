@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
  */
 public final class UnionClass {
     public UnionFindSolver solver;
-    Map<String, UnionNode> fields = new HashMap<>();
-    public final List<Runnable> callbacks = new ArrayList<>();
+    Map<String, UnionNode> fields = null;
+    public List<Runnable> callbacks = null;
 
     private UnionFeature feature = new UnionFeature(this);
 
-    public final Set<UnionClass> includes = new HashSet<>();
-    public final Set<UnionClass> includesUs = new HashSet<>();
+    public Set<UnionClass> includes = null;
+    public Set<UnionClass> includesUs = null;
 
     private int hasRunAtIteration = -1;
     private boolean waitingForCallback = false;
@@ -38,29 +38,54 @@ public final class UnionClass {
     }
 
     public void takeIn(UnionClass other) {
+        if (other == this) {
+            return;
+        }
+        if (other == null) {
+            throw new NullPointerException();
+        }
+
         merge(other.fields);
 
         this.feature.takeIn(other.feature);
 
-        for (UnionClass includesOther : other.includesUs) {
-            includesOther.includes.remove(other);
-            includesOther.includes.add(this);
-            this.includesUs.add(includesOther);
+        if (other.includesUs != null && !other.includesUs.isEmpty()) {
+            if (this.includesUs == null) {
+                this.includesUs = new HashSet<>();
+            }
+            for (UnionClass includesOther : other.includesUs) {
+                includesOther.includes.remove(other);
+                includesOther.includes.add(this);
+                this.includesUs.add(includesOther);
+            }
         }
-        this.includes.remove(this);
-        this.includes.remove(other);
-        this.includesUs.remove(this);
-        this.includesUs.remove(other);
 
-        this.includes.addAll(other.includes);
 
-        if (other.callbacks.size() > 0) {
+        if (this.includes != null) {
+            this.includes.remove(this);
+            this.includes.remove(other);
+        }
+        if (this.includesUs != null) {
+            this.includesUs.remove(this);
+            this.includesUs.remove(other);
+        }
+
+        if (other.includes != null && !other.includes.isEmpty()) {
+            if (this.includes == null) {
+                this.includes = new HashSet<>();
+            }
+            this.includes.addAll(other.includes);
+        }
+
+        if (other.callbacks != null && other.callbacks.size() > 0) {
             solver.removeDoneCallback(other);
+            if (this.callbacks == null) {
+                this.callbacks = new ArrayList<>();
+            }
+            this.callbacks.addAll(other.callbacks);
         }
 
-        this.callbacks.addAll(other.callbacks);
-
-        if (this.callbacks.size() > 0 && !waitingForCallback) {
+        if (this.callbacks != null && this.callbacks.size() > 0 && !waitingForCallback) {
             solver.addDoneCallback(this);
         }
 
@@ -83,21 +108,30 @@ public final class UnionClass {
     }
 
     private void merge(Map<String, UnionNode> fields) {
+        if (fields == null) {
+            return;
+        }
         for (Map.Entry<String, UnionNode> entry : fields.entrySet()) {
             addField(entry.getKey(), entry.getValue());
         }
     }
 
     public void addField(String key, UnionNode value) {
+        if (this.fields == null) {
+            this.fields = new HashMap<>();
+        }
         if (this.fields.containsKey(key)) {
             solver.union(value, this.fields.get(key));
         } else {
-            solver.add(value);
+            solver.add(value); // TODO: Allow a more lazy approach.
             this.fields.put(key, value);
         }
     }
 
     public void addChangeCallback(Runnable callback) {
+        if (this.callbacks == null) {
+            this.callbacks = new ArrayList<>();
+        }
         this.callbacks.add(callback);
         if (!waitingForCallback) {
             solver.addDoneCallback(this);
@@ -114,11 +148,15 @@ public final class UnionClass {
         }
         hasRunAtIteration = iteration;
         waitingForCallback = false;
-        for (Runnable callback : new ArrayList<>(this.callbacks)) {
-            callback.run();
+        if (this.callbacks != null) {
+            for (Runnable callback : new ArrayList<>(this.callbacks)) {
+                callback.run();
+            }
         }
-        for (UnionClass includesUs : this.includesUs) {
-            includesUs.doneCallback(iteration);
+        if (this.includesUs != null) {
+            for (UnionClass includesUs : this.includesUs) {
+                includesUs.doneCallback(iteration);
+            }
         }
     }
 
@@ -134,6 +172,9 @@ public final class UnionClass {
     private class TarjanNode extends Tarjan.Node<TarjanNode> {
         @Override
         public Collection<TarjanNode> getEdges() {
+            if (UnionClass.this.includes == null) {
+                return Collections.EMPTY_LIST;
+            }
             return new MappedCollection<>(UnionClass.this.includes, unionClass -> unionClass.tarjanNode);
         }
 

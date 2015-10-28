@@ -79,8 +79,10 @@ public class TypeFactory {
     public CombinationType getTypeNoCache(UnionFeature feature) {
         // First unpacking the IncludeNode
         CombinationType result = new CombinationType(typeReducer);
-        for (UnionClass include : feature.unionClass.includes) {
-            result.addType(getType(include));
+        if (feature.unionClass.includes != null) {
+            for (UnionClass include : feature.unionClass.includes) {
+                result.addType(getType(include));
+            }
         }
 
         // Adding primitives

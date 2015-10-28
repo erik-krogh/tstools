@@ -20,18 +20,58 @@ public class HeapValueNode extends ObjectUnionNode {
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
                     addField(property.name, factory.fromProperty(property, cache));
+//                    addField(property.name, new LazyField(factory, property, cache));
                 }
             }
+        }
+    }
+
+
+    private static int stillLazy = 0;
+    private static int resolved = 0;
+    private static final class LazyField extends UnionNodeWithFields {
+        private Factory factory;
+        private Snap.Property property;
+        private Map<Snap.Value, HeapValueNode> cache;
+        private UnionNode result = null;
+
+        public LazyField(Factory factory, Snap.Property property, Map<Snap.Value, HeapValueNode> cache) {
+            this.factory = factory;
+            this.property = property;
+            this.cache = cache;
+            stillLazy++;
+        }
+
+        @Override
+        public void addTo(UnionClass unionClass) {
+            if (result == null) {
+                stillLazy--;
+                resolved++;
+                if (resolved % 1000 == 0) {
+                    System.out.println("Still lazy: " + stillLazy + ", resolved: " + resolved);
+                }
+                result = factory.fromProperty(property, cache);
+                if (result instanceof UnionNodeWithFields) {
+                    ((UnionNodeWithFields) result).fields.forEach(this::addField);
+                }
+                factory = null;
+                property = null;
+                cache = null;
+            }
+            result.addTo(unionClass);
         }
     }
 
     @Override
     public void addTo(UnionClass unionClass) {
         super.addTo(unionClass);
-        unionClass.getFeature().heapValues.add(this.value);
+        UnionFeature feature = unionClass.getFeature();
+        if (feature.heapValues == null) {
+            feature.heapValues = new HashSet<>();
+        }
+        feature.heapValues.add(this.value);
     }
 
-    // TODO: Make ResolveEnvironmentVisitor have some cache, and make this cache-less (except for recursive stuff).
     public static class Factory {
         private final Snap.Obj globalObject;
         private PrimitiveUnionNode.Factory primitivesFactory;

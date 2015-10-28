@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,8 +24,14 @@ public class IncludeNode extends UnionNode {
                 unionClass.solver.add(node);
             }
             UnionClass otherClass = node.getUnionClass();
+            if (unionClass.includes == null) {
+                unionClass.includes = new HashSet<>();
+            }
             unionClass.includes.add(otherClass);
 
+            if (otherClass.includesUs == null) {
+                otherClass.includesUs = new HashSet<>();
+            }
             otherClass.includesUs.add(unionClass);
         }
     }

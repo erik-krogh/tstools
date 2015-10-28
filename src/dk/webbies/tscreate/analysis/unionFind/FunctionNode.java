@@ -59,7 +59,7 @@ public class FunctionNode extends UnionNodeWithFields {
             FunctionNode result = create(closure.function.astNode);
             result.closure = closure;
             return result;
-        } else if (type.equals("native") || type.equals("unknown")) {
+        } else if (type.equals("unknown") || type.equals("native")) {
             FunctionNode result = create(0);
             result.closure = closure;
             return result;

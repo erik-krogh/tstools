@@ -7,8 +7,6 @@ import java.util.Map;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public abstract class UnionNodeWithFields extends UnionNode {
-    public UnionClass unionClass;
-
     protected Map<String, UnionNode> fields = new HashMap<>();
 
     public Map<String, UnionNode> getUnionNodeFields() {

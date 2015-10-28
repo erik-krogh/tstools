@@ -4,6 +4,8 @@ package dk.webbies.tscreate.analysis.unionFind;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.jsnap.Snap;
 
+import java.util.HashSet;
+
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
@@ -20,7 +22,11 @@ public class PrimitiveUnionNode extends UnionNode {
 
     @Override
     public void addTo(UnionClass unionClass) {
-        unionClass.getFeature().primitives.add(this.type);
+        UnionFeature feature = unionClass.getFeature();
+        if (feature.primitives == null) {
+            feature.primitives = new HashSet<>();
+        }
+        feature.primitives.add(this.type);
     }
 
     public static class Factory {
@@ -62,7 +68,7 @@ public class PrimitiveUnionNode extends UnionNode {
         }
 
         public UnionNode any() {
-            return gen(PrimitiveDeclarationType.ANY, null);
+            return new PrimitiveUnionNode(PrimitiveDeclarationType.ANY);
         }
 
         public UnionNode stringOrNumber() {
@@ -70,7 +76,7 @@ public class PrimitiveUnionNode extends UnionNode {
         }
 
         public UnionNode nonVoid() {
-            return gen(PrimitiveDeclarationType.NON_VOID, null);
+            return new PrimitiveUnionNode(PrimitiveDeclarationType.NON_VOID);
         }
     }
 }

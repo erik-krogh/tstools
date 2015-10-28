@@ -63,9 +63,6 @@ public class TypeAnalysis {
 
         int counter = 1;
         for (Snap.Obj functionClosure : functions) {
-            if (functionClosure.function.id.equals("2")) {
-                System.out.println();
-            }
             System.out.println(counter++ + "/" + functions.size());
             UnionFindSolver solver = new UnionFindSolver();
 
@@ -83,7 +80,10 @@ public class TypeAnalysis {
 
             typeFactory.finishedFunctionClosures.add(functionClosure);
             UnionFeature feature = functionNode.getFeature();
-            feature.getHeapValues().add(functionClosure);
+            if (feature.heapValues == null) {
+                feature.heapValues = new HashSet<>();
+            }
+            feature.heapValues.add(functionClosure);
             typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));
         }
 

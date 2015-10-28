@@ -11,41 +11,77 @@ import java.util.*;
 public class UnionFeature {
     public final UnionClass unionClass;
 
-    Set<Snap.Obj> prototypes = new HashSet<>();
-    Set<Snap.Value> heapValues = new HashSet<>();
-    Set<PrimitiveDeclarationType> primitives = new HashSet<>();
+    Set<Snap.Obj> prototypes = null;
+    public Set<Snap.Value> heapValues = null;
+    Set<PrimitiveDeclarationType> primitives = null;
     FunctionFeature functionFeature = null;
-    Map<String, UnionNode> objectFields = new HashMap<>();
-    public Set<String> typeNames = new HashSet<>();
+    Map<String, UnionNode> objectFields = null;
+    public Set<String> typeNames = null;
 
     public UnionFeature(UnionClass unionClass) {
         this.unionClass = unionClass;
     }
 
     public void takeIn(UnionFeature other) {
-        this.prototypes.addAll(other.prototypes);
-        this.heapValues.addAll(other.heapValues);
-        this.primitives.addAll(other.primitives);
+        if (other.prototypes != null && !other.prototypes.isEmpty()) {
+            if (this.prototypes == null) {
+                this.prototypes = new LinkedHashSet<>();
+            }
+            this.prototypes.addAll(other.prototypes);
+        }
+
+        if (other.heapValues != null && !other.heapValues.isEmpty()) {
+            if (this.heapValues == null) {
+                this.heapValues = new LinkedHashSet<>();
+            }
+            this.heapValues.addAll(other.heapValues);
+        }
+
+        if (other.primitives != null && !other.primitives.isEmpty()) {
+            if (this.primitives == null) {
+                this.primitives = new LinkedHashSet<>();
+            }
+            this.primitives.addAll(other.primitives);
+        }
+
+
         if (this.functionFeature == null) {
             this.functionFeature = other.functionFeature;
         } else if (other.functionFeature != null) {
             this.functionFeature.takeIn(other.functionFeature);
         }
 
-        other.objectFields.forEach((name, node) -> {
-            if (!this.objectFields.containsKey(name)) {
-                this.objectFields.put(name, node);
+        if (other.objectFields != null && !other.objectFields.isEmpty()) {
+            if (this.objectFields == null) {
+                this.objectFields = new HashMap<>();
             }
-        });
+            other.objectFields.forEach((name, node) -> {
+                if (!this.objectFields.containsKey(name)) {
+                    this.objectFields.put(name, node);
+                }
+            });
+        }
 
-        this.typeNames.addAll(other.typeNames);
+
+        if (other.typeNames != null && !other.typeNames.isEmpty()) {
+            if (this.typeNames == null) {
+                this.typeNames = new LinkedHashSet<>();
+            }
+            this.typeNames.addAll(other.typeNames);
+        }
     }
 
     public Set<Snap.Value> getHeapValues() {
+        if (heapValues == null) {
+            return Collections.EMPTY_SET;
+        }
         return heapValues;
     }
 
     public Set<PrimitiveDeclarationType> getPrimitives() {
+        if (primitives == null) {
+            return Collections.EMPTY_SET;
+        }
         return primitives;
     }
 
@@ -54,14 +90,23 @@ public class UnionFeature {
     }
 
     public Map<String, UnionNode> getObjectFields() {
+        if (objectFields == null) {
+            return Collections.EMPTY_MAP;
+        }
         return objectFields;
     }
 
     public Set<String> getTypeNames() {
+        if (typeNames == null) {
+            return Collections.EMPTY_SET;
+        }
         return typeNames;
     }
 
     public Set<Snap.Obj> getPrototypes() {
+        if (this.prototypes == null) {
+            return Collections.EMPTY_SET;
+        }
         return prototypes;
     }
 
