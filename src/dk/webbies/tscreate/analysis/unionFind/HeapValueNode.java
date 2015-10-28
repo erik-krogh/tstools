@@ -21,61 +21,8 @@ public class HeapValueNode extends ObjectUnionNode {
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
                     addField(property.name, factory.fromProperty(property, cache));
-//                    addField(property.name, new LazyField(factory, property, cache, solver));
                 }
             }
-        }
-    }
-
-
-    private static int stillLazy = 0;
-    private static int resolved = 0;
-    public static final class LazyField extends UnionNodeWithFields {
-        private Factory factory;
-        private Snap.Property property;
-        private Map<Snap.Value, HeapValueNode> cache;
-        private UnionNode result = null;
-
-        public LazyField(Factory factory, Snap.Property property, Map<Snap.Value, HeapValueNode> cache, UnionFindSolver solver) {
-            super(solver);
-            this.factory = factory;
-            this.property = property;
-            this.cache = cache;
-            stillLazy++;
-        }
-
-        public UnionNode resolve() {
-            if (result != null) {
-                return result;
-            }
-            result = factory.fromProperty(property, cache);
-            factory = null;
-//            property = null;
-            cache = null;
-            return result;
-        }
-
-        @Override
-        public Map<String, UnionNode> getUnionNodeFields() {
-            resolve();
-            if (result instanceof UnionNodeWithFields) {
-                return ((UnionNodeWithFields)result).getUnionNodeFields();
-            } else {
-                return Collections.EMPTY_MAP;
-            }
-        }
-
-        @Override
-        public void addTo(UnionClass unionClass) {
-            if (result == null) {
-                stillLazy--;
-                resolved++;
-                if (resolved % 1000 == 0) {
-                    System.out.println("Still lazy: " + stillLazy + ", resolved: " + resolved);
-                }
-                resolve();
-            }
-            result.addTo(unionClass);
         }
     }
 
