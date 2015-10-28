@@ -19,7 +19,6 @@ public class TypeAnalysis {
     final Options options;
 
     private final TypeFactory typeFactory;
-    private final Map<Snap.Obj, FunctionNode> functionNodes;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
     public final Map<Type, String> typeNames;
 
@@ -28,7 +27,6 @@ public class TypeAnalysis {
         this.options = options;
         this.globalObject = globalObject;
         this.typeNames = typeNames;
-        this.functionNodes = TypeAnalysis.getFunctionNodes(globalObject);
         this.typeFactory = typeFactory;
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
     }
@@ -46,18 +44,9 @@ public class TypeAnalysis {
         return result;
     }
 
-    private static Map<Snap.Obj, FunctionNode> getFunctionNodes(Snap.Obj globalObject) {
-        List<Snap.Obj> functions = getAllFunctionInstances(globalObject, new HashSet<>());
-
-        Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
-        for (Snap.Obj function : functions) {
-            functionNodes.put(function, FunctionNode.create(function));
-        }
-        return functionNodes;
-    }
-
     public void analyseFunctions() {
-        Set<Snap.Obj> functions = functionNodes.keySet();
+
+        List<Snap.Obj> functions = getAllFunctionInstances(globalObject, new HashSet<>());
 
         System.out.println("Analyzing " + functions.size() + " functions");
 
@@ -66,16 +55,15 @@ public class TypeAnalysis {
             System.out.println(counter++ + "/" + functions.size());
             UnionFindSolver solver = new UnionFindSolver();
 
-            FunctionNode functionNode = functionNodes.get(functionClosure);
+            FunctionNode functionNode = FunctionNode.create(functionClosure, solver);
 
             HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this, new HashSet<>());
 
             Map<Snap.Obj, FunctionNode> subFunctionNodes = new HashMap<>();
-            subFunctionNodes.put(functionClosure, FunctionNode.create(functionClosure));
+            subFunctionNodes.put(functionClosure, FunctionNode.create(functionClosure, solver));
 
             analyse(functionClosure, subFunctionNodes, solver, functionNode, heapFactory, new HashSet<>());
 
-            solver.add(functionNode);
             solver.finish();
 
             typeFactory.finishedFunctionClosures.add(functionClosure);
@@ -111,7 +99,7 @@ public class TypeAnalysis {
 
         if (prototypeFunctions.containsKey(closure)) {
             LibraryClass libraryClass = prototypeFunctions.get(closure);
-            solver.union(functionNode.thisNode, HasPrototypeUnionNode.create(libraryClass.prototype));
+            solver.union(functionNode.thisNode, HasPrototypeUnionNode.create(libraryClass.prototype, solver));
         }
 
         HashMap<ProgramPoint, UnionNode> programPoints = new HashMap<>();

@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.jsnap.classes;
 
 import dk.webbies.tscreate.analysis.unionFind.EmptyUnionNode;
+import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.jsnap.Snap;
 
@@ -27,14 +28,14 @@ public class LibraryClass {
         this.prototype = prototype;
     }
 
-    public UnionNode getNewConstructorNode() {
-        EmptyUnionNode result = new EmptyUnionNode();
+    public UnionNode getNewConstructorNode(UnionFindSolver solver) {
+        EmptyUnionNode result = new EmptyUnionNode(solver);
         constructorNodes.add(result);
         return result;
     }
 
-    public UnionNode getNewThisNode() {
-        EmptyUnionNode result = new EmptyUnionNode();
+    public UnionNode getNewThisNode(UnionFindSolver solver) {
+        EmptyUnionNode result = new EmptyUnionNode(solver);
         thisNodes.add(result);
         return result;
     }

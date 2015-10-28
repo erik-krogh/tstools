@@ -9,15 +9,22 @@ public abstract class UnionNode {
     int rank = 0;
     UnionClass unionClass;
 
+    private final UnionFindSolver solver;
+
     private static int instanceCounter = 0;
     private final int counter;
-    public UnionNode() {
+
+    public UnionNode(UnionFindSolver solver) {
+        this.solver = solver;
         this.counter = instanceCounter++;
+        if (counter == 549035 || counter == 556729) {
+            System.out.println();
+        }
     }
 
     public UnionClass getUnionClass() {
         if (parent == null) {
-            return null;
+            solver.add(this);
         }
         return findParent().unionClass;
     }

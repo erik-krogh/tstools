@@ -35,7 +35,7 @@ public class FunctionSignatureFactory {
         for (int i = argumentNames.size(); i < args.size(); i++) {
             argumentNames.add("arg" + i);
         }
-        FunctionNode functionNode = FunctionNode.create(closure, argumentNames);
+        FunctionNode functionNode = FunctionNode.create(closure, argumentNames, solver);
         signatureCache.put(signature, functionNode);
 
         int normalParameterCount = signature.getParameters().size();
@@ -119,7 +119,7 @@ public class FunctionSignatureFactory {
             ArrayList<UnionNode> result = new ArrayList<>();
             interfaceCache.put(t, result);
 
-            ObjectUnionNode obj = new ObjectUnionNode();
+            ObjectUnionNode obj = new ObjectUnionNode(solver);
             if (typeNames.containsKey(t)) {
                 obj.setTypeName(typeNames.get(t));
             }
@@ -130,7 +130,7 @@ public class FunctionSignatureFactory {
                 String key = entry.getKey();
                 Type type = entry.getValue();
 
-                EmptyUnionNode fieldNode = new EmptyUnionNode();
+                EmptyUnionNode fieldNode = new EmptyUnionNode(solver);
                 obj.addField(key, fieldNode);
                 delayedUnions.add(new AbstractMap.SimpleEntry<>(fieldNode, type.accept(this)));
             }

@@ -58,24 +58,25 @@ public class UnionFindSolver {
      * is in its own partition.  If the element already exists, this
      * function returns false.  Otherwise, it returns true.
      *
-     * @param elem The element to insert.
+     * @param node The element to insert.
      * @return Whether the element was successfully inserted.
      * @throws NullPointerException If elem is null.
      */
-    public boolean add(UnionNode elem) {
+    public boolean add(UnionNode node) {
         /* Check for null. */
-        if (elem == null)
+        if (node == null)
             throw new NullPointerException("UnionFind does not support null.");
 
         /* Check whether this entry exists; fail if it does. */
-        if (elem.parent != null) {
+        if (node.parent != null) {
             return false;
         }
 
         /* Otherwise add the element as its own parent. */
-        elem.parent = elem;
+        node.parent = node;
 
-        elem.unionClass = new UnionClass(this, elem);
+        node.unionClass = new UnionClass(this, node);
+
         return true;
     }
 

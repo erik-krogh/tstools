@@ -9,12 +9,14 @@ public class InterfaceType implements DeclarationType {
 
     public final String name;
 
+    private static int counter = 0;
+
     public InterfaceType(String name) {
         // TODO: Ensure no conflicts
         if (name != null) {
             this.name = name;
         } else {
-            this.name = "interface_" + System.identityHashCode(this);
+            this.name = "interface_" + counter++;
         }
     }
 

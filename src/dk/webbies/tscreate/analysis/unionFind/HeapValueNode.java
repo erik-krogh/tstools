@@ -12,7 +12,8 @@ import java.util.*;
 public class HeapValueNode extends ObjectUnionNode {
     public final Snap.Value value;
 
-    private HeapValueNode(Snap.Value value, Factory factory, Map<Snap.Value, HeapValueNode> cache) {
+    private HeapValueNode(Snap.Value value, Factory factory, Map<Snap.Value, HeapValueNode> cache, UnionFindSolver solver) {
+        super(solver);
         this.value = value;
         cache.put(value, this);
         if (value instanceof Snap.Obj) {
@@ -20,7 +21,7 @@ public class HeapValueNode extends ObjectUnionNode {
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
                     addField(property.name, factory.fromProperty(property, cache));
-//                    addField(property.name, new LazyField(factory, property, cache));
+//                    addField(property.name, new LazyField(factory, property, cache, solver));
                 }
             }
         }
@@ -29,17 +30,39 @@ public class HeapValueNode extends ObjectUnionNode {
 
     private static int stillLazy = 0;
     private static int resolved = 0;
-    private static final class LazyField extends UnionNodeWithFields {
+    public static final class LazyField extends UnionNodeWithFields {
         private Factory factory;
         private Snap.Property property;
         private Map<Snap.Value, HeapValueNode> cache;
         private UnionNode result = null;
 
-        public LazyField(Factory factory, Snap.Property property, Map<Snap.Value, HeapValueNode> cache) {
+        public LazyField(Factory factory, Snap.Property property, Map<Snap.Value, HeapValueNode> cache, UnionFindSolver solver) {
+            super(solver);
             this.factory = factory;
             this.property = property;
             this.cache = cache;
             stillLazy++;
+        }
+
+        public UnionNode resolve() {
+            if (result != null) {
+                return result;
+            }
+            result = factory.fromProperty(property, cache);
+            factory = null;
+//            property = null;
+            cache = null;
+            return result;
+        }
+
+        @Override
+        public Map<String, UnionNode> getUnionNodeFields() {
+            resolve();
+            if (result instanceof UnionNodeWithFields) {
+                return ((UnionNodeWithFields)result).getUnionNodeFields();
+            } else {
+                return Collections.EMPTY_MAP;
+            }
         }
 
         @Override
@@ -50,13 +73,7 @@ public class HeapValueNode extends ObjectUnionNode {
                 if (resolved % 1000 == 0) {
                     System.out.println("Still lazy: " + stillLazy + ", resolved: " + resolved);
                 }
-                result = factory.fromProperty(property, cache);
-                if (result instanceof UnionNodeWithFields) {
-                    ((UnionNodeWithFields) result).fields.forEach(this::addField);
-                }
-                factory = null;
-                property = null;
-                cache = null;
+                resolve();
             }
             result.addTo(unionClass);
         }
@@ -100,25 +117,21 @@ public class HeapValueNode extends ObjectUnionNode {
                 if (property.get == null || property.set == null) {
                     throw new NullPointerException();
                 }
-                UnionNode getter = new EmptyUnionNode();
+                UnionNode getter = new EmptyUnionNode(solver);
                 if (!(property.get instanceof Snap.UndefinedConstant)) {
                     getter = getGetterSetterNode((Snap.Obj) property.get).returnNode;
                 }
-                UnionNode setter = new EmptyUnionNode();
+                UnionNode setter = new EmptyUnionNode(solver);
                 if (!(property.set instanceof Snap.UndefinedConstant)) {
                     FunctionNode setterFunctionNode = getGetterSetterNode((Snap.Obj) property.set);
                     if (!setterFunctionNode.arguments.isEmpty()) {
                         setter = setterFunctionNode.arguments.get(0);
                     }
                 }
-                IncludeNode fieldNode = new IncludeNode(getter, setter);
-                solver.add(fieldNode);
-                solver.add(getter);
-                solver.add(setter);
-                return fieldNode;
+                return new IncludeNode(solver, getter, setter);
             } else {
                 List<UnionNode> fieldNodes = fromValue(property.value, cache);
-                EmptyUnionNode fieldNode = new EmptyUnionNode();
+                EmptyUnionNode fieldNode = new EmptyUnionNode(solver);
                 solver.union(fieldNode, fieldNodes);
                 return fieldNode;
             }
@@ -135,18 +148,18 @@ public class HeapValueNode extends ObjectUnionNode {
             }
 
             List<UnionNode> result = new ArrayList<>();
-            ObjectUnionNode objectNode = new ObjectUnionNode();
+            ObjectUnionNode objectNode = new ObjectUnionNode(solver);
             result.add(objectNode);
 
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.prototype != null) {
                 LibraryClass libraryClass = libraryClasses.get(obj.prototype);
-                result.add(HasPrototypeUnionNode.create(obj.prototype));
+                result.add(HasPrototypeUnionNode.create(obj.prototype, solver));
                 if (libraryClass != null && !libraryClass.isNativeClass()) {
-                    solver.union(libraryClass.getNewThisNode(), objectNode);
+                    solver.union(libraryClass.getNewThisNode(solver), objectNode);
                     Snap.Property constructorProp = obj.prototype.getProperty("constructor");
                     if (constructorProp != null) {
-                        solver.union(libraryClass.getNewConstructorNode(), fromProperty(constructorProp, cache));
+                        solver.union(libraryClass.getNewConstructorNode(solver), fromProperty(constructorProp, cache));
                     }
                 }
             }
@@ -157,7 +170,7 @@ public class HeapValueNode extends ObjectUnionNode {
             if (cache.containsKey(value)) {
                 result.add(cache.get(value));
             } else {
-                result.add(new HeapValueNode(value, this, cache));
+                result.add(new HeapValueNode(value, this, cache, solver));
             }
             return result;
         }
@@ -165,12 +178,12 @@ public class HeapValueNode extends ObjectUnionNode {
         private Collection<UnionNode> getFunctionNode(Snap.Obj obj) {
             List<UnionNode> result = new ArrayList<>();
             if (obj.function != null) {
-                FunctionNode functionNode = FunctionNode.create(obj);
+                FunctionNode functionNode = FunctionNode.create(obj, solver);
                 result.add(functionNode);
                 if (obj.getProperty("prototype") != null) {
                     Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
                     if (libraryClasses.containsKey(prototype)) {
-                         solver.union(functionNode, libraryClasses.get(prototype).getNewConstructorNode());
+                         solver.union(functionNode, libraryClasses.get(prototype).getNewConstructorNode(solver));
                     }
                 }
             } else {
@@ -207,7 +220,7 @@ public class HeapValueNode extends ObjectUnionNode {
                 return this.getterSetterCache.get(closure);
             }
 
-            FunctionNode functionNode = FunctionNode.create(closure);
+            FunctionNode functionNode = FunctionNode.create(closure, solver);
             Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
             functionNodes.put(closure, functionNode);
 

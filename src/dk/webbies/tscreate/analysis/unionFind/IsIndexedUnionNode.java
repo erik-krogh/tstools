@@ -7,7 +7,8 @@ public class IsIndexedUnionNode extends UnionNodeWithFields {
     private final UnionNode returnType;
     private final UnionNode lookupExp;
 
-    public IsIndexedUnionNode(UnionNode returnType, UnionNode lookupExp) {
+    public IsIndexedUnionNode(UnionNode returnType, UnionNode lookupExp, UnionFindSolver solver) {
+        super(solver);
         this.returnType = returnType;
         addField("isIndexer-returnType", returnType);
         this.lookupExp = lookupExp;

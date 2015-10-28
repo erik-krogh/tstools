@@ -32,7 +32,6 @@ public final class UnionClass {
 
         if (node instanceof UnionNodeWithFields) {
             UnionNodeWithFields fieldNode = (UnionNodeWithFields) node;
-            fieldNode.unionClass = this;
             this.takeIn(fieldNode);
         }
     }
@@ -123,7 +122,6 @@ public final class UnionClass {
         if (this.fields.containsKey(key)) {
             solver.union(value, this.fields.get(key));
         } else {
-            solver.add(value); // TODO: Allow a more lazy approach.
             this.fields.put(key, value);
         }
     }

@@ -12,7 +12,8 @@ import java.util.HashSet;
 public class PrimitiveUnionNode extends UnionNode {
     private PrimitiveDeclarationType type;
 
-    private PrimitiveUnionNode(PrimitiveDeclarationType type) {
+    private PrimitiveUnionNode(PrimitiveDeclarationType type, UnionFindSolver solver) {
+        super(solver);
         this.type = type;
     }
 
@@ -39,11 +40,11 @@ public class PrimitiveUnionNode extends UnionNode {
         }
 
         private UnionNode gen(PrimitiveDeclarationType type, String constructorName) {
-            PrimitiveUnionNode result = new PrimitiveUnionNode(type);
+            PrimitiveUnionNode result = new PrimitiveUnionNode(type, solver);
             if (constructorName != null) {
                 try {
                     Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
-                    solver.union(result, HasPrototypeUnionNode.create(prototype));
+                    solver.union(result, HasPrototypeUnionNode.create(prototype, solver));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -68,15 +69,15 @@ public class PrimitiveUnionNode extends UnionNode {
         }
 
         public UnionNode any() {
-            return new PrimitiveUnionNode(PrimitiveDeclarationType.ANY);
+            return new PrimitiveUnionNode(PrimitiveDeclarationType.ANY, solver);
         }
 
         public UnionNode stringOrNumber() {
-            return new PrimitiveUnionNode(PrimitiveDeclarationType.STRING_OR_NUMBER);
+            return new PrimitiveUnionNode(PrimitiveDeclarationType.STRING_OR_NUMBER, solver);
         }
 
         public UnionNode nonVoid() {
-            return new PrimitiveUnionNode(PrimitiveDeclarationType.NON_VOID);
+            return new PrimitiveUnionNode(PrimitiveDeclarationType.NON_VOID, solver);
         }
     }
 }

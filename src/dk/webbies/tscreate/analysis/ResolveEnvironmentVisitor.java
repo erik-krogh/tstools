@@ -64,13 +64,13 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     @Override
     public Void visit(Identifier identifier) {
         String name = identifier.getName();
-        UnionNode idNode = UnionConstraintVisitor.getUnionNode(identifier, this.closure, this.nodes);
+        UnionNode idNode = UnionConstraintVisitor.getUnionNode(identifier, this.closure, this.nodes, solver);
         if (this.values.containsKey(name)) {
             solver.union(idNode, heapFactory.fromProperty(this.values.get(name)));
         } else if (identifier.isGlobal) {
             if (name.equals("arguments")) {
-                solver.union(idNode, new IsIndexedUnionNode(primitivesBuilder.any(), primitivesBuilder.number()));
-                ObjectUnionNode obj = new ObjectUnionNode();
+                solver.union(idNode, new IsIndexedUnionNode(primitivesBuilder.any(), primitivesBuilder.number(), solver));
+                ObjectUnionNode obj = new ObjectUnionNode(solver);
                 obj.addField("length", primitivesBuilder.number());
                 solver.union(idNode, obj);
             } else if (this.globalValues.containsKey(name)) {

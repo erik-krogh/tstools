@@ -11,10 +11,8 @@ public class ObjectUnionNode extends UnionNodeWithFields {
     private Map<String, UnionNode> objectFields = new HashMap<>();
     private String typeName;
 
-    private static int instanceCounter = 0;
-    public final int counter;
-    public ObjectUnionNode() {
-        this.counter = instanceCounter++;
+    public ObjectUnionNode(UnionFindSolver solver) {
+        super(solver);
     }
 
     @Override

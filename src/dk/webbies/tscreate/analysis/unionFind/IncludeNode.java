@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
  */
 public class IncludeNode extends UnionNode {
     private final List<UnionNode> nodes;
-    public IncludeNode(UnionNode... nodes) {
+    public IncludeNode(UnionFindSolver solver, UnionNode... nodes) {
+        super(solver);
         this.nodes = Arrays.asList(nodes).stream().filter(node -> node != null).collect(Collectors.toList());
         if (this.nodes.size() == 0) {
             throw new IllegalArgumentException();

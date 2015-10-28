@@ -19,12 +19,13 @@ public class FunctionNode extends UnionNodeWithFields {
 
     private final List<String> argumentNames;
 
-    private FunctionNode(List<String> argumentNames) {
+    private FunctionNode(List<String> argumentNames, UnionFindSolver solver) {
+        super(solver);
         this.argumentNames = argumentNames;
-        this.returnNode = new EmptyUnionNode();
-        this.thisNode = new EmptyUnionNode();
+        this.returnNode = new EmptyUnionNode(solver);
+        this.thisNode = new EmptyUnionNode(solver);
         for (int i = 0; i < argumentNames.size(); i++) {
-            EmptyUnionNode node = new EmptyUnionNode();
+            EmptyUnionNode node = new EmptyUnionNode(solver);
             arguments.add(node);
             addField("function-argument-" + i, node);
         }
@@ -32,12 +33,12 @@ public class FunctionNode extends UnionNodeWithFields {
         addField("function-this", thisNode);
     }
 
-    public static  FunctionNode create(List<String> argumentNames) {
-        return new FunctionNode(argumentNames);
+    public static  FunctionNode create(List<String> argumentNames, UnionFindSolver solver) {
+        return new FunctionNode(argumentNames, solver);
     }
 
-    public static FunctionNode create(int size) {
-        return new FunctionNode(createArgumentNames(size));
+    public static FunctionNode create(int size, UnionFindSolver solver) {
+        return new FunctionNode(createArgumentNames(size), solver);
     }
 
     private static List<String> createArgumentNames(int size) {
@@ -48,34 +49,34 @@ public class FunctionNode extends UnionNodeWithFields {
         return argNames;
     }
 
-    public static FunctionNode create(FunctionExpression function) {
-        FunctionNode result = new FunctionNode(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()));
+    public static FunctionNode create(FunctionExpression function, UnionFindSolver solver) {
+        FunctionNode result = new FunctionNode(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()), solver);
         return result;
     }
 
-    public static FunctionNode create(Snap.Obj closure) {
+    public static FunctionNode create(Snap.Obj closure, UnionFindSolver solver) {
         String type = closure.function.type;
         if (type.equals("user")) {
-            FunctionNode result = create(closure.function.astNode);
+            FunctionNode result = create(closure.function.astNode, solver);
             result.closure = closure;
             return result;
         } else if (type.equals("unknown") || type.equals("native")) {
-            FunctionNode result = create(0);
+            FunctionNode result = create(0, solver);
             result.closure = closure;
             return result;
         } else if (type.equals("bind")) {
             int boundArguments = closure.function.arguments.size() - 1;
             List<Identifier> allArguments = closure.function.target.function.astNode.getArguments();
             List<Identifier> freeArguments = allArguments.subList(boundArguments, allArguments.size());
-            FunctionNode result = create(freeArguments.stream().map(Identifier::getName).collect(Collectors.toList()));
+            FunctionNode result = create(freeArguments.stream().map(Identifier::getName).collect(Collectors.toList()), solver);
             result.closure = closure;
             return result;
         }
         throw new RuntimeException();
     }
 
-    public static FunctionNode create(Snap.Obj closure, List<String> argumentNames) {
-        FunctionNode result = create(argumentNames);
+    public static FunctionNode create(Snap.Obj closure, List<String> argumentNames, UnionFindSolver solver) {
+        FunctionNode result = create(argumentNames, solver);
         result.closure = closure;
         return result;
     }
