@@ -17,9 +17,6 @@ public abstract class UnionNode {
     public UnionNode(UnionFindSolver solver) {
         this.solver = solver;
         this.counter = instanceCounter++;
-        if (counter == 549035 || counter == 556729) {
-            System.out.println();
-        }
     }
 
     public UnionClass getUnionClass() {
