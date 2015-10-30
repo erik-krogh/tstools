@@ -23,6 +23,8 @@ public class LibraryClass {
 
     public final Snap.Obj prototype;
 
+    public List<Snap.Obj> instances = new ArrayList<>();
+
     public LibraryClass(String pathSeen, Snap.Obj prototype) {
         this.pathsSeen.add(pathSeen);
         this.prototype = prototype;

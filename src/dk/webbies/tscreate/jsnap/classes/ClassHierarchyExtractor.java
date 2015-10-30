@@ -3,6 +3,7 @@ package dk.webbies.tscreate.jsnap.classes;
 import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Created by webbies on 31-08-2015.
@@ -107,31 +108,59 @@ public class ClassHierarchyExtractor {
             }
         }
 
-        new MarkClassUsage(libraryClasses).visit(this.globalObject);
+        VisitEntireHeap.visit(this.globalObject, (value) -> {
+            if (value instanceof Snap.Obj) {
+                // Marking every class, that has an instance in the heap.
+                Snap.Obj obj = (Snap.Obj) value;
+                if (obj.prototype != null) {
+                    LibraryClass libraryClass = libraryClasses.get(obj.prototype);
+                    if (libraryClass != null) {
+                        libraryClass.isUsedAsClass = true;
+                    }
+                }
+
+                // Checking if it is an instance of a class, and saving it.
+                if (obj.prototype != null && libraryClasses.get(obj.prototype) != null) {
+                    LibraryClass clazz = libraryClasses.get(obj.prototype);
+                    clazz.instances.add(obj);
+                }
+            }
+
+
+            return null;
+        });
 
         return libraryClasses;
     }
 
-    private static final class MarkClassUsage {
+    private static final class VisitEntireHeap {
         private final HashSet<Snap.Obj> seen = new HashSet<>();
-        private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+        private List<Function<Snap.Value, Void>> functions;
 
-        public MarkClassUsage(HashMap<Snap.Obj, LibraryClass> libraryClasses) {
-            this.libraryClasses = libraryClasses;
+        private VisitEntireHeap(List<Function<Snap.Value, Void>> functions) {
+            this.functions = functions;
+        }
+
+        public static void visit(Snap.Obj globalObject, Function<Snap.Value, Void>... functions) {
+            new VisitEntireHeap(Arrays.asList(functions)).visit(globalObject);
         }
 
 
-        public void visit(Snap.Obj obj) {
-            if (seen.contains(obj)) {
+        private void visit(Snap.Value value) {
+            //noinspection RedundantCast
+            if (value instanceof Snap.Obj && seen.contains((Snap.Obj)value)) {
                 return;
             }
-            seen.add(obj);
-            if (obj.prototype != null) {
-                LibraryClass libraryClass = libraryClasses.get(obj.prototype);
-                if (libraryClass != null) {
-                    libraryClass.isUsedAsClass = true;
-                }
+
+            for (Function<Snap.Value, Void> function : functions) {
+                function.apply(value);
             }
+
+            if (!(value instanceof Snap.Obj)) {
+                return;
+            }
+            Snap.Obj obj = (Snap.Obj) value;
+            seen.add(obj);
 
             for (Snap.Property prop : obj.getPropertyMap().values()) {
                 visitProp(prop);
@@ -152,13 +181,13 @@ public class ClassHierarchyExtractor {
 
         private void visitProp(Snap.Property prop) {
             if (prop.value instanceof Snap.Obj) {
-                visit((Snap.Obj) prop.value);
+                visit(prop.value);
             }
             if (prop.get != null && !(prop.get instanceof Snap.UndefinedConstant)) {
-                visit((Snap.Obj) prop.get);
+                visit(prop.get);
             }
             if (prop.set != null && !(prop.set instanceof Snap.UndefinedConstant)) {
-                visit((Snap.Obj) prop.set);
+                visit(prop.set);
             }
         }
     }
