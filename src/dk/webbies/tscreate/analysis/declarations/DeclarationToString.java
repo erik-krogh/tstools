@@ -37,7 +37,7 @@ public class DeclarationToString {
         this.countMap = useCounter.getCountMap();
         this.countMap.forEach((type, count) -> {
             if (count > 1 && type instanceof FunctionType) {
-                InterfaceType interfaceType = new InterfaceType("function_" + System.identityHashCode(type));
+                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.counter++);
                 interfaceType.function = type;
                 printsAsInterface.put(type, interfaceType);
             }
@@ -222,7 +222,6 @@ public class DeclarationToString {
         @Override
         public Void visit(InterfaceType interfaceType) {
             if (finishing) {
-                write("\n");
                 finishing = false;
                 writeln("interface " + interfaceType.name + " {");
                 ident++;
@@ -242,6 +241,7 @@ public class DeclarationToString {
                 }
                 ident--;
                 writeln("}");
+                write("\n");
                 finishing = true;
             } else {
                 write(interfaceType.name);
@@ -320,6 +320,7 @@ public class DeclarationToString {
 
                 ident--;
                 writeln("}");
+                write("\n");
                 finishing = true;
             } else {
                 write(classType.getName() + "Constructor");
