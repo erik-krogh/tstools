@@ -7,7 +7,6 @@ import java.util.Collection;
  * Created by Erik Krogh Kristensen on 15-09-2015.
  */
 public class Options {
-
     public boolean includeThisNodeFromHeap = true;
     public boolean includeThisNodeFromConstructor = false;
     public boolean includeThisNodeFromPrototypeMethods = false;
@@ -16,7 +15,14 @@ public class Options {
     public boolean interProceduralAnalysisWithHeap = true;
     public Collection<String> isClassNames = Arrays.asList("_");
 
-    public Options() {
+    public static class ClassOptions {
+        public boolean useThisObjectUsages = false;
+        public boolean useConstructorUsages = false;
+        public boolean useClassInstancesFromHeap = true;
+    }
 
+    public final ClassOptions classOptions;
+    public Options() {
+        this.classOptions = new ClassOptions();
     }
 }

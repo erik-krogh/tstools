@@ -9,7 +9,7 @@ public class InterfaceType implements DeclarationType {
 
     public final String name;
 
-    private static int counter = 0;
+    public static int counter = 0;
 
     public InterfaceType(String name) {
         // TODO: Ensure no conflicts

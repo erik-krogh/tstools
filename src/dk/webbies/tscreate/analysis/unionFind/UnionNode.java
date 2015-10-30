@@ -15,8 +15,8 @@ public abstract class UnionNode {
     private final int counter;
 
     public UnionNode(UnionFindSolver solver) {
-        this.solver = solver;
         this.counter = instanceCounter++;
+        this.solver = solver;
     }
 
     public UnionClass getUnionClass() {

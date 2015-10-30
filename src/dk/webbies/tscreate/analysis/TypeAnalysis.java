@@ -16,7 +16,7 @@ import java.util.*;
 public class TypeAnalysis {
     final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
-    final Options options;
+    public final Options options;
 
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;

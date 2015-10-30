@@ -56,6 +56,20 @@ public class TypeFactory {
         }
     }
 
+    private DeclarationType getType(Collection<UnionNode> nodes) {
+        if (nodes.size() == 0) {
+            return PrimitiveDeclarationType.VOID;
+        } else if (nodes.size() == 1) {
+            return getType(nodes.iterator().next());
+        } else {
+            CombinationType result = new CombinationType(typeReducer);
+            for (UnionNode node : nodes) {
+                result.addType(getType(node));
+            }
+
+            return result;
+        }
+    }
 
     DeclarationType getType(UnionNode node) {
         return getType(node.getUnionClass());
@@ -185,55 +199,28 @@ public class TypeFactory {
 
     // This is only to be used from within resolveClassTypes.
     // TODO: Use the options defined in Options
+    // TODO: This nodes from constructor, and from prototype-functions.
     private DeclarationType createClassType(LibraryClass libraryClass) {
         Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
         switch (constructor.function.type) {
             case "user":
                 Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
 
-                List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
                 CombinationType constructorType = new CombinationType(typeReducer);
+                List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
                 constructorFunctionFeatures.forEach(constructorFeature -> {
                     constructorType.addType(createFunctionType(constructorFeature));
                 });
 
                 Map<String, DeclarationType> staticFields = new HashMap<>();
-                if (true) {
-                    for (Map.Entry<String, Snap.Property> entry : constructor.getPropertyMap().entrySet()) {
-                        if (Arrays.asList("prototype", "caller", "length", "name", "arguments").stream().noneMatch(str -> str.equals(entry.getKey()))) {
-                            staticFields.put(entry.getKey(), getHeapPropType(entry.getValue()));
-                        }
+                for (Map.Entry<String, Snap.Property> entry : constructor.getPropertyMap().entrySet()) {
+                    if (Arrays.asList("prototype", "caller", "length", "name", "arguments").stream().noneMatch(str -> str.equals(entry.getKey()))) {
+                        staticFields.put(entry.getKey(), getHeapPropType(entry.getValue()));
                     }
-                } else {
-                    // Other approach
-
-                    Multimap<String, UnionNode> staticFieldsNodes = ArrayListMultimap.create();
-                    for (UnionFeature feature : constructorFeatures) {
-                        for (Map.Entry<String, UnionNode> fieldEntry : feature.getObjectFields().entrySet()) {
-                            staticFieldsNodes.put(fieldEntry.getKey(), fieldEntry.getValue());
-                        }
-                    }
-                    for (String name : Arrays.asList("prototype", "caller", "length", "name", "arguments")) {
-                        staticFieldsNodes.removeAll(name);
-                    }
-
-                    staticFieldsNodes.asMap().forEach((name, nodes) -> {
-                        CombinationType combinationType = new CombinationType(typeReducer);
-                        staticFields.put(name, combinationType);
-                        for (UnionNode node : nodes) {
-                            combinationType.addType(getType(node));
-                        }
-                    });
                 }
 
 
-                Map<String, DeclarationType> prototypeProperties = new HashMap<>();
-                libraryClass.prototype.getPropertyMap().forEach((name, prop) -> {
-                    if (!name.equals("constructor")) {
-                        prototypeProperties.put(name, getHeapPropType(prop));
-                    }
-                });
-
+                Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass);
 
 
                 ClassType classType = new ClassType(constructorType, prototypeProperties, libraryClass.getName(), staticFields);
@@ -241,6 +228,65 @@ public class TypeFactory {
                 return classType;
             default: // Case "native" should already be handled here.
                 throw new UnsupportedOperationException();
+        }
+    }
+
+    private Map<String, DeclarationType> createClassFields(LibraryClass libraryClass) {
+        Map<String, DeclarationType> fieldTypes = new HashMap<>();
+        libraryClass.prototype.getPropertyMap().forEach((name, prop) -> {
+            if (!name.equals("constructor")) {
+                fieldTypes.put(name, getHeapPropType(prop));
+            }
+        });
+
+        if (options.classOptions.useClassInstancesFromHeap) {
+            Multimap<String, Snap.Property> propertiesMultimap = ArrayListMultimap.create();
+            for (Snap.Obj instance : libraryClass.instances) {
+                for (Snap.Property property : instance.properties) {
+                    propertiesMultimap.put(property.name, property);
+                }
+            }
+            for (Map.Entry<String, Collection<Snap.Property>> entry : propertiesMultimap.asMap().entrySet()) {
+                String name = entry.getKey();
+                Collection<Snap.Property> properties = entry.getValue();
+                if (name.equals("constructor") || fieldTypes.containsKey(name)) {
+                    continue;
+                }
+                fieldTypes.put(name, getHeapPropType(properties));
+            }
+        }
+
+        if (options.classOptions.useThisObjectUsages) {
+            Multimap<String, UnionNode> propertiesMultiMap = ArrayListMultimap.create();
+            for (UnionNode thisNode : libraryClass.thisNodes) {
+                for (Map.Entry<String, UnionNode> entry : thisNode.getFeature().getObjectFields().entrySet()) {
+                    propertiesMultiMap.put(entry.getKey(), entry.getValue());
+                }
+            }
+            for (Map.Entry<String, Collection<UnionNode>> entry : propertiesMultiMap.asMap().entrySet()) {
+                String name = entry.getKey();
+                Collection<UnionNode> nodes = entry.getValue();
+                if (name.equals("constructor") || fieldTypes.containsKey(name)) {
+                    continue;
+                }
+                fieldTypes.put(name, getType(nodes));
+            }
+        }
+        return fieldTypes;
+    }
+
+    private DeclarationType getHeapPropType(Collection<Snap.Property> properties) {
+        if (properties.size() == 0) {
+            return PrimitiveDeclarationType.VOID;
+        } else if (properties.size() == 1) {
+            return getHeapPropType(properties.iterator().next());
+        } else {
+            CombinationType result = new CombinationType(typeReducer);
+            for (Snap.Property property : properties) {
+                result.addType(getHeapPropType(property));
+            }
+
+            return result;
         }
     }
 
@@ -289,15 +335,22 @@ public class TypeFactory {
         }
         UnresolvedDeclarationType unresolvedType = new UnresolvedDeclarationType();
         objectTypeCache.put(value, unresolvedType);
-        HashMap<String, DeclarationType> declarations = new HashMap<>();
-        for (Map.Entry<String, Snap.Property> entry : value.getPropertyMap().entrySet()) {
-            declarations.put(entry.getKey(), getHeapPropType(entry.getValue()));
+
+        if (libraryClasses.get(value.prototype) != null && getClassType(libraryClasses.get(value.prototype)) != null) {
+            ClassInstanceType result = new ClassInstanceType(getClassType(libraryClasses.get(value.prototype)));
+            unresolvedType.setResolvedType(result);
+            return unresolvedType;
+        } else {
+            HashMap<String, DeclarationType> declarations = new HashMap<>();
+            for (Map.Entry<String, Snap.Property> entry : value.getPropertyMap().entrySet()) {
+                declarations.put(entry.getKey(), getHeapPropType(entry.getValue()));
+            }
+
+            UnnamedObjectType result = new UnnamedObjectType(declarations);
+            unresolvedType.setResolvedType(result);
+
+            return unresolvedType;
         }
-
-        UnnamedObjectType result = new UnnamedObjectType(declarations);
-        unresolvedType.setResolvedType(result);
-
-        return unresolvedType;
     }
 
 

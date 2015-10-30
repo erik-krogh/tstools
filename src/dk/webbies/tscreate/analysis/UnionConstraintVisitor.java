@@ -450,11 +450,14 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         @SuppressWarnings("RedundantCast")
                         LibraryClass clazz = typeAnalysis.libraryClasses.get((Snap.Obj) closure.getProperty("prototype").value);
                         if (clazz != null) {
-//                            clazz.isUsedAsClass = true; // This is useless after changing to "eager type resolution".
-                            solver.union(this.thisNode, clazz.getNewThisNode(solver));
+                            if (typeAnalysis.options.classOptions.useThisObjectUsages) {
+                                solver.union(this.thisNode, clazz.getNewThisNode(solver));
+                            }
                             solver.union(this.thisNode, HasPrototypeUnionNode.create(clazz.prototype, solver));
 
-                            solver.union(clazz.getNewConstructorNode(solver), this.function);
+                            if (typeAnalysis.options.classOptions.useConstructorUsages) {
+                                solver.union(clazz.getNewConstructorNode(solver), this.function);
+                            }
                         }
                         break;
                     case "unknown":
@@ -475,7 +478,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         boolean constructorCalls;
         private HashSet<Snap.Obj> seenHeap = new HashSet<>();
         private final FunctionNode functionNode;
-        private FunctionSignatureFactory functionNodeFactory;
+        private FunctionSignatureFactory functionSignatureFactory;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, EmptyUnionNode returnNode, Expression callExpression) {
             this.args = args;
@@ -489,7 +492,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             solver.union(functionNode.returnNode, returnNode);
             solver.union(functionNode.thisNode, thisNode);
             
-            this.functionNodeFactory = new FunctionSignatureFactory(primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.typeNames);
+            this.functionSignatureFactory = new FunctionSignatureFactory(primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.typeNames);
         }
 
         @Override
@@ -531,7 +534,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     }
                     case "native": {
                         boolean constructorCalls = this.constructorCalls;
-                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, constructorCalls, functionNodeFactory);
+                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, constructorCalls, functionSignatureFactory);
                         solver.union(functionNode, signatures);
                         break;
                     }
@@ -560,6 +563,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     private Collection<Snap.Obj> getFunctionNodes(UnionNode function, HashSet<Snap.Obj> seenHeap) {
         Set<Snap.Obj> result = new HashSet<>();
+        // TODO: What if one of our parents (with fields), includes something that has the same field.
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             for (Snap.Value value : feature.getHeapValues()) {
                 if (!(value instanceof Snap.Obj)) {

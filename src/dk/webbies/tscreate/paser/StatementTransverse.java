@@ -98,8 +98,12 @@ public interface StatementTransverse<T> extends StatementVisitor<T>  {
     @Override
     public default T visit(TryStatement tryStatement) {
         tryStatement.getTryBlock().accept(this);
-        tryStatement.getCatchBlock().accept(this);
-        tryStatement.getFinallyBlock().accept(this);
+        if (tryStatement.getCatchBlock() != null) {
+            tryStatement.getCatchBlock().accept(this);
+        }
+        if (tryStatement.getFinallyBlock() != null) {
+            tryStatement.getFinallyBlock().accept(this);
+        }
         return null;
     }
 
@@ -107,6 +111,12 @@ public interface StatementTransverse<T> extends StatementVisitor<T>  {
     public default T visit(CatchStatement catchStatement) {
         catchStatement.getException().accept(getExpressionVisitor());
         catchStatement.getBody().accept(this);
+        return null;
+    }
+
+    @Override
+    public default T visit(LabeledStatement labeledStatement) {
+        labeledStatement.getStatement().accept(this);
         return null;
     }
 }

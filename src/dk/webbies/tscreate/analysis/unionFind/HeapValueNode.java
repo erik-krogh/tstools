@@ -103,9 +103,11 @@ public class HeapValueNode extends ObjectUnionNode {
                 LibraryClass libraryClass = libraryClasses.get(obj.prototype);
                 result.add(HasPrototypeUnionNode.create(obj.prototype, solver));
                 if (libraryClass != null && !libraryClass.isNativeClass()) {
-                    solver.union(libraryClass.getNewThisNode(solver), objectNode);
+                    if (typeAnalysis.options.classOptions.useThisObjectUsages) {
+                        solver.union(libraryClass.getNewThisNode(solver), objectNode);
+                    }
                     Snap.Property constructorProp = obj.prototype.getProperty("constructor");
-                    if (constructorProp != null) {
+                    if (constructorProp != null && typeAnalysis.options.classOptions.useConstructorUsages) {
                         solver.union(libraryClass.getNewConstructorNode(solver), fromProperty(constructorProp, cache));
                     }
                 }
@@ -129,8 +131,10 @@ public class HeapValueNode extends ObjectUnionNode {
                 result.add(functionNode);
                 if (obj.getProperty("prototype") != null) {
                     Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
-                    if (libraryClasses.containsKey(prototype)) {
-                         solver.union(functionNode, libraryClasses.get(prototype).getNewConstructorNode(solver));
+                    if (libraryClasses.containsKey(prototype) && !libraryClasses.get(prototype).isNativeClass()) {
+                        if (typeAnalysis.options.classOptions.useConstructorUsages) {
+                            solver.union(functionNode, libraryClasses.get(prototype).getNewConstructorNode(solver));
+                        }
                     }
                 }
             } else {

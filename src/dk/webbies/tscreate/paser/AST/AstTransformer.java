@@ -228,12 +228,18 @@ public class AstTransformer {
             if (tryStatement.finallyBlock != null) {
                 finallyBlock = (BlockStatement) convert(tryStatement.finallyBlock);
             } else {
-                finallyBlock = new BlockStatement(loc, Collections.EMPTY_LIST);
+                finallyBlock = null;
             }
-            return new TryStatement(loc, (Statement) convert(tryStatement.body), (CatchStatement) convert(tryStatement.catchBlock), finallyBlock);
+            CatchStatement catchBlock;
+            if (tryStatement.catchBlock != null) {
+                catchBlock = (CatchStatement) convert(tryStatement.catchBlock);
+            } else {
+                catchBlock = null;
+            }
+            return new TryStatement(loc, (Statement) convert(tryStatement.body), catchBlock, finallyBlock);
         } else if (tree instanceof CatchTree) {
             CatchTree catchTree = (CatchTree) tree;
-            return new CatchStatement(loc, (Identifier) convert(catchTree.exception), (Statement)convert(catchTree.catchBody));
+            return new CatchStatement(loc, (Identifier) convert(catchTree.exception), (Statement) convert(catchTree.catchBody));
         } else if (tree instanceof FinallyTree) {
             FinallyTree finallyTree = (FinallyTree) tree;
             return convert(finallyTree.block);
@@ -242,6 +248,9 @@ public class AstTransformer {
             return new WhileStatement(loc, (Expression) convert(doWhile.condition), (Statement) convert(doWhile.body));
         } else if (tree instanceof EmptyStatementTree) {
             return new BlockStatement(loc, Collections.EMPTY_LIST);
+        } else if (tree instanceof LabelledStatementTree) {
+            LabelledStatementTree labelled = (LabelledStatementTree) tree;
+            return new LabeledStatement(loc, (Statement) convert(labelled.statement), labelled.name.value);
         }
 
         throw new RuntimeException("Cannot yet handle that kind of expression: " + tree.getClass().getName());
