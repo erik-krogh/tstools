@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers;
+package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
 /**
  * Created by Erik Krogh Kristensen on 17-10-2015.

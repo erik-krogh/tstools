@@ -7,6 +7,9 @@ public class InterfaceType implements DeclarationType {
     public DeclarationType function = null;
     public DeclarationType object = null;
 
+    public DeclarationType dynamicAccessLookupExp = null;
+    public DeclarationType dynamicAccessReturnExp = null;
+
     public final String name;
 
     public static int counter = 0;

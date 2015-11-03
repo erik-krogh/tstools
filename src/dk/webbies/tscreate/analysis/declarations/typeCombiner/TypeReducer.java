@@ -1,10 +1,10 @@
-package dk.webbies.tscreate.analysis.declarations.types.typeCombiner;
+package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 
 import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
-import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers.*;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
 

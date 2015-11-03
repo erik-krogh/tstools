@@ -1,11 +1,11 @@
-package dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers;
+package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
-import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 
 import java.util.Collection;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.declarations.types.typeCombiner.singleTypeReducers;
+package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
 import dk.webbies.tscreate.analysis.declarations.types.ClassInstanceType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;

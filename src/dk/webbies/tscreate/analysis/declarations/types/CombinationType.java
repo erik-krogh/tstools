@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 
 import java.util.*;
 
