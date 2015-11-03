@@ -23,7 +23,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private final Map<Snap.Obj, FunctionNode> functionNodes;
     private TypeAnalysis typeAnalysis;
     private final PrimitiveUnionNode.Factory primitiveFactory;
-    private HeapValueNode.Factory heapFactory;
+    private HeapValueFactory heapFactory;
     private Set<Snap.Obj> analyzedFunction;
 
     public UnionConstraintVisitor(
@@ -32,7 +32,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             Map<TypeAnalysis.ProgramPoint, UnionNode> nodes,
             FunctionNode functionNode,
             Map<Snap.Obj, FunctionNode> functionNodes,
-            HeapValueNode.Factory heapFactory,
+            HeapValueFactory heapFactory,
             TypeAnalysis typeAnalysis,
             Set<Snap.Obj> analyzedFunction) {
         this.closure = function;
@@ -322,7 +322,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         memberLookupExpression.getLookupKey().accept(this);
         memberLookupExpression.getOperand().accept(this);
         solver.union(get(memberLookupExpression.getLookupKey()), primitiveFactory.stringOrNumber());
-        solver.union(get(memberLookupExpression), new IsIndexedUnionNode(get(memberLookupExpression), get(memberLookupExpression.getLookupKey()), solver));
+        solver.union(get(memberLookupExpression), new DynamicAccessUnionNode(get(memberLookupExpression), get(memberLookupExpression.getLookupKey()), solver));
         return get(memberLookupExpression);
     }
 
@@ -606,23 +606,21 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private Collection<Snap.Obj> getFunctionNodes(UnionNode function, HashSet<Snap.Obj> seenHeap) {
         Set<Snap.Obj> result = new HashSet<>();
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
-            for (Snap.Value value : feature.getHeapValues()) {
-                if (!(value instanceof Snap.Obj)) {
-                    continue;
-                }
-                Snap.Obj closure = (Snap.Obj) value;
-                if (closure.function == null) {
-                    continue;
-                }
-                if (seenHeap.contains(closure)) {
-                    continue;
-                }
-                seenHeap.add(closure);
+            if (feature.getFunctionFeature() != null) {
+                for (Snap.Obj closure : feature.getFunctionFeature().getClosures()) {
+                    if (closure.function == null) {
+                        continue;
+                    }
+                    if (seenHeap.contains(closure)) {
+                        continue;
+                    }
+                    seenHeap.add(closure);
 
-                result.add(closure);
+                    result.add(closure);
+                }
+
             }
         }
-
 
         return result;
     }

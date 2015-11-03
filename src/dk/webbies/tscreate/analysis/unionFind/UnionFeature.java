@@ -12,7 +12,6 @@ public class UnionFeature {
     public final UnionClass unionClass;
 
     Set<Snap.Obj> prototypes = null;
-    public Set<Snap.Value> heapValues = null;
     Set<PrimitiveDeclarationType> primitives = null;
     FunctionFeature functionFeature = null;
     Map<String, UnionNode> objectFields = null;
@@ -28,13 +27,6 @@ public class UnionFeature {
                 this.prototypes = new LinkedHashSet<>();
             }
             this.prototypes.addAll(other.prototypes);
-        }
-
-        if (other.heapValues != null && !other.heapValues.isEmpty()) {
-            if (this.heapValues == null) {
-                this.heapValues = new LinkedHashSet<>();
-            }
-            this.heapValues.addAll(other.heapValues);
         }
 
         if (other.primitives != null && !other.primitives.isEmpty()) {
@@ -69,13 +61,6 @@ public class UnionFeature {
             }
             this.typeNames.addAll(other.typeNames);
         }
-    }
-
-    public Set<Snap.Value> getHeapValues() {
-        if (heapValues == null) {
-            return Collections.EMPTY_SET;
-        }
-        return heapValues;
     }
 
     public Set<PrimitiveDeclarationType> getPrimitives() {

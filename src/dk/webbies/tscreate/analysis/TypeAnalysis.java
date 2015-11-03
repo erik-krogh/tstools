@@ -57,7 +57,7 @@ public class TypeAnalysis {
 
             FunctionNode functionNode = FunctionNode.create(functionClosure, solver);
 
-            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this, new HashSet<>());
+            HeapValueFactory heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, this, new HashSet<>());
 
             Map<Snap.Obj, FunctionNode> subFunctionNodes = new HashMap<>();
             subFunctionNodes.put(functionClosure, FunctionNode.create(functionClosure, solver));
@@ -67,10 +67,6 @@ public class TypeAnalysis {
             solver.finish();
 
             UnionFeature feature = functionNode.getFeature();
-            if (feature.heapValues == null) {
-                feature.heapValues = new HashSet<>();
-            }
-            feature.heapValues.add(functionClosure);
             typeFactory.currentClosure = functionClosure;
             typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));
             typeFactory.currentClosure = null;
@@ -80,7 +76,7 @@ public class TypeAnalysis {
 
     }
 
-    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueNode.Factory heapFactory, Set<Snap.Obj> analyzedFunctions) {
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Set<Snap.Obj> analyzedFunctions) {
         if (closure.function.type.equals("unknown")) {
             return;
         }

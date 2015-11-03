@@ -23,7 +23,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private Map<String, Snap.Property> globalValues;
     private Map<String, Snap.Property> values;
     private final PrimitiveUnionNode.Factory primitivesBuilder;
-    private HeapValueNode.Factory heapFactory;
+    private HeapValueFactory heapFactory;
     private Map<Snap.Obj, LibraryClass> libraryClasses;
 
     public ResolveEnvironmentVisitor(
@@ -34,7 +34,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
             Map<String, Snap.Property> values,
             Map<String, Snap.Property> globalValues,
             Snap.Obj globalObject,
-            HeapValueNode.Factory heapFactory,
+            HeapValueFactory heapFactory,
             Map<Snap.Obj, LibraryClass> libraryClasses) {
         this.closure = closure;
         this.function = function;
@@ -69,7 +69,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
             solver.union(idNode, heapFactory.fromProperty(this.values.get(name)));
         } else if (identifier.isGlobal) {
             if (name.equals("arguments")) {
-                solver.union(idNode, new IsIndexedUnionNode(primitivesBuilder.any(), primitivesBuilder.number(), solver));
+                solver.union(idNode, new DynamicAccessUnionNode(primitivesBuilder.any(), primitivesBuilder.number(), solver));
                 ObjectUnionNode obj = new ObjectUnionNode(solver);
                 obj.addField("length", primitivesBuilder.number());
                 solver.union(idNode, obj);

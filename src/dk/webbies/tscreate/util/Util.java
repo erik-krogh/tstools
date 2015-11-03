@@ -38,6 +38,10 @@ public class Util {
         return inputGobbler.getResult();
     }
 
+    public static <T> boolean notNull(T t) {
+        return t != null;
+    }
+
     private static class StreamGobbler extends Thread {
         BufferedInputStream is;
         private CountDownLatch latch;

@@ -113,15 +113,16 @@ public class TypeFactory {
         result.addType(getObjectInstanceType(feature));
 
         // Adding class declaration (if it is a constructor).
-        feature.getHeapValues().stream()
-                .filter(obj -> obj instanceof Snap.Obj)
-                .map(obj -> (Snap.Obj) obj)
+        if (feature.getFunctionFeature() != null) {
+            feature.getFunctionFeature().getClosures().stream()
                 .filter(obj -> obj.function != null && obj.getProperty("prototype") != null)
                 .map(obj -> obj.getProperty("prototype").value)
                 .distinct()
                 .map(this.libraryClasses::get)
                 .map(this::getClassType)
+                .filter(Util::notNull)
                 .forEach(result::addType);
+        }
 
         if (!feature.getObjectFields().isEmpty()) {
             HashMap<String, DeclarationType> fields = new HashMap<>();
@@ -292,7 +293,7 @@ public class TypeFactory {
     public DeclarationType getHeapPropType(Snap.Property prop) {
         TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, this, typeNames);
         UnionFindSolver solver = new UnionFindSolver();
-        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeAnalysis, new HashSet<>());
+        HeapValueFactory heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, typeAnalysis, new HashSet<>());
         UnionNode unionNode = heapFactory.fromProperty(prop);
         solver.finish();
         return getType(unionNode);
