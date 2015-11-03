@@ -379,10 +379,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         public void run() {
             Collection<UnionFeature> features = UnionFeature.getReachable(get(member.getExpression()).getFeature());
             for (UnionFeature feature : features) {
+                if (feature == get(member.getExpression()).getFeature()) {
+                    continue;
+                }
                 Map<String, UnionNode> fields = feature.getObjectFields();
                 if (fields.containsKey(name)) {
                     UnionNode fieldNode = fields.get(name);
-                    solver.union(get(member), fieldNode);
+                    Set<UnionClass> includes = get(member).getUnionClass().includes;
+                    if (includes == null || !includes.contains(fieldNode.getUnionClass())) {
+                        solver.union(get(member), new IncludeNode(solver, fieldNode));
+                    }
                 }
             }
 
@@ -421,7 +427,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final UnionNode thisNode;
         private final CallGraphResolver callResolver;
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
-        private FunctionSignatureFactory functionNodeFactory;
+        private FunctionSignatureFactory functionNodeSignatureFactory;
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode, Expression callExpression) {
             this.function = function;
@@ -429,7 +435,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.thisNode = thisNode;
             this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyUnionNode(solver), callExpression);
             this.callResolver.constructorCalls = true;
-            this.functionNodeFactory = new FunctionSignatureFactory(UnionConstraintVisitor.this.primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.typeNames);
+            this.functionNodeSignatureFactory = new FunctionSignatureFactory(UnionConstraintVisitor.this.primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.typeNames);
         }
 
         @Override
@@ -441,7 +447,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         if (prototypeProp != null) {
                             solver.union(this.thisNode, HasPrototypeUnionNode.create((Snap.Obj) prototypeProp.value, solver));
                         }
-                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true, functionNodeFactory);
+                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true, functionNodeSignatureFactory);
                         for (FunctionNode signature : signatures) {
                             solver.union(signature.returnNode, this.thisNode);
                         }
@@ -495,8 +501,44 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.functionSignatureFactory = new FunctionSignatureFactory(primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.typeNames);
         }
 
+        private boolean containsInclude(UnionNode nodeWithIncludes, UnionNode possiblyIncluded) {
+            UnionClass myClass = nodeWithIncludes.getUnionClass();
+            if (myClass.includes == null) {
+                return false;
+            }
+            return myClass.includes.contains(possiblyIncluded.getUnionClass());
+        }
+
         @Override
         public void run() {
+            List<UnionFeature> reachable = UnionFeature.getReachable(this.functionNode.getFeature());
+            for (UnionFeature feature : reachable) {
+                if (feature == functionNode.getFeature()) {
+                    continue;
+                }
+                UnionFeature.FunctionFeature otherFeature = feature.getFunctionFeature();
+                UnionFeature.FunctionFeature myFeature = this.functionNode.getFeature().getFunctionFeature();
+                if (otherFeature != null) {
+                    if (!containsInclude(myFeature.getThisNode(), otherFeature.getThisNode())) {
+                        solver.union(myFeature.getThisNode(), new IncludeNode(solver, otherFeature.getThisNode()));
+                    }
+                    if (!containsInclude(myFeature.getReturnNode(), otherFeature.getReturnNode())) {
+                        solver.union(myFeature.getReturnNode(), new IncludeNode(solver, otherFeature.getReturnNode()));
+                    }
+                    for (int i = 0; i < otherFeature.getArguments().size(); i++) {
+                        UnionFeature.FunctionFeature.Argument otherArg = otherFeature.getArguments().get(i);
+                        if (myFeature.getArguments().size() > i) {
+                            UnionFeature.FunctionFeature.Argument myArg = myFeature.getArguments().get(i);
+                            if (!containsInclude(myArg.node, otherArg.node)) {
+                                solver.union(myArg.node, new IncludeNode(solver, otherArg.node));
+                            }
+                        } else {
+                            myFeature.getArguments().add(new UnionFeature.FunctionFeature.Argument(otherArg.name, new IncludeNode(solver, otherArg.node)));
+                        }
+                    }
+                }
+            }
+
             Collection<Snap.Obj> functions = getFunctionNodes(functionNode, seenHeap);
 
             for (Snap.Obj closure : functions) {
