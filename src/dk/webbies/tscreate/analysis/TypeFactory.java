@@ -290,68 +290,13 @@ public class TypeFactory {
     }
 
     public DeclarationType getHeapPropType(Snap.Property prop) {
-        if (prop.value != null) {
-            return getHeapValueType(prop.value);
-        } else {
-            TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, this, typeNames);
-            UnionFindSolver solver = new UnionFindSolver();
-            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeAnalysis, new HashSet<>());
-            UnionNode unionNode = heapFactory.fromProperty(prop);
-            solver.finish();
-            return getType(unionNode);
-        }
+        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, this, typeNames);
+        UnionFindSolver solver = new UnionFindSolver();
+        HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, typeAnalysis, new HashSet<>());
+        UnionNode unionNode = heapFactory.fromProperty(prop);
+        solver.finish();
+        return getType(unionNode);
     }
-
-    // TODO: Can this be deleted, and just use HeapValueNode and get a type from that?
-    public DeclarationType getHeapValueType(Snap.Value value) {
-        if (value instanceof Snap.BooleanConstant) {
-            return PrimitiveDeclarationType.BOOLEAN;
-        } else if (value instanceof Snap.NumberConstant) {
-            return PrimitiveDeclarationType.NUMBER;
-        } else if (value instanceof Snap.StringConstant) {
-            return PrimitiveDeclarationType.STRING;
-        } else if (value instanceof Snap.UndefinedConstant) {
-            return PrimitiveDeclarationType.VOID;
-        } else if (value instanceof Snap.NullConstant) {
-            return PrimitiveDeclarationType.ANY;
-        } else if ((value instanceof Snap.Obj)) {
-            if (((Snap.Obj) value).function != null) {
-                return getFunctionType((Snap.Obj) value);
-            } else {
-                return getObjectType((Snap.Obj) value);
-            }
-        } else {
-            throw new RuntimeException("I don't know what to do with a " + value);
-        }
-
-    }
-
-
-    private Map<Snap.Obj, UnresolvedDeclarationType> objectTypeCache = new HashMap<>();
-    private UnresolvedDeclarationType getObjectType(Snap.Obj value) {
-        if (objectTypeCache.containsKey(value)) {
-            return objectTypeCache.get(value);
-        }
-        UnresolvedDeclarationType unresolvedType = new UnresolvedDeclarationType();
-        objectTypeCache.put(value, unresolvedType);
-
-        if (libraryClasses.get(value.prototype) != null && getClassType(libraryClasses.get(value.prototype)) != null) {
-            ClassInstanceType result = new ClassInstanceType(getClassType(libraryClasses.get(value.prototype)));
-            unresolvedType.setResolvedType(result);
-            return unresolvedType;
-        } else {
-            HashMap<String, DeclarationType> declarations = new HashMap<>();
-            for (Map.Entry<String, Snap.Property> entry : value.getPropertyMap().entrySet()) {
-                declarations.put(entry.getKey(), getHeapPropType(entry.getValue()));
-            }
-
-            UnnamedObjectType result = new UnnamedObjectType(declarations);
-            unresolvedType.setResolvedType(result);
-
-            return unresolvedType;
-        }
-    }
-
 
     public Snap.Obj currentClosure; // Set by TypeAnalysis, to set which closure we have just finished analyzing, and therefore should create the type of.
     public List<DeclarationType> createFunctionType(UnionFeature.FunctionFeature feature) {
