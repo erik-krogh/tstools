@@ -100,7 +100,7 @@ public class TypeAnalysis {
 
         if (prototypeFunctions.containsKey(closure)) {
             LibraryClass libraryClass = prototypeFunctions.get(closure);
-            solver.union(functionNode.thisNode, HasPrototypeUnionNode.create(libraryClass.prototype, solver));
+            solver.union(functionNode.thisNode, new HasPrototypeUnionNode(solver, libraryClass.prototype));
         }
 
         HashMap<ProgramPoint, UnionNode> programPoints = new HashMap<>();

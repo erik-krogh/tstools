@@ -445,7 +445,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     case "native":
                         Snap.Property prototypeProp = closure.getProperty("prototype");
                         if (prototypeProp != null) {
-                            solver.union(this.thisNode, HasPrototypeUnionNode.create((Snap.Obj) prototypeProp.value, solver));
+                            solver.union(this.thisNode, new HasPrototypeUnionNode(solver, (Snap.Obj) prototypeProp.value));
                         }
                         List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true, functionNodeSignatureFactory);
                         for (FunctionNode signature : signatures) {
@@ -459,7 +459,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             if (typeAnalysis.options.classOptions.useThisObjectUsages) {
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
-                            solver.union(this.thisNode, HasPrototypeUnionNode.create(clazz.prototype, solver));
+                            solver.union(this.thisNode, new HasPrototypeUnionNode(solver, clazz.prototype));
 
                             if (typeAnalysis.options.classOptions.useConstructorUsages) {
                                 solver.union(clazz.getNewConstructorNode(solver), this.function);

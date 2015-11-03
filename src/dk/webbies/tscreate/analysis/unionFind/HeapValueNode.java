@@ -101,7 +101,7 @@ public class HeapValueNode extends ObjectUnionNode {
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.prototype != null) {
                 LibraryClass libraryClass = libraryClasses.get(obj.prototype);
-                result.add(HasPrototypeUnionNode.create(obj.prototype, solver));
+                result.add(new HasPrototypeUnionNode(solver, obj.prototype));
                 if (libraryClass != null && !libraryClass.isNativeClass()) {
                     if (typeAnalysis.options.classOptions.useThisObjectUsages) {
                         solver.union(libraryClass.getNewThisNode(solver), objectNode);

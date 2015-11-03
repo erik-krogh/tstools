@@ -44,7 +44,7 @@ public class PrimitiveUnionNode extends UnionNode {
             if (constructorName != null) {
                 try {
                     Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
-                    solver.union(result, HasPrototypeUnionNode.create(prototype, solver));
+                    solver.union(result, new HasPrototypeUnionNode(solver, prototype));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

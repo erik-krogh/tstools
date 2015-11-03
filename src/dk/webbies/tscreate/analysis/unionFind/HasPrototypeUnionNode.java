@@ -10,7 +10,7 @@ import java.util.HashSet;
 public class HasPrototypeUnionNode extends UnionNode {
     private Snap.Obj prototype;
 
-    private HasPrototypeUnionNode(Snap.Obj prototype, UnionFindSolver solver) {
+    public HasPrototypeUnionNode(UnionFindSolver solver, Snap.Obj prototype) {
         super(solver);
         if (prototype == null) {
             throw new RuntimeException();
@@ -29,9 +29,5 @@ public class HasPrototypeUnionNode extends UnionNode {
             feature.prototypes = new HashSet<>();
         }
         feature.prototypes.add(this.prototype);
-    }
-
-    public static HasPrototypeUnionNode create(Snap.Obj prototype, UnionFindSolver solver) {
-        return new HasPrototypeUnionNode(prototype, solver);
     }
 }
