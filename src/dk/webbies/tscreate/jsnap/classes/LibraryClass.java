@@ -71,10 +71,6 @@ public class LibraryClass {
         return name;
     }
 
-    private boolean containsShader() {
-        return pathsSeen.stream().anyMatch(str -> str.contains("Shader"));
-    }
-
     private String getNameFromPath(String path) {
         String[] split = path.split("\\.");
         return split[split.length - 1];
