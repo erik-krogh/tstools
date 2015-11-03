@@ -66,13 +66,14 @@ public class TypeAnalysis {
 
             solver.finish();
 
-            typeFactory.finishedFunctionClosures.add(functionClosure);
             UnionFeature feature = functionNode.getFeature();
             if (feature.heapValues == null) {
                 feature.heapValues = new HashSet<>();
             }
             feature.heapValues.add(functionClosure);
+            typeFactory.currentClosure = functionClosure;
             typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));
+            typeFactory.currentClosure = null;
         }
 
         typeFactory.resolveClassTypes();

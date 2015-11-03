@@ -22,7 +22,6 @@ public class TypeFactory {
     private final Snap.Obj globalObject;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
-    public final Set<Snap.Obj> finishedFunctionClosures = new HashSet<>();
     public final TypeReducer typeReducer;
     private Map<Type, String> typeNames;
 
@@ -354,12 +353,12 @@ public class TypeFactory {
     }
 
 
-
+    public Snap.Obj currentClosure; // Set by TypeAnalysis, to set which closure we have just finished analyzing, and therefore should create the type of.
     public List<DeclarationType> createFunctionType(UnionFeature.FunctionFeature feature) {
         if (!feature.getClosures().isEmpty()) {
             return feature.getClosures().stream().map(closure -> {
                 boolean isUserDefined = closure.function.type.equals("user") || closure.function.type.equals("bind");
-                if (!finishedFunctionClosures.contains(closure) && isUserDefined) {
+                if (currentClosure != closure && isUserDefined) {
                     return getFunctionType(closure);
                 } else {
                     DeclarationType returnType = getType(feature.getReturnNode());
