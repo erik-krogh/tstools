@@ -7,11 +7,11 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
-public class ObjectUnionNode extends UnionNodeWithFields {
+public class ObjectNode extends UnionNodeWithFields {
     private Map<String, UnionNode> objectFields = new HashMap<>();
     private String typeName;
 
-    public ObjectUnionNode(UnionFindSolver solver) {
+    public ObjectNode(UnionFindSolver solver) {
         super(solver);
     }
 

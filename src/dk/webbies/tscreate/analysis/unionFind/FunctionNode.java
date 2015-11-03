@@ -22,10 +22,10 @@ public class FunctionNode extends UnionNodeWithFields {
     private FunctionNode(List<String> argumentNames, UnionFindSolver solver) {
         super(solver);
         this.argumentNames = argumentNames;
-        this.returnNode = new EmptyUnionNode(solver);
-        this.thisNode = new EmptyUnionNode(solver);
+        this.returnNode = new EmptyNode(solver);
+        this.thisNode = new EmptyNode(solver);
         for (int i = 0; i < argumentNames.size(); i++) {
-            EmptyUnionNode node = new EmptyUnionNode(solver);
+            EmptyNode node = new EmptyNode(solver);
             arguments.add(node);
             addField("function-argument-" + i, node);
         }

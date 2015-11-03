@@ -5,8 +5,8 @@ package dk.webbies.tscreate.analysis.unionFind;
  *
  * This UnionNode is used everywhere to combine UnionNodes.
  */
-public class EmptyUnionNode extends UnionNode{
-    public EmptyUnionNode(UnionFindSolver solver) {
+public class EmptyNode extends UnionNode{
+    public EmptyNode(UnionFindSolver solver) {
         super(solver);
     }
 

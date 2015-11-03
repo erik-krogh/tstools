@@ -9,10 +9,10 @@ import java.util.HashSet;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-public class PrimitiveUnionNode extends UnionNode {
+public class PrimitiveNode extends UnionNode {
     private PrimitiveDeclarationType type;
 
-    private PrimitiveUnionNode(PrimitiveDeclarationType type, UnionFindSolver solver) {
+    private PrimitiveNode(PrimitiveDeclarationType type, UnionFindSolver solver) {
         super(solver);
         this.type = type;
     }
@@ -40,11 +40,11 @@ public class PrimitiveUnionNode extends UnionNode {
         }
 
         private UnionNode gen(PrimitiveDeclarationType type, String constructorName) {
-            PrimitiveUnionNode result = new PrimitiveUnionNode(type, solver);
+            PrimitiveNode result = new PrimitiveNode(type, solver);
             if (constructorName != null) {
                 try {
                     Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
-                    solver.union(result, new HasPrototypeUnionNode(solver, prototype));
+                    solver.union(result, new HasPrototypeNode(solver, prototype));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -69,15 +69,15 @@ public class PrimitiveUnionNode extends UnionNode {
         }
 
         public UnionNode any() {
-            return new PrimitiveUnionNode(PrimitiveDeclarationType.ANY, solver);
+            return new PrimitiveNode(PrimitiveDeclarationType.ANY, solver);
         }
 
         public UnionNode stringOrNumber() {
-            return new PrimitiveUnionNode(PrimitiveDeclarationType.STRING_OR_NUMBER, solver);
+            return new PrimitiveNode(PrimitiveDeclarationType.STRING_OR_NUMBER, solver);
         }
 
         public UnionNode nonVoid() {
-            return new PrimitiveUnionNode(PrimitiveDeclarationType.NON_VOID, solver);
+            return new PrimitiveNode(PrimitiveDeclarationType.NON_VOID, solver);
         }
     }
 }

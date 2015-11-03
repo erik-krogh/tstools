@@ -5,11 +5,11 @@ package dk.webbies.tscreate.analysis.unionFind;
  *
  * Encodes the type for a "foo[lookupExp]" expression, of type "returnType".
  */
-public class DynamicAccessUnionNode extends UnionNodeWithFields {
+public class DynamicAccessNode extends UnionNodeWithFields {
     private final UnionNode returnType;
     private final UnionNode lookupExp;
 
-    public DynamicAccessUnionNode(UnionNode returnType, UnionNode lookupExp, UnionFindSolver solver) {
+    public DynamicAccessNode(UnionNode returnType, UnionNode lookupExp, UnionFindSolver solver) {
         super(solver);
         this.returnType = returnType;
         addField("isIndexer-returnType", returnType);

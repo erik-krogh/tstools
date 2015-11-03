@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
  */
 public class FunctionSignatureFactory {
     private Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
-    private PrimitiveUnionNode.Factory primitiveFactory;
+    private PrimitiveNode.Factory primitiveFactory;
     private UnionFindSolver solver;
     private Map<Type, String> typeNames;
 
-    public FunctionSignatureFactory(PrimitiveUnionNode.Factory primitiveFactory, UnionFindSolver solver, Map<Type, String> typeNames) {
+    public FunctionSignatureFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, Map<Type, String> typeNames) {
         this.primitiveFactory = primitiveFactory;
         this.solver = solver;
         this.typeNames = typeNames;
@@ -119,7 +119,7 @@ public class FunctionSignatureFactory {
             ArrayList<UnionNode> result = new ArrayList<>();
             interfaceCache.put(t, result);
 
-            ObjectUnionNode obj = new ObjectUnionNode(solver);
+            ObjectNode obj = new ObjectNode(solver);
             if (typeNames.containsKey(t)) {
                 obj.setTypeName(typeNames.get(t));
             }
@@ -130,7 +130,7 @@ public class FunctionSignatureFactory {
                 String key = entry.getKey();
                 Type type = entry.getValue();
 
-                EmptyUnionNode fieldNode = new EmptyUnionNode(solver);
+                EmptyNode fieldNode = new EmptyNode(solver);
                 obj.addField(key, fieldNode);
                 delayedUnions.add(new AbstractMap.SimpleEntry<>(fieldNode, type.accept(this)));
             }

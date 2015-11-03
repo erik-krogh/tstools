@@ -7,10 +7,10 @@ import java.util.HashSet;
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
  */
-public class HasPrototypeUnionNode extends UnionNode {
+public class HasPrototypeNode extends UnionNode {
     private Snap.Obj prototype;
 
-    public HasPrototypeUnionNode(UnionFindSolver solver, Snap.Obj prototype) {
+    public HasPrototypeNode(UnionFindSolver solver, Snap.Obj prototype) {
         super(solver);
         if (prototype == null) {
             throw new RuntimeException();

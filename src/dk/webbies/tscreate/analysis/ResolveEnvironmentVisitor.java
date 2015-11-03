@@ -22,7 +22,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private Snap.Obj globalObject;
     private Map<String, Snap.Property> globalValues;
     private Map<String, Snap.Property> values;
-    private final PrimitiveUnionNode.Factory primitivesBuilder;
+    private final PrimitiveNode.Factory primitivesBuilder;
     private HeapValueFactory heapFactory;
     private Map<Snap.Obj, LibraryClass> libraryClasses;
 
@@ -45,7 +45,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
         this.libraryClasses = libraryClasses;
         this.globalValues = new HashMap<>(globalValues);
         this.values = new HashMap<>(values);
-        this.primitivesBuilder = new PrimitiveUnionNode.Factory(solver, globalObject);
+        this.primitivesBuilder = new PrimitiveNode.Factory(solver, globalObject);
         function.declarations.keySet().forEach(this.values::remove);
         function.declarations.keySet().forEach(this.globalValues::remove);
 
@@ -69,8 +69,8 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
             solver.union(idNode, heapFactory.fromProperty(this.values.get(name)));
         } else if (identifier.isGlobal) {
             if (name.equals("arguments")) {
-                solver.union(idNode, new DynamicAccessUnionNode(primitivesBuilder.any(), primitivesBuilder.number(), solver));
-                ObjectUnionNode obj = new ObjectUnionNode(solver);
+                solver.union(idNode, new DynamicAccessNode(primitivesBuilder.any(), primitivesBuilder.number(), solver));
+                ObjectNode obj = new ObjectNode(solver);
                 obj.addField("length", primitivesBuilder.number());
                 solver.union(idNode, obj);
             } else if (this.globalValues.containsKey(name)) {

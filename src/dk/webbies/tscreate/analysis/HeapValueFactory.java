@@ -10,7 +10,7 @@ import java.util.*;
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
 public class HeapValueFactory {
-    private PrimitiveUnionNode.Factory primitivesFactory;
+    private PrimitiveNode.Factory primitivesFactory;
     private UnionFindSolver solver;
     private Map<Snap.Obj, LibraryClass> libraryClasses;
 
@@ -22,7 +22,7 @@ public class HeapValueFactory {
         this.libraryClasses = libraryClasses;
         this.typeAnalysis = typeAnalysis;
         this.analyzedFunctions = analyzedFunctions;
-        this.primitivesFactory = new PrimitiveUnionNode.Factory(solver, globalObject);
+        this.primitivesFactory = new PrimitiveNode.Factory(solver, globalObject);
         this.solver = solver;
     }
 
@@ -30,16 +30,16 @@ public class HeapValueFactory {
         return fromProperty(property, new HashMap<>());
     }
 
-    private UnionNode fromProperty(Snap.Property property, Map<Snap.Value, ObjectUnionNode> cache) {
+    private UnionNode fromProperty(Snap.Property property, Map<Snap.Value, ObjectNode> cache) {
         if (property.value == null) {
             if (property.get == null || property.set == null) {
                 throw new NullPointerException();
             }
-            UnionNode getter = new EmptyUnionNode(solver);
+            UnionNode getter = new EmptyNode(solver);
             if (!(property.get instanceof Snap.UndefinedConstant)) {
                 getter = getGetterSetterNode((Snap.Obj) property.get).returnNode;
             }
-            UnionNode setter = new EmptyUnionNode(solver);
+            UnionNode setter = new EmptyNode(solver);
             if (!(property.set instanceof Snap.UndefinedConstant)) {
                 FunctionNode setterFunctionNode = getGetterSetterNode((Snap.Obj) property.set);
                 if (!setterFunctionNode.arguments.isEmpty()) {
@@ -49,7 +49,7 @@ public class HeapValueFactory {
             return new IncludeNode(solver, getter, setter);
         } else {
             List<UnionNode> fieldNodes = fromValue(property.value, cache);
-            EmptyUnionNode fieldNode = new EmptyUnionNode(solver);
+            EmptyNode fieldNode = new EmptyNode(solver);
             solver.union(fieldNode, fieldNodes);
             return fieldNode;
         }
@@ -59,20 +59,20 @@ public class HeapValueFactory {
         return fromValue(value, new HashMap<>());
     }
 
-    private List<UnionNode> fromValue(Snap.Value value, Map<Snap.Value, ObjectUnionNode> cache) {
+    private List<UnionNode> fromValue(Snap.Value value, Map<Snap.Value, ObjectNode> cache) {
         UnionNode primitive = getPrimitiveValue(value, primitivesFactory);
         if (primitive != null) {
             return Arrays.asList(primitive);
         }
 
         List<UnionNode> result = new ArrayList<>();
-        ObjectUnionNode objectNode = new ObjectUnionNode(solver);
+        ObjectNode objectNode = new ObjectNode(solver);
         result.add(objectNode);
 
         Snap.Obj obj = (Snap.Obj) value;
         if (obj.prototype != null) {
             LibraryClass libraryClass = libraryClasses.get(obj.prototype);
-            result.add(new HasPrototypeUnionNode(solver, obj.prototype));
+            result.add(new HasPrototypeNode(solver, obj.prototype));
             if (libraryClass != null && !libraryClass.isNativeClass()) {
                 if (typeAnalysis.options.classOptions.useThisObjectUsages) {
                     solver.union(libraryClass.getNewThisNode(solver), objectNode);
@@ -120,7 +120,7 @@ public class HeapValueFactory {
         return result;
     }
 
-    private UnionNode getPrimitiveValue(Snap.Value value, PrimitiveUnionNode.Factory primitivesBuilder) {
+    private UnionNode getPrimitiveValue(Snap.Value value, PrimitiveNode.Factory primitivesBuilder) {
         if (value instanceof Snap.BooleanConstant) {
             return primitivesBuilder.bool();
         }
