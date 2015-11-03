@@ -48,6 +48,7 @@ public class TypeReducer {
         register(new ClassInterfaceReducer(globalObject, this));
         register(new ClassInstanceUnnamedObjectReducer());
         register(new ClassInstanceReducer());
+        register(new InterfaceReducer(this));
     }
 
     private List<CombinationType> unresolvedTypes = new ArrayList<>();
@@ -94,7 +95,7 @@ public class TypeReducer {
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Pair<>(one.getClass(), two.getClass());
         if (!handlers.containsKey(typePair)) {
-            return null;
+            throw new RuntimeException();
         }
 
 
