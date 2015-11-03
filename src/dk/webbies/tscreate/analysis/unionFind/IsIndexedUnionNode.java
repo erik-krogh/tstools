@@ -25,6 +25,6 @@ public class IsIndexedUnionNode extends UnionNodeWithFields {
 
     @Override
     public void addTo(UnionClass unionClass) {
-        // TODO: Mark it or something here.
+        // FIXME: Mark it or something here.
     }
 }

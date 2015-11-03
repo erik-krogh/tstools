@@ -605,7 +605,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     private Collection<Snap.Obj> getFunctionNodes(UnionNode function, HashSet<Snap.Obj> seenHeap) {
         Set<Snap.Obj> result = new HashSet<>();
-        // TODO: What if one of our parents (with fields), includes something that has the same field.
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             for (Snap.Value value : feature.getHeapValues()) {
                 if (!(value instanceof Snap.Obj)) {

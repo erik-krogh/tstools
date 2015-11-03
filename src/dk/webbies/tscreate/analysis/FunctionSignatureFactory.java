@@ -162,7 +162,7 @@ public class FunctionSignatureFactory {
             switch (t.getKind()) {
                 case Any:
                     if (this.isArgument) {
-                        return Arrays.asList(primitiveFactory.nonVoid()); // TODO: Mention somewhere, also option.
+                        return Arrays.asList(primitiveFactory.nonVoid());
                     } else {
                         return Arrays.asList(primitiveFactory.any());
                     }

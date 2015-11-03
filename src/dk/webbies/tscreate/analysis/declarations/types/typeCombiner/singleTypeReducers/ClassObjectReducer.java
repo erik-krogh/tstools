@@ -31,10 +31,12 @@ public class ClassObjectReducer implements SingleTypeReducer<ClassType, UnnamedO
 
     @Override
     public DeclarationType reduce(ClassType clazz, UnnamedObjectType object) {
-        if (true) {
-            return clazz; // TODO:
-        }
-        if (FunctionObjectReducer.objectMatchFunctionPrototype(object, globalObject)) {
+        // This is done this way, because we infer all the fields we want in a class, when we create that class.
+        // So putting extra fields in it here, would essentially mean ignoring the options about what information should be used to infer types about classes.
+        return clazz;
+
+        // Old method
+        /*if (FunctionObjectReducer.objectMatchFunctionPrototype(object, globalObject)) {
             return clazz;
         }
         Snap.Value functionPrototype = globalObject.getProperty("Function").value;
@@ -53,6 +55,6 @@ public class ClassObjectReducer implements SingleTypeReducer<ClassType, UnnamedO
                 }
             }
         });
-        return clazz;
+        return clazz;*/
     }
 }

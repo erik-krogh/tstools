@@ -53,7 +53,7 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
         for (Map.Entry<String, DeclarationType> entry : objectType.getDeclarations().entrySet()) {
             DeclarationType type = entry.getValue();
             if (countMap.containsKey(type)) {
-                increment(objectType); // TODO: Hacky, better way to avoid recursion?
+                increment(objectType); // TODO: Hacky, better way to avoid recursion? (Ignore for now, it works for all current test-cases).
             }
             type.accept(this);
         }

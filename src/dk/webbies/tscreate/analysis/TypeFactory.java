@@ -197,8 +197,8 @@ public class TypeFactory {
     }
 
     // This is only to be used from within resolveClassTypes.
-    // TODO: Use the options defined in Options
-    // TODO: This nodes from constructor, and from prototype-functions.
+    // FIXME: Use the options defined in Options
+    // FIXME: This nodes from constructor, and from prototype-functions.
     private DeclarationType createClassType(LibraryClass libraryClass) {
         Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
         switch (constructor.function.type) {
