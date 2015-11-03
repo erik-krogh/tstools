@@ -8,9 +8,13 @@ public interface DeclarationType {
 
     <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument);
 
-    default DeclarationType resolve(DeclarationType type) {
+    default DeclarationType resolve() {
+        return DeclarationType.resolve(this);
+    }
+
+    public static DeclarationType resolve(DeclarationType type) {
         if (type instanceof UnresolvedDeclarationType) {
-            return resolve(((UnresolvedDeclarationType) type).getResolvedType());
+            return DeclarationType.resolve(((UnresolvedDeclarationType) type).getResolvedType());
         } else if (type instanceof CombinationType) {
             return ((CombinationType) type).getCombined();
         } else {

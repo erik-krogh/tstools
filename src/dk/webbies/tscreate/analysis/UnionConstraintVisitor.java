@@ -319,11 +319,14 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(MemberLookupExpression memberLookupExpression) {
-        memberLookupExpression.getLookupKey().accept(this);
-        memberLookupExpression.getOperand().accept(this);
-        solver.union(get(memberLookupExpression.getLookupKey()), primitiveFactory.stringOrNumber());
-        solver.union(get(memberLookupExpression), new DynamicAccessUnionNode(get(memberLookupExpression), get(memberLookupExpression.getLookupKey()), solver));
-        return get(memberLookupExpression);
+        UnionNode lookupKey = memberLookupExpression.getLookupKey().accept(this);
+        UnionNode operand = memberLookupExpression.getOperand().accept(this);
+        UnionNode returnType = get(memberLookupExpression);
+
+        solver.union(lookupKey, primitiveFactory.stringOrNumber());
+
+        solver.union(operand, new DynamicAccessUnionNode(returnType, lookupKey, solver));
+        return returnType;
     }
 
     @Override

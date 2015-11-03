@@ -17,16 +17,10 @@ public class DynamicAccessUnionNode extends UnionNodeWithFields {
         addField("isIndexer-lookupExp", lookupExp);
     }
 
-    public UnionNode getReturnType() {
-        return returnType;
-    }
-
-    public UnionNode getLookupExp() {
-        return lookupExp;
-    }
-
     @Override
     public void addTo(UnionClass unionClass) {
-        // FIXME: Mark it or something here.
+        // UnionClass fields makes sure that even if i overwrite, it doesn't matter.
+        unionClass.getFeature().dynamicAccessLookupExp = this.lookupExp;
+        unionClass.getFeature().dynamicAccessReturnType = this.returnType;
     }
 }

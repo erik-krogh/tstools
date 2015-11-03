@@ -5,7 +5,7 @@ import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.types.*;
-import dk.webbies.tscreate.analysis.declarations.types.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -130,6 +130,16 @@ public class TypeFactory {
                 fields.put(name, getType(node));
             });
             result.addType(new UnnamedObjectType(fields));
+        }
+
+        if (feature.getDynamicAccessLookupExp() != null) {
+            UnionNode lookupType = feature.getDynamicAccessLookupExp();
+            UnionNode returnType = feature.getDynamicAccessReturnType();
+            InterfaceType interfaceType = new InterfaceType();
+            interfaceType.dynamicAccessLookupExp = getType(lookupType);
+            interfaceType.dynamicAccessReturnExp = getType(returnType);
+
+            result.addType(interfaceType);
         }
         return result;
     }

@@ -17,6 +17,10 @@ public class UnionFeature {
     Map<String, UnionNode> objectFields = null;
     public Set<String> typeNames = null;
 
+    // Dynamic access
+    UnionNode dynamicAccessReturnType = null;
+    UnionNode dynamicAccessLookupExp = null;
+
     public UnionFeature(UnionClass unionClass) {
         this.unionClass = unionClass;
     }
@@ -61,6 +65,13 @@ public class UnionFeature {
             }
             this.typeNames.addAll(other.typeNames);
         }
+
+        if (other.dynamicAccessLookupExp != null) {
+            this.dynamicAccessLookupExp = other.dynamicAccessLookupExp;
+        }
+        if (other.dynamicAccessReturnType != null) {
+            this.dynamicAccessReturnType = other.dynamicAccessReturnType;
+        }
     }
 
     public Set<PrimitiveDeclarationType> getPrimitives() {
@@ -93,6 +104,14 @@ public class UnionFeature {
             return Collections.EMPTY_SET;
         }
         return prototypes;
+    }
+
+    public UnionNode getDynamicAccessReturnType() {
+        return dynamicAccessReturnType;
+    }
+
+    public UnionNode getDynamicAccessLookupExp() {
+        return dynamicAccessLookupExp;
     }
 
     public static class FunctionFeature {

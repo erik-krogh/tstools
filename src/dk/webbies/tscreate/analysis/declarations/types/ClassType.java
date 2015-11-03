@@ -25,7 +25,7 @@ public class ClassType implements DeclarationType{
 
     // Typecasting this, because it is unresolvedType for a while.
     public FunctionType getConstructorType() {
-        return (FunctionType) resolve(constructorType);
+        return (FunctionType) constructorType.resolve();
     }
 
     public Map<String, DeclarationType> getPrototypeFields() {
@@ -37,7 +37,7 @@ public class ClassType implements DeclarationType{
     }
 
     public ClassType getSuperClass() {
-        return (ClassType) resolve(superClass);
+        return (ClassType) DeclarationType.resolve(superClass);
     }
 
     public String getName() {

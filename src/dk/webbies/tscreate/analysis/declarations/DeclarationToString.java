@@ -230,14 +230,22 @@ public class DeclarationToString {
                     printFunction(interfaceType.getFunction(), true);
                     write(";\n");
                 }
+                // [s: string]: PropertyDescriptor;
+                if (interfaceType.dynamicAccessReturnExp != null) {
+                    ident();
+                    write("[");
+                    if (interfaceType.dynamicAccessLookupExp.resolve() == PrimitiveDeclarationType.NUMBER) {
+                        write("index: number");
+                    } else {
+                        write("s: string");
+                    }
+                    write("]: ");
+                    interfaceType.dynamicAccessReturnExp.accept(this);
+                    write(";\n");
+
+                }
                 if (interfaceType.getObject() != null) {
-                    interfaceType.getObject().getDeclarations().forEach((name, type) -> {
-                        ident();
-                        writeName(name);
-                        write(": ");
-                        type.accept(this);
-                        write(";\n");
-                    });
+                    interfaceType.getObject().getDeclarations().forEach(this::printObjectField);
                 }
                 ident--;
                 writeln("}");
@@ -249,6 +257,14 @@ public class DeclarationToString {
             }
 
             return null;
+        }
+
+        private void printObjectField(String name, DeclarationType type) {
+            ident();
+            writeName(name);
+            write(": ");
+            type.accept(this);
+            write(";\n");
         }
 
         @Override
@@ -266,12 +282,16 @@ public class DeclarationToString {
 
         @Override
         public Void visit(NamedObjectType namedObjectType) {
-            if (namedObjectType.getName().equals("Array")) {
-                write("Array<any>");
-            } else if (namedObjectType.getName().equals("NodeListOf")) {
-                write("NodeListOf<any>");
-            } else {
-                write(namedObjectType.getName());
+            switch (namedObjectType.getName()) {
+                case "Array":
+                    write("Array<any>");
+                    break;
+                case "NodeListOf":
+                    write("NodeListOf<any>");
+                    break;
+                default:
+                    write(namedObjectType.getName());
+                    break;
             }
             return null;
         }
@@ -288,13 +308,7 @@ public class DeclarationToString {
                 printArguments(classType.getConstructorType().getArguments());
                 write(") : " + classType.getName() + "\n");
 
-                classType.getStaticFields().forEach((name, type) -> {
-                    ident();
-                    writeName(name);
-                    write(": ");
-                    type.accept(this);
-                    write(";\n");
-                });
+                classType.getStaticFields().forEach(this::printObjectField);
 
                 ident--;
                 writeln("}");

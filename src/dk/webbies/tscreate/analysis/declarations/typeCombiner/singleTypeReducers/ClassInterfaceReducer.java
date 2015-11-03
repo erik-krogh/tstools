@@ -31,11 +31,7 @@ public class ClassInterfaceReducer implements SingleTypeReducer<ClassType, Inter
 
     @Override
     public DeclarationType reduce(ClassType classType, InterfaceType interfaceType) {
-        if (interfaceType.object != null) {
-            return new ClassObjectReducer(globalObject, combiner).reduce(classType, interfaceType.getObject());
-        } else {
-            classType.constructorType = new CombinationType(combiner, classType.constructorType, interfaceType.function);
-            return classType;
-        }
+        // See ClassObjectReducer as to why it behaves this way.
+        return classType;
     }
 }

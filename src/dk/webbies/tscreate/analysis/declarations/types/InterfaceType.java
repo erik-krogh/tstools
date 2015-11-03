@@ -28,17 +28,17 @@ public class InterfaceType implements DeclarationType {
     }
 
     public FunctionType getFunction() {
-        if (function == null && object == null) {
-            throw new NullPointerException("An interface must have either an object or function associated");
+        if (function == null && object == null && dynamicAccessLookupExp == null) {
+            throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
         }
-        return (FunctionType) resolve(function);
+        return (FunctionType) DeclarationType.resolve(function);
     }
 
     public UnnamedObjectType getObject() {
-        if (function == null && object == null) {
-            throw new NullPointerException("An interface must have either an object or function associated");
+        if (function == null && object == null && dynamicAccessLookupExp == null) {
+            throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
         }
-        return (UnnamedObjectType) resolve(object);
+        return (UnnamedObjectType) DeclarationType.resolve(object);
     }
 
     @Override

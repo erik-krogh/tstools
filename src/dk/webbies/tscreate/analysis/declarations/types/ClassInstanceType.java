@@ -18,7 +18,7 @@ public class ClassInstanceType implements DeclarationType {
 
     // Casting because of UnresolvedDeclarationType
     public ClassType getClazz() {
-        return (ClassType) resolve(clazz);
+        return (ClassType) clazz.resolve();
     }
 
     @Override
