@@ -43,13 +43,18 @@ public class PrimitiveNode extends UnionNode {
             PrimitiveNode result = new PrimitiveNode(type, solver);
             if (constructorName != null) {
                 try {
-                    Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
-                    solver.union(result, new HasPrototypeNode(solver, prototype));
+                    HasPrototypeNode hasProto = getPrototype(constructorName);
+                    solver.union(result, hasProto);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
             return result;
+        }
+
+        private HasPrototypeNode getPrototype(String constructorName) {
+            Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
+            return new HasPrototypeNode(solver, prototype);
         }
 
         public UnionNode number() {
@@ -73,7 +78,9 @@ public class PrimitiveNode extends UnionNode {
         }
 
         public UnionNode stringOrNumber() {
-            return new PrimitiveNode(PrimitiveDeclarationType.STRING_OR_NUMBER, solver);
+            PrimitiveNode result = new PrimitiveNode(PrimitiveDeclarationType.STRING_OR_NUMBER, solver);
+            solver.union(result, getPrototype("Number"), getPrototype("String"));
+            return result;
         }
 
         public UnionNode nonVoid() {

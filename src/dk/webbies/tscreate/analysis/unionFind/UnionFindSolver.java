@@ -132,23 +132,26 @@ public class UnionFindSolver {
         return elem.parent;
     }
 
-    public void union(UnionNode... nodes) {
-        union(Arrays.asList(nodes));
+    public UnionNode union(UnionNode... nodes) {
+        return union(Arrays.asList(nodes));
     }
 
-    public void union(List<UnionNode> nodes) {
-        if (nodes.size() >= 2) {
+    public UnionNode union(List<UnionNode> nodes) {
+        if (nodes.size() >= 1) {
             UnionNode first = nodes.get(0);
             for (int i = 1; i < nodes.size(); i++) {
                 union(first, nodes.get(i));
             }
+            return first;
         }
+        return null;
     }
 
-    public void union(UnionNode one, Collection<? extends UnionNode> list) {
+    public UnionNode union(UnionNode one, Collection<? extends UnionNode> list) {
         for (UnionNode unionNode : list) {
             this.union(one, unionNode);
         }
+        return one;
     }
 
     /**

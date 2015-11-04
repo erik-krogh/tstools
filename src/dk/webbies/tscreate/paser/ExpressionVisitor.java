@@ -22,7 +22,7 @@ public interface ExpressionVisitor<T> {
 
     T visit(MemberExpression memberExpression);
 
-    T visit(MemberLookupExpression memberLookupExpression);
+    T visit(DynamicAccessExpression memberLookupExpression);
 
     T visit(MethodCallExpression methodCallExpression);
 

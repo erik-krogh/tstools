@@ -24,6 +24,7 @@ public class FunctionSignatureFactory {
         this.typeNames = typeNames;
     }
 
+    // FIXME: Dynamic property accesses.
     public FunctionNode fromSignature(Signature signature, Snap.Obj closure, List<UnionNode> args) {
         if (args == null) {
             args = Collections.EMPTY_LIST;

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  */
 public final class UnionClass {
     public UnionFindSolver solver;
-    Map<String, UnionNode> fields = null;
+    private Map<String, UnionNode> fields = null;
     public List<Runnable> callbacks = null;
 
     private UnionFeature feature = new UnionFeature(this);
@@ -158,15 +158,21 @@ public final class UnionClass {
         }
     }
 
+    public List<UnionClass> getReachable() {
+        return getReachable((obj) -> obj);
+    }
+
     public <T> List<T> getReachable(Function<UnionClass, T> mapFunc) {
-        if (mapFunc == null) {
-            mapFunc = (x) -> (T)x;
-        }
         return new Tarjan<TarjanNode>().getReachableSet(this.tarjanNode).stream().map(TarjanNode::getUnionClass).map(mapFunc).collect(Collectors.toList());
     }
 
 
     private TarjanNode tarjanNode = new TarjanNode();
+
+    public Map<String, UnionNode> getFields() {
+        return fields;
+    }
+
     private class TarjanNode extends Tarjan.Node<TarjanNode> {
         @Override
         public Collection<TarjanNode> getEdges() {

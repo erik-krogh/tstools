@@ -1,15 +1,14 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 
-import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
-import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
-import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
+import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 16-10-2015.
@@ -34,7 +33,8 @@ public class TypeReducer {
         }
     }
 
-    public TypeReducer(Snap.Obj globalObject) {
+    public TypeReducer(Snap.Obj globalObject, Map<Type, String> typeNames) {
+        Map<String, Type> namesToTypes = typeNames.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
         register(new PrimitiveObjectReducer(globalObject));
         register(new FunctionObjectReducer(globalObject));
         register(new FunctionClassReducer(this));
@@ -49,6 +49,7 @@ public class TypeReducer {
         register(new ClassInstanceUnnamedObjectReducer());
         register(new ClassInstanceReducer());
         register(new InterfaceReducer(this));
+        register(new InterfaceNamedObjectReducer(this, globalObject));
     }
 
     private List<CombinationType> unresolvedTypes = new ArrayList<>();
@@ -81,7 +82,7 @@ public class TypeReducer {
 
 
 
-    private DeclarationType combineTypes(DeclarationType one, DeclarationType two) {
+    public DeclarationType combineTypes(DeclarationType one, DeclarationType two) {
         if (one == two) {
             return one;
         }
@@ -95,7 +96,8 @@ public class TypeReducer {
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Pair<>(one.getClass(), two.getClass());
         if (!handlers.containsKey(typePair)) {
-            throw new RuntimeException();
+            return null;
+//            throw new RuntimeException(); // FIXME: throw a RuntimeException instead, and look at them.
         }
 
 

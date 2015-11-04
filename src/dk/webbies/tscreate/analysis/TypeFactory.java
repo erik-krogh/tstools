@@ -30,7 +30,7 @@ public class TypeFactory {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.typeNames = typeNames;
-        this.typeReducer = new TypeReducer(globalObject);
+        this.typeReducer = new TypeReducer(globalObject, typeNames);
     }
 
 
@@ -90,7 +90,7 @@ public class TypeFactory {
     }
 
     public CombinationType getTypeNoCache(UnionFeature feature) {
-        // First unpacking the IncludeNode
+        // First unpacking the IncludeNodes
         CombinationType result = new CombinationType(typeReducer);
         if (feature.unionClass.includes != null) {
             for (UnionClass include : feature.unionClass.includes) {
@@ -107,7 +107,7 @@ public class TypeFactory {
         }
 
         // Adding names object types.
-        feature.getTypeNames().stream().filter(name -> name != null).map(NamedObjectType::new).forEach(result::addType);
+        feature.getTypeNames().stream().filter(Util::notNull).map(NamedObjectType::new).forEach(result::addType);
 
         // Adding object instance
         result.addType(getObjectInstanceType(feature));

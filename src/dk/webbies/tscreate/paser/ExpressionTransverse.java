@@ -112,7 +112,7 @@ public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
     }
 
     @Override
-    public default T visit(MemberLookupExpression memberLookup) {
+    public default T visit(DynamicAccessExpression memberLookup) {
         memberLookup.getOperand().accept(this);
         memberLookup.getLookupKey().accept(this);
         return null;

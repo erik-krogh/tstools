@@ -49,8 +49,7 @@ public class PrimitiveReducer implements SingleTypeReducer<PrimitiveDeclarationT
     @Override
     public DeclarationType reduce(PrimitiveDeclarationType one, PrimitiveDeclarationType two) {
         if (reductionRules.containsKey(new Pair<>(one, two))) {
-            PrimitiveDeclarationType result = reductionRules.get(new Pair<>(one, two));
-            return result;
+            return reductionRules.get(new Pair<>(one, two));
         } else {
             throw new RuntimeException("Dont know how to reduce primitive " + one + " with " + two);
         }

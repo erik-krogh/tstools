@@ -194,7 +194,7 @@ public class AstTransformer {
             MemberLookupExpressionTree memberLook = (MemberLookupExpressionTree) tree;
             Expression operand = (Expression) convert(memberLook.operand);
             Expression lookupKey = (Expression) convert(memberLook.memberExpression);
-            return new MemberLookupExpression(loc, operand, lookupKey);
+            return new DynamicAccessExpression(loc, operand, lookupKey);
         } else if (tree instanceof CommaExpressionTree) {
             CommaExpressionTree commaExp = (CommaExpressionTree) tree;
             return new CommaExpression(loc, cast(Expression.class, commaExp.expressions.stream().map(AstTransformer::convert).collect(Collectors.toList())));
