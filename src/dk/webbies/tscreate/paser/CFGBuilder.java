@@ -25,6 +25,25 @@ public class CFGBuilder {
     }
 
 
+    private CFGUse useNodeUnderconstruction = null;
+    private final void initNewUseNode(AstNode astNode) {
+        assert (useNodeUnderconstruction == null);
+        useNodeUnderconstruction = new CFGUse(astNode);
+    }
+
+    // The following two methods should be used to create CFGDef nodes during AST traversal.
+    // The first one  (creates if necessary and) returns the current CFGUse node
+    // Second method gets you the current CFGUSE nod and un-init it
+    private final CFGUse makeUseNode(AstNode astNode) {
+        if (useNodeUnderconstruction == null) initNewUseNode(astNode);
+        return useNodeUnderconstruction;
+    }
+    private final CFGUse getCurrentAndResetUseNode() {
+        assert (useNodeUnderconstruction != null);
+        CFGUse ret = useNodeUnderconstruction;
+        useNodeUnderconstruction = null;
+        return ret;
+    }
     class CFGExprVisitor implements  CFGExpressionVisitor<CFGEnv> {
         @Override
         public CFGEnv visit(BinaryExpression binOp, CFGEnv au) {
@@ -33,27 +52,57 @@ public class CFGBuilder {
                 au = DUMMY_ENV;
             }
             printAstNode(binOp);
-            if (binOp.getOperator() == Operator.EQUAL) {
-                Expression var = binOp.getLhs();
-                if (!(var instanceof Identifier)) throw new RuntimeException();
-                Identifier id = (Identifier)var;
-                // process rhs first
-                CFGEnv aux = binOp.getRhs().accept(exprVisitor, au);
-                if (aux == null) {
-                    //throw new RuntimeException();
-                    aux = DUMMY_ENV;
-                }
-                CFGNode defNode = new CFGDef(binOp, id);
-                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode);
-                var.accept(exprVisitor, null); // debug purposes only
+            switch (binOp.getOperator()) {
+                case EQUAL:
+                {
+                    // preparing for creating defnode: def(lhs)
+                    Expression var = binOp.getLhs();
+                    if (!(var instanceof Identifier)) throw new RuntimeException();
+                    Identifier id = (Identifier) var;
+                    // process rhs first
+                    CFGEnv aux = binOp.getRhs().accept(exprVisitor, au);
+                    if (aux == null) {
+                        //throw new RuntimeException();
+                        aux = DUMMY_ENV;
+                    }
+                    CFGNode defNode = new CFGDef(binOp, id);
+                    CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode);
+                    var.accept(exprVisitor, null); // debug purposes only
 
-                return outEnv;
+                    return outEnv;
+                }
+                case PLUS:
+                case MINUS:
+                case MULT:
+                {
+
+                    // creates a CFGUseNode if necessary (otherwise use the one under construction)
+                    boolean isTopUseNode = (useNodeUnderconstruction == null);
+                    {if (isTopUseNode) h.Helper.printDebug("TOPNODE");
+                    printAstNode(binOp);}
+                    CFGUse currUseNode = makeUseNode(binOp);
+
+                    Expression lhs = binOp.getLhs();
+                    Expression rhs = binOp.getRhs();
+                    lhs.accept(exprVisitor, null);
+                    rhs.accept(exprVisitor, null);
+                    ;
+                    if (isTopUseNode) {
+                        CFGUse useNode = getCurrentAndResetUseNode();
+                        assert (useNode == currUseNode);
+                        CFGEnv outEnv = CFGEnv.createOutCfgEnv(au.getAppendNode(), useNode);
+                        assert (useNodeUnderconstruction == null);
+                        return outEnv;
+                    }
+                    return null;
+                }
+                default:
+                    return null;
             }
 
-            binOp.getLhs().accept(exprVisitor, null);
-            binOp.getRhs().accept(exprVisitor,null);
+            //binOp.getLhs().accept(exprVisitor, null);
+            //binOp.getRhs().accept(exprVisitor,null);
 
-            return null;
         }
 
         @Override
@@ -103,7 +152,10 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(Identifier identifier, CFGEnv aux) {
             printAstNode(identifier);
-
+            if (useNodeUnderconstruction != null) {
+                // we are making a use node
+                useNodeUnderconstruction.addUse(identifier);
+            }
             return null;
         }
 
