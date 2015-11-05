@@ -97,6 +97,14 @@ public class TypeAnalysis {
         if (prototypeFunctions.containsKey(closure)) {
             LibraryClass libraryClass = prototypeFunctions.get(closure);
             solver.union(functionNode.thisNode, new HasPrototypeNode(solver, libraryClass.prototype));
+            if (options.classOptions.unionThisFromPrototypeMethods) {
+                solver.union(functionNode.thisNode, libraryClass.getNewThisNode(solver));
+            }
+        }
+
+        Snap.Obj prototype = closure.getProperty("prototype") != null ? (Snap.Obj) closure.getProperty("prototype").value : null;
+        if (prototype != null && libraryClasses.containsKey(prototype) && options.classOptions.unionThisFromConstructor) {
+            solver.union(libraryClasses.get(prototype).getNewThisNode(solver), functionNode.thisNode);
         }
 
         HashMap<ProgramPoint, UnionNode> programPoints = new HashMap<>();

@@ -38,12 +38,12 @@ public class DeclarationToString {
         this.countMap.forEach((type, count) -> {
             if (count > 1 && type instanceof FunctionType) {
                 InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.counter++);
-                interfaceType.function = type;
+                interfaceType.function = (FunctionType) type;
                 printsAsInterface.put(type, interfaceType);
             }
             if (type instanceof UnnamedObjectType) {
                 InterfaceType interfaceType = new InterfaceType();
-                interfaceType.object = type;
+                interfaceType.object = (UnnamedObjectType) type;
                 printsAsInterface.put(type, interfaceType);
             }
         });
@@ -231,16 +231,16 @@ public class DeclarationToString {
                     write(";\n");
                 }
                 // [s: string]: PropertyDescriptor;
-                if (interfaceType.dynamicAccessReturnExp != null) {
+                if (interfaceType.getDynamicAccess() != null) {
                     ident();
                     write("[");
-                    if (interfaceType.dynamicAccessLookupExp.resolve() == PrimitiveDeclarationType.NUMBER) {
+                    if (interfaceType.getDynamicAccess().getLookupType().resolve() == PrimitiveDeclarationType.NUMBER) {
                         write("index: number");
                     } else {
                         write("s: string");
                     }
                     write("]: ");
-                    interfaceType.dynamicAccessReturnExp.accept(this);
+                    interfaceType.getDynamicAccess().getReturnType().accept(this);
                     write(";\n");
 
                 }

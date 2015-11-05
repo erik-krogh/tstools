@@ -4,11 +4,10 @@ package dk.webbies.tscreate.analysis.declarations.types;
  * Created by Erik Krogh Kristensen on 08-09-2015.
  */
 public class InterfaceType implements DeclarationType {
-    public DeclarationType function = null;
-    public DeclarationType object = null;
+    public FunctionType function = null;
+    public UnnamedObjectType object = null;
 
-    public DeclarationType dynamicAccessLookupExp = null;
-    public DeclarationType dynamicAccessReturnExp = null;
+    public DynamicAccessType dynamicAccess = null;
 
     public final String name;
 
@@ -28,17 +27,24 @@ public class InterfaceType implements DeclarationType {
     }
 
     public FunctionType getFunction() {
-        if (function == null && object == null && dynamicAccessLookupExp == null) {
+        if (function == null && object == null && dynamicAccess == null) {
             throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
         }
-        return (FunctionType) DeclarationType.resolve(function);
+        return function;
     }
 
     public UnnamedObjectType getObject() {
-        if (function == null && object == null && dynamicAccessLookupExp == null) {
+        if (function == null && object == null && dynamicAccess == null) {
             throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
         }
-        return (UnnamedObjectType) DeclarationType.resolve(object);
+        return object;
+    }
+
+    public DynamicAccessType getDynamicAccess() {
+        if (function == null && object == null && dynamicAccess == null) {
+            throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
+        }
+        return dynamicAccess;
     }
 
     @Override

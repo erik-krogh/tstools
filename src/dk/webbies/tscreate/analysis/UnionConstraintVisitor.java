@@ -401,7 +401,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 if (otherClass.getFields() == null) {
                     continue;
                 }
-                for (String key : Sets.intersection(myClass.getFields().keySet(), otherClass.getFields().keySet())) {
+                HashSet<String> keys = new HashSet<>(Sets.intersection(myClass.getFields().keySet(), otherClass.getFields().keySet()));
+                for (String key : keys) {
                     UnionNode myField = myClass.getFields().get(key);
                     UnionNode otherField = otherClass.getFields().get(key);
                     if (myField.getUnionClass().includes == null || !myField.getUnionClass().includes.contains(otherField.getUnionClass())) {
@@ -415,11 +416,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private final class MemberResolver implements Runnable {
         private MemberExpression member;
         private Set<Snap.Obj> seenPrototypes = new HashSet<>();
-        private String name;
 
         public MemberResolver(MemberExpression member) {
             this.member = member;
-            this.name = member.getProperty();
         }
 
         @Override
@@ -490,7 +489,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         @SuppressWarnings("RedundantCast")
                         LibraryClass clazz = typeAnalysis.libraryClasses.get((Snap.Obj) closure.getProperty("prototype").value);
                         if (clazz != null) {
-                            if (typeAnalysis.options.classOptions.useThisObjectUsages) {
+                            if (typeAnalysis.options.classOptions.unionThisFromConstructedObjects) {
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));

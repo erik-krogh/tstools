@@ -28,10 +28,7 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
         if (objectMatchFunctionPrototype(object, globalObject)) {
             return function;
         } else {
-            InterfaceType interfaceType = new InterfaceType();
-            interfaceType.function = function;
-            interfaceType.object = object;
-            return interfaceType;
+            return null;
         }
     }
 

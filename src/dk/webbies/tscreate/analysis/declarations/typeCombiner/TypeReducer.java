@@ -18,7 +18,11 @@ public class TypeReducer {
 
     public HashMap<Set<DeclarationType>, DeclarationType> combinationTypeCache = new HashMap<>(); // Used inside combinationType.
 
-    private void register(SingleTypeReducer handler) {
+    private void register(SingleTypeReducer<? extends DeclarationType, ? extends DeclarationType> handler) {
+        if (!DeclarationType.class.isAssignableFrom(handler.getAClass()) || !DeclarationType.class.isAssignableFrom(handler.getBClass())) {
+            throw new RuntimeException("Only works on declarationTypes and subclasses.");
+        }
+
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> key1 = new Pair<>(handler.getAClass(), handler.getBClass());
         if (this.handlers.containsKey(key1)) {
             throw new RuntimeException("Duplicate handler registration, " + key1);
@@ -42,14 +46,26 @@ public class TypeReducer {
         register(new FunctionReducer(this));
         register(new PrimitiveReducer());
         register(new NamedUnamedObjectReducer(globalObject));
-        register(new InterfaceFunctionReducer(this));
-        register(new InterfaceUnnamedObjectReducer(this));
         register(new UnnamedObjectReducer(this));
-        register(new ClassInterfaceReducer(globalObject, this));
         register(new ClassInstanceUnnamedObjectReducer());
         register(new ClassInstanceReducer());
-        register(new InterfaceReducer(this));
-        register(new InterfaceNamedObjectReducer(this, globalObject));
+        register(new DynamicAccessReducer(this));
+
+        // The ones that I cant do anything about. // TODO: Look to see if any of these can actually be handled.
+        register(new CantReduceReducer(FunctionType.class, NamedObjectType.class));
+        register(new CantReduceReducer(FunctionType.class, PrimitiveDeclarationType.class));
+        register(new CantReduceReducer(DynamicAccessType.class, UnnamedObjectType.class));
+        register(new CantReduceReducer(DynamicAccessType.class, NamedObjectType.class));
+        register(new CantReduceReducer(DynamicAccessType.class, FunctionType.class));
+        register(new CantReduceReducer(DynamicAccessType.class, PrimitiveDeclarationType.class));
+        register(new CantReduceReducer(DynamicAccessType.class, ClassInstanceType.class));
+        register(new CantReduceReducer(DynamicAccessType.class, ClassType.class));
+        register(new CantReduceReducer(NamedObjectType.class, PrimitiveDeclarationType.class));
+        register(new CantReduceReducer(NamedObjectType.class, NamedObjectType.class));
+        register(new CantReduceReducer(ClassType.class, PrimitiveDeclarationType.class));
+        register(new CantReduceReducer(ClassInstanceType.class, PrimitiveDeclarationType.class));
+        register(new CantReduceReducer(ClassInstanceType.class, NamedObjectType.class));
+        register(new CantReduceReducer(ClassInstanceType.class, FunctionType.class));
     }
 
     private List<CombinationType> unresolvedTypes = new ArrayList<>();
@@ -96,10 +112,8 @@ public class TypeReducer {
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Pair<>(one.getClass(), two.getClass());
         if (!handlers.containsKey(typePair)) {
-            return null;
-//            throw new RuntimeException(); // FIXME: throw a RuntimeException instead, and look at them.
+            throw new RuntimeException("Don't know how to handle " + one.getClass().getSimpleName() + " - " + two.getClass().getSimpleName());
         }
-
 
         return handlers.get(typePair).reduce(one, two);
     }
@@ -123,6 +137,8 @@ public class TypeReducer {
             }
         }
 
+        extractInterfaces(types);
+
         if (types.size() == 0) {
             return PrimitiveDeclarationType.VOID;
         } else if (types.size() == 1) {
@@ -130,5 +146,39 @@ public class TypeReducer {
         } else {
             return new UnionDeclarationType(types);
         }
+    }
+
+    private void extractInterfaces(ArrayList<DeclarationType> types) {
+        // Works in place, so no return.
+
+        List<DeclarationType> interfaceParts = new ArrayList<>();
+        boolean hadDynamicAccess = false;
+        for (DeclarationType type : types) {
+            if (type instanceof FunctionType) {
+                interfaceParts.add(type);
+            } else if (type instanceof DynamicAccessType) {
+                hadDynamicAccess = true;
+                interfaceParts.add(type);
+            } else if (type instanceof UnnamedObjectType) {
+                interfaceParts.add(type);
+            }
+        }
+        if (interfaceParts.size() >= 2 || hadDynamicAccess) {
+            types.removeAll(interfaceParts);
+            InterfaceType result = new InterfaceType();
+            for (DeclarationType part : interfaceParts) {
+                if (part instanceof FunctionType) {
+                    assert result.function == null;
+                    result.function = (FunctionType) part;
+                } else if (part instanceof DynamicAccessType) {
+                    assert result.dynamicAccess == null;
+                    result.dynamicAccess = (DynamicAccessType) part;
+                } else if (part instanceof UnnamedObjectType) {
+                    assert result.object == null;
+                    result.object = (UnnamedObjectType) part;
+                }
+            }
+        }
+
     }
 }

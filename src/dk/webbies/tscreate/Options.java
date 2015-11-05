@@ -16,9 +16,14 @@ public class Options {
     public Collection<String> isClassNames = Arrays.asList("_");
 
     public static class ClassOptions {
-        public boolean useThisObjectUsages = false;
         public boolean useConstructorUsages = false;
         public boolean useClassInstancesFromHeap = true;
+
+        // For every prototype method, use the information gained by the "this" calls.
+        public boolean unionThisFromPrototypeMethods = false;
+        public boolean unionThisFromConstructor = false;
+        public boolean unionThisFromObjectsInTheHeap = false;
+        public boolean unionThisFromConstructedObjects = false;
     }
 
     public final ClassOptions classOptions;

@@ -47,9 +47,6 @@ public class CombinationType implements DeclarationType {
         if (this.types.size() == 0) {
             combined = PrimitiveDeclarationType.VOID;
             return PrimitiveDeclarationType.VOID;
-        } else if (this.types.size() == 1 && !(this.types.get(0) instanceof CombinationType)) {
-            combined = this.types.get(0);
-            return this.types.get(0);
         } else {
             Set<DeclarationType> unfolded = unfold(this, new HashSet<>());
 
@@ -100,6 +97,20 @@ public class CombinationType implements DeclarationType {
             Set<DeclarationType> result = new HashSet<>();
             for (DeclarationType subType : ((UnionDeclarationType) type).getTypes()) {
                 result.addAll(unfold(subType, seen));
+            }
+
+            return result;
+        } else if (type instanceof InterfaceType) {
+            HashSet<DeclarationType> result = new HashSet<>();
+            InterfaceType interfaceType = (InterfaceType) type;
+            if (interfaceType.function != null) {
+                result.addAll(unfold(interfaceType.function, seen));
+            }
+            if (interfaceType.object != null) {
+                result.addAll(unfold(interfaceType.object, seen));
+            }
+            if (interfaceType.getDynamicAccess() != null) {
+                result.addAll(unfold(interfaceType.getDynamicAccess(), seen));
             }
 
             return result;

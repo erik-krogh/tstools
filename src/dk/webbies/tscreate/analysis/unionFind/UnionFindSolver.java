@@ -81,7 +81,7 @@ public class UnionFindSolver {
     }
 
     public void runWhenChanged(UnionNode node, Runnable callback) {
-        recFind(node).unionClass.addChangeCallback(callback);
+        node.getUnionClass().addChangeCallback(callback);
     }
 
     public void addDoneCallback(UnionClass unionClass) {

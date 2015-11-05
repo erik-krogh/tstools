@@ -74,7 +74,7 @@ public class HeapValueFactory {
             LibraryClass libraryClass = libraryClasses.get(obj.prototype);
             result.add(new HasPrototypeNode(solver, obj.prototype));
             if (libraryClass != null && !libraryClass.isNativeClass()) {
-                if (typeAnalysis.options.classOptions.useThisObjectUsages) {
+                if (typeAnalysis.options.classOptions.unionThisFromObjectsInTheHeap) {
                     solver.union(libraryClass.getNewThisNode(solver), objectNode);
                 }
                 Snap.Property constructorProp = obj.prototype.getProperty("constructor");
