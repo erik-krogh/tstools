@@ -152,7 +152,7 @@ public final class UnionClass {
             }
         }
         if (this.includesUs != null) {
-            for (UnionClass includesUs : this.includesUs) {
+            for (UnionClass includesUs : new ArrayList<>(this.includesUs)) {
                 includesUs.doneCallback(iteration);
             }
         }

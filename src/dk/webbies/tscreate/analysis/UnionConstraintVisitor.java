@@ -2,13 +2,14 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Sets;
 import dk.au.cs.casa.typescript.types.Signature;
-import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.*;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 import dk.webbies.tscreate.paser.StatementTransverse;
+import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
     private final Snap.Obj closure;
     private final UnionFindSolver solver;
-    private final Map<TypeAnalysis.ProgramPoint, UnionNode> nodes;
+    private final Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap;
     private final FunctionNode functionNode;
     private final Map<Snap.Obj, FunctionNode> functionNodes;
     private TypeAnalysis typeAnalysis;
@@ -30,7 +31,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     public UnionConstraintVisitor(
             Snap.Obj function,
             UnionFindSolver solver,
-            Map<TypeAnalysis.ProgramPoint, UnionNode> nodes,
+            Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap,
             FunctionNode functionNode,
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
@@ -39,7 +40,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.closure = function;
         this.solver = solver;
         this.heapFactory = heapFactory;
-        this.nodes = nodes;
+        this.identifierMap = identifierMap;
         this.functionNode = functionNode;
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
@@ -47,28 +48,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.primitiveFactory = new PrimitiveNode.Factory(solver, typeAnalysis.globalObject);
     }
 
-    // TODO: Remove this method, because it is ugly.
-    UnionNode get(AstNode node) {
-        return getUnionNode(node, this.closure, this.nodes, solver);
-    }
-
     @Override
     public ExpressionVisitor<UnionNode> getExpressionVisitor() {
         return this;
-    }
-
-    public static UnionNode getUnionNode(AstNode node, Snap.Obj closure, Map<TypeAnalysis.ProgramPoint, UnionNode> nodes, UnionFindSolver solver) {
-        if (node == null) {
-            throw new NullPointerException("node cannot be null");
-        }
-        TypeAnalysis.ProgramPoint key = new TypeAnalysis.ProgramPoint(closure, node);
-        if (nodes.containsKey(key)) {
-            return nodes.get(key);
-        } else {
-            EmptyNode result = new EmptyNode(solver);
-            nodes.put(key, result);
-            return result;
-        }
     }
 
     @Override
@@ -144,7 +126,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 throw new UnsupportedOperationException("Don't yet handle the operator: " + op.getOperator());
         }
 
-        return solver.union(get(op), result);
+        return result;
     }
 
     @Override
@@ -177,7 +159,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             default:
                 throw new UnsupportedOperationException("Don't yet handle the operator: " + unOp.getOperator());
         }
-        return solver.union(get(unOp), result);
+        return result;
     }
 
     @Override
@@ -189,16 +171,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 return null;
             }
         });
-        solver.union(get(forIn.getCollection()), new ObjectNode(solver));
+        solver.union(forIn.getCollection().accept(this), new ObjectNode(solver));
         return null;
     }
 
     @Override
     public UnionNode visit(ThisExpression thisExpression) {
         if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses) {
-            return solver.union(new EmptyNode(solver), get(thisExpression));
+            return new EmptyNode(solver);
         } else {
-            return solver.union(get(thisExpression), this.functionNode.thisNode);
+            return this.functionNode.thisNode;
         }
     }
 
@@ -209,13 +191,13 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         UnionNode left = condExp.getLeft().accept(this);
         UnionNode right = condExp.getRight().accept(this);
         solver.union(left, right);
-        return solver.union(get(condExp), left);
+        return left;
     }
 
     @Override
     public UnionNode visit(CommaExpression commaExpression) {
-        commaExpression.getExpressions().forEach(exp -> exp.accept(this));
-        return solver.union(get(commaExpression), get(commaExpression.getLastExpression()));
+        // Recursively visits every one of them, returns the result of the last.
+        return commaExpression.getExpressions().stream().map(exp -> exp.accept(this)).reduce((a, b) -> b).get();
     }
 
     @Override
@@ -227,14 +209,14 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(SwitchStatement switchStatement) {
-        solver.union(get(switchStatement.getExpression()), primitiveFactory.stringOrNumber());
+        solver.union(switchStatement.getExpression().accept(this), primitiveFactory.stringOrNumber());
         StatementTransverse.super.visit(switchStatement);
         return null;
     }
 
     @Override
     public UnionNode visit(StringLiteral string) {
-        return solver.union(get(string), primitiveFactory.string());
+        return primitiveFactory.string();
     }
 
     @Override
@@ -242,51 +224,52 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         if (identifier.getDeclaration() == null) {
             throw new RuntimeException("Cannot have null declarations");
         }
-        return solver.union(get(identifier), get(identifier.getDeclaration()));
+        UnionNode identifierNode = ResolveEnvironmentVisitor.getIdentifier(identifier, solver, closure, identifierMap);
+        UnionNode declarationNode = ResolveEnvironmentVisitor.getIdentifier(identifier.getDeclaration(), solver, closure, identifierMap);
+        return solver.union(identifierNode, declarationNode);
     }
 
     @Override
     public UnionNode visit(BooleanLiteral booleanLiteral) {
-        return solver.union(get(booleanLiteral), primitiveFactory.bool());
+        return primitiveFactory.bool();
     }
 
     @Override
     public UnionNode visit(UndefinedLiteral undefined) {
-        return solver.union(get(undefined), primitiveFactory.undefined());
+        return primitiveFactory.undefined();
     }
 
     @Override
     public UnionNode visit(FunctionExpression function) {
         if (closureMatch(function, this.closure)) {
             function.getBody().accept(this);
-            function.getArguments().forEach(arg -> solver.union(arg.accept(this), primitiveFactory.nonVoid()));
+            List<UnionNode> arguments = function.getArguments().stream().map(arg -> solver.union(arg.accept(this), primitiveFactory.nonVoid())).collect(Collectors.toList());
 
             if (this.closure.function.type.equals("user")) {
                 for (int i = 0; i < functionNode.arguments.size(); i++) {
-                    solver.union(get(function.getArguments().get(i)), functionNode.arguments.get(i));
+                    solver.union(arguments.get(i), functionNode.arguments.get(i));
                 }
             } else {
                 int boundArguments = this.closure.function.arguments.size() - 1;
                 for (int i = 0; i < functionNode.arguments.size(); i++) {
-                    solver.union(get(function.getArguments().get(i + boundArguments)), functionNode.arguments.get(i));
+                    solver.union(arguments.get(i + boundArguments), functionNode.arguments.get(i));
                 }
                 for (int i = 0; i < boundArguments; i++) {
-                    solver.union(get(function.getArguments().get(i)), heapFactory.fromValue(this.closure.function.arguments.get(i + 1))); // Plus 1, because the first argment is the "this" node.
+                    solver.union(arguments.get(i), heapFactory.fromValue(this.closure.function.arguments.get(i + 1))); // Plus 1, because the first argment is the "this" node.
                 }
             }
             return null;
         } else {
             FunctionNode result = FunctionNode.create(function, solver);
             if (function.getName() != null) {
-                solver.union(get(function.getName()), result);
+                solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new UnionConstraintVisitor(this.closure, this.solver, this.nodes, result, this.functionNodes, heapFactory, typeAnalysis, analyzedFunction).visit(function.getBody());
+            new UnionConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, analyzedFunction).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
-                solver.union(get(function.getArguments().get(i)), result.arguments.get(i));
-                solver.union(get(function.getArguments().get(i)), primitiveFactory.nonVoid());
+                solver.union(function.getArguments().get(i).accept(this), result.arguments.get(i), primitiveFactory.nonVoid());
             }
-            return solver.union(get(function), result);
+            return result;
         }
     }
 
@@ -303,12 +286,12 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(NumberLiteral number) {
-        return solver.union(get(number), primitiveFactory.number());
+        return primitiveFactory.number();
     }
 
     @Override
     public UnionNode visit(NullLiteral nullLiteral) {
-        return solver.union(get(nullLiteral), primitiveFactory.nonVoid());
+        return primitiveFactory.nonVoid();
     }
 
     @Override
@@ -330,14 +313,14 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             result.addField(key, valueNode);
         }
 
-        return solver.union(get(object), result);
+        return result;
     }
 
     @Override
     public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
         UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
         UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
-        UnionNode returnType = get(dynamicAccessExpression);
+        UnionNode returnType = new EmptyNode(solver);
 
         solver.union(lookupKey, primitiveFactory.stringOrNumber());
         DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(returnType, lookupKey, solver);
@@ -352,43 +335,73 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         UnionNode function = callExpression.getFunction().accept(this);
         EmptyNode returnNode = new EmptyNode(solver);
         solver.runWhenChanged(function, new CallGraphResolver(this.functionNode.thisNode, function, args, returnNode, callExpression));
-        return solver.union(get(callExpression), returnNode);
+        return returnNode;
+    }
+
+    @Override
+    public UnionNode visit(MemberExpression member) {
+        return new MemberExpressionVisitor(member).invoke().getResult();
+    }
+
+    private class MemberExpressionVisitor {
+        private MemberExpression member;
+        private UnionNode objectExp;
+        private UnionNode result;
+
+        public MemberExpressionVisitor(MemberExpression member) {
+            this.member = member;
+        }
+
+        public UnionNode getObjectExp() {
+            return objectExp;
+        }
+
+        public UnionNode getResult() {
+            return result;
+        }
+
+        public MemberExpressionVisitor invoke() {
+            objectExp = member.getExpression().accept(UnionConstraintVisitor.this);
+            ObjectNode object = new ObjectNode(solver);
+            result = new EmptyNode(solver);
+            object.addField(member.getProperty(), result);
+            solver.union(object, objectExp);
+            solver.union(primitiveFactory.nonVoid(), result);
+            solver.runWhenChanged(object, new MemberResolver(member, objectExp, result));
+            solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, solver));
+
+            if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
+                solver.union(UnionConstraintVisitor.this.functionNode.thisNode, objectExp);
+            }
+            return this;
+        }
     }
 
     @Override
     public UnionNode visit(MethodCallExpression methodCall) {
+        // Yes i know it is copy-paste, yes i know it is ugly.
+        MemberExpression member = methodCall.getMemberExpression();
+        MemberExpressionVisitor memberExpressionVisitor = new MemberExpressionVisitor(member).invoke();
+        UnionNode objectExp = memberExpressionVisitor.getObjectExp();
+        UnionNode result = memberExpressionVisitor.getResult();
+
+
         List<UnionNode> args = methodCall.getArgs().stream().map(arg -> arg.accept(this)).collect(Collectors.toList());
+
         UnionNode function = methodCall.getMemberExpression().accept(this);
+
         EmptyNode returnNode = new EmptyNode(solver);
-        solver.runWhenChanged(function, new CallGraphResolver(get(methodCall.getMemberExpression().getExpression()), function, args, returnNode, methodCall));
-        return solver.union(get(methodCall), returnNode);
+        solver.runWhenChanged(function, new CallGraphResolver(objectExp, function, args, returnNode, methodCall));
+        return returnNode;
     }
 
     @Override
     public UnionNode visit(NewExpression newExp) {
         List<UnionNode> args = newExp.getArgs().stream().map(arg -> arg.accept(this)).collect(Collectors.toList());
         UnionNode function = newExp.getOperand().accept(this);
-        UnionNode thisNode = get(newExp);
+        UnionNode thisNode = new EmptyNode(solver);
         solver.runWhenChanged(function, new NewCallResolver(function, args, thisNode, newExp));
         return thisNode;
-    }
-
-    @Override
-    public UnionNode visit(MemberExpression member) {
-        UnionNode objectExp = member.getExpression().accept(this);
-        ObjectNode object = new ObjectNode(solver);
-        UnionNode result = get(member);
-        object.addField(member.getProperty(), result);
-        solver.union(object, objectExp);
-        solver.union(primitiveFactory.nonVoid(), result);
-        solver.runWhenChanged(object, new MemberResolver(member));
-        solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, solver));
-
-        if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
-            solver.union(this.functionNode.thisNode, objectExp);
-        }
-
-        return result;
     }
 
     private static final class IncludesWithFieldsResolver implements Runnable {
@@ -425,15 +438,21 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     private final class MemberResolver implements Runnable {
         private MemberExpression member;
+        private final UnionNode expressionNode;
+        private final UnionNode memberNode;
         private Set<Snap.Obj> seenPrototypes = new HashSet<>();
 
-        public MemberResolver(MemberExpression member) {
+        // expressionNode = node for "foo" in "foo.bar".
+        // memberNode = node for "foo.bar" in "foo.bar".
+        public MemberResolver(MemberExpression member, UnionNode expressionNode, UnionNode memberNode) {
             this.member = member;
+            this.expressionNode = expressionNode;
+            this.memberNode = memberNode;
         }
 
         @Override
         public void run() {
-            List<UnionFeature> features = UnionFeature.getReachable(get(member.getExpression()).getFeature());
+            List<UnionFeature> features = UnionFeature.getReachable(expressionNode.getFeature());
 
             Set<Snap.Obj> prototypes = new HashSet<>();
             for (UnionFeature feature : features) {
@@ -444,7 +463,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             seenPrototypes.addAll(prototypes);
             for (Snap.Obj prototype : new HashSet<>(prototypes)) {
                 UnionNode propertyNode = lookupProperty(prototype, member.getProperty());
-                solver.union(get(member), propertyNode);
+                solver.union(memberNode, propertyNode);
             }
         }
 
@@ -573,7 +592,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             new UnionConstraintVisitor(
                                     closure,
                                     UnionConstraintVisitor.this.solver,
-                                    UnionConstraintVisitor.this.nodes,
+                                    UnionConstraintVisitor.this.identifierMap,
                                     functionNode,
                                     UnionConstraintVisitor.this.functionNodes,
                                     UnionConstraintVisitor.this.heapFactory,

@@ -6,6 +6,7 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.AST.Identifier;
 import dk.webbies.tscreate.paser.AST.NodeTransverse;
+import dk.webbies.tscreate.util.Pair;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,21 +17,21 @@ import java.util.Map;
  */
 public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private final Snap.Obj closure;
-    private FunctionExpression function;
+    private final FunctionExpression function;
     private final UnionFindSolver solver;
-    private final Map<TypeAnalysis.ProgramPoint, UnionNode> nodes;
-    private Snap.Obj globalObject;
-    private Map<String, Snap.Property> globalValues;
-    private Map<String, Snap.Property> values;
+    private final Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap;
+    private final Snap.Obj globalObject;
+    private final Map<String, Snap.Property> globalValues;
+    private final Map<String, Snap.Property> values;
     private final PrimitiveNode.Factory primitivesBuilder;
-    private HeapValueFactory heapFactory;
-    private Map<Snap.Obj, LibraryClass> libraryClasses;
+    private final HeapValueFactory heapFactory;
+    private final Map<Snap.Obj, LibraryClass> libraryClasses;
 
     public ResolveEnvironmentVisitor(
             Snap.Obj closure,
             FunctionExpression function,
             UnionFindSolver solver,
-            Map<TypeAnalysis.ProgramPoint, UnionNode> nodes,
+            Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap,
             Map<String, Snap.Property> values,
             Map<String, Snap.Property> globalValues,
             Snap.Obj globalObject,
@@ -39,7 +40,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
         this.closure = closure;
         this.function = function;
         this.solver = solver;
-        this.nodes = nodes;
+        this.identifierMap = identifierMap;
         this.globalObject = globalObject;
         this.heapFactory = heapFactory;
         this.libraryClasses = libraryClasses;
@@ -54,7 +55,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     @Override
     public Void visit(FunctionExpression function) {
         if (function != this.function) {
-            new ResolveEnvironmentVisitor(this.closure, function, this.solver, this.nodes, this.values, this.globalValues, globalObject, heapFactory, libraryClasses).visit(function);
+            new ResolveEnvironmentVisitor(this.closure, function, this.solver, this.identifierMap, this.values, this.globalValues, globalObject, heapFactory, libraryClasses).visit(function);
             return null;
         } else {
             return NodeTransverse.super.visit(function);
@@ -64,7 +65,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     @Override
     public Void visit(Identifier identifier) {
         String name = identifier.getName();
-        UnionNode idNode = UnionConstraintVisitor.getUnionNode(identifier, this.closure, this.nodes, solver);
+        UnionNode idNode = getIdentifier(identifier, solver, closure, identifierMap);
         if (this.values.containsKey(name)) {
             solver.union(idNode, heapFactory.fromProperty(this.values.get(name)));
         } else if (identifier.isGlobal) {
@@ -85,5 +86,13 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
         }
 
         return NodeTransverse.super.visit(identifier);
+    }
+
+    public static UnionNode getIdentifier(Identifier identifier, UnionFindSolver solver, Snap.Obj closure, Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap) {
+        Pair<Snap.Obj, Identifier> key = new Pair<>(closure, identifier);
+        if (!identifierMap.containsKey(key)) {
+            identifierMap.put(key, new EmptyNode(solver));
+        }
+        return identifierMap.get(key);
     }
 }

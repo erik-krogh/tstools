@@ -6,7 +6,8 @@ import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
-import dk.webbies.tscreate.paser.AST.AstNode;
+import dk.webbies.tscreate.paser.AST.Identifier;
+import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 
@@ -107,38 +108,11 @@ public class TypeAnalysis {
             solver.union(libraryClasses.get(prototype).getNewThisNode(solver), functionNode.thisNode);
         }
 
-        HashMap<ProgramPoint, UnionNode> programPoints = new HashMap<>();
+        Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap = new HashMap<>();
 
-        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, programPoints, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
+        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, identifierMap, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
 
-        new UnionConstraintVisitor(closure, solver, programPoints, functionNode, functionNodes, heapFactory, this, analyzedFunctions).visit(closure.function.astNode);
-    }
-
-    public static class ProgramPoint {
-        private Snap.Obj function;
-        private AstNode astNode;
-
-        public ProgramPoint(Snap.Obj function, AstNode astNode) {
-            if (function.function == null) {
-                throw new RuntimeException("This should be a function");
-            }
-            this.function = function;
-            this.astNode = astNode;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ProgramPoint that = (ProgramPoint) o;
-            return Objects.equals(function, that.function) &&
-                    Objects.equals(astNode, that.astNode);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(function, astNode);
-        }
+        new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, analyzedFunctions).visit(closure.function.astNode);
     }
 
     private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj obj, HashSet<Snap.Obj> seen) {
