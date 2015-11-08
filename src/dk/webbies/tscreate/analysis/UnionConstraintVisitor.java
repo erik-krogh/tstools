@@ -47,6 +47,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.primitiveFactory = new PrimitiveNode.Factory(solver, typeAnalysis.globalObject);
     }
 
+    // TODO: Remove this method, because it is ugly.
     UnionNode get(AstNode node) {
         return getUnionNode(node, this.closure, this.nodes, solver);
     }
@@ -184,7 +185,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         forIn.getInitializer().accept(new NodeTransverse<Void>() {
             @Override
             public Void visit(Identifier identifier) {
-                solver.union(get(identifier), primitiveFactory.string());
+                solver.union(identifier.accept(UnionConstraintVisitor.this), primitiveFactory.string());
                 return null;
             }
         });
@@ -194,7 +195,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(ThisExpression thisExpression) {
-        return solver.union(get(thisExpression), this.functionNode.thisNode);
+        if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses) {
+            return solver.union(new EmptyNode(solver), get(thisExpression));
+        } else {
+            return solver.union(get(thisExpression), this.functionNode.thisNode);
+        }
     }
 
     @Override
@@ -378,6 +383,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         solver.union(primitiveFactory.nonVoid(), result);
         solver.runWhenChanged(object, new MemberResolver(member));
         solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, solver));
+
+        if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
+            solver.union(this.functionNode.thisNode, objectExp);
+        }
+
         return result;
     }
 
