@@ -27,9 +27,6 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         Options options = new Options();
-        options.includeThisNodeFromHeap = true;
-        options.includeThisNodeFromConstructor = false;
-        options.includeThisNodeFromPrototypeMethods = false;
 
         options.interProceduralAnalysisWithHeap = true;
 

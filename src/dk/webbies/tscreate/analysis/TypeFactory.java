@@ -244,7 +244,7 @@ public class TypeFactory {
             }
         });
 
-        if (options.classOptions.useClassInstancesFromHeap) {
+        if (options.classOptions.useClassInstancesFromHeap && !libraryClass.instances.isEmpty()) {
             Multimap<String, Snap.Property> propertiesMultimap = ArrayListMultimap.create();
             for (Snap.Obj instance : libraryClass.instances) {
                 for (Snap.Property property : instance.properties) {
@@ -259,21 +259,21 @@ public class TypeFactory {
                 }
                 fieldTypes.put(name, getHeapPropType(properties));
             }
-        }
-
-        Multimap<String, UnionNode> propertiesMultiMap = ArrayListMultimap.create();
-        for (UnionNode thisNode : libraryClass.thisNodes) {
-            for (Map.Entry<String, UnionNode> entry : thisNode.getFeature().getObjectFields().entrySet()) {
-                propertiesMultiMap.put(entry.getKey(), entry.getValue());
+        } else {
+            Multimap<String, UnionNode> propertiesMultiMap = ArrayListMultimap.create();
+            for (UnionNode thisNode : libraryClass.thisNodes) {
+                for (Map.Entry<String, UnionNode> entry : thisNode.getFeature().getObjectFields().entrySet()) {
+                    propertiesMultiMap.put(entry.getKey(), entry.getValue());
+                }
             }
-        }
-        for (Map.Entry<String, Collection<UnionNode>> entry : propertiesMultiMap.asMap().entrySet()) {
-            String name = entry.getKey();
-            Collection<UnionNode> nodes = entry.getValue();
-            if (name.equals("constructor") || fieldTypes.containsKey(name)) {
-                continue;
+            for (Map.Entry<String, Collection<UnionNode>> entry : propertiesMultiMap.asMap().entrySet()) {
+                String name = entry.getKey();
+                Collection<UnionNode> nodes = entry.getValue();
+                if (name.equals("constructor") || fieldTypes.containsKey(name)) {
+                    continue;
+                }
+                fieldTypes.put(name, getType(nodes));
             }
-            fieldTypes.put(name, getType(nodes));
         }
         return fieldTypes;
     }
