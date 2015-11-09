@@ -28,13 +28,7 @@ public class FunctionClassReducer implements SingleTypeReducer<FunctionType, Cla
 
     @Override
     public DeclarationType reduce(FunctionType functionType, ClassType classType) {
-        // Adding the function to the constructor
-        CombinationType newConstrctor = new CombinationType(combiner);
-        newConstrctor.addType(classType.constructorType);
-        newConstrctor.addType(functionType);
-
-        classType.constructorType = newConstrctor;
-
+        // Same reasoning as in ClassObjectReducer.
         return classType;
     }
 }

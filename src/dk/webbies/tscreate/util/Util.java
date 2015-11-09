@@ -233,5 +233,12 @@ public class Util {
         return acc;
     };
 
-
+    public static<S, T, T1 extends T, S1 extends S> T getWithDefault(Map<S, T> map, S1 key, T1 defaultValue) {
+        if (map.containsKey(key)) {
+            return map.get(key);
+        } else {
+            map.put(key, defaultValue);
+            return defaultValue;
+        }
+    }
 }

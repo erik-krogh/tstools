@@ -55,8 +55,8 @@ public class HeapValueFactory {
         }
     }
 
-    public List<UnionNode> fromValue(Snap.Value value) {
-        return fromValue(value, new HashMap<>());
+    public UnionNode fromValue(Snap.Value value) {
+        return solver.union(fromValue(value, new HashMap<>()));
     }
 
     private List<UnionNode> fromValue(Snap.Value value, Map<Snap.Value, ObjectNode> cache) {

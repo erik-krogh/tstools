@@ -42,13 +42,7 @@ public class TypeFactory {
     private final Map<Snap.Obj, UnresolvedDeclarationType> functionTypes = new HashMap<>();
 
     public DeclarationType getFunctionType(Snap.Obj closure) {
-        if (functionTypes.containsKey(closure)) {
-            return functionTypes.get(closure);
-        } else {
-            UnresolvedDeclarationType result = new UnresolvedDeclarationType();
-            functionTypes.put(closure, result);
-            return result;
-        }
+        return Util.getWithDefault(functionTypes, closure, new UnresolvedDeclarationType());
     }
 
     public void putResolvedFunctionType(Snap.Obj closure, DeclarationType type) {
@@ -145,7 +139,7 @@ public class TypeFactory {
 
         if (result.types.size() == 0) {
             return PrimitiveDeclarationType.VOID;
-        } else if (result.types.size() == 1) {
+        } else if (result.types.size() == 1 && !(result.types.get(0) instanceof UnresolvedDeclarationType)) {
             return result.types.get(0);
         }
         return result;
@@ -244,11 +238,13 @@ public class TypeFactory {
     }
 
     // This is only to be used from within resolveClassTypes.
-    // FIXME: Use the options defined in Options, include this nodes from constructor, and from prototype-functions.
     private DeclarationType createClassType(LibraryClass libraryClass) {
-        Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
+        Snap.Property constructorProp = libraryClass.prototype.getProperty("constructor");
+        Snap.Obj constructor = (Snap.Obj) constructorProp.value;
         switch (constructor.function.type) {
             case "user":
+                DeclarationType otherConstructorType = getPureFunction(constructor);
+                // TODO: This is fallback.
                 Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
 
                 CombinationType constructorType = new CombinationType(typeReducer);
@@ -267,7 +263,7 @@ public class TypeFactory {
                 Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass, constructor);
 
 
-                ClassType classType = new ClassType(constructorType, prototypeProperties, libraryClass.getName(), staticFields);
+                ClassType classType = new ClassType(otherConstructorType, prototypeProperties, libraryClass.getName(), staticFields);
                 classType.setSuperClass(getClassType(libraryClass.superClass));
                 return classType;
             default: // Case "native" should already be handled here.
@@ -362,14 +358,19 @@ public class TypeFactory {
                 if (currentClosure != closure && isUserDefined) {
                     return getFunctionType(closure);
                 } else {
-                    DeclarationType returnType = getType(feature.getReturnNode());
+                    if (isUserDefined) {
+                        return getPureFunction(closure);
+                    } else {
+                        // FIXME: From another cache.
+                        DeclarationType returnType = getType(feature.getReturnNode());
 
-                    List<FunctionType.Argument> arguments = feature.getArguments().stream().map((arg) -> {
-                        DeclarationType type = getType(arg.node);
-                        return new FunctionType.Argument(arg.name, type);
-                    }).collect(Collectors.toList());
+                        List<FunctionType.Argument> arguments = feature.getArguments().stream().map((arg) -> {
+                            DeclarationType type = getType(arg.node);
+                            return new FunctionType.Argument(arg.name, type);
+                        }).collect(Collectors.toList());
 
-                    return new FunctionType(returnType, arguments);
+                        return new FunctionType(returnType, arguments);
+                    }
                 }
             }).collect(Collectors.toList());
         } else {
@@ -384,4 +385,26 @@ public class TypeFactory {
         }
     }
 
+    // This is only used, when we KNOW that we want a functionType. So only from createFunctionType and when we need a type for the constructor.
+    private Map<Snap.Obj, UnresolvedDeclarationType> pureFunctionCache = new HashMap<>();
+
+    // This is only used, when we KNOW that we want a functionType. So only from createFunctionType and when we need a type for the constructor.
+    private UnresolvedDeclarationType getPureFunction(Snap.Obj closure) {
+        return Util.getWithDefault(pureFunctionCache, closure, new UnresolvedDeclarationType());
+    }
+
+    public void registerFunction(Snap.Obj closure, UnionFeature.FunctionFeature feature) {
+        UnresolvedDeclarationType unresolved = getPureFunction(closure);
+
+        DeclarationType returnType = getType(feature.getReturnNode());
+
+        List<FunctionType.Argument> arguments = feature.getArguments().stream().map((arg) -> {
+            DeclarationType type = getType(arg.node);
+            return new FunctionType.Argument(arg.name, type);
+        }).collect(Collectors.toList());
+
+        FunctionType result = new FunctionType(returnType, arguments);
+
+        unresolved.setResolvedType(result);
+    }
 }

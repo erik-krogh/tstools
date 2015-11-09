@@ -75,11 +75,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
                 obj.addField("length", primitivesBuilder.number());
                 solver.union(idNode, obj);
             } else if (this.globalValues.containsKey(name)) {
-                List<UnionNode> nodes = heapFactory.fromValue(this.globalValues.get(name).value);
-                if (nodes.isEmpty()) {
-                    throw new RuntimeException("Cannot have an identifier be nothing");
-                }
-                solver.union(idNode, nodes);
+                solver.union(idNode, heapFactory.fromProperty(this.globalValues.get(name)));
             } else {
                 solver.union(idNode, primitivesBuilder.any());
             }
