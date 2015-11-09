@@ -102,6 +102,7 @@ public class Snap {
         public List<Value> arguments;
         public FunctionExpression astNode;
         public Obj target;
+        public Obj instance;
 
         public List<Signature> callSignatures = new ArrayList<>();
         public List<Signature> constructorSignatures = new ArrayList<>();

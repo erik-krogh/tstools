@@ -17,7 +17,7 @@ import java.util.*;
 public class JSNAPUtil {
 
     public static String getJsnapRaw(String path) throws IOException {
-        return Util.getCachedOrRun(path + ".jsnap", new File(path), "lib/jsnap/jsnap.js " + path);
+        return Util.getCachedOrRun(path + ".jsnap", new File(path), "lib/jsnap/jsnap.js --createInstances " + path);
     }
 
     private static String getEmptyJSNAP() throws IOException {
@@ -161,6 +161,9 @@ public class JSNAPUtil {
         for (Snap.Obj obj : stateDump.heap) {
             if (obj == null || obj.properties == null) {
                 continue;
+            }
+            if (obj.function != null && obj.function.instance != null) {
+                obj.function.instance = stateDump.heap.get(obj.function.instance.key);
             }
             for (Snap.Property prop : obj.properties) {
                 if (prop.value instanceof Snap.Obj) {

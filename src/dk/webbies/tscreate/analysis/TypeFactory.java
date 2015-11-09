@@ -94,7 +94,7 @@ public class TypeFactory {
         return result;
     }
 
-    public CombinationType getTypeNoCache(UnionFeature feature) {
+    public DeclarationType getTypeNoCache(UnionFeature feature) {
         // First unpacking the IncludeNodes
         CombinationType result = new CombinationType(typeReducer);
         if (feature.unionClass.includes != null) {
@@ -141,6 +141,12 @@ public class TypeFactory {
             UnionNode lookupType = feature.getDynamicAccessLookupExp();
             UnionNode returnType = feature.getDynamicAccessReturnType();
             result.addType(new DynamicAccessType(getType(lookupType), getType(returnType)));
+        }
+
+        if (result.types.size() == 0) {
+            return PrimitiveDeclarationType.VOID;
+        } else if (result.types.size() == 1) {
+            return result.types.get(0);
         }
         return result;
     }
@@ -258,7 +264,7 @@ public class TypeFactory {
                     }
                 }
 
-                Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass);
+                Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass, constructor);
 
 
                 ClassType classType = new ClassType(constructorType, prototypeProperties, libraryClass.getName(), staticFields);
@@ -269,7 +275,7 @@ public class TypeFactory {
         }
     }
 
-    private Map<String, DeclarationType> createClassFields(LibraryClass libraryClass) {
+    private Map<String, DeclarationType> createClassFields(LibraryClass libraryClass, Snap.Obj constructor) {
         Map<String, DeclarationType> fieldTypes = new HashMap<>();
         libraryClass.prototype.getPropertyMap().forEach((name, prop) -> {
             if (!name.equals("constructor")) {
@@ -277,9 +283,22 @@ public class TypeFactory {
             }
         });
 
-        if (options.classOptions.useClassInstancesFromHeap && !libraryClass.instances.isEmpty()) {
+        Multimap<String, UnionNode> thisNodePropertyMap = ArrayListMultimap.create();
+        for (UnionNode thisNode : libraryClass.thisNodes) {
+            for (Map.Entry<String, UnionNode> entry : thisNode.getFeature().getObjectFields().entrySet()) {
+                thisNodePropertyMap.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if (options.classOptions.useClassInstancesFromHeap && (!libraryClass.instances.isEmpty() || constructor.function.instance != null)) {
             Multimap<String, Snap.Property> propertiesMultimap = ArrayListMultimap.create();
-            for (Snap.Obj instance : libraryClass.instances) {
+
+            List<Snap.Obj> instances = new ArrayList<>(libraryClass.instances);
+            if (constructor.function.instance != null) {
+                instances.add(constructor.function.instance);
+            }
+
+            for (Snap.Obj instance : instances) {
                 for (Snap.Property property : instance.properties) {
                     propertiesMultimap.put(property.name, property);
                 }
@@ -290,16 +309,16 @@ public class TypeFactory {
                 if (name.equals("constructor") || fieldTypes.containsKey(name)) {
                     continue;
                 }
-                fieldTypes.put(name, getHeapPropType(properties));
-            }
-        } else {
-            Multimap<String, UnionNode> propertiesMultiMap = ArrayListMultimap.create();
-            for (UnionNode thisNode : libraryClass.thisNodes) {
-                for (Map.Entry<String, UnionNode> entry : thisNode.getFeature().getObjectFields().entrySet()) {
-                    propertiesMultiMap.put(entry.getKey(), entry.getValue());
+                DeclarationType fieldType = getHeapPropType(properties);
+                fieldTypes.put(name, fieldType);
+                if (fieldType == PrimitiveDeclarationType.VOID || fieldType == PrimitiveDeclarationType.NON_VOID) {
+                    if (thisNodePropertyMap.containsKey(name)) {
+                        fieldTypes.put(name, getType(thisNodePropertyMap.get(name)));
+                    }
                 }
             }
-            for (Map.Entry<String, Collection<UnionNode>> entry : propertiesMultiMap.asMap().entrySet()) {
+        } else {
+            for (Map.Entry<String, Collection<UnionNode>> entry : thisNodePropertyMap.asMap().entrySet()) {
                 String name = entry.getKey();
                 Collection<UnionNode> nodes = entry.getValue();
                 if (name.equals("constructor") || fieldTypes.containsKey(name)) {

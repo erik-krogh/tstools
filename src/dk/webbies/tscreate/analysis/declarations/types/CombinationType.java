@@ -8,7 +8,7 @@ import java.util.*;
  * Created by Erik Krogh Kristensen on 16-10-2015.
  */
 public class CombinationType implements DeclarationType {
-    private final List<DeclarationType> types = new ArrayList<>();
+    public final List<DeclarationType> types = new ArrayList<>();
     private final TypeReducer combiner;
 
     private boolean hasBeenUnfolded = false;
