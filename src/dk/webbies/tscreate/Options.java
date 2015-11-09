@@ -17,12 +17,12 @@ public class Options {
         public boolean useConstructorUsages = false;
         public boolean useClassInstancesFromHeap = true;
 
-        // For every prototype method, use the information gained by the "this" calls.
-        public boolean unionThisFromObjectsInTheHeap = true;
         // If the above is true, these ones are only used as fallback (that is, they are then only used if there are no instances of the class found in the heap).
+        public boolean unionThisFromObjectsInTheHeap = true;
+        // For every prototype method, use the information gained by the "this" calls.
         public boolean unionThisFromPrototypeMethods = true;
-        public boolean unionThisFromConstructor = true;
-        public boolean unionThisFromConstructedObjects = false;
+        public boolean unionThisFromConstructor = false; // Except in some very weird situations. This will be more accurately covered when we create an instance of the class.
+        public boolean unionThisFromConstructedObjects = false; // As in objects that are constructed using "new Foo()" inside the function we are analyzing.
     }
 
     public final ClassOptions classOptions = new ClassOptions();
