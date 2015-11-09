@@ -1,10 +1,13 @@
 package dk.webbies.tscreate.analysis.declarations;
 
+import com.google.common.collect.BiMap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.TypeFactory;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
@@ -18,10 +21,10 @@ public class DeclarationBuilder {
     private final Snap.Obj librarySnap;
     private final TypeFactory typeFactory;
 
-    public DeclarationBuilder(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, Map<Type, String> typeNames) {
+    public DeclarationBuilder(Snap.Obj librarySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
         this.librarySnap = librarySnap;
-        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, typeNames);
-        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, typeFactory, typeNames);
+        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses);
+        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, typeFactory, nativeClasses);
         typeAnalysis.analyseFunctions();
     }
 

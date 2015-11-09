@@ -21,6 +21,8 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
+
 /**
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
@@ -48,12 +50,12 @@ public class Main {
         FunctionExpression program = SSA.toSSA(new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST());
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath), program);
 
-        Map<Type, String> typeNames = DeclarationParser.markNatives(globalObject, languageLevel.environment);
+        NativeClassesMap nativeClasses = markNatives(globalObject, languageLevel.environment);
 
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject);
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
-        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject, typeNames).buildDeclaration();
+        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject, nativeClasses).buildDeclaration();
 
         BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(resultDeclarationFilePath)));
         OutputStream out = new MultiOutputStream(fileOut, System.out);
@@ -69,13 +71,13 @@ public class Main {
     }
 
     public enum LanguageLevel {
-        ES5(Parser.Config.Mode.ES5, DeclarationParser.Environment.ES5DOM),
-        ES6(Parser.Config.Mode.ES6, DeclarationParser.Environment.ES6DOM);
+        ES5(Parser.Config.Mode.ES5, Environment.ES5DOM),
+        ES6(Parser.Config.Mode.ES6, Environment.ES6DOM);
 
         public final Parser.Config.Mode closureCompilerMode;
-        public final DeclarationParser.Environment environment;
+        public final Environment environment;
 
-        LanguageLevel(Parser.Config.Mode closure, DeclarationParser.Environment declaration) {
+        LanguageLevel(Parser.Config.Mode closure, Environment declaration) {
             this.closureCompilerMode = closure;
             this.environment = declaration;
         }

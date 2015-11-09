@@ -2,6 +2,8 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -13,15 +15,15 @@ import java.util.stream.Collectors;
  * Created by Erik Krogh Kristensen on 18-09-2015.
  */
 public class FunctionSignatureFactory {
+    private final NativeClassesMap nativeClasses;
     private Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
     private PrimitiveNode.Factory primitiveFactory;
     private UnionFindSolver solver;
-    private Map<Type, String> typeNames;
 
-    public FunctionSignatureFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, Map<Type, String> typeNames) {
+    public FunctionSignatureFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, NativeClassesMap nativeClasses) {
         this.primitiveFactory = primitiveFactory;
         this.solver = solver;
-        this.typeNames = typeNames;
+        this.nativeClasses = nativeClasses;
     }
 
     // FIXME: Dynamic property accesses.
@@ -81,6 +83,7 @@ public class FunctionSignatureFactory {
 
     private class UnionNativeTypeVisitor implements TypeVisitor<List<UnionNode>> {
         private final boolean isArgument;
+        private Map<InterfaceType, GenericType> convertedTypeMap = new HashMap<>();
 
         private UnionNativeTypeVisitor(boolean isArgument) {
             this.isArgument = isArgument;
@@ -105,9 +108,7 @@ public class FunctionSignatureFactory {
             genericTypeCache.put(t, result);
 
             InterfaceType interfaceType = t.toInterface();
-            if (typeNames.containsKey(t)) {
-                typeNames.put(interfaceType, typeNames.get(t));
-            }
+            convertedTypeMap.put(interfaceType, t);
             result.addAll(interfaceType.accept(this));
             return result;
         }
@@ -121,9 +122,17 @@ public class FunctionSignatureFactory {
             interfaceCache.put(t, result);
 
             ObjectNode obj = new ObjectNode(solver);
-            if (typeNames.containsKey(t)) {
-                obj.setTypeName(typeNames.get(t));
+            if (convertedTypeMap.containsKey(t)) {
+                GenericType type = convertedTypeMap.get(t);
+                if (nativeClasses.nameFromType(type) != null) {
+                    obj.setTypeName(nativeClasses.nameFromType(type));
+                }
+            } else {
+                if (nativeClasses.nameFromType(t) != null) {
+                    obj.setTypeName(nativeClasses.nameFromType(t));
+                }
             }
+
             result.add(obj);
 
             List<Map.Entry<UnionNode, List<UnionNode>>> delayedUnions = new ArrayList<>();

@@ -4,9 +4,14 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
-import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.analysis.declarations.types.*;
+import dk.webbies.tscreate.analysis.unionFind.UnionClass;
+import dk.webbies.tscreate.analysis.unionFind.UnionFeature;
+import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
+import dk.webbies.tscreate.analysis.unionFind.UnionNode;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
@@ -20,17 +25,17 @@ import java.util.stream.Collectors;
 public class TypeFactory {
     private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
     private final Snap.Obj globalObject;
+    private final NativeClassesMap nativeClasses;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
     public final TypeReducer typeReducer;
-    private Map<Type, String> typeNames;
 
-    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Map<Type, String> typeNames) {
+    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses) {
         this.globalObject = globalObject;
         this.libraryClasses = libraryClasses;
         this.options = options;
-        this.typeNames = typeNames;
-        this.typeReducer = new TypeReducer(globalObject, typeNames);
+        this.nativeClasses = nativeClasses;
+        this.typeReducer = new TypeReducer(globalObject, nativeClasses);
     }
 
 
@@ -140,15 +145,44 @@ public class TypeFactory {
         return result;
     }
 
+    // FIXME: Add native classes, by looking at type-names and prototypes.
     private List<DeclarationType> getObjectInstanceType(UnionFeature feature) {
-        return feature.getPrototypes().stream()
+        List<LibraryClass> classes = feature.getPrototypes().stream()
                 .map(this.libraryClasses::get)
-                .filter(clazz -> clazz != null)
+                .filter(clazz -> clazz != null).collect(Collectors.toList());
+
+        List<DeclarationType> result = new ArrayList<>();
+
+        // Adding all the user-defined classes classes.
+        classes.stream()
                 .filter(clazz -> !clazz.isNativeClass())
                 .map(this::getClassType)
                 .filter(classType -> classType != null)
                 .map(ClassInstanceType::new)
-                .collect(Collectors.toList());
+                .forEach(result::add);
+
+        // Adding all the native classes
+        classes.stream()
+                .filter(LibraryClass::isNativeClass)
+                .map(LibraryClass::getPrototype)
+                .map(nativeClasses::nameFromPrototype)
+                .map(name -> Util.removeSuffix(name, "Constructor"))
+                .map(NamedObjectType::new)
+                .map(TypeFactory::namedToPrimitive)
+                .forEach(result::add);
+
+        return result;
+    }
+
+    private static DeclarationType namedToPrimitive(NamedObjectType named) {
+        switch (named.getName()) {
+            case "Function": return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
+            case "Number": return PrimitiveDeclarationType.NUMBER;
+            case "Boolean": return PrimitiveDeclarationType.BOOLEAN;
+            case "String": return PrimitiveDeclarationType.STRING;
+            default:
+                return named;
+        }
     }
 
     private List<DeclarationType> getPrimitiveType(Set<PrimitiveDeclarationType> primitives) {
@@ -224,7 +258,6 @@ public class TypeFactory {
                     }
                 }
 
-
                 Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass);
 
 
@@ -294,7 +327,7 @@ public class TypeFactory {
     }
 
     public DeclarationType getHeapPropType(Snap.Property prop) {
-        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, this, typeNames);
+        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, this, nativeClasses);
         UnionFindSolver solver = new UnionFindSolver();
         HeapValueFactory heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, typeAnalysis, new HashSet<>());
         UnionNode unionNode = heapFactory.fromProperty(prop);

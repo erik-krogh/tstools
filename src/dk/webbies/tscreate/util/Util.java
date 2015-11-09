@@ -42,6 +42,11 @@ public class Util {
         return t != null;
     }
 
+    public static String removeSuffix(String str, String suffix) {
+        assert str.endsWith(suffix);
+        return str.substring(0, str.length() - suffix.length());
+    }
+
     private static class StreamGobbler extends Thread {
         BufferedInputStream is;
         private CountDownLatch latch;

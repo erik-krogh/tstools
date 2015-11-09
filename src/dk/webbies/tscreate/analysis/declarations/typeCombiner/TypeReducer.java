@@ -3,12 +3,15 @@ package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
 /**
  * Created by Erik Krogh Kristensen on 16-10-2015.
@@ -37,8 +40,7 @@ public class TypeReducer {
         }
     }
 
-    public TypeReducer(Snap.Obj globalObject, Map<Type, String> typeNames) {
-        Map<String, Type> namesToTypes = typeNames.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+    public TypeReducer(Snap.Obj globalObject, NativeClassesMap nativeClasses) {
         register(new PrimitiveObjectReducer(globalObject));
         register(new FunctionObjectReducer(globalObject));
         register(new FunctionClassReducer(this));
@@ -67,6 +69,8 @@ public class TypeReducer {
         register(new CantReduceReducer(ClassInstanceType.class, NamedObjectType.class));
         register(new CantReduceReducer(ClassType.class, NamedObjectType.class));
         register(new CantReduceReducer(ClassInstanceType.class, FunctionType.class));
+
+        register(new CantReduceReducer(ClassInstanceType.class, ClassType.class));
     }
 
     private List<CombinationType> unresolvedTypes = new ArrayList<>();

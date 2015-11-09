@@ -2,31 +2,34 @@ package dk.webbies.tscreate.declarationReader;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.util.Util;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static Map<Type, String> markNatives(Snap.Obj global, Environment env) {
+    public static NativeClassesMap markNatives(Snap.Obj global, Environment env) {
         SpecReader spec = getTypeSpecification(env);
 
         Map<Type, String> typeNames = new HashMap<>();
 
         markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
 
-
+        Map<Snap.Obj, Type> prototypes = new HashMap<>();
         while (global != null) {
-            spec.getGlobal().accept(new MarkNativesVisitor(), global);
+            spec.getGlobal().accept(new MarkNativesVisitor(prototypes), global);
             global = global.prototype;
         }
 
-        return typeNames;
+        return new NativeClassesMap(typeNames, prototypes);
     }
 
     public static SpecReader getTypeSpecification(Environment env, String... declarationFilePaths) {
@@ -66,6 +69,12 @@ public class DeclarationParser {
 
     private static class MarkNativesVisitor implements TypeVisitorWithArgument<Void, Snap.Obj> {
         Set<Type> seen = new HashSet<>();
+        private Map<Snap.Obj, Type> nativeClasses;
+
+        public MarkNativesVisitor(Map<Snap.Obj, Type> nativeClasses) {
+            this.nativeClasses = nativeClasses;
+        }
+
         @Override
         public Void visit(AnonymousType t, Snap.Obj obj) {
             if (obj.function != null) {
@@ -85,6 +94,7 @@ public class DeclarationParser {
             }
         }
 
+        @SuppressWarnings("Duplicates")
         @Override
         public Void visit(GenericType t, Snap.Obj obj) {
             if (seen.contains(t)) {
@@ -94,6 +104,9 @@ public class DeclarationParser {
             if (obj.function != null) {
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
+                if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
+                    this.nativeClasses.put((Snap.Obj)obj.getProperty("prototype").value, t);
+                }
             }
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                 String key = entry.getKey();
@@ -106,6 +119,7 @@ public class DeclarationParser {
             return null;
         }
 
+        @SuppressWarnings("Duplicates")
         @Override
         public Void visit(InterfaceType t, Snap.Obj obj) {
             if (seen.contains(t)) {
@@ -115,6 +129,9 @@ public class DeclarationParser {
             if (obj.function != null) {
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
+                if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
+                    this.nativeClasses.put((Snap.Obj)obj.getProperty("prototype").value, t);
+                }
             }
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                 String key = entry.getKey();
@@ -167,6 +184,28 @@ public class DeclarationParser {
         @Override
         public Void visit(ClassType t, Snap.Obj obj) {
             return null;
+        }
+    }
+
+    public static final class NativeClassesMap {
+        private final Map<Type, String> typeNames;
+        private final Map<Snap.Obj, String> classNames = new HashMap<>();
+
+        public NativeClassesMap(Map<Type, String> typeNames, Map<Snap.Obj, Type> nativeClasses) {
+            this.typeNames = typeNames;
+            nativeClasses.forEach((prototype, type) -> {
+                if (typeNames.containsKey(type)) {
+                    classNames.put(prototype, typeNames.get(type));
+                }
+            });
+        }
+
+        public String nameFromType(Type type) {
+            return typeNames.get(type);
+        }
+
+        public String nameFromPrototype(Snap.Obj prototype) {
+            return classNames.get(prototype);
         }
     }
 

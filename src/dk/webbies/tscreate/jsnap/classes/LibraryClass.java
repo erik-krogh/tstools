@@ -30,6 +30,10 @@ public class LibraryClass {
         this.prototype = prototype;
     }
 
+    public Snap.Obj getPrototype() {
+        return prototype;
+    }
+
     public UnionNode getNewConstructorNode(UnionFindSolver solver) {
         EmptyNode result = new EmptyNode(solver);
         constructorNodes.add(result);

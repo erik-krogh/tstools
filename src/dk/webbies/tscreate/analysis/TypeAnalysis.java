@@ -3,6 +3,8 @@ package dk.webbies.tscreate.analysis;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -21,13 +23,13 @@ public class TypeAnalysis {
 
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
-    public final Map<Type, String> typeNames;
+    public final NativeClassesMap nativeClasses;
 
-    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, TypeFactory typeFactory, Map<Type, String> typeNames) {
+    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, TypeFactory typeFactory, NativeClassesMap nativeClasses) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.globalObject = globalObject;
-        this.typeNames = typeNames;
+        this.nativeClasses = nativeClasses;
         this.typeFactory = typeFactory;
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
     }
