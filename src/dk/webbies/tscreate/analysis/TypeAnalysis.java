@@ -1,9 +1,7 @@
 package dk.webbies.tscreate.analysis;
 
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.*;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -147,6 +145,10 @@ public class TypeAnalysis {
 
         if (obj.env != null) {
             result.addAll(getAllFunctionInstances(obj.env, seen));
+        }
+
+        if (obj.function != null && obj.function.instance != null) {
+            result.addAll(getAllFunctionInstances(obj.function.instance, seen));
         }
 
         return result;
