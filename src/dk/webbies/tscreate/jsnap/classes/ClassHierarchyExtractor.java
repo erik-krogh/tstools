@@ -130,7 +130,28 @@ public class ClassHierarchyExtractor {
             return null;
         });
 
+        fixIsUsedAsClass(libraryClasses.values());
+
         return libraryClasses;
+    }
+
+    // Sometimes, something is marked as "not a class", even though its super-class is a class.
+    // So if one class in a "chain" is a class, then all of them is.
+    private void fixIsUsedAsClass(Collection<LibraryClass> classes) {
+        for (LibraryClass aClass : classes) {
+            boolean isUsedAsClass = aClass.isUsedAsClass;
+            Set<LibraryClass> chain = new HashSet<>();
+            while (aClass != null && !chain.contains(aClass)) {
+                isUsedAsClass |= aClass.isUsedAsClass;
+                chain.add(aClass);
+                aClass = aClass.superClass;
+            }
+            if (isUsedAsClass) {
+                for (LibraryClass libraryClass : chain) {
+                    libraryClass.isUsedAsClass = true;
+                }
+            }
+        }
     }
 
     private static final class VisitEntireHeap {
