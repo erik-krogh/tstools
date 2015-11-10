@@ -212,6 +212,8 @@ public class TypeFactory {
             case "native":
                 // We cant produce the "Constructor" of a native class, because we don't know what to call it.
                 // I could produce something like "interface NumberConstructor { new () : Number;}", but that just seems stupid.
+                throw new RuntimeException(); // TODO:
+            case "unknown": // Well we cant do anything with this one.
                 return null;
         }
 
@@ -267,7 +269,7 @@ public class TypeFactory {
                 classType.setSuperClass(getClassType(libraryClass.superClass));
                 return classType;
             default: // Case "native" should already be handled here.
-                throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException("unhandled type for creating a class type: " + constructor.function.type);
         }
     }
 

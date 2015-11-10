@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        (function () {
+            var src = getParameter("script");
+            if (!src || src == "Not found") {
+                throw new Error("No script found in URL");
+            }
+
+            var head = document.getElementsByTagName('head').item(0);
+            var script = document.createElement('script');
+            script.setAttribute('type', 'text/javascript');
+            script.setAttribute('src', "file:///" + src);
+            head.appendChild(script);
+
+
+            function getParameter(key) {
+                var result = "Not found",
+                        tmp = [];
+                location.search
+                        //.replace ( "?", "" )
+                        // this is better, there might be a question mark inside
+                        .substr(1)
+                        .split("&")
+                        .forEach(function (item) {
+                            tmp = item.split("=");
+                            if (tmp[0] === key) result = decodeURIComponent(tmp[1]);
+                        });
+                return result;
+            }
+        })();
+    </script>
+</head>
+<body>
+    <h2>This is the TSCreate / TSInfer (whatever the names ends up being) page for running JavaScript in a browser. </h2>
+</body>
+</html>

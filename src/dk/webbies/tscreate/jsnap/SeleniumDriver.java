@@ -2,6 +2,7 @@ package dk.webbies.tscreate.jsnap;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import org.apache.commons.io.IOUtils;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.logging.LogEntries;
@@ -11,6 +12,11 @@ import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.logging.Level;
 
@@ -20,16 +26,21 @@ import java.util.logging.Level;
  */
 public class SeleniumDriver {
     public static void main(String[] args) {
-        System.out.println(executeScript("console.log(\"\\\"3\\\"\")"));
+        System.out.println(executeScript("console.log(\"{\\\"global\\\":1, this is test stuff\")"));
     }
 
-    private static String getEmptyPageUrl() {
+    private static String getEmptyPageUrl(String scriptPath) {
+        try {
+            scriptPath = URLEncoder.encode(scriptPath, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
         String workingDir = System.getProperty("user.dir");
         if (isWindows) {
-            return "file:///" + workingDir + "\\lib\\selenium\\empty.html";
+            return "file:///" + workingDir + "\\lib\\selenium\\driver.html?script=" + scriptPath;
         } else {
-            return "file:///" + workingDir + "/lib/selenium/empty.html";
+            return "file:///" + workingDir + "/lib/selenium/driver.html?script=" + scriptPath;
         }
     }
 
@@ -38,9 +49,16 @@ public class SeleniumDriver {
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
 
-        driver.get(getEmptyPageUrl());
+        File scriptFile;
+        String tmpFileSuffix = "tmpFileSeleniumDriverThing.js";
+        try {
+            scriptFile = File.createTempFile("script-", tmpFileSuffix);
+            FileWriter out = new FileWriter(scriptFile);
+            IOUtils.write(script.getBytes(), out);
+            out.close();
+        } catch (IOException e) {throw new RuntimeException();}
 
-        driver.executeScript(script);
+        driver.get(getEmptyPageUrl(scriptFile.getAbsolutePath()));
 
         LogEntries logEntries = driver.manage().logs().get(LogType.BROWSER);
 
@@ -49,11 +67,11 @@ public class SeleniumDriver {
         LogEntry jsnapEntry = findJsnapEntry(logEntries);
 
         String message = jsnapEntry.getMessage();
-        if (!message.substring(0, 12).equals("console-api ")) {
-            throw new RuntimeException("I don't even know!");
+        if (!message.contains(tmpFileSuffix)) {
+            throw new RuntimeException("I don't even know");
         }
 
-        message = message.substring(12, message.length());
+        message = message.substring(message.indexOf(tmpFileSuffix) + tmpFileSuffix.length() + 1, message.length());
 
         return message.substring(message.indexOf(" ") + 1, message.length());
     }
