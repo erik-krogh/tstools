@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.paser.AST;
 
+import com.google.javascript.jscomp.parsing.parser.util.SourcePosition;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 
 /**
@@ -10,4 +11,19 @@ public abstract class AstNode {
     AstNode(SourceRange location) {
         this.location = location;
     }
+    public String toString() {
+        AstNode astnode = this;
+        StringBuilder ret = new StringBuilder();
+        //ret.append(astnode.getClass().getName() + "\n");
+        SourcePosition start = astnode.location.start;
+        SourcePosition end = astnode.location.end;
+        //assert (start.source.contents.equals(end.source.contents));
+        String contents = start.source.contents;
+
+        for (int i = start.offset; i < end.offset; i++) {
+            ret.append(contents.charAt(i));
+        }
+        return ret.toString();
+    }
+
 }

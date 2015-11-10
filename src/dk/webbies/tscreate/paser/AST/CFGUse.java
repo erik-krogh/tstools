@@ -8,11 +8,15 @@ import java.util.*;
  * We are unable to use List<Identifier> for uses list because PhiNode (which is not an identifier) can be a use
  */
 public class CFGUse extends CFGNode {
+
+    public static Set<CFGUse> useNodes = new HashSet<>();
+
     private Set<Expression> uses;
     public CFGUse(AstNode astNode) {
 
         super(astNode);
         uses = new HashSet<>(8);
+        useNodes.add(this);
     }
 
     public Collection<Expression> getUses() {

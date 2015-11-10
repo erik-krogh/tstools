@@ -16,7 +16,15 @@ public class SSA {
         for (CFGDef d : CFGDef.defNodes) {
             h.Helper.printDebug("ID", d.getDefinition().getName());
             h.Helper.printDebug("AST", h.Helper.getText(d.getAstNode()));
-            h.Helper.printDebug("", "");
+            h.Helper.printDebug("~", "~");
+
+        }
+        h.Helper.printDebug("USES", "");
+        for (CFGUse u : CFGUse.useNodes) {
+
+            h.Helper.printDebug("AST", h.Helper.getText(u.getAstNode()));
+            h.Helper.printDebug("UUUUUUUUUUUUU", u.getUses().toString());
+            h.Helper.printDebug("~", "~");
 
         }
         return null;
