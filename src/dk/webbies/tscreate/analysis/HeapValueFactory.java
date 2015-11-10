@@ -33,7 +33,8 @@ public class HeapValueFactory {
     private UnionNode fromProperty(Snap.Property property, Map<Snap.Value, ObjectNode> cache) {
         if (property.value == null) {
             if (property.get == null || property.set == null) {
-                throw new NullPointerException();
+                // TODO: This sometimes happens with Symbols.
+                return new EmptyNode(solver);
             }
             UnionNode getter = new EmptyNode(solver);
             if (!(property.get instanceof Snap.UndefinedConstant)) {

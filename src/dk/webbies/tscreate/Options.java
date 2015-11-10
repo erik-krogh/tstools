@@ -11,6 +11,14 @@ public class Options {
     public boolean interProceduralAnalysisWithHeap = true;
     public Collection<String> isClassNames = Arrays.asList("_");
 
+    public Runtime runtime = Runtime.CHROME;
+
+    public enum Runtime {
+        PHANTOM,
+        CHROME,
+        NODE
+    }
+
     public static class ClassOptions {
         public boolean onlyUseThisWithFieldAccesses = true; // So as an example, in "foo(this)", this will not be unified with the functions this-node. But in "this.foo" it will.
 

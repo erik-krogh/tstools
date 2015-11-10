@@ -89,6 +89,8 @@ public class DeclarationParser {
                 return null;
             } else if (obj.getProperty(key) != null) {
                 return obj.getProperty(key).value;
+            } else if (obj.prototype == obj) { // Happens with Chrome
+                return null;
             } else {
                 return lookUp(obj.prototype, key);
             }

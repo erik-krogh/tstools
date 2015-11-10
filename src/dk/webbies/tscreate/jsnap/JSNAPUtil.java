@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.paser.AST.BlockStatement;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
@@ -16,18 +17,44 @@ import java.util.*;
 
 public class JSNAPUtil {
 
-    public static String getJsnapRaw(String path) throws IOException {
-        return Util.getCachedOrRun(path + ".jsnap", new File(path), "lib/jsnap/jsnap.js --createInstances " + path);
+    public static String getJsnapRaw(String path, Options options) throws IOException {
+        return getJsnapRaw(path, options, path + ".jsnap", path);
     }
 
-    private static String getEmptyJSNAP() throws IOException {
-        File checkAgainst = new File("lib/jsnap/node_modules/phantomjs/lib/phantom");
-        return Util.getCachedOrRun("onlyDom.jsnap", checkAgainst, "lib/jsnap/jsnap.js");
+    private static String getEmptyJSNAP(Options options) throws IOException {
+        if (options.runtime == Options.Runtime.CHROME) {
+            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/selenium");
+        } else {
+            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/jsnap/node_modules/phantomjs/lib/phantom");
+        }
     }
 
-    public static Snap.Obj extractUnique(Snap.Obj librarySnap) throws IOException {
+    private static String getJsnapRaw(String path, Options options, String cachePath, String checkAgainst) throws IOException {
+        if (options.runtime == Options.Runtime.CHROME) {
+            File fileToCheckAgainst = checkAgainst == null ? null : new File(checkAgainst);
+
+            String instrumented = Util.getCachedOrRun(cachePath + ".instrumented", fileToCheckAgainst, "lib/jsnap/jsnap.js --createInstances" + " --onlyInstrument " + path);
+
+            return Util.getCachedOrRun(cachePath + ".selinium", fileToCheckAgainst, () -> {
+                return SeleniumDriver.executeScript(instrumented);
+            });
+        } else if (options.runtime == Options.Runtime.NODE || options.runtime == Options.Runtime.PHANTOM) {
+            String nodeArgs;
+            switch (options.runtime) {
+                case PHANTOM: nodeArgs = "lib/jsnap/jsnap.js --createInstances" + " --runtime browser " + path; break;
+                case NODE: nodeArgs = "lib/jsnap/jsnap.js --createInstances --runtime node " + path; break;
+                default:
+                    throw new RuntimeException("Dont know runtime: " + options.runtime);
+            }
+            return Util.getCachedOrRun(cachePath, new File(path), nodeArgs);
+        } else {
+            throw new RuntimeException("Unknwon runtime environment " + options.runtime);
+        }
+    }
+
+    public static Snap.Obj extractUnique(Snap.Obj librarySnap, Options options) throws IOException {
         FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
-        Snap.Obj domSnap = JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAP(), emptyProgram);
+        Snap.Obj domSnap = JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAP(options), emptyProgram);
         return extractUnique(librarySnap, domSnap);
     }
 
@@ -90,11 +117,6 @@ public class JSNAPUtil {
         return result;
     }
 
-    public static Snap.Obj getStateDumpFromFile(String path, FunctionExpression program) throws IOException {
-        String jsnapRaw = readFile(path);
-        return getStateDump(jsnapRaw, program);
-    }
-
     public static Snap.Obj getStateDump(String jsnapRaw, FunctionExpression program) {
         GsonBuilder builder = new GsonBuilder();
         List<FunctionExpression> functions = getFunctions(program);
@@ -145,7 +167,7 @@ public class JSNAPUtil {
                 int id = Integer.parseInt(function.id);
                 function.astNode = functions.get(id);
             } else if (function.type.equals("bind")) {
-                function.target = stateDump.heap.get((function.target).key);
+                function.target = getHeapObject(stateDump, (function.target).key);
                 if (!function.target.function.type.equals("user")) {
                     throw new RuntimeException();
                 }
@@ -156,6 +178,9 @@ public class JSNAPUtil {
     private static void resolveKeys(Snap.StateDump stateDump) {
         for (int i = 1; i < stateDump.heap.size(); i++) {
             Snap.Obj obj = stateDump.heap.get(i);
+            if (obj == null) {
+                continue;
+            }
             obj.key = i;
         }
         for (Snap.Obj obj : stateDump.heap) {
@@ -163,40 +188,40 @@ public class JSNAPUtil {
                 continue;
             }
             if (obj.function != null && obj.function.instance != null) {
-                obj.function.instance = stateDump.heap.get(obj.function.instance.key);
+                int key = obj.function.instance.key;
+                obj.function.instance = getHeapObject(stateDump, key);
             }
             for (Snap.Property prop : obj.properties) {
                 if (prop.value instanceof Snap.Obj) {
-                    prop.value = stateDump.heap.get(((Snap.Obj) prop.value).key);
+                    prop.value = getHeapObject(stateDump, ((Snap.Obj) prop.value).key);
 
                     Snap.Obj propValue = (Snap.Obj) prop.value;
                     if (propValue.env != null) {
-                        propValue.env = stateDump.heap.get((propValue.env).key);
+                        propValue.env = getHeapObject(stateDump, (propValue.env).key);
                     }
                     if (propValue.prototype != null) {
-                        propValue.prototype = stateDump.heap.get((propValue.prototype).key);
+                        propValue.prototype = getHeapObject(stateDump, (propValue.prototype).key);
                     }
                 }
                 if (prop.get != null && prop.get instanceof Snap.Obj) {
-                    prop.get = stateDump.heap.get(((Snap.Obj) prop.get).key);
+                    prop.get = getHeapObject(stateDump, ((Snap.Obj) prop.get).key);
                 }
                 if (prop.set != null && prop.set instanceof Snap.Obj) {
-                    prop.set = stateDump.heap.get(((Snap.Obj) prop.set).key);
+                    prop.set = getHeapObject(stateDump, ((Snap.Obj) prop.set).key);
                 }
             }
         }
 
     }
 
-    private static String readFile(String path) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(new File(path)));
-        String line;
-        StringBuilder builder = new StringBuilder();
-        while ((line = reader.readLine()) != null) {
-            builder.append(line);
-            builder.append("\n");
+    private static Snap.Obj getHeapObject(Snap.StateDump stateDump, int key) {
+        Snap.Obj result = stateDump.heap.get(key);
+        if (result == null) { // Happens in Chrome.
+            Snap.Obj obj = new Snap.Obj();
+            obj.properties = new ArrayList<>();
+            return obj;
         }
-        return builder.toString();
+        return result;
     }
 
     private static class KeyTypeFactory implements TypeAdapterFactory {
@@ -244,10 +269,6 @@ public class JSNAPUtil {
                     return (T) obj;
                 }
             };
-        }
-
-        private String toLowercase(Object o) {
-            return o.toString().toLowerCase(Locale.US);
         }
     }
 }

@@ -306,8 +306,11 @@ public class TypeFactory {
                     continue;
                 }
                 DeclarationType fieldType = getHeapPropType(properties);
+                if (fieldType == PrimitiveDeclarationType.VOID) {
+                    fieldType = PrimitiveDeclarationType.NON_VOID;
+                }
                 fieldTypes.put(name, fieldType);
-                if (fieldType == PrimitiveDeclarationType.VOID || fieldType == PrimitiveDeclarationType.NON_VOID) {
+                if (fieldType == PrimitiveDeclarationType.NON_VOID) {
                     if (thisNodePropertyMap.containsKey(name)) {
                         fieldTypes.put(name, getType(thisNodePropertyMap.get(name)));
                     }

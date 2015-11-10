@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -76,6 +77,16 @@ public class Util {
     }
 
     public static String getCachedOrRun(String cachePath, File checkAgainst, String nodeArgs) throws IOException {
+        return getCachedOrRun(cachePath, checkAgainst, () -> {
+            try {
+                return Util.runNodeScript(nodeArgs);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static String getCachedOrRun(String cachePath, File checkAgainst, Supplier<String> run) throws IOException {
         cachePath = cachePath.replaceAll("/", "");
 
         if (checkAgainst != null && !checkAgainst.exists()) {
@@ -97,7 +108,7 @@ public class Util {
 
         if (recreate) {
             System.out.println("Creating " + cache.getPath() + " from scratch.");
-            String jsnap = Util.runNodeScript(nodeArgs);
+            String jsnap = run.get();
             BufferedWriter writer = new BufferedWriter(new FileWriter(cache));
             writer.write(jsnap);
             writer.close();
@@ -183,11 +194,8 @@ public class Util {
         Spliterator<B> bSpliterator = (Spliterator<B>) Objects.requireNonNull(b).spliterator();
 
         // Zipping looses DISTINCT and SORTED characteristics
-        int both = aSpliterator.characteristics() & bSpliterator.characteristics() &
-                ~(Spliterator.DISTINCT | Spliterator.SORTED);
-        int characteristics = both;
-
-        long zipSize = ((characteristics & Spliterator.SIZED) != 0)
+        long zipSize = ((aSpliterator.characteristics() & bSpliterator.characteristics() &
+                ~(Spliterator.DISTINCT | Spliterator.SORTED) & Spliterator.SIZED) != 0)
                 ? Math.min(aSpliterator.getExactSizeIfKnown(), bSpliterator.getExactSizeIfKnown())
                 : -1;
 
@@ -205,7 +213,7 @@ public class Util {
             }
         };
 
-        Spliterator<C> split = Spliterators.spliterator(cIterator, zipSize, characteristics);
+        Spliterator<C> split = Spliterators.spliterator(cIterator, zipSize, aSpliterator.characteristics() & bSpliterator.characteristics() & ~(Spliterator.DISTINCT | Spliterator.SORTED));
         return (a.isParallel() || b.isParallel())
                 ? StreamSupport.stream(split, true)
                 : StreamSupport.stream(split, false);

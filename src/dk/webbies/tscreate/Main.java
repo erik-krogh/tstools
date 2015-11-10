@@ -1,11 +1,9 @@
 package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationToString;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -48,11 +46,11 @@ public class Main {
 
         String script = Util.readFile(scriptPath);
         FunctionExpression program = SSA.toSSA(new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST());
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath), program);
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath, options), program);
 
         NativeClassesMap nativeClasses = markNatives(globalObject, languageLevel.environment);
 
-        Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject);
+        Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, options);
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject, nativeClasses).buildDeclaration();
