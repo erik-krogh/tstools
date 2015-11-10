@@ -135,7 +135,6 @@ public class DeclarationToString {
 
             write(";\n");
         } else if (type instanceof UnnamedObjectType) {
-            // TODO: Use this, when typing globally accessible stuff. (Right now this if is never hit).
             UnnamedObjectType module = (UnnamedObjectType) type;
             ident();
             write(prefix + " module " + name + " {\n");
