@@ -244,15 +244,7 @@ public class TypeFactory {
         Snap.Obj constructor = (Snap.Obj) constructorProp.value;
         switch (constructor.function.type) {
             case "user":
-                DeclarationType otherConstructorType = getPureFunction(constructor);
-                // TODO: This is fallback.
-                Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
-
-                CombinationType constructorType = new CombinationType(typeReducer);
-                List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
-                constructorFunctionFeatures.forEach(constructorFeature -> {
-                    constructorType.addType(createFunctionType(constructorFeature));
-                });
+                CombinationType constructorType = createConstructorType(libraryClass, constructor);
 
                 Map<String, DeclarationType> staticFields = new HashMap<>();
                 for (Map.Entry<String, Snap.Property> entry : constructor.getPropertyMap().entrySet()) {
@@ -263,13 +255,26 @@ public class TypeFactory {
 
                 Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass, constructor);
 
-
-                ClassType classType = new ClassType(otherConstructorType, prototypeProperties, libraryClass.getName(), staticFields);
+                ClassType classType = new ClassType(libraryClass.getName(), constructorType, prototypeProperties, staticFields);
                 classType.setSuperClass(getClassType(libraryClass.superClass));
                 return classType;
             default: // Case "native" should already be handled here.
                 throw new UnsupportedOperationException("unhandled type for creating a class type: " + constructor.function.type);
         }
+    }
+
+    private CombinationType createConstructorType(LibraryClass libraryClass, Snap.Obj constructor) {
+        CombinationType constructorType = new CombinationType(typeReducer);
+
+        constructorType.addType(getPureFunction(constructor));
+
+        Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
+
+        List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
+        constructorFunctionFeatures.forEach(constructorFeature -> {
+            constructorType.addType(createFunctionType(constructorFeature));
+        });
+        return constructorType;
     }
 
     private Map<String, DeclarationType> createClassFields(LibraryClass libraryClass, Snap.Obj constructor) {

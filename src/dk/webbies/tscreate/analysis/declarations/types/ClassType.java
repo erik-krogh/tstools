@@ -12,7 +12,7 @@ public class ClassType implements DeclarationType{
     private final String name;
     public DeclarationType superClass;
 
-    public ClassType(DeclarationType constructorType, Map<String, DeclarationType> properties, String name, Map<String, DeclarationType> staticFields) {
+    public ClassType(String name, DeclarationType constructorType, Map<String, DeclarationType> properties, Map<String, DeclarationType> staticFields) {
         this.constructorType = constructorType;
         this.prototypeFields = properties;
         this.name = name;
