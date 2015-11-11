@@ -171,6 +171,7 @@ public class TypeReducer {
         if (interfaceParts.size() >= 2 || hadDynamicAccess) {
             types.removeAll(interfaceParts);
             InterfaceType result = new InterfaceType();
+            types.add(result);
             for (DeclarationType part : interfaceParts) {
                 if (part instanceof FunctionType) {
                     assert result.function == null;
