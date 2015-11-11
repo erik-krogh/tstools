@@ -32,7 +32,8 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        runAnalysis("Test script", "tests/underscore.js", null, options, LanguageLevel.ES5);
+        options.createInstances = false; // This doesn't work with jQuery.
+        runAnalysis("Test script", "tests/test.js", null, options, LanguageLevel.ES5);
 
         long end = System.currentTimeMillis();
 
