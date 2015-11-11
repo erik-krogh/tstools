@@ -2,8 +2,6 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.unionFind.*;
@@ -15,13 +13,13 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 18-09-2015.
  */
-public class FunctionSignatureFactory {
+public class NativeTypeFactory {
     private final NativeClassesMap nativeClasses;
     private Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
     private PrimitiveNode.Factory primitiveFactory;
     private UnionFindSolver solver;
 
-    public FunctionSignatureFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, NativeClassesMap nativeClasses) {
+    public NativeTypeFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, NativeClassesMap nativeClasses) {
         this.primitiveFactory = primitiveFactory;
         this.solver = solver;
         this.nativeClasses = nativeClasses;
@@ -63,20 +61,28 @@ public class FunctionSignatureFactory {
 
             Type typeArgument = Iterables.getLast(typeArguments);
             for (int i = normalParameterCount; i < args.size(); i++) {
-                solver.union(args.get(i), typeArgument.accept(new UnionNativeTypeVisitor(true)));
+                solver.union(args.get(i), fromType(typeArgument, true));
                 solver.union(functionNode.arguments.get(i), args.get(i));
             }
         }
         for (int i = 0; i < normalParameterCount; i++) {
             Type parameter = signature.getParameters().get(i).getType();
             UnionNode argument = functionNode.arguments.get(i);
-            solver.union(argument, parameter.accept(new UnionNativeTypeVisitor(true)));
+            solver.union(argument, fromType(parameter, true));
         }
-        solver.union(functionNode.returnNode, signature.getResolvedReturnType().accept(new UnionNativeTypeVisitor(false)));
+        solver.union(functionNode.returnNode, fromType(signature.getResolvedReturnType(), false));
 
         functionNode.arguments.forEach(arg -> solver.union(arg, primitiveFactory.nonVoid()));
 
         return functionNode;
+    }
+
+    private List<UnionNode> fromType(Type parameter, boolean isArgument) {
+        return parameter.accept(new UnionNativeTypeVisitor(isArgument));
+    }
+
+    public List<UnionNode> fromType(Type parameter) {
+        return fromType(parameter, false);
     }
 
     private Map<GenericType, List<UnionNode>> genericTypeCache = new HashMap<>();

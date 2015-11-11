@@ -394,7 +394,7 @@ public class TypeFactory {
             return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
         }
         UnionFindSolver solver = new UnionFindSolver();
-        FunctionSignatureFactory factory = new FunctionSignatureFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
+        NativeTypeFactory factory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
         EmptyNode unionNode = new EmptyNode(solver);
         for (Signature signature : closure.function.callSignatures) {
             FunctionNode functionNode = factory.fromSignature(signature, closure, null);

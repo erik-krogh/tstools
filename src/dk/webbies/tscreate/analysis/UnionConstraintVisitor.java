@@ -489,7 +489,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final UnionNode thisNode;
         private final CallGraphResolver callResolver;
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
-        private FunctionSignatureFactory functionNodeSignatureFactory;
+        private final NativeTypeFactory nativeTypeFactory;
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode, Expression callExpression) {
             this.function = function;
@@ -497,7 +497,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.thisNode = thisNode;
             this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyNode(solver), callExpression);
             this.callResolver.constructorCalls = true;
-            this.functionNodeSignatureFactory = new FunctionSignatureFactory(UnionConstraintVisitor.this.primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.nativeClasses);
+            this.nativeTypeFactory = new NativeTypeFactory(UnionConstraintVisitor.this.primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.nativeClasses);
         }
 
         @Override
@@ -509,7 +509,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         if (prototypeProp != null) {
                             solver.union(this.thisNode, new HasPrototypeNode(solver, (Snap.Obj) prototypeProp.value));
                         }
-                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true, functionNodeSignatureFactory);
+                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true, nativeTypeFactory);
                         for (FunctionNode signature : signatures) {
                             solver.union(signature.returnNode, this.thisNode);
                         }
@@ -546,7 +546,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         boolean constructorCalls;
         private HashSet<Snap.Obj> seenHeap = new HashSet<>();
         private final FunctionNode functionNode;
-        private FunctionSignatureFactory functionSignatureFactory;
+        private NativeTypeFactory nativeTypeFactory;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, EmptyNode returnNode, Expression callExpression) {
             solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, solver));
@@ -562,7 +562,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             solver.union(functionNode.returnNode, returnNode);
             solver.union(functionNode.thisNode, thisNode);
             
-            this.functionSignatureFactory = new FunctionSignatureFactory(primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.nativeClasses);
+            this.nativeTypeFactory = new NativeTypeFactory(primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.nativeClasses);
         }
 
         @Override
@@ -604,7 +604,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     }
                     case "native": {
                         boolean constructorCalls = this.constructorCalls;
-                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, constructorCalls, functionSignatureFactory);
+                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, constructorCalls, nativeTypeFactory);
                         solver.union(functionNode, signatures);
                         break;
                     }
@@ -617,7 +617,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, List<UnionNode> args, boolean constructorCalls, FunctionSignatureFactory functionNodeFactory) {
+    private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, List<UnionNode> args, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
         List<Signature> signatures;
         if (constructorCalls) {
             signatures = closure.function.constructorSignatures;

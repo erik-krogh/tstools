@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.declarationReader;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -190,11 +192,11 @@ public class DeclarationParser {
     }
 
     public static final class NativeClassesMap {
-        private final Map<Type, String> typeNames;
+        private final BiMap<Type, String> typeNames;
         private final Map<Snap.Obj, String> classNames = new HashMap<>();
 
         public NativeClassesMap(Map<Type, String> typeNames, Map<Snap.Obj, Type> nativeClasses) {
-            this.typeNames = typeNames;
+            this.typeNames = HashBiMap.create(typeNames);
             nativeClasses.forEach((prototype, type) -> {
                 if (typeNames.containsKey(type)) {
                     classNames.put(prototype, typeNames.get(type));
@@ -208,6 +210,10 @@ public class DeclarationParser {
 
         public String nameFromPrototype(Snap.Obj prototype) {
             return classNames.get(prototype);
+        }
+
+        public Type typeFromName(String name) {
+            return typeNames.inverse().get(name);
         }
     }
 

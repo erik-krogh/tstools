@@ -47,14 +47,14 @@ public class TypeReducer {
         register(new ClassObjectReducer(globalObject, this));
         register(new FunctionReducer(this));
         register(new PrimitiveReducer());
-        register(new NamedUnamedObjectReducer(globalObject));
+        register(new NamedUnamedObjectReducer(globalObject, nativeClasses));
         register(new UnnamedObjectReducer(this));
         register(new ClassInstanceUnnamedObjectReducer());
         register(new ClassInstanceReducer());
         register(new DynamicAccessReducer(this));
         register(new NamedObjectReducer());
 
-        // The ones that I cant do anything about. // TODO: Look to see if any of these can actually be handled.
+        // The ones that I cant do anything about. // FIXME: Look to see if any of these can actually be handled.
         register(new CantReduceReducer(FunctionType.class, NamedObjectType.class));
         register(new CantReduceReducer(FunctionType.class, PrimitiveDeclarationType.class));
         register(new CantReduceReducer(DynamicAccessType.class, UnnamedObjectType.class));
