@@ -143,7 +143,6 @@ public class TypeFactory {
         return result;
     }
 
-    // FIXME: Add native classes, by looking at type-names and prototypes.
     private List<DeclarationType> getObjectInstanceType(UnionFeature feature) {
         List<LibraryClass> classes = feature.getPrototypes().stream()
                 .map(this.libraryClasses::get)
