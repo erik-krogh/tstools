@@ -25,7 +25,6 @@ public class NativeTypeFactory {
         this.nativeClasses = nativeClasses;
     }
 
-    // FIXME: Dynamic property accesses.
     public FunctionNode fromSignature(Signature signature, Snap.Obj closure, List<UnionNode> args) {
         if (args == null) {
             args = Collections.EMPTY_LIST;
