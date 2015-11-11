@@ -210,9 +210,8 @@ public class TypeFactory {
         Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
         switch (constructor.function.type) {
             case "native":
-                // We cant produce the "Constructor" of a native class, because we don't know what to call it.
-                // I could produce something like "interface NumberConstructor { new () : Number;}", but that just seems stupid.
-                throw new RuntimeException(); // TODO:
+                // This should never be hit.
+                throw new RuntimeException();
             case "unknown": // Well we cant do anything with this one.
                 return null;
         }
