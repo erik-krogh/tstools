@@ -12,6 +12,7 @@ public class Options {
     public Collection<String> isClassNames = Arrays.asList("_");
 
     public Runtime runtime = Runtime.CHROME;
+    public boolean createInstances = false; // Should JSNAP instrument the code to dynamically create instances of every function it meets, which can be used to find the existence and types of fields in classes.
 
     public enum Runtime {
         PHANTOM,

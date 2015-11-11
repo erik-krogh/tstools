@@ -29,11 +29,16 @@ public class JSNAPUtil {
         }
     }
 
-    private static String getJsnapRaw(String path, Options options, String cachePath, String checkAgainst) throws IOException {
+    private static String getJsnapRaw(String scriptPath, Options options, String cachePath, String checkAgainst) throws IOException {
+        String jsnapPath = "lib/jsnap/jsnap.js";
+        if (options.createInstances) {
+            jsnapPath += " --createInstances";
+            cachePath += ".createdInstances";
+        }
         if (options.runtime == Options.Runtime.CHROME) {
             File fileToCheckAgainst = checkAgainst == null ? null : new File(checkAgainst);
 
-            String instrumented = Util.getCachedOrRun(cachePath + ".instrumented", fileToCheckAgainst, "lib/jsnap/jsnap.js --createInstances" + " --onlyInstrument " + path);
+            String instrumented = Util.getCachedOrRun(cachePath + ".instrumented", fileToCheckAgainst, jsnapPath + " --onlyInstrument " + scriptPath);
 
             return Util.getCachedOrRun(cachePath + ".selinium", fileToCheckAgainst, () -> {
                 return SeleniumDriver.executeScript(instrumented);
@@ -41,12 +46,12 @@ public class JSNAPUtil {
         } else if (options.runtime == Options.Runtime.NODE || options.runtime == Options.Runtime.PHANTOM) {
             String nodeArgs;
             switch (options.runtime) {
-                case PHANTOM: nodeArgs = "lib/jsnap/jsnap.js --createInstances" + " --runtime browser " + path; break;
-                case NODE: nodeArgs = "lib/jsnap/jsnap.js --createInstances --runtime node " + path; break;
+                case PHANTOM: nodeArgs = jsnapPath + " --runtime browser " + scriptPath; break;
+                case NODE: nodeArgs = jsnapPath + " --runtime node " + scriptPath; break;
                 default:
                     throw new RuntimeException("Dont know runtime: " + options.runtime);
             }
-            return Util.getCachedOrRun(cachePath, new File(path), nodeArgs);
+            return Util.getCachedOrRun(cachePath, new File(scriptPath), nodeArgs);
         } else {
             throw new RuntimeException("Unknwon runtime environment " + options.runtime);
         }
