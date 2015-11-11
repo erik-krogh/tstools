@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
+import dk.webbies.tscreate.util.Util;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +14,7 @@ public class IncludeNode extends UnionNode {
     private final List<UnionNode> nodes;
     public IncludeNode(UnionFindSolver solver, UnionNode... nodes) {
         super(solver);
-        this.nodes = Arrays.asList(nodes).stream().filter(node -> node != null).collect(Collectors.toList());
+        this.nodes = Arrays.asList(nodes).stream().filter(Util::notNull).collect(Collectors.toList());
         if (this.nodes.size() == 0) {
             throw new IllegalArgumentException();
         }

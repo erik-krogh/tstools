@@ -2,15 +2,11 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
-import dk.webbies.tscreate.analysis.unionFind.UnionClass;
-import dk.webbies.tscreate.analysis.unionFind.UnionFeature;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.UnionNode;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -118,6 +114,8 @@ public class TypeFactory {
                 .map(obj -> obj.getProperty("prototype").value)
                 .distinct()
                 .map(this.libraryClasses::get)
+                .filter(Util::notNull)
+                .filter(clazz -> !clazz.isNativeClass())
                 .map(this::getClassType)
                 .filter(Util::notNull)
                 .forEach(result::addType);
@@ -168,18 +166,21 @@ public class TypeFactory {
                 .map(nativeClasses::nameFromPrototype)
                 .map(name -> Util.removeSuffix(name, "Constructor"))
                 .map(NamedObjectType::new)
-                .map(TypeFactory::namedToPrimitive)
+                .map(TypeFactory::filterPrimitives)
+                .filter(Util::notNull)
                 .forEach(result::add);
 
         return result;
     }
 
-    private static DeclarationType namedToPrimitive(NamedObjectType named) {
+    // Primitives are handled by the PrimitiveDeclarationType, and filtering them out here allows for "spurious" prototypes (see PrimitiveDeclarationType.STRING_OR_NUMBER
+    private static DeclarationType filterPrimitives(NamedObjectType named) {
         switch (named.getName()) {
             case "Function": return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
-            case "Number": return PrimitiveDeclarationType.NUMBER;
-            case "Boolean": return PrimitiveDeclarationType.BOOLEAN;
-            case "String": return PrimitiveDeclarationType.STRING;
+            case "Number":
+            case "Boolean":
+            case "String":
+                return null;
             default:
                 return named;
         }
@@ -366,15 +367,7 @@ public class TypeFactory {
                     if (isUserDefined) {
                         return getPureFunction(closure);
                     } else {
-                        // FIXME: From another cache.
-                        DeclarationType returnType = getType(feature.getReturnNode());
-
-                        List<FunctionType.Argument> arguments = feature.getArguments().stream().map((arg) -> {
-                            DeclarationType type = getType(arg.node);
-                            return new FunctionType.Argument(arg.name, type);
-                        }).collect(Collectors.toList());
-
-                        return new FunctionType(returnType, arguments);
+                        return getNativeFunctionType(closure);
                     }
                 }
             }).collect(Collectors.toList());
@@ -388,6 +381,26 @@ public class TypeFactory {
 
             return Arrays.asList(new FunctionType(returnType, arguments));
         }
+    }
+
+    private DeclarationType getNativeFunctionType(Snap.Obj closure) {
+        if (pureFunctionCache.containsKey(closure)) {
+            return getPureFunction(closure);
+        }
+        if (closure.function.callSignatures.isEmpty()) {
+            return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
+        }
+        UnionFindSolver solver = new UnionFindSolver();
+        FunctionSignatureFactory factory = new FunctionSignatureFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
+        EmptyNode unionNode = new EmptyNode(solver);
+        for (Signature signature : closure.function.callSignatures) {
+            FunctionNode functionNode = factory.fromSignature(signature, closure, null);
+            solver.union(unionNode, functionNode);
+        }
+        solver.finish();
+
+        registerFunction(closure, unionNode.getFeature().getFunctionFeature());
+        return getPureFunction(closure);
     }
 
     // This is only used, when we KNOW that we want a functionType. So only from createFunctionType and when we need a type for the constructor.
