@@ -143,8 +143,9 @@ public class UnionFindSolver {
                 union(first, nodes.get(i));
             }
             return first;
+        } else {
+            return new EmptyNode(this);
         }
-        return null;
     }
 
     public UnionNode union(UnionNode one, Collection<? extends UnionNode> list) {

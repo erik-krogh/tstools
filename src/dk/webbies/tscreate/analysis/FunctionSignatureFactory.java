@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.util.Util;
@@ -153,6 +154,13 @@ public class FunctionSignatureFactory {
             if (!t.getDeclaredConstructSignatures().isEmpty()) {
                 List<FunctionNode> functionNodes = t.getDeclaredConstructSignatures().stream().map(sig -> fromSignature(sig, null, null)).collect(Collectors.toList());
                 result.addAll(functionNodes);
+            }
+
+            if (t.getDeclaredStringIndexType() != null) {
+                result.add(new DynamicAccessNode(solver.union(t.getDeclaredStringIndexType().accept(this)), primitiveFactory.string(), solver));
+            }
+            if (t.getDeclaredNumberIndexType() != null) {
+                result.add(new DynamicAccessNode(solver.union(t.getDeclaredNumberIndexType().accept(this)), primitiveFactory.number(), solver));
             }
 
             for (Map.Entry<UnionNode, List<UnionNode>> entry : delayedUnions) {
