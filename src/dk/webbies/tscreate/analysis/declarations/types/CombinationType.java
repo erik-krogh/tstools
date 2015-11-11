@@ -59,8 +59,6 @@ public class CombinationType implements DeclarationType {
             DeclarationType result;
             if (unfolded.isEmpty()) {
                 result = PrimitiveDeclarationType.VOID;
-            } else if (unfolded.size() == 1) {
-                result = unfolded.iterator().next();
             } else {
                 result = combiner.combineTypes(unfolded);
             }
