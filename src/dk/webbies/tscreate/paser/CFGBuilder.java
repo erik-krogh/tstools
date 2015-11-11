@@ -1,9 +1,10 @@
 package dk.webbies.tscreate.paser;
 
+import dk.webbies.tscreate.Util;
 import dk.webbies.tscreate.paser.AST.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.PrintWriter;
+import java.util.*;
 
 /**
  * Created by hamid on 10/16/15.
@@ -318,7 +319,7 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(VariableNode variableNode, CFGEnv au) {
+        public CFGEnv visit(VariableNode variableNode, CFGEnv au) {//ok
             if (au == null) {
                 //throw new RuntimeException();
                 au = DUMMY_ENV;
@@ -378,5 +379,36 @@ public class CFGBuilder {
     public void processMain(FunctionExpression mainFunction) {
         exprVisitor.visit(mainFunction, null);
     }
-    public static CFGEnv DUMMY_ENV = CFGEnv.createInCfgEnv(); // should be removed
+    public static CFGEnv DUMMY_ENV = CFGEnv.createInCfgEnv(); // we have to remove this eventually
+    public static void toDot(PrintWriter w, CFGNode root) {
+        List<CFGNode> nodes = new LinkedList<>();
+        HashSet<CFGNode> visited = new HashSet<>();
+        Queue<CFGNode> q = new LinkedList<>();
+        q.add(root);
+        while (!q.isEmpty()) {
+            CFGNode n = q.remove();
+            nodes.add(n);
+            visited.add(n);
+            for (CFGNode succ : n.getSuccessors()) {
+                if (!visited.contains(succ)) q.add(succ);
+            }
+        }
+        h.Helper.printDebug("nodes size ", nodes.size() + " ");
+        // TODO id(node)=node.hashCode() id [label="{ ... }"]->
+        w.print("digraph {");
+        for (CFGNode n : nodes) {
+            String s;
+            if (n == null)
+                s = "entry";
+            else
+                s = Util.escString(n.toString());
+            String src = "\"" + s + "\"";
+            for (CFGNode succ : n.getSuccessors()) {
+                w.print(src + " -> \"" + Util.escString(succ.toString()) +"\"");
+            }
+
+
+        }
+        w.print("}");
+    }
 }

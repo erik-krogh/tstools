@@ -255,5 +255,27 @@ public class Util {
         return acc;
     };
 
+    // Added by Hamid
+    public static int ord(String s) {
+        int ret = 0;
+        for (int i=0; i < s.length(); i++) {
+            ret += ((int)s.charAt(i));
+        }
+        return ret;
+    }
+    // borrowed (and adapted) from typechef project (DotGraph.scala)
+    public static String escString(String i)  {
+        return i.replace("\n", "\\l").
+                replace("{", "\\{").
+                replace("}", "\\}").
+                replace("<", "\\<").
+                replace(">", "\\>").
+                replace("\"", "\\\"").
+                replace("|", "\\|").
+                replace(" ", "\\ ").
+                replace("\\\"", "\\\\\"").
+                replace("\\\\\"", "\\\\\\\"").
+                replace("\\\\\\\\\"", "\\\\\\\"");
+    }
 
 }

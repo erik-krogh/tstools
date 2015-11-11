@@ -2,6 +2,10 @@ package dk.webbies.tscreate.paser;
 
 import dk.webbies.tscreate.paser.AST.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 /**
  * Created by hamid on 10/9/15.
  */
@@ -9,7 +13,7 @@ public class SSA {
     public static FunctionExpression toSSA(FunctionExpression functionExpression) {
         return functionExpression;
     }
-    public static FunctionExpression toSSA_(FunctionExpression functionExpression) {
+    public static FunctionExpression toSSA_(FunctionExpression functionExpression) throws IOException {
         CFGBuilder cfgbuilder = new CFGBuilder();
         cfgbuilder.processMain(functionExpression);
         h.Helper.printDebug("DEFS", "");
@@ -27,6 +31,10 @@ public class SSA {
             h.Helper.printDebug("~", "~");
 
         }
+        CFGNode rootNode = cfgbuilder.functionExpression2CFGNode.get(functionExpression);
+        PrintWriter w = new PrintWriter(new File("out/graph.dot"));
+        CFGBuilder.toDot(w, rootNode);
+        w.close();
         return null;
     }
 

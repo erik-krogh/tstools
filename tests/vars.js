@@ -3,4 +3,5 @@
   var x = 3;
   y =8 + x;
   var q = "hi" + y;
-  y= i1 + x +j3 + y;
+  y= i1 + x +j3 + y + x;
+  myY = !y + 2*x

@@ -38,7 +38,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        runAnalysis("Test script", "tests/t.js", null, options, LanguageLevel.ES5);
+        runAnalysis("Test script", "tests/vardecs.js", null, options, LanguageLevel.ES5);
 
         long end = System.currentTimeMillis();
 
