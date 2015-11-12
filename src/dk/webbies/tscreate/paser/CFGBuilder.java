@@ -49,8 +49,8 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(BinaryExpression binOp, CFGEnv au) {
             if (au == null) {
-                //throw new RuntimeException();
-                au = DUMMY_ENV;
+                throw new RuntimeException(binOp.toString());
+                //au = DUMMY_ENV;
             }
             printAstNode(binOp);
             switch (binOp.getOperator()) {
@@ -63,8 +63,8 @@ public class CFGBuilder {
                     // process rhs first
                     CFGEnv aux = binOp.getRhs().accept(exprVisitor, au);
                     if (aux == null) {
-                        //throw new RuntimeException();
-                        aux = DUMMY_ENV;
+                        throw new RuntimeException();
+                        //aux = DUMMY_ENV;
                     }
                     CFGNode defNode = new CFGDef(binOp, id);
                     CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode);
@@ -95,10 +95,10 @@ public class CFGBuilder {
                         assert (useNodeUnderconstruction == null);
                         return outEnv;
                     }
-                    return null;
+
                 }
                 default:
-                    return null;
+                    return au;
             }
 
             //binOp.getLhs().accept(exprVisitor, null);
@@ -144,6 +144,7 @@ public class CFGBuilder {
         public CFGEnv visit(FunctionExpression functionExpression, CFGEnv aux) {
             // aux == null --> this is the main function
             printAstNode(functionExpression);
+
             CFGEnv inCfgEnv = CFGEnv.createInCfgEnv();
             CFGNode entry = inCfgEnv.getAppendNode();
             functionExpression2CFGNode.put(functionExpression, entry);
@@ -206,19 +207,19 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(NumberLiteral numberLiteral, CFGEnv aux) {
             printAstNode(numberLiteral);
-            return null;
+            return aux;
         }
 
         @Override
         public CFGEnv visit(ObjectLiteral objectLiteral, CFGEnv aux) {
             printAstNode(objectLiteral);
-            return null;
+            return aux;
         }
 
         @Override
         public CFGEnv visit(StringLiteral stringLiteral, CFGEnv aux) {
             printAstNode(stringLiteral);
-            return null;
+            return aux;
         }
 
         @Override
@@ -274,8 +275,8 @@ public class CFGBuilder {
             printAstNode(expressionStatement);
 
             Expression expr = expressionStatement.getExpression();
-            expr.accept(exprVisitor,null);
-            return null;
+            return expr.accept(exprVisitor,aux);
+
         }
 
         @Override
@@ -319,10 +320,9 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(VariableNode variableNode, CFGEnv au) {//ok
+        public CFGEnv visit(VariableNode variableNode, CFGEnv au) {
             if (au == null) {
-                //throw new RuntimeException();
-                au = DUMMY_ENV;
+                throw new RuntimeException();
             }
             printAstNode(variableNode);
             Expression var = variableNode.getlValue();
@@ -331,9 +331,9 @@ public class CFGBuilder {
 
             // first process init, as it is evaluated first
             CFGEnv aux = variableNode.getInit().accept(exprVisitor, au);
+
             if (aux == null) {
-                //throw new RuntimeException();
-                aux = DUMMY_ENV;
+                throw new RuntimeException();
             }
 
             CFGNode defNode = new CFGDef(variableNode, id);
@@ -379,7 +379,7 @@ public class CFGBuilder {
     public void processMain(FunctionExpression mainFunction) {
         exprVisitor.visit(mainFunction, null);
     }
-    public static CFGEnv DUMMY_ENV = CFGEnv.createInCfgEnv(); // we have to remove this eventually
+    //public static CFGEnv DUMMY_ENV = CFGEnv.createInCfgEnv(); // we have to remove this eventually
     public static void toDot(PrintWriter w, CFGNode root) {
         List<CFGNode> nodes = new LinkedList<>();
         HashSet<CFGNode> visited = new HashSet<>();
@@ -395,20 +395,29 @@ public class CFGBuilder {
         }
         h.Helper.printDebug("nodes size ", nodes.size() + " ");
         // TODO id(node)=node.hashCode() id [label="{ ... }"]->
-        w.print("digraph {");
+        if (false) {
+            for (CFGNode n : nodes) {
+                w.print(n.getClass() + "::");
+                w.println(n.hashCode() + " : " + (n.getAstNode() == null ? "E" : n.getAstNode().toString()));
+            }
+            w.println(root.getAstNode()==null?"E":root.getAstNode().toString());
+        }
+
+
+        w.println("digraph {");
         for (CFGNode n : nodes) {
             String s;
-            if (n == null)
-                s = "entry";
+            if (n.getAstNode() == null)
+                s = "entry";//String.valueOf(n.hashCode());
             else
-                s = Util.escString(n.toString());
+                s = Util.escString(n.getAstNode().toString());
             String src = "\"" + s + "\"";
             for (CFGNode succ : n.getSuccessors()) {
-                w.print(src + " -> \"" + Util.escString(succ.toString()) +"\"");
+                w.println(src + " -> \"" + Util.escString(succ.getAstNode().toString()) +"\"");
             }
 
 
         }
-        w.print("}");
+        w.println("}");
     }
 }

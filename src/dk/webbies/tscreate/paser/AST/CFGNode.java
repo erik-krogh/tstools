@@ -9,13 +9,17 @@ import java.util.List;
  * Created by hamid on 10/22/15.
  */
 public abstract class CFGNode {
+
+    public static  List<CFGNode> cfgNodes = new LinkedList<>();
     private AstNode astNode;
     private List<CFGNode> successors = new LinkedList<>();
 
     CFGNode() {
+        cfgNodes.add(this);
         astNode = null;
     }
     CFGNode(AstNode astNode) {
+        cfgNodes.add(this);
         this.astNode = astNode;
     }
 
