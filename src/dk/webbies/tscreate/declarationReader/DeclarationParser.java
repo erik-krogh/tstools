@@ -106,6 +106,7 @@ public class DeclarationParser {
             }
             seen.add(t);
             if (obj.function != null) {
+                obj.function.type = "native";
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
@@ -131,6 +132,7 @@ public class DeclarationParser {
             }
             seen.add(t);
             if (obj.function != null) {
+                obj.function.type = "native";
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
