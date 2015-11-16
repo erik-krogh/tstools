@@ -2,7 +2,7 @@ package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
-import dk.webbies.tscreate.analysis.declarations.DeclarationToString;
+import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
@@ -58,7 +58,7 @@ public class Main {
 
         BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(resultDeclarationFilePath)));
         OutputStream out = new MultiOutputStream(fileOut, System.out);
-        new DeclarationToString(out, declaration).print();
+        new DeclarationPrinter(out, declaration).print();
         fileOut.close();
 
         if (declarationPath != null) {

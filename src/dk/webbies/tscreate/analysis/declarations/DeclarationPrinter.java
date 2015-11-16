@@ -6,11 +6,12 @@ import dk.webbies.tscreate.analysis.declarations.types.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
-public class DeclarationToString {
+public class DeclarationPrinter {
     private final Map<DeclarationType, Integer> countMap;
     private final OutputStream out;
     private final Map<String, DeclarationType> declarations;
@@ -24,7 +25,7 @@ public class DeclarationToString {
     // That we therefore print as an interface instead.
     private final Map<DeclarationType, InterfaceType> printsAsInterface = new HashMap<>();
 
-    public DeclarationToString(OutputStream out, Map<String, DeclarationType> declarations) {
+    public DeclarationPrinter(OutputStream out, Map<String, DeclarationType> declarations) {
         this.out = out;
         this.declarations = declarations;
 
@@ -324,11 +325,8 @@ public class DeclarationToString {
 
 
                 ident++;
-                classType.getPrototypeFields().forEach((name, type) -> {
-                    ident();
-                    write(name + ": ");
-                    type.accept(this);
-                    write("\n");
+                classType.getPrototypeFields().entrySet().stream().filter(this.filterSuperclassFields(classType.getSuperClass())).forEach((entry) -> {
+                    this.printObjectField(entry.getKey(), entry.getValue());
                 });
 
                 ident--;
@@ -341,6 +339,15 @@ public class DeclarationToString {
             }
 
             return null;
+        }
+
+        private Predicate<Map.Entry<String, DeclarationType>> filterSuperclassFields(ClassType superClass) {
+            Set<String> fieldsInSuper = new HashSet<>();
+            while (superClass != null) {
+                fieldsInSuper.addAll(superClass.getPrototypeFields().keySet());
+                superClass = superClass.getSuperClass();
+            }
+            return (entry) -> !fieldsInSuper.contains(entry.getKey());
         }
 
         @Override
