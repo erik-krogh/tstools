@@ -44,7 +44,14 @@ public class UnnamedObjectReducer implements SingleTypeReducer<UnnamedObjectType
 
         Map<String, DeclarationType> result = new HashMap<>();
         for (Map.Entry<String, Collection<DeclarationType>> entry : declarations.asMap().entrySet()) {
-            result.put(entry.getKey(), new CombinationType(combiner, entry.getValue()));
+            Collection<DeclarationType> types = entry.getValue();
+            if (types.size() == 0) {
+                throw new RuntimeException();
+            } else if (types.size() == 1) {
+                result.put(entry.getKey(), types.iterator().next());
+            } else {
+                result.put(entry.getKey(), new CombinationType(combiner, types));
+            }
         }
 
         return new UnnamedObjectType(result);
