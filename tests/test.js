@@ -607,21 +607,164 @@ function test(argument) {
     return document.getElementById(x);
 }*/
 
-function minusOne(a) {
-    return a - 1;
+/*
+// Really good stress test of just how indirectly information can be gathered.
+ var func = function () {
+
+ };
+
+ function test() {
+ var obj = {};
+ var other = {a: func};
+ obj = other || {};
+ func(1);
+
+ var a;
+ (obj || false).a(a);
+ return a;
+ }
+ */
+
+/*
+    TODO Section
+ */
+// TODO: Getters and setters.
+/*
+function Klass() {
+    this.field = 2;
 }
+Klass.prototype.getField = function () {
+    return this.field;
+};
+Klass.prototype.setField = function (x) {
+    this.field = x;
+};
 
-function divideByTwo(a) {
-    return a / 2;
+// TODO: This doesn't work, because there is no closure with "func". So call-graph doesn't catch it. If the inner definition of "func" is deleted, it works.
+ function func() {
+
+ }
+
+ function test() {
+ var func = function (a) {
+
+ };
+ func(1);
+
+ var a;
+ (func || false)(a);
+ return a;
+ }
+
+var instance = new Klass();*/
+
+
+/*var shuldReturnNumber = (function () {
+    var returnNumber = function () {
+        return 2;
+    };
+    var returnBool = function () {
+        return true;
+    };
+
+    return function () {
+        var obj = {};
+        var other1 = {a: returnNumber};
+        var other2 = {a: returnBool};
+        obj = other1 || other2;
+        obj.a;
+        return other1.a();
+    }
+})();
+
+var shouldReturnUnionOfNumberAndArray = (function () {
+    return function () {
+        var obj = function (a) {};
+        var other1 = function (a) {};
+        other1([]);
+        var other2 = function (a) {};
+        other2(2);
+        obj = other1 || other2;
+
+        var result;
+        obj(result);
+        return result;
+    }
+})();
+
+var shouldReturnUnionOfNumberAndArray2 = (function () {
+    return function () {
+        var obj = {};
+        var other1 = {};
+        other1[1] = [];
+        var other2 = {};
+        other2[2] = 2;
+        obj = other1 || other2;
+
+        return obj[3];
+    }
+})();*/
+
+
+
+/*
+function test() {
+    var a;
+    a[1] = true;
+    var b;
+    b[2] = false;
+    return {
+        a: a[1],
+        b: b[1],
+        combined: (a || b)[1]
+    };
+}*/
+
+/*function Klass() {
+    this._field = 2;
 }
+Klass.prototype.doStuff = function () {
+    return 2;
+};
+Klass.prototype.setField = function (x) {
+    this._field = x;
+};
+Klass.prototype.getField = function () {
+    return this._field;
+};*/
 
-function test(argument) {
-    var node1 = true,
-        node2 = 123,
-        node3 = "string";
+/*function Klass() {
+    this._field = 2;
+}
+Klass.prototype.doStuff = function () {
+    return 2;
+};
+Klass.prototype.setField = function (x) {
+    function addNastiness(obj) {
+        obj.no = 2;
+        obj.nope = false;
+    }
+    this._field = x;
+    addNastiness(this);
+};
+Klass.prototype.getField = function () {
+    return this._field;
+};*/
 
-    node1 = node2 && "1";
-    node2 = node1 && "1";
-    node1 = node3 && "1";
-    return number;
+/*var MyKlass = (function () {
+    var _ = function _(obj) {
+        if (obj instanceof _) return obj;
+        if (!(this instanceof _)) return new _(obj);
+        this._wrapped = obj;
+    };
+    _.prototype.doNothing = function () {
+        return 42;
+    };
+
+    return _;
+})();*/
+
+
+function test(className) {
+    return document.getElementsByClassName(className);
 }
