@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tscreate.analysis.declarations.types.UnresolvedDeclarationType.*;
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
 /**
@@ -88,6 +89,11 @@ public class TypeReducer {
         }
     }
 
+    public void partiallyResolveCombinationTypes() {
+        // Creating a copy, because we might add a new one.
+        new ArrayList<>(this.unresolvedTypes).forEach(CombinationType::partiallyResolve);
+    }
+
     private static Map<PrimitiveDeclarationType, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
     static {
         specialPrimitives.put(PrimitiveDeclarationType.VOID, other -> other);
@@ -103,7 +109,7 @@ public class TypeReducer {
 
 
 
-    public DeclarationType combineTypes(DeclarationType one, DeclarationType two) {
+    public DeclarationType combineTypes(DeclarationType one, DeclarationType two, boolean avoidUnresolved) {
         if (one == two) {
             return one;
         }
@@ -120,10 +126,18 @@ public class TypeReducer {
             throw new RuntimeException("Don't know how to handle " + one.getClass().getSimpleName() + " - " + two.getClass().getSimpleName());
         }
 
-        return handlers.get(typePair).reduce(one, two);
+        try {
+            return handlers.get(typePair).reduce(one, two);
+        } catch (NotResolvedException e) {
+            if (avoidUnresolved) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
-    public DeclarationType combineTypes(Collection<DeclarationType> typeCollection) {
+    public DeclarationType combineTypes(Collection<DeclarationType> typeCollection, boolean avoidUnresolved) {
         // Copy, because i modify the list.
         ArrayList<DeclarationType> types = new ArrayList<>(typeCollection);
 
@@ -131,7 +145,7 @@ public class TypeReducer {
             DeclarationType one = types.get(i);
             for (int j = i + 1; j < types.size(); j++) {
                 DeclarationType two = types.get(j);
-                DeclarationType combinedType = combineTypes(one, two);
+                DeclarationType combinedType = combineTypes(one, two, avoidUnresolved);
                 if (combinedType == null) {
                     continue;
                 }

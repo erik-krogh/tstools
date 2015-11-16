@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 
@@ -14,13 +15,11 @@ public class CombinationType implements DeclarationType {
     private boolean hasBeenUnfolded = false;
 
     public CombinationType(TypeReducer combiner, DeclarationType... types) {
-        this(combiner, Arrays.asList(types));
-    }
-
-    public CombinationType(TypeReducer combiner, Collection<DeclarationType> types) {
         this.combiner = combiner;
         this.combiner.registerUnresolved(this);
-        addType(types);
+        for (DeclarationType type : types) {
+            addType(type);
+        }
     }
 
     public void addType(DeclarationType type) {
@@ -29,14 +28,6 @@ public class CombinationType implements DeclarationType {
         }
         if (type != null) {
             this.types.add(type);
-        }
-    }
-
-    public void addType(Collection<DeclarationType> types) {
-        for (DeclarationType type : types) {
-            if (type != null) {
-                this.addType(type);
-            }
         }
     }
 
@@ -60,7 +51,7 @@ public class CombinationType implements DeclarationType {
             if (unfolded.isEmpty()) {
                 result = PrimitiveDeclarationType.VOID;
             } else {
-                result = combiner.combineTypes(unfolded);
+                result = combiner.combineTypes(unfolded, false);
             }
             this.types.clear();
             this.types.add(result);
@@ -70,6 +61,89 @@ public class CombinationType implements DeclarationType {
             combiner.combinationTypeCache.put(unfolded, result);
 
             return result;
+        }
+    }
+
+    public void partiallyResolve() {
+        if (this.types.size() <= 1) {
+            return;
+        }
+        Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> unfolded = unfoldPartially(this, new HashSet<>());
+        Set<DeclarationType> types = unfolded.left;
+        Set<UnresolvedDeclarationType> unresolved = unfolded.right;
+        DeclarationType result;
+        if (types.isEmpty()) {
+            result = PrimitiveDeclarationType.VOID;
+        } else if (combiner.combinationTypeCache.containsKey(types)) {
+            result = combiner.combinationTypeCache.get(types);
+        } else {
+            result = combiner.combineTypes(types, true);
+            combiner.combinationTypeCache.put(types, result);
+        }
+        this.types.clear();
+        this.types.add(result);
+        this.types.addAll(unresolved);
+    }
+
+    private static Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> unfoldPartially(DeclarationType type, Set<CombinationType> seen) {
+        if (type instanceof CombinationType) {
+            CombinationType combination = (CombinationType) type;
+            if (seen.contains(combination)) {
+                return new Pair<>(Collections.EMPTY_SET, Collections.EMPTY_SET);
+            }
+            seen.add(combination);
+
+            combination.hasBeenUnfolded = true;
+
+            Set<DeclarationType> types = new HashSet<>();
+            Set<UnresolvedDeclarationType> unresolved = new HashSet<>();
+            for (DeclarationType subType : combination.types) {
+                Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> subResult = unfoldPartially(subType, seen);
+                types.addAll(subResult.left);
+                unresolved.addAll(subResult.right);
+            }
+
+            return new Pair<>(types, unresolved);
+        } else if (type instanceof UnresolvedDeclarationType) {
+            UnresolvedDeclarationType unresolved = (UnresolvedDeclarationType) type;
+            if (unresolved.isResolved()) {
+                return unfoldPartially(unresolved.getResolvedType(), seen);
+            } else {
+                return new Pair<>(Collections.EMPTY_SET, new HashSet<>(Arrays.asList(unresolved)));
+            }
+        } else if (type instanceof UnionDeclarationType) {
+            Set<DeclarationType> types = new HashSet<>();
+            Set<UnresolvedDeclarationType> unresolved = new HashSet<>();
+            for (DeclarationType subType : ((UnionDeclarationType) type).getTypes()) {
+                Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> subResult = unfoldPartially(subType, seen);
+                types.addAll(subResult.left);
+                unresolved.addAll(subResult.right);
+            }
+
+            return new Pair<>(types, unresolved);
+        } else if (type instanceof InterfaceType) {
+            Set<DeclarationType> types = new HashSet<>();
+            Set<UnresolvedDeclarationType> unresolved = new HashSet<>();
+            InterfaceType interfaceType = (InterfaceType) type;
+            if (interfaceType.function != null) {
+                Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> subResult = unfoldPartially(interfaceType.function, seen);
+                types.addAll(subResult.left);
+                unresolved.addAll(subResult.right);
+            }
+            if (interfaceType.object != null) {
+                Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> subResult = unfoldPartially(interfaceType.object, seen);
+                types.addAll(subResult.left);
+                unresolved.addAll(subResult.right);
+            }
+            if (interfaceType.getDynamicAccess() != null) {
+                Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> subResult = unfoldPartially(interfaceType.getDynamicAccess(), seen);
+                types.addAll(subResult.left);
+                unresolved.addAll(subResult.right);
+            }
+
+            return new Pair<>(types, unresolved);
+        } else {
+            return new Pair<>(new HashSet<>(Arrays.asList(type)), Collections.EMPTY_SET);
         }
     }
 
