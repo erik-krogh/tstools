@@ -1,15 +1,12 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
@@ -84,21 +81,23 @@ public class TypeReducer {
             List<CombinationType> copy = new ArrayList<>(this.unresolvedTypes);
             this.unresolvedTypes.clear();
 
+
+
             copy.forEach(CombinationType::createCombined);
         }
     }
 
-    private static Map<PrimitiveDeclarationType, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
+    private static Map<PrimitiveDeclarationType.Type, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
     static {
-        specialPrimitives.put(PrimitiveDeclarationType.VOID, other -> other);
-        specialPrimitives.put(PrimitiveDeclarationType.NON_VOID, other -> {
-            if (other == PrimitiveDeclarationType.VOID) {
-                return PrimitiveDeclarationType.NON_VOID;
+        specialPrimitives.put(PrimitiveDeclarationType.Type.VOID, other -> other);
+        specialPrimitives.put(PrimitiveDeclarationType.Type.NON_VOID, other -> {
+            if (other instanceof PrimitiveDeclarationType &&  ((PrimitiveDeclarationType)other).getType() == PrimitiveDeclarationType.Type.VOID) {
+                return PrimitiveDeclarationType.NonVoid();
             } else {
                 return other;
             }
         });
-        specialPrimitives.put(PrimitiveDeclarationType.ANY, other -> PrimitiveDeclarationType.ANY);
+        specialPrimitives.put(PrimitiveDeclarationType.Type.ANY, other -> PrimitiveDeclarationType.Any());
     }
 
 
@@ -108,11 +107,11 @@ public class TypeReducer {
             return one;
         }
 
-        if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(one)) {
-            return specialPrimitives.get(one).apply(two);
+        if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) one).getType())) {
+            return specialPrimitives.get(((PrimitiveDeclarationType) one).getType()).apply(two);
         }
-        if (two instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(two)) {
-            return specialPrimitives.get(two).apply(one);
+        if (two instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) two).getType())) {
+            return specialPrimitives.get(((PrimitiveDeclarationType) two).getType()).apply(one);
         }
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Pair<>(one.getClass(), two.getClass());
@@ -145,7 +144,7 @@ public class TypeReducer {
         extractInterfaces(types);
 
         if (types.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (types.size() == 1) {
             return types.get(0);
         } else {

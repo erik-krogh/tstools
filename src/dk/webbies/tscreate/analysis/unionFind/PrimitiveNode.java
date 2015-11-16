@@ -58,33 +58,33 @@ public class PrimitiveNode extends UnionNode {
         }
 
         public UnionNode number() {
-            return gen(PrimitiveDeclarationType.NUMBER, "Number");
+            return gen(PrimitiveDeclarationType.Number(), "Number");
         }
 
         public UnionNode undefined() {
-            return gen(PrimitiveDeclarationType.VOID, null);
+            return gen(PrimitiveDeclarationType.Void(), null);
         }
 
         public UnionNode bool() {
-            return gen(PrimitiveDeclarationType.BOOLEAN, "Boolean");
+            return gen(PrimitiveDeclarationType.Boolean(), "Boolean");
         }
 
         public UnionNode string() {
-            return gen(PrimitiveDeclarationType.STRING, "String");
+            return gen(PrimitiveDeclarationType.String(), "String");
         }
 
         public UnionNode any() {
-            return new PrimitiveNode(PrimitiveDeclarationType.ANY, solver);
+            return new PrimitiveNode(PrimitiveDeclarationType.Any(), solver);
         }
 
         public UnionNode stringOrNumber() {
-            PrimitiveNode result = new PrimitiveNode(PrimitiveDeclarationType.STRING_OR_NUMBER, solver);
+            PrimitiveNode result = new PrimitiveNode(PrimitiveDeclarationType.StringOrNumber(), solver);
             solver.union(result, getPrototype("Number"), getPrototype("String"));
             return result;
         }
 
         public UnionNode nonVoid() {
-            return new PrimitiveNode(PrimitiveDeclarationType.NON_VOID, solver);
+            return new PrimitiveNode(PrimitiveDeclarationType.NonVoid(), solver);
         }
     }
 }

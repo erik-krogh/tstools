@@ -45,8 +45,8 @@ public class CombinationType implements DeclarationType {
         this.hasBeenUnfolded = true;
 
         if (this.types.size() == 0) {
-            combined = PrimitiveDeclarationType.VOID;
-            return PrimitiveDeclarationType.VOID;
+            combined = PrimitiveDeclarationType.Void();
+            return PrimitiveDeclarationType.Void();
         } else {
             Set<DeclarationType> unfolded = unfold(this, new HashSet<>());
 
@@ -58,7 +58,7 @@ public class CombinationType implements DeclarationType {
 
             DeclarationType result;
             if (unfolded.isEmpty()) {
-                result = PrimitiveDeclarationType.VOID;
+                result = PrimitiveDeclarationType.Void();
             } else {
                 result = combiner.combineTypes(unfolded);
             }

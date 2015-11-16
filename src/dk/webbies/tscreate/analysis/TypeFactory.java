@@ -52,7 +52,7 @@ public class TypeFactory {
 
     private DeclarationType getType(Collection<UnionNode> nodes) {
         if (nodes.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (nodes.size() == 1) {
             return getType(nodes.iterator().next());
         } else {
@@ -136,7 +136,7 @@ public class TypeFactory {
         }
 
         if (result.types.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (result.types.size() == 1 && !(result.types.get(0) instanceof UnresolvedDeclarationType)) {
             return result.types.get(0);
         }
@@ -175,7 +175,7 @@ public class TypeFactory {
     // Primitives are handled by the PrimitiveDeclarationType, and filtering them out here allows for "spurious" prototypes (see PrimitiveDeclarationType.STRING_OR_NUMBER
     private static DeclarationType filterPrimitives(NamedObjectType named) {
         switch (named.getName()) {
-            case "Function": return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
+            case "Function": return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
             case "Number":
             case "Boolean":
             case "String":
@@ -312,11 +312,11 @@ public class TypeFactory {
                     continue;
                 }
                 DeclarationType fieldType = getHeapPropType(properties);
-                if (fieldType == PrimitiveDeclarationType.VOID) {
-                    fieldType = PrimitiveDeclarationType.NON_VOID;
+                if (fieldType == PrimitiveDeclarationType.Void()) {
+                    fieldType = PrimitiveDeclarationType.NonVoid();
                 }
                 fieldTypes.put(name, fieldType);
-                if (fieldType == PrimitiveDeclarationType.NON_VOID) {
+                if (fieldType == PrimitiveDeclarationType.NonVoid()) {
                     if (thisNodePropertyMap.containsKey(name)) {
                         fieldTypes.put(name, getType(thisNodePropertyMap.get(name)));
                     }
@@ -337,7 +337,7 @@ public class TypeFactory {
 
     private DeclarationType getHeapPropType(Collection<Snap.Property> properties) {
         if (properties.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (properties.size() == 1) {
             return getHeapPropType(properties.iterator().next());
         } else {
@@ -391,7 +391,7 @@ public class TypeFactory {
             return getPureFunction(closure);
         }
         if (closure.function.callSignatures.isEmpty()) {
-            return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
+            return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
         }
         UnionFindSolver solver = new UnionFindSolver();
         NativeTypeFactory factory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
