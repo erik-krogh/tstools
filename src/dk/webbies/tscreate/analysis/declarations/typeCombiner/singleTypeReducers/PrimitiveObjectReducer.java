@@ -38,7 +38,7 @@ public class PrimitiveObjectReducer implements SingleTypeReducer<PrimitiveDeclar
         return object.getDeclarations().keySet().stream().allMatch(key -> {
             boolean matchObject = objectFieldMatchPrototypeOf(this.globalObject.getProperty("Object").value, key);
             boolean matchPrimitive;
-            switch (primitive) {
+            switch (primitive.getType()) {
                 case NUMBER:
                     matchPrimitive = objectFieldMatchPrototypeOf(this.globalObject.getProperty("Number").value, key); break;
                 case BOOLEAN:

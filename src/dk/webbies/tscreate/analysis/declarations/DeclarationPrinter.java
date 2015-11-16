@@ -234,7 +234,8 @@ public class DeclarationPrinter {
                 if (interfaceType.getDynamicAccess() != null) {
                     ident();
                     write("[");
-                    if (interfaceType.getDynamicAccess().getLookupType().resolve() == PrimitiveDeclarationType.NUMBER) {
+                    DeclarationType resolvedLookup = interfaceType.getDynamicAccess().getLookupType().resolve();
+                    if (resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER) {
                         write("index: number");
                     } else {
                         write("s: string");

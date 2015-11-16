@@ -54,7 +54,7 @@ public class TypeFactory {
 
     private DeclarationType getType(Collection<UnionNode> nodes) {
         if (nodes.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (nodes.size() == 1) {
             return getType(nodes.iterator().next());
         } else {
@@ -96,18 +96,18 @@ public class TypeFactory {
         }
 
         // Adding primitives
-        result.addType(getPrimitiveType(feature.getPrimitives()));
+        feature.getPrimitives().stream().forEach(result::addType);
 
         // Adding function
         if (feature.getFunctionFeature() != null) {
-            result.addType(createFunctionType(feature.getFunctionFeature()));
+            createFunctionType(feature.getFunctionFeature()).forEach(result::addType);
         }
 
         // Adding names object types.
         feature.getTypeNames().stream().filter(Util::notNull).map(NamedObjectType::new).forEach(result::addType);
 
         // Adding object instance
-        result.addType(getObjectInstanceType(feature));
+        getObjectInstanceType(feature).forEach(result::addType);
 
         // Adding class declaration (if it is a constructor).
         if (feature.getFunctionFeature() != null) {
@@ -138,10 +138,11 @@ public class TypeFactory {
         }
 
         if (result.types.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (result.types.size() == 1 && !(result.types.get(0) instanceof UnresolvedDeclarationType)) {
             return result.types.get(0);
         }
+        result.partiallyResolve();
         return result;
     }
 
@@ -178,7 +179,7 @@ public class TypeFactory {
     // Primitives are handled by the PrimitiveDeclarationType, and filtering them out here allows for "spurious" prototypes (see PrimitiveDeclarationType.STRING_OR_NUMBER
     private static DeclarationType filterPrimitives(NamedObjectType named) {
         switch (named.getName()) {
-            case "Function": return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
+            case "Function": return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
             case "Number":
             case "Boolean":
             case "String":
@@ -275,7 +276,7 @@ public class TypeFactory {
 
         List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
         constructorFunctionFeatures.forEach(constructorFeature -> {
-            constructorType.addType(createFunctionType(constructorFeature));
+            createFunctionType(constructorFeature).forEach(constructorType::addType);
         });
         return constructorType;
     }
@@ -315,11 +316,11 @@ public class TypeFactory {
                     continue;
                 }
                 DeclarationType fieldType = getHeapPropType(properties);
-                if (fieldType == PrimitiveDeclarationType.VOID) {
-                    fieldType = PrimitiveDeclarationType.NON_VOID;
+                if (fieldType == PrimitiveDeclarationType.Void()) {
+                    fieldType = PrimitiveDeclarationType.NonVoid();
                 }
                 fieldTypes.put(name, fieldType);
-                if (fieldType == PrimitiveDeclarationType.NON_VOID) {
+                if (fieldType == PrimitiveDeclarationType.NonVoid()) {
                     if (thisNodePropertyMap.containsKey(name)) {
                         fieldTypes.put(name, getType(thisNodePropertyMap.get(name)));
                     }
@@ -340,7 +341,7 @@ public class TypeFactory {
 
     private DeclarationType getHeapPropType(Collection<Snap.Property> properties) {
         if (properties.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (properties.size() == 1) {
             return getHeapPropType(properties.iterator().next());
         } else {
@@ -391,7 +392,7 @@ public class TypeFactory {
             return getPureFunction(closure);
         }
         if (closure.function.callSignatures.isEmpty()) {
-            return new FunctionType(PrimitiveDeclarationType.VOID, Collections.EMPTY_LIST);
+            return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
         }
         UnionFindSolver solver = new UnionFindSolver();
         NativeTypeFactory factory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);

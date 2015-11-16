@@ -3,7 +3,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 /**
  * Created by Erik Krogh Kristensen on 18-09-2015.
  */
-public class ClassInstanceType implements DeclarationType {
+public class ClassInstanceType extends DeclarationType {
     public DeclarationType clazz;
 
     public ClassInstanceType(DeclarationType clazz) {

@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 17-09-2015.
  */
-public class ClassType implements DeclarationType{
+public class ClassType extends DeclarationType{
     private final DeclarationType constructorType;
     private final Map<String, DeclarationType> prototypeFields;
     private final Map<String, DeclarationType> staticFields;

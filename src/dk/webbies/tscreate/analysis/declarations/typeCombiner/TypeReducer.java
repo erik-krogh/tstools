@@ -1,16 +1,16 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tscreate.analysis.declarations.types.UnresolvedDeclarationType.*;
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
 /**
@@ -84,35 +84,51 @@ public class TypeReducer {
             List<CombinationType> copy = new ArrayList<>(this.unresolvedTypes);
             this.unresolvedTypes.clear();
 
+            List<List<DeclarationType>> components = DeclarationType.getStronglyConnectedComponents(Util.cast(DeclarationType.class, copy));
+            for (List<DeclarationType> component : components) {
+                if (component.size() > 1) {
+                    List<DeclarationType> componentCombinationTypes = component.stream().filter(node -> node instanceof CombinationType).collect(Collectors.toList());
+                    if (componentCombinationTypes.size() > 1) {
+                        throw new RuntimeException();
+                    }
+                }
+            }
+
+
             copy.forEach(CombinationType::createCombined);
         }
     }
 
-    private static Map<PrimitiveDeclarationType, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
+    public void partiallyResolveCombinationTypes() {
+        // Creating a copy, because we might add a new one.
+        new ArrayList<>(this.unresolvedTypes).forEach(CombinationType::partiallyResolve);
+    }
+
+    private static Map<PrimitiveDeclarationType.Type, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
     static {
-        specialPrimitives.put(PrimitiveDeclarationType.VOID, other -> other);
-        specialPrimitives.put(PrimitiveDeclarationType.NON_VOID, other -> {
-            if (other == PrimitiveDeclarationType.VOID) {
-                return PrimitiveDeclarationType.NON_VOID;
+        specialPrimitives.put(PrimitiveDeclarationType.Type.VOID, other -> other);
+        specialPrimitives.put(PrimitiveDeclarationType.Type.NON_VOID, other -> {
+            if (other instanceof PrimitiveDeclarationType &&  ((PrimitiveDeclarationType)other).getType() == PrimitiveDeclarationType.Type.VOID) {
+                return PrimitiveDeclarationType.NonVoid();
             } else {
                 return other;
             }
         });
-        specialPrimitives.put(PrimitiveDeclarationType.ANY, other -> PrimitiveDeclarationType.ANY);
+        specialPrimitives.put(PrimitiveDeclarationType.Type.ANY, other -> PrimitiveDeclarationType.Any());
     }
 
 
 
-    public DeclarationType combineTypes(DeclarationType one, DeclarationType two) {
+    public DeclarationType combineTypes(DeclarationType one, DeclarationType two, boolean avoidUnresolved) {
         if (one == two) {
             return one;
         }
 
-        if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(one)) {
-            return specialPrimitives.get(one).apply(two);
+        if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) one).getType())) {
+            return specialPrimitives.get(((PrimitiveDeclarationType) one).getType()).apply(two);
         }
-        if (two instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(two)) {
-            return specialPrimitives.get(two).apply(one);
+        if (two instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) two).getType())) {
+            return specialPrimitives.get(((PrimitiveDeclarationType) two).getType()).apply(one);
         }
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Pair<>(one.getClass(), two.getClass());
@@ -120,10 +136,18 @@ public class TypeReducer {
             throw new RuntimeException("Don't know how to handle " + one.getClass().getSimpleName() + " - " + two.getClass().getSimpleName());
         }
 
-        return handlers.get(typePair).reduce(one, two);
+        try {
+            return handlers.get(typePair).reduce(one, two);
+        } catch (NotResolvedException e) {
+            if (avoidUnresolved) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
-    public DeclarationType combineTypes(Collection<DeclarationType> typeCollection) {
+    public DeclarationType combineTypes(Collection<DeclarationType> typeCollection, boolean avoidUnresolved) {
         // Copy, because i modify the list.
         ArrayList<DeclarationType> types = new ArrayList<>(typeCollection);
 
@@ -131,7 +155,7 @@ public class TypeReducer {
             DeclarationType one = types.get(i);
             for (int j = i + 1; j < types.size(); j++) {
                 DeclarationType two = types.get(j);
-                DeclarationType combinedType = combineTypes(one, two);
+                DeclarationType combinedType = combineTypes(one, two, avoidUnresolved);
                 if (combinedType == null) {
                     continue;
                 }
@@ -145,7 +169,7 @@ public class TypeReducer {
         extractInterfaces(types);
 
         if (types.size() == 0) {
-            return PrimitiveDeclarationType.VOID;
+            return PrimitiveDeclarationType.Void();
         } else if (types.size() == 1) {
             return types.get(0);
         } else {
