@@ -5,7 +5,7 @@ import java.util.Set;
 /**
  * Created by Erik Krogh Kristensen on 05-11-2015.
  */
-public class DynamicAccessType implements DeclarationType {
+public class DynamicAccessType extends DeclarationType {
     private final DeclarationType lookupType;
     private final DeclarationType returnType;
 

@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
  */
-public class UnionDeclarationType implements DeclarationType {
+public class UnionDeclarationType extends DeclarationType {
     private final List<DeclarationType> types;
 
     public UnionDeclarationType(DeclarationType ...types) {

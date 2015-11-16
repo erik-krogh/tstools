@@ -3,7 +3,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-public class PrimitiveDeclarationType implements DeclarationType {
+public class PrimitiveDeclarationType extends DeclarationType {
     public Type getType() {
         return type;
     }

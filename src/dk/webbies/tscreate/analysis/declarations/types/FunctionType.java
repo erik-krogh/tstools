@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-public class FunctionType implements DeclarationType {
+public class FunctionType extends DeclarationType {
     private DeclarationType returnType;
     private List<Argument> arguments;
 

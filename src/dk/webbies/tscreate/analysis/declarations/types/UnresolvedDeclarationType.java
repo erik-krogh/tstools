@@ -3,7 +3,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 /**
  * Created by Erik Krogh Kristensen on 17-09-2015.
  */
-public class UnresolvedDeclarationType implements DeclarationType {
+public class UnresolvedDeclarationType extends DeclarationType {
     private DeclarationType resolvedType = null;
 
     private static int instanceCounter = 0;

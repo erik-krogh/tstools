@@ -3,7 +3,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 /**
  * Created by Erik Krogh Kristensen on 08-09-2015.
  */
-public class InterfaceType implements DeclarationType {
+public class InterfaceType extends DeclarationType {
     public FunctionType function = null;
     public UnnamedObjectType object = null;
 

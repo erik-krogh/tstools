@@ -7,7 +7,7 @@ import java.util.*;
 /**
  * Created by Erik Krogh Kristensen on 16-10-2015.
  */
-public class CombinationType implements DeclarationType {
+public class CombinationType extends DeclarationType {
     public final List<DeclarationType> types = new ArrayList<>();
     private final TypeReducer combiner;
 
