@@ -94,18 +94,18 @@ public class TypeFactory {
         }
 
         // Adding primitives
-        result.addType(getPrimitiveType(feature.getPrimitives()));
+        feature.getPrimitives().stream().forEach(result::addType);
 
         // Adding function
         if (feature.getFunctionFeature() != null) {
-            result.addType(createFunctionType(feature.getFunctionFeature()));
+            createFunctionType(feature.getFunctionFeature()).forEach(result::addType);
         }
 
         // Adding names object types.
         feature.getTypeNames().stream().filter(Util::notNull).map(NamedObjectType::new).forEach(result::addType);
 
         // Adding object instance
-        result.addType(getObjectInstanceType(feature));
+        getObjectInstanceType(feature).forEach(result::addType);
 
         // Adding class declaration (if it is a constructor).
         if (feature.getFunctionFeature() != null) {
@@ -140,6 +140,7 @@ public class TypeFactory {
         } else if (result.types.size() == 1 && !(result.types.get(0) instanceof UnresolvedDeclarationType)) {
             return result.types.get(0);
         }
+        result.partiallyResolve();
         return result;
     }
 
@@ -273,7 +274,7 @@ public class TypeFactory {
 
         List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
         constructorFunctionFeatures.forEach(constructorFeature -> {
-            constructorType.addType(createFunctionType(constructorFeature));
+            createFunctionType(constructorFeature).forEach(constructorType::addType);
         });
         return constructorType;
     }

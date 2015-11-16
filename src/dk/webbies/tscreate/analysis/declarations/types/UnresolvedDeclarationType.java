@@ -32,9 +32,13 @@ public class UnresolvedDeclarationType extends DeclarationType {
         return this.resolvedType != null;
     }
 
+    public static final class NotResolvedException extends RuntimeException {
+    }
+
+
     public DeclarationType getResolvedType() {
         if (this.resolvedType == null) {
-            throw new RuntimeException();
+            throw new NotResolvedException();
         }
         while (resolvedType instanceof UnresolvedDeclarationType) {
             resolvedType = ((UnresolvedDeclarationType) resolvedType).getResolvedType();

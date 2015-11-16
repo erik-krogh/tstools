@@ -3,6 +3,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 import dk.au.cs.casa.typescript.types.UnionType;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,13 +18,11 @@ public class CombinationType extends DeclarationType {
     private boolean hasBeenUnfolded = false;
 
     public CombinationType(TypeReducer combiner, DeclarationType... types) {
-        this(combiner, Arrays.asList(types));
-    }
-
-    public CombinationType(TypeReducer combiner, Collection<DeclarationType> types) {
         this.combiner = combiner;
         this.combiner.registerUnresolved(this);
-        addType(types);
+        for (DeclarationType type : types) {
+            addType(type);
+        }
     }
 
     public void addType(DeclarationType type) {
@@ -32,14 +31,6 @@ public class CombinationType extends DeclarationType {
         }
         if (type != null) {
             this.types.add(type);
-        }
-    }
-
-    public void addType(Collection<DeclarationType> types) {
-        for (DeclarationType type : types) {
-            if (type != null) {
-                this.addType(type);
-            }
         }
     }
 
@@ -63,7 +54,7 @@ public class CombinationType extends DeclarationType {
             if (unfolded.isEmpty()) {
                 result = PrimitiveDeclarationType.Void();
             } else {
-                result = combiner.combineTypes(unfolded);
+                result = combiner.combineTypes(unfolded, false);
             }
             this.types.clear();
             this.types.add(result);
@@ -74,6 +65,27 @@ public class CombinationType extends DeclarationType {
 
             return result;
         }
+    }
+
+    public void partiallyResolve() {
+        if (this.types.size() <= 1) {
+            return;
+        }
+        Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> unfolded = unfoldPartially(this, new HashSet<>());
+        Set<DeclarationType> types = unfolded.left;
+        Set<UnresolvedDeclarationType> unresolved = unfolded.right;
+        DeclarationType result;
+        if (types.isEmpty()) {
+            result = PrimitiveDeclarationType.VOID;
+        } else if (combiner.combinationTypeCache.containsKey(types)) {
+            result = combiner.combinationTypeCache.get(types);
+        } else {
+            result = combiner.combineTypes(types, true);
+            combiner.combinationTypeCache.put(types, result);
+        }
+        this.types.clear();
+        this.types.add(result);
+        this.types.addAll(unresolved);
     }
 
     private static Set<DeclarationType> unfold(DeclarationType type) {
