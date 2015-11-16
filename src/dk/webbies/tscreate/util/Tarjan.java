@@ -31,11 +31,25 @@ public class Tarjan<T extends Tarjan.Node<T>> {
     /**
      * function to get all strongly connected components
      **/
+    public List<List<T>> getSCComponents(List<T> graph) {
+        return getSCComponents(graph, iterationCounter++);
+    }
+
+    /**
+     * function to get all strongly connected components
+     **/
     private List<List<T>> getSCComponents(T graph, int iteration) {
+        return getSCComponents(Arrays.asList(graph), iteration);
+    }
+
+    /**
+     * function to get all strongly connected components
+     **/
+    private List<List<T>> getSCComponents(List<T> graph, int iteration) {
         Deque<T> stack = new LinkedList<>();
         List<List<T>> sccComp = new ArrayList<>();
 
-        for (T edge : graph.getEdges()) {
+        for (T edge : graph) {
             if (edge.visited != iteration) {
                 dfs(edge, iteration, stack, sccComp);
             }
