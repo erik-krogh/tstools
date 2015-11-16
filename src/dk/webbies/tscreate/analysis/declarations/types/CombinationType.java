@@ -67,27 +67,6 @@ public class CombinationType extends DeclarationType {
         }
     }
 
-    public void partiallyResolve() {
-        if (this.types.size() <= 1) {
-            return;
-        }
-        Pair<Set<DeclarationType>, Set<UnresolvedDeclarationType>> unfolded = unfoldPartially(this, new HashSet<>());
-        Set<DeclarationType> types = unfolded.left;
-        Set<UnresolvedDeclarationType> unresolved = unfolded.right;
-        DeclarationType result;
-        if (types.isEmpty()) {
-            result = PrimitiveDeclarationType.VOID;
-        } else if (combiner.combinationTypeCache.containsKey(types)) {
-            result = combiner.combinationTypeCache.get(types);
-        } else {
-            result = combiner.combineTypes(types, true);
-            combiner.combinationTypeCache.put(types, result);
-        }
-        this.types.clear();
-        this.types.add(result);
-        this.types.addAll(unresolved);
-    }
-
     private static Set<DeclarationType> unfold(DeclarationType type) {
         return type.getReachable().stream().filter((subType) -> {
             // We have the sub-types of these in the reachables, and we don't need the parents.

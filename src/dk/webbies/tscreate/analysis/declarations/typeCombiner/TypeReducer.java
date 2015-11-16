@@ -84,24 +84,8 @@ public class TypeReducer {
             List<CombinationType> copy = new ArrayList<>(this.unresolvedTypes);
             this.unresolvedTypes.clear();
 
-            List<List<DeclarationType>> components = DeclarationType.getStronglyConnectedComponents(Util.cast(DeclarationType.class, copy));
-            for (List<DeclarationType> component : components) {
-                if (component.size() > 1) {
-                    List<DeclarationType> componentCombinationTypes = component.stream().filter(node -> node instanceof CombinationType).collect(Collectors.toList());
-                    if (componentCombinationTypes.size() > 1) {
-                        throw new RuntimeException();
-                    }
-                }
-            }
-
-
             copy.forEach(CombinationType::createCombined);
         }
-    }
-
-    public void partiallyResolveCombinationTypes() {
-        // Creating a copy, because we might add a new one.
-        new ArrayList<>(this.unresolvedTypes).forEach(CombinationType::partiallyResolve);
     }
 
     private static Map<PrimitiveDeclarationType.Type, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();

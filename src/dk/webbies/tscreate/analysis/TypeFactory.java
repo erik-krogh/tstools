@@ -142,7 +142,6 @@ public class TypeFactory {
         } else if (result.types.size() == 1 && !(result.types.get(0) instanceof UnresolvedDeclarationType)) {
             return result.types.get(0);
         }
-        result.partiallyResolve();
         return result;
     }
 

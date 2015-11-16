@@ -17,6 +17,7 @@ public final class UnionClass {
 
     private UnionFeature feature = new UnionFeature(this);
 
+    // FIXME: Set<UnionNode> instead. 
     public Set<UnionClass> includes = null;
     public Set<UnionClass> includesUs = null;
 

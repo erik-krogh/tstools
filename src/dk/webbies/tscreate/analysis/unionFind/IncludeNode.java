@@ -23,9 +23,6 @@ public class IncludeNode extends UnionNode {
     @Override
     public void addTo(UnionClass unionClass) {
         for (UnionNode node : this.nodes) {
-            if (node.getUnionClass() == null) {
-                unionClass.solver.add(node);
-            }
             UnionClass otherClass = node.getUnionClass();
             if (unionClass.includes == null) {
                 unionClass.includes = new HashSet<>();

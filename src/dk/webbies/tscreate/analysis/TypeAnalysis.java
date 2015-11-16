@@ -79,9 +79,6 @@ public class TypeAnalysis {
             typeFactory.currentClosure = functionClosure;
             typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));
             typeFactory.currentClosure = null;
-
-            // Cleaning up.
-            typeFactory.typeReducer.partiallyResolveCombinationTypes();
         }
 
         typeFactory.resolveClassTypes();

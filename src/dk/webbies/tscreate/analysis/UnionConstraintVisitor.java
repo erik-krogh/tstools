@@ -408,9 +408,15 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final UnionNode node;
         private UnionFindSolver solver;
 
+        private static int instanceCounter = 0;
+        private static int includeNodesCounter = 0;
+
         public IncludesWithFieldsResolver(UnionNode node, UnionFindSolver solver) {
             this.node = node;
             this.solver = solver;
+            if (instanceCounter++ % 1000 == 0) {
+                System.out.println("IncludeResolverInstances: " + instanceCounter);
+            }
         }
 
         @Override
@@ -429,7 +435,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     UnionNode myField = myClass.getFields().get(key);
                     UnionNode otherField = otherClass.getFields().get(key);
                     if (myField.getUnionClass().includes == null || !myField.getUnionClass().includes.contains(otherField.getUnionClass())) {
-                        solver.union(myField, new IncludeNode(solver, otherField));
+                        if (myField.getUnionClass() == otherField.getUnionClass()) {
+//                            System.out.println("Im stupid!");
+//                            solver.union(myField, new IncludeNode(solver, otherField));
+                        } else {
+                            solver.union(myField, new IncludeNode(solver, otherField));
+                        }
+
+                        if (includeNodesCounter++ % 1000 == 0) {
+                            System.out.println("IncludeNodes: " + includeNodesCounter + " key: " + key);
+                        }
                     }
                 }
             }
