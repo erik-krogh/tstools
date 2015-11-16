@@ -49,10 +49,7 @@ public class HeapValueFactory {
             }
             return new IncludeNode(solver, getter, setter);
         } else {
-            List<UnionNode> fieldNodes = fromValue(property.value, cache);
-            EmptyNode fieldNode = new EmptyNode(solver);
-            solver.union(fieldNode, fieldNodes);
-            return fieldNode;
+            return fromValue(property.value, cache);
         }
     }
 
@@ -60,10 +57,10 @@ public class HeapValueFactory {
         return solver.union(fromValue(value, new HashMap<>()));
     }
 
-    private List<UnionNode> fromValue(Snap.Value value, Map<Snap.Value, ObjectNode> cache) {
+    private UnionNode fromValue(Snap.Value value, Map<Snap.Value, ObjectNode> cache) {
         UnionNode primitive = getPrimitiveValue(value, primitivesFactory);
         if (primitive != null) {
-            return Arrays.asList(primitive);
+            return primitive;
         }
 
         List<UnionNode> result = new ArrayList<>();
@@ -98,7 +95,7 @@ public class HeapValueFactory {
                 }
             }
         }
-        return result;
+        return solver.union(result);
     }
 
     private Collection<UnionNode> getFunctionNode(Snap.Obj obj) {
