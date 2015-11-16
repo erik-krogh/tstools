@@ -16,21 +16,21 @@ public class HeapValueFactory {
 
     private final Map<Snap.Obj, FunctionNode> getterSetterCache = new HashMap<>();
     private final TypeAnalysis typeAnalysis;
-    private Set<Snap.Obj> analyzedFunctions;
 
-    public HeapValueFactory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, TypeAnalysis typeAnalysis, Set<Snap.Obj> analyzedFunctions) {
+    private final Map<Snap.Obj, UnionNode> cache = new HashMap<>();
+
+    public HeapValueFactory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, TypeAnalysis typeAnalysis) {
         this.libraryClasses = libraryClasses;
         this.typeAnalysis = typeAnalysis;
-        this.analyzedFunctions = analyzedFunctions;
         this.primitivesFactory = new PrimitiveNode.Factory(solver, globalObject);
         this.solver = solver;
     }
 
     public UnionNode fromProperty(Snap.Property property) {
-        return fromProperty(property, new HashMap<>());
+        return new IncludeNode(solver, innerFromProperty(property));
     }
 
-    private UnionNode fromProperty(Snap.Property property, Map<Snap.Value, ObjectNode> cache) {
+    private UnionNode innerFromProperty(Snap.Property property) {
         if (property.value == null) {
             if (property.get == null || property.set == null) {
                 // TODO: This sometimes happens with Symbols.
@@ -49,15 +49,15 @@ public class HeapValueFactory {
             }
             return new IncludeNode(solver, getter, setter);
         } else {
-            return fromValue(property.value, cache);
+            return innerFromValue(property.value);
         }
     }
 
     public UnionNode fromValue(Snap.Value value) {
-        return solver.union(fromValue(value, new HashMap<>()));
+        return new IncludeNode(solver, innerFromValue(value));
     }
 
-    private UnionNode fromValue(Snap.Value value, Map<Snap.Value, ObjectNode> cache) {
+    private UnionNode innerFromValue(Snap.Value value) {
         UnionNode primitive = getPrimitiveValue(value, primitivesFactory);
         if (primitive != null) {
             return primitive;
@@ -77,7 +77,7 @@ public class HeapValueFactory {
                 }
                 Snap.Property constructorProp = obj.prototype.getProperty("constructor");
                 if (constructorProp != null && typeAnalysis.options.classOptions.useConstructorUsages) {
-                    solver.union(libraryClass.getNewConstructorNode(solver), fromProperty(constructorProp, cache));
+                    solver.union(libraryClass.getNewConstructorNode(solver), innerFromProperty(constructorProp));
                 }
             }
         }
@@ -85,13 +85,13 @@ public class HeapValueFactory {
             result.addAll(getFunctionNode(obj));
         }
 
-        if (cache.containsKey(value)) {
-            result.add(cache.get(value));
+        if (cache.containsKey(obj)) {
+            result.add(new IncludeNode(solver, cache.get(obj)));
         } else {
-            cache.put(value, objectNode);
+            cache.put(obj, objectNode);
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    objectNode.addField(property.name, this.fromProperty(property, cache));
+                    objectNode.addField(property.name, this.innerFromProperty(property));
                 }
             }
         }
@@ -151,7 +151,7 @@ public class HeapValueFactory {
 
         this.getterSetterCache.put(closure, functionNode);
 
-        this.typeAnalysis.analyse(closure, functionNodes, this.solver, functionNode, this, analyzedFunctions);
+        this.typeAnalysis.analyse(closure, functionNodes, this.solver, functionNode, this, new HashSet<>());
 
         return functionNode;
     }

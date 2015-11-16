@@ -37,7 +37,7 @@ public class UnionFindSolver {
     public void finish() {
         while (doneCallbacks.size() > 0) {
             int count = iteration++;
-            System.out.println(count + " (" + doneCallbacks.size() + ")");
+            System.out.println(" - " + count + " (" + doneCallbacks.size() + ")");
             ArrayList<UnionClass> copy = new ArrayList<>(doneCallbacks);
             doneCallbacks.clear();
             for (UnionClass unionClass : copy) {

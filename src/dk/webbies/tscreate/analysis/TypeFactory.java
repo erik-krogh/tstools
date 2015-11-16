@@ -22,15 +22,17 @@ public class TypeFactory {
     private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
     private final Snap.Obj globalObject;
     private final NativeClassesMap nativeClasses;
+    private TypeAnalysis typeAnalysis;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
     public final TypeReducer typeReducer;
 
-    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses) {
+    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
         this.globalObject = globalObject;
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.nativeClasses = nativeClasses;
+        this.typeAnalysis = typeAnalysis;
         this.typeReducer = new TypeReducer(globalObject, nativeClasses);
     }
 
@@ -163,6 +165,7 @@ public class TypeFactory {
                 .filter(LibraryClass::isNativeClass)
                 .map(LibraryClass::getPrototype)
                 .map(nativeClasses::nameFromPrototype)
+                .filter(Util::notNull)
                 .map(name -> Util.removeSuffix(name, "Constructor"))
                 .map(NamedObjectType::new)
                 .map(TypeFactory::filterPrimitives)
@@ -351,11 +354,8 @@ public class TypeFactory {
     }
 
     public DeclarationType getHeapPropType(Snap.Property prop) {
-        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, this, nativeClasses);
-        UnionFindSolver solver = new UnionFindSolver();
-        HeapValueFactory heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, typeAnalysis, new HashSet<>());
-        UnionNode unionNode = heapFactory.fromProperty(prop);
-        solver.finish();
+        UnionNode unionNode = typeAnalysis.heapFactory.fromProperty(prop);
+        typeAnalysis.solver.finish();
         return getType(unionNode);
     }
 

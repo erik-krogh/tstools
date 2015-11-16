@@ -17,19 +17,28 @@ import java.util.*;
 public class TypeAnalysis {
     final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
+    final HeapValueFactory heapFactory;
+    final UnionFindSolver solver;
+
     public final Options options;
+    public final NativeClassesMap nativeClasses;
 
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
-    public final NativeClassesMap nativeClasses;
 
-    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, TypeFactory typeFactory, NativeClassesMap nativeClasses) {
+    public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.globalObject = globalObject;
         this.nativeClasses = nativeClasses;
-        this.typeFactory = typeFactory;
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
+        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this);
+        this.solver = new UnionFindSolver();
+        this.heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, this);
+    }
+
+    public TypeFactory getTypeFactory() {
+        return typeFactory;
     }
 
     private static Map<Snap.Obj, LibraryClass> createPrototypeFunctionMap(HashMap<Snap.Obj, LibraryClass> libraryClasses) {
@@ -54,11 +63,8 @@ public class TypeAnalysis {
         int counter = 1;
         for (Snap.Obj functionClosure : functions) {
             System.out.println(counter++ + "/" + functions.size());
-            UnionFindSolver solver = new UnionFindSolver();
 
             FunctionNode functionNode = FunctionNode.create(functionClosure, solver);
-
-            HeapValueFactory heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, this, new HashSet<>());
 
             Map<Snap.Obj, FunctionNode> subFunctionNodes = new HashMap<>();
             subFunctionNodes.put(functionClosure, FunctionNode.create(functionClosure, solver));
