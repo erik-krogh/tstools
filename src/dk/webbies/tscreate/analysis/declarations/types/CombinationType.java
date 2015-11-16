@@ -1,8 +1,11 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import dk.au.cs.casa.typescript.types.UnionType;
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 16-10-2015.
@@ -48,7 +51,7 @@ public class CombinationType extends DeclarationType {
             combined = PrimitiveDeclarationType.Void();
             return PrimitiveDeclarationType.Void();
         } else {
-            Set<DeclarationType> unfolded = unfold(this, new HashSet<>());
+            Set<DeclarationType> unfolded = unfold(this);
 
             if (combiner.combinationTypeCache.containsKey(unfolded)) {
                 DeclarationType result = combiner.combinationTypeCache.get(unfolded);
@@ -73,48 +76,21 @@ public class CombinationType extends DeclarationType {
         }
     }
 
-    private static Set<DeclarationType> unfold(DeclarationType type, Set<CombinationType> seen) {
-        if (type instanceof CombinationType) {
-            CombinationType combination = (CombinationType) type;
-            if (seen.contains(combination)) {
-                return Collections.EMPTY_SET;
+    private static Set<DeclarationType> unfold(DeclarationType type) {
+        return type.getReachable().stream().filter((subType) -> {
+            // We have the sub-types of these in the reachables, and we don't need the parents.
+            if (subType instanceof UnresolvedDeclarationType) {
+                return false;
+            } else if (subType instanceof CombinationType) {
+                return false;
+            } else if (subType instanceof UnionDeclarationType) {
+                return false;
+            } else if (subType instanceof InterfaceType) {
+                return false;
+            } else {
+                return true;
             }
-            seen.add(combination);
-
-            combination.hasBeenUnfolded = true;
-
-            Set<DeclarationType> result = new HashSet<>();
-            for (DeclarationType subType : combination.types) {
-                result.addAll(unfold(subType, seen));
-            }
-
-            return result;
-        } else if (type instanceof UnresolvedDeclarationType) {
-            return unfold(((UnresolvedDeclarationType) type).getResolvedType(), seen);
-        } else if (type instanceof UnionDeclarationType) {
-            Set<DeclarationType> result = new HashSet<>();
-            for (DeclarationType subType : ((UnionDeclarationType) type).getTypes()) {
-                result.addAll(unfold(subType, seen));
-            }
-
-            return result;
-        } else if (type instanceof InterfaceType) {
-            HashSet<DeclarationType> result = new HashSet<>();
-            InterfaceType interfaceType = (InterfaceType) type;
-            if (interfaceType.function != null) {
-                result.addAll(unfold(interfaceType.function, seen));
-            }
-            if (interfaceType.object != null) {
-                result.addAll(unfold(interfaceType.object, seen));
-            }
-            if (interfaceType.getDynamicAccess() != null) {
-                result.addAll(unfold(interfaceType.getDynamicAccess(), seen));
-            }
-
-            return result;
-        } else {
-            return new HashSet<>(Arrays.asList(type));
-        }
+        }).collect(Collectors.toSet());
     }
 
     public DeclarationType getCombined() {

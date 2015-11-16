@@ -163,6 +163,7 @@ public class TypeFactory {
                 .filter(LibraryClass::isNativeClass)
                 .map(LibraryClass::getPrototype)
                 .map(nativeClasses::nameFromPrototype)
+                .filter(Util::notNull)
                 .map(name -> Util.removeSuffix(name, "Constructor"))
                 .map(NamedObjectType::new)
                 .map(TypeFactory::filterPrimitives)

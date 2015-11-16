@@ -4,9 +4,11 @@ import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
@@ -81,6 +83,15 @@ public class TypeReducer {
             List<CombinationType> copy = new ArrayList<>(this.unresolvedTypes);
             this.unresolvedTypes.clear();
 
+            List<List<DeclarationType>> components = DeclarationType.getStronglyConnectedComponents(Util.cast(DeclarationType.class, copy));
+            for (List<DeclarationType> component : components) {
+                if (component.size() > 1) {
+                    List<DeclarationType> componentCombinationTypes = component.stream().filter(node -> node instanceof CombinationType).collect(Collectors.toList());
+                    if (componentCombinationTypes.size() > 1) {
+                        throw new RuntimeException();
+                    }
+                }
+            }
 
 
             copy.forEach(CombinationType::createCombined);
