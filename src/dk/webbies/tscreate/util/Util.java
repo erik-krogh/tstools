@@ -11,7 +11,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -179,6 +181,10 @@ public class Util {
         return (ColS)list;
     }
 
+    public static <T, S> List<S> filter(Class<S> clazz, List<T> list) {
+        return list.stream().filter(clazz::isInstance).map(t -> (S) t).collect(Collectors.toList());
+    }
+
     public static String readFile(String path) throws IOException {
         return new String(Files.readAllBytes(Paths.get(path)));
     }
@@ -248,5 +254,25 @@ public class Util {
             map.put(key, defaultValue);
             return defaultValue;
         }
+    }
+
+    public static<T> void runOnCommon(Set<T> one, Set<T> two, Consumer<T> callback) {
+        Set<T> smallSet;
+        Set<T> bigSet;
+        if (one.size() <= two.size()) {
+            smallSet = one;
+            bigSet = two;
+        } else {
+            smallSet = two;
+            bigSet = one;
+        }
+
+        smallSet.stream().filter(bigSet::contains).forEach(callback::accept);
+    }
+
+    public static<T> ArrayList<T> intersection(Set<T> one, Set<T> two) {
+        ArrayList<T> result = new ArrayList<>();
+        runOnCommon(one, two, result::add);
+        return result;
     }
 }

@@ -7,11 +7,13 @@ import com.google.javascript.jscomp.parsing.parser.TokenType;
 import com.google.javascript.jscomp.parsing.parser.trees.*;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tscreate.paser.JavaScriptParser;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.util.Util.cast;
+import static dk.webbies.tscreate.util.Util.filter;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
@@ -124,7 +126,8 @@ public class AstTransformer {
         } else if (tree instanceof ObjectLiteralExpressionTree) {
             ObjectLiteralExpressionTree object = (ObjectLiteralExpressionTree) tree;
             LinkedHashMap<String, Expression> properties = new LinkedHashMap<>();
-            cast(PropertyNameAssignmentTree.class, object.propertyNameAndValues).stream().forEach(prop -> {
+            // TODO: Three.js has getters and setters directly on objects, but I have no idea how to support that, so for now they are filtered.
+            filter(PropertyNameAssignmentTree.class, object.propertyNameAndValues).stream().forEach(prop -> {
                 Token name = prop.name;
                 if (name.type == TokenType.IDENTIFIER) {
                     properties.put(name.asIdentifier().value, (Expression) convert(prop.value));
