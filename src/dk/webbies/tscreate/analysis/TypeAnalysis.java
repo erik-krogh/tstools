@@ -99,8 +99,13 @@ public class TypeAnalysis {
         }
 
         Map<String, Snap.Property> values = new HashMap<>();
-        for (Snap.Property property : closure.env.properties) {
-            values.put(property.name, property);
+        // FIXME: Getters and setters, something gotta be done.
+        if (closure.env.properties != null) {
+            for (Snap.Property property : closure.env.properties) {
+                values.put(property.name, property);
+            }
+        } else {
+            throw new RuntimeException();
         }
 
         if (prototypeFunctions.containsKey(closure)) {

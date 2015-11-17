@@ -80,7 +80,10 @@ public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
 
     @Override
     public default T visit(ObjectLiteral object) {
-        object.getProperties().forEach((name, value) -> value.accept(this));
+        for (ObjectLiteral.Property property : object.getProperties()) {
+            property.expression.accept(this);
+        }
+
         return null;
     }
 
@@ -121,6 +124,18 @@ public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
     @Override
     public default T visit(CommaExpression commaExpression) {
         commaExpression.getExpressions().forEach(exp -> exp.accept(this));
+        return null;
+    }
+
+    @Override
+    public default T visit(GetterExpression getter) {
+        getter.asFunction().accept(this);
+        return null;
+    }
+
+    @Override
+    public default T visit(SetterExpression setter) {
+        setter.asFunction().accept(this);
         return null;
     }
 }

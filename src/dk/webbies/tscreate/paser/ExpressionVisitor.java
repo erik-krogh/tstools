@@ -41,4 +41,8 @@ public interface ExpressionVisitor<T> {
     T visit(UnaryExpression unaryExpression);
 
     T visit(UndefinedLiteral undefinedLiteral);
+
+    T visit(GetterExpression getter);
+
+    T visit(SetterExpression setter);
 }

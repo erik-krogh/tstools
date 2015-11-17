@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.analysis;
 
-import com.google.common.collect.Sets;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -110,6 +109,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case LEFT_SHIFT_EQUAL: // <<=
             case RIGHT_SHIFT_EQUAL: // >>=
             case UNSIGNED_RIGHT_SHIFT_EQUAL: // >>>=
+            case BITWISE_OR_EQUAL: // |=
+            case BITWISE_AND_EQUAL: // &=
+            case BITWISE_XOR_EQUAL: // ^=
                 solver.union(primitiveFactory.number(), lhs);
                 solver.union(primitiveFactory.number(), rhs);
                 result = primitiveFactory.number();
@@ -240,6 +242,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @Override
+    public UnionNode visit(GetterExpression getter) {
+        throw new UnsupportedOperationException("Should be handled by ObjectLiteral");
+    }
+
+    @Override
+    public UnionNode visit(SetterExpression setter) {
+        throw new UnsupportedOperationException("Should be handled by ObjectLiteral");
+    }
+
+    @Override
     public UnionNode visit(FunctionExpression function) {
         if (closureMatch(function, this.closure)) {
             function.getBody().accept(this);
@@ -305,12 +317,18 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     @Override
     public UnionNode visit(ObjectLiteral object) {
         ObjectNode result = new ObjectNode(solver);
-        for (Map.Entry<String, Expression> entry : object.getProperties().entrySet()) {
-            String key = entry.getKey();
-            Expression value = entry.getValue();
-            UnionNode valueNode = value.accept(this);
-            solver.union(valueNode, primitiveFactory.nonVoid());
-            result.addField(key, valueNode);
+        for (ObjectLiteral.Property property : object.getProperties()) {
+            String key = property.name;
+            Expression value = property.expression;
+            if (value instanceof GetterExpression) {
+                // TODO: Do something...
+            } else if (value instanceof SetterExpression) {
+                // TODO: Do something...
+            } else {
+                UnionNode valueNode = value.accept(this);
+                solver.union(valueNode, primitiveFactory.nonVoid());
+                result.addField(key, valueNode);
+            }
         }
 
         return result;
@@ -404,46 +422,40 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return thisNode;
     }
 
-    private static final class IncludesWithFieldsResolver implements Runnable {
+    private final class IncludesWithFieldsResolver implements Runnable {
         private final UnionNode node;
         private UnionFindSolver solver;
-
-        private static int instanceCounter = 0;
-        private static int includeNodesCounter = 0;
 
         public IncludesWithFieldsResolver(UnionNode node, UnionFindSolver solver) {
             this.node = node;
             this.solver = solver;
-            if (instanceCounter++ % 1000 == 0) {
-                System.out.println("IncludeResolverInstances: " + instanceCounter);
-            }
         }
 
         @Override
         public void run() {
+            if (!typeAnalysis.options.resolveIncludesWithFields) {
+                return;
+            }
             UnionClass myClass = this.node.getUnionClass();
-            if (myClass.getFields() == null) {
+            Map<String, UnionNode> myFields = myClass.getFields();
+            if (myFields == null) {
                 return;
             }
             List<UnionClass> reachableClasses = this.node.getUnionClass().getReachable();
             for (UnionClass otherClass : reachableClasses) {
-                if (otherClass.getFields() == null) {
+                if (otherClass == myClass) {
                     continue;
                 }
-                HashSet<String> keys = new HashSet<>(Sets.intersection(myClass.getFields().keySet(), otherClass.getFields().keySet()));
-                for (String key : keys) {
-                    UnionNode myField = myClass.getFields().get(key);
-                    UnionNode otherField = otherClass.getFields().get(key);
-                    if (myField.getUnionClass().includes == null || !myField.getUnionClass().includes.contains(otherField.getUnionClass())) {
-                        if (myField.getUnionClass() == otherField.getUnionClass()) {
-//                            System.out.println("Im stupid!");
-//                            solver.union(myField, new IncludeNode(solver, otherField));
-                        } else {
+                Map<String, UnionNode> otherFields = otherClass.getFields();
+                if (otherFields == null) {
+                    continue;
+                }
+                for (String key : Util.intersection(myFields.keySet(), otherFields.keySet())) {
+                    UnionNode myField = myFields.get(key);
+                    UnionNode otherField = otherFields.get(key);
+                    if (myField.getUnionClass().includes == null || !myField.getUnionClass().includes.contains(otherField.findParent())) {
+                        if (myField.getUnionClass() != otherField.getUnionClass()) {
                             solver.union(myField, new IncludeNode(solver, otherField));
-                        }
-
-                        if (includeNodesCounter++ % 1000 == 0) {
-                            System.out.println("IncludeNodes: " + includeNodesCounter + " key: " + key);
                         }
                     }
                 }

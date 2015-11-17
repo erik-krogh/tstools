@@ -6,14 +6,13 @@ import com.google.javascript.jscomp.parsing.parser.Token;
 import com.google.javascript.jscomp.parsing.parser.TokenType;
 import com.google.javascript.jscomp.parsing.parser.trees.*;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+import dk.webbies.tscreate.paser.AST.ObjectLiteral.Property;
 import dk.webbies.tscreate.paser.JavaScriptParser;
-import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.util.Util.cast;
-import static dk.webbies.tscreate.util.Util.filter;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
@@ -125,18 +124,32 @@ public class AstTransformer {
             return new IfStatement(loc, (Expression) convert(ifTree.condition), (Statement) convert(ifTree.ifClause), elseBranch);
         } else if (tree instanceof ObjectLiteralExpressionTree) {
             ObjectLiteralExpressionTree object = (ObjectLiteralExpressionTree) tree;
-            LinkedHashMap<String, Expression> properties = new LinkedHashMap<>();
-            // TODO: Three.js has getters and setters directly on objects, but I have no idea how to support that, so for now they are filtered.
-            filter(PropertyNameAssignmentTree.class, object.propertyNameAndValues).stream().forEach(prop -> {
-                Token name = prop.name;
-                if (name.type == TokenType.IDENTIFIER) {
-                    properties.put(name.asIdentifier().value, (Expression) convert(prop.value));
-                } else if (name.type == TokenType.STRING){
-                    String value = name.asLiteral().value;
-                    properties.put(value.substring(1, value.length() - 1), (Expression) convert(prop.value));
-                } else if (name.type == TokenType.NUMBER){
-                    String value = name.asLiteral().value;
-                    properties.put(value, (Expression) convert(prop.value));
+            List<Property> properties = new ArrayList<>();
+            object.propertyNameAndValues.forEach(untypedProp -> {
+                if (untypedProp instanceof PropertyNameAssignmentTree) {
+                    PropertyNameAssignmentTree prop = (PropertyNameAssignmentTree) untypedProp;
+                    Token name = prop.name;
+                    if (name.type == TokenType.IDENTIFIER) {
+                        properties.add(new Property(name.asIdentifier().value, (Expression) convert(prop.value)));
+                    } else if (name.type == TokenType.STRING){
+                        String value = name.asLiteral().value;
+                        properties.add(new Property(value.substring(1, value.length() - 1), (Expression) convert(prop.value)));
+                    } else if (name.type == TokenType.NUMBER){
+                        String value = name.asLiteral().value;
+                        properties.add(new Property(value, (Expression) convert(prop.value)));
+                    }
+                } else if (untypedProp instanceof GetAccessorTree) {
+                    GetAccessorTree prop = (GetAccessorTree) untypedProp;
+                    Token name = prop.propertyName;
+                    BlockStatement body = (BlockStatement) convert(prop.body);
+                    properties.add(new Property(name.asIdentifier().value, new GetterExpression(prop.body.location, body)));
+                } else if (untypedProp instanceof SetAccessorTree) {
+                    SetAccessorTree prop = (SetAccessorTree) untypedProp;
+                    Token name = prop.propertyName;
+                    BlockStatement converted = (BlockStatement) convert(prop.body);
+                    properties.add(new Property(name.asIdentifier().value, new SetterExpression(prop.body.location, converted, new Identifier(prop.location, prop.parameter.value))));
+                } else {
+                    throw new UnsupportedOperationException("Don't know " + untypedProp.getClass().getSimpleName() + " here");
                 }
             });
             return new ObjectLiteral(loc, properties);
@@ -303,8 +316,11 @@ public class AstTransformer {
             case DELETE: return Operator.DELETE;
 
             case AMPERSAND: return Operator.BITWISE_AND;
+            case AMPERSAND_EQUAL: return Operator.BITWISE_AND_EQUAL;
             case BAR: return Operator.BITWISE_OR;
+            case BAR_EQUAL: return Operator.BITWISE_OR_EQUAL;
             case CARET: return Operator.BITWISE_XOR;
+            case CARET_EQUAL: return Operator.BITWISE_XOR_EQUAL;
             case TILDE: return Operator.BITWISE_NOT;
             case LEFT_SHIFT: return Operator.LEFT_SHIFT;
             case RIGHT_SHIFT: return Operator.RIGHT_SHIFT;
