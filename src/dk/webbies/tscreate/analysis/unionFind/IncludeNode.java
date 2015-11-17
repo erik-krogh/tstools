@@ -23,16 +23,20 @@ public class IncludeNode extends UnionNode {
     @Override
     public void addTo(UnionClass unionClass) {
         for (UnionNode node : this.nodes) {
+            node = node.findParent();
             UnionClass otherClass = node.getUnionClass();
+            if (otherClass == unionClass) {
+                throw new RuntimeException();
+            }
             if (unionClass.includes == null) {
                 unionClass.includes = new HashSet<>();
             }
-            unionClass.includes.add(otherClass);
+            unionClass.includes.add(node);
 
             if (otherClass.includesUs == null) {
                 otherClass.includesUs = new HashSet<>();
             }
-            otherClass.includesUs.add(unionClass);
+            otherClass.includesUs.add(node);
         }
     }
 }

@@ -17,9 +17,8 @@ public final class UnionClass {
 
     private UnionFeature feature = new UnionFeature(this);
 
-    // FIXME: Set<UnionNode> instead. 
-    public Set<UnionClass> includes = null;
-    public Set<UnionClass> includesUs = null;
+    public Set<UnionNode> includes = null;
+    public Set<UnionNode> includesUs = null;
 
     private int hasRunAtIteration = -1;
     private boolean waitingForCallback = false;
@@ -49,25 +48,31 @@ public final class UnionClass {
 
         this.feature.takeIn(other.feature);
 
+        this.makeIncludesPointToParent();
+        other.makeIncludesPointToParent();
+
         if (other.includesUs != null && !other.includesUs.isEmpty()) {
             if (this.includesUs == null) {
                 this.includesUs = new HashSet<>();
             }
-            for (UnionClass includesOther : other.includesUs) {
-                includesOther.includes.remove(other);
-                includesOther.includes.add(this);
+            for (UnionNode includesOther : other.includesUs) {
+                includesOther = includesOther.findParent();
+
+                UnionClass otherUnionClass = includesOther.getUnionClass();
+                otherUnionClass.makeIncludesPointToParent();
+                otherUnionClass.includes.remove(other.representative.findParent());
+                otherUnionClass.includes.add(this.representative);
                 this.includesUs.add(includesOther);
             }
         }
 
-
         if (this.includes != null) {
-            this.includes.remove(this);
-            this.includes.remove(other);
+            this.includes.remove(this.representative);
+            this.includes.remove(other.representative.findParent());
         }
         if (this.includesUs != null) {
-            this.includesUs.remove(this);
-            this.includesUs.remove(other);
+            this.includesUs.remove(this.representative);
+            this.includesUs.remove(other.representative.findParent());
         }
 
         if (other.includes != null && !other.includes.isEmpty()) {
@@ -90,6 +95,18 @@ public final class UnionClass {
         }
 
         collapseCycles();
+    }
+
+    private void makeIncludesPointToParent() {
+        this.representative = this.representative.findParent();
+        if (this.includes != null) {
+            this.includes = this.includes.stream().map(UnionNode::findParent).collect(Collectors.toSet());
+            this.includes.remove(this.representative);
+        }
+        if (this.includesUs != null) {
+            this.includesUs = this.includesUs.stream().map(UnionNode::findParent).collect(Collectors.toSet());
+            this.includesUs.remove(this.representative);
+        }
     }
 
 
@@ -153,8 +170,8 @@ public final class UnionClass {
             }
         }
         if (this.includesUs != null) {
-            for (UnionClass includesUs : new ArrayList<>(this.includesUs)) {
-                includesUs.doneCallback(iteration);
+            for (UnionNode includesUs : new ArrayList<>(this.includesUs)) {
+                includesUs.getUnionClass().doneCallback(iteration);
             }
         }
     }
@@ -180,7 +197,7 @@ public final class UnionClass {
             if (UnionClass.this.includes == null) {
                 return Collections.EMPTY_LIST;
             }
-            return new MappedCollection<>(UnionClass.this.includes, unionClass -> unionClass.tarjanNode);
+            return new MappedCollection<>(UnionClass.this.includes, node -> node.getUnionClass().tarjanNode);
         }
 
         private UnionClass getUnionClass() {

@@ -90,7 +90,7 @@ public class TypeFactory {
         // First unpacking the IncludeNodes
         CombinationType result = new CombinationType(typeReducer);
         if (feature.unionClass.includes != null) {
-            for (UnionClass include : feature.unionClass.includes) {
+            for (UnionNode include : feature.unionClass.includes) {
                 result.addType(getType(include));
             }
         }
