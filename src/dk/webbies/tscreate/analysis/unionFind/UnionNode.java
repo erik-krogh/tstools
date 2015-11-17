@@ -26,9 +26,9 @@ public abstract class UnionNode {
         return findParent().unionClass;
     }
 
-    private UnionNode findParent() {
+    public UnionNode findParent() {
         if (this.parent == null) {
-            throw new RuntimeException();
+            return this;
         }
         while (this.parent != this.parent.parent) {
             this.parent = this.parent.parent;
