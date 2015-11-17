@@ -264,7 +264,23 @@ public class JSNAPUtil {
                         reader.endObject();
                         return (T) new Snap.UndefinedConstant();
                     } else {
-                        key = reader.nextInt();
+                        if (reader.peek() == JsonToken.NUMBER) {
+                            key = reader.nextInt();
+                        } else if (reader.peek() == JsonToken.STRING) {
+                            key = Integer.parseInt(reader.nextString());
+                        } else if (reader.peek() == JsonToken.BEGIN_OBJECT){
+                            // FIXME This happens in three.js, it is an object with __jsnapHiddenProp__ values defined on it.
+                            reader.beginObject();
+                            reader.nextName();
+                            reader.nextBoolean();
+                            reader.nextName();
+                            reader.nextString();
+                            reader.endObject();
+
+                            key = 1;
+                        } else {
+                            throw new RuntimeException("Did really not expect " + reader.peek());
+                        }
                     }
 
                     reader.endObject();
