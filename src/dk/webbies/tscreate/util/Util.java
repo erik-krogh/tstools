@@ -90,6 +90,8 @@ public class Util {
 
     public static String getCachedOrRun(String cachePath, File checkAgainst, Supplier<String> run) throws IOException {
         cachePath = cachePath.replaceAll("/", "");
+        cachePath = cachePath.replaceAll(":", "");
+        cachePath = cachePath.replaceAll("\\\\", "");
 
         if (checkAgainst != null && !checkAgainst.exists()) {
             throw new RuntimeException("I cannot check against something that doesn't exist.");
