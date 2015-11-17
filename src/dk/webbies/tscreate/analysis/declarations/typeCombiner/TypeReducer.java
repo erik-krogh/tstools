@@ -69,6 +69,7 @@ public class TypeReducer {
         register(new CantReduceReducer(ClassInstanceType.class, NamedObjectType.class));
         register(new CantReduceReducer(ClassType.class, NamedObjectType.class));
         register(new CantReduceReducer(ClassInstanceType.class, FunctionType.class));
+        register(new CantReduceReducer(ClassType.class, ClassType.class));
 
         register(new CantReduceReducer(ClassInstanceType.class, ClassType.class));
     }
