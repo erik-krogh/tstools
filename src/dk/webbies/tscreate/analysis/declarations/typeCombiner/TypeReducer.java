@@ -136,18 +136,23 @@ public class TypeReducer {
         // Copy, because i modify the list.
         ArrayList<DeclarationType> types = new ArrayList<>(typeCollection);
 
-        for (int i = 0; i < types.size(); i++) {
-            DeclarationType one = types.get(i);
-            for (int j = i + 1; j < types.size(); j++) {
-                DeclarationType two = types.get(j);
-                DeclarationType combinedType = combineTypes(one, two, avoidUnresolved);
-                if (combinedType == null) {
-                    continue;
+        boolean fixPoint = false;
+        while (!fixPoint) {
+            fixPoint = true;
+            for (int i = 0; i < types.size(); i++) {
+                DeclarationType one = types.get(i);
+                for (int j = i + 1; j < types.size(); j++) {
+                    DeclarationType two = types.get(j);
+                    DeclarationType combinedType = combineTypes(one, two, avoidUnresolved);
+                    if (combinedType == null) {
+                        continue;
+                    }
+                    fixPoint = false;
+                    types.set(i, combinedType);
+                    types.remove(j);
+                    i--;
+                    break;
                 }
-                types.set(i, combinedType);
-                types.remove(j);
-                i--;
-                break;
             }
         }
 
