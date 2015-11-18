@@ -14,24 +14,42 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static dk.webbies.tscreate.jsnap.Snap.*;
+
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static NativeClassesMap markNatives(Snap.Obj global, Environment env) {
+    public static NativeClassesMap markNatives(Obj global, Environment env) {
         SpecReader spec = getTypeSpecification(env);
 
         Map<Type, String> typeNames = new HashMap<>();
 
         markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
 
-        Map<Snap.Obj, Type> prototypes = new HashMap<>();
-        while (global != null) {
-            spec.getGlobal().accept(new MarkNativesVisitor(prototypes), global);
-            global = global.prototype;
+        Map<Obj, Type> prototypes = new HashMap<>();
+        Obj globalProto = global;
+        while (globalProto != null) {
+            spec.getGlobal().accept(new MarkNativesVisitor(prototypes), globalProto);
+            globalProto = globalProto.prototype;
         }
 
-        return new NativeClassesMap(typeNames, prototypes);
+        for (Map.Entry<Type, String> entry : typeNames.entrySet()) {
+            String name = entry.getValue();
+            Type type = entry.getKey();
+
+            if (global.getProperty(name) != null && global.getProperty(name).value instanceof Obj) {
+                Obj obj = (Obj) global.getProperty(name).value;
+                if (obj.getProperty("prototype") != null && obj.getProperty("prototype").value instanceof Obj) {
+                    Obj prototype = (Obj) obj.getProperty("prototype").value;
+                    if (!prototypes.containsKey(prototype)) {
+                        prototypes.put(prototype, type);
+                    }
+                }
+            }
+        }
+
+        return new NativeClassesMap(typeNames, prototypes, global);
     }
 
     public static SpecReader getTypeSpecification(Environment env, String... declarationFilePaths) {
@@ -78,7 +96,7 @@ public class DeclarationParser {
         }
 
         @Override
-        public Void visit(AnonymousType t, Snap.Obj obj) {
+        public Void visit(AnonymousType t, Obj obj) {
             if (obj.function != null) {
                 throw new UnsupportedOperationException("This is useless");
             } else {
@@ -86,7 +104,7 @@ public class DeclarationParser {
             }
         }
 
-        private Snap.Value lookUp(Snap.Obj obj, String key) {
+        private Value lookUp(Obj obj, String key) {
             if (obj == null) {
                 return null;
             } else if (obj.getProperty(key) != null) {
@@ -100,7 +118,7 @@ public class DeclarationParser {
 
         @SuppressWarnings("Duplicates")
         @Override
-        public Void visit(GenericType t, Snap.Obj obj) {
+        public Void visit(GenericType t, Obj obj) {
             if (seen.contains(t)) {
                 return null;
             }
@@ -110,15 +128,15 @@ public class DeclarationParser {
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
-                    this.nativeClasses.put((Snap.Obj)obj.getProperty("prototype").value, t);
+                    this.nativeClasses.put((Obj)obj.getProperty("prototype").value, t);
                 }
             }
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                 String key = entry.getKey();
                 Type value = entry.getValue();
-                Snap.Value propValue = lookUp(obj, key);
-                if (propValue != null && propValue instanceof Snap.Obj) {
-                    value.accept(this, (Snap.Obj) propValue);
+                Value propValue = lookUp(obj, key);
+                if (propValue != null && propValue instanceof Obj) {
+                    value.accept(this, (Obj) propValue);
                 }
             }
             return null;
@@ -126,7 +144,7 @@ public class DeclarationParser {
 
         @SuppressWarnings("Duplicates")
         @Override
-        public Void visit(InterfaceType t, Snap.Obj obj) {
+        public Void visit(InterfaceType t, Obj obj) {
             if (seen.contains(t)) {
                 return null;
             }
@@ -136,15 +154,15 @@ public class DeclarationParser {
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
-                    this.nativeClasses.put((Snap.Obj)obj.getProperty("prototype").value, t);
+                    this.nativeClasses.put((Obj)obj.getProperty("prototype").value, t);
                 }
             }
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                 String key = entry.getKey();
                 Type value = entry.getValue();
-                Snap.Value propValue = lookUp(obj, key);
-                if (propValue != null && propValue instanceof Snap.Obj) {
-                    value.accept(this, (Snap.Obj) propValue);
+                Value propValue = lookUp(obj, key);
+                if (propValue != null && propValue instanceof Obj) {
+                    value.accept(this, (Obj) propValue);
                 }
             }
 
@@ -152,52 +170,54 @@ public class DeclarationParser {
         }
 
         @Override
-        public Void visit(ReferenceType t, Snap.Obj obj) {
+        public Void visit(ReferenceType t, Obj obj) {
             t.getTarget().accept(this, obj);
             return null;
         }
 
         @Override
-        public Void visit(SimpleType t, Snap.Obj obj) {
+        public Void visit(SimpleType t, Obj obj) {
             return null;
         }
 
         @Override
-        public Void visit(TupleType t, Snap.Obj obj) {
+        public Void visit(TupleType t, Obj obj) {
             return null;
         }
 
         @Override
-        public Void visit(UnionType t, Snap.Obj obj) {
+        public Void visit(UnionType t, Obj obj) {
             return null;
         }
 
         @Override
-        public Void visit(UnresolvedType t, Snap.Obj obj) {
+        public Void visit(UnresolvedType t, Obj obj) {
             return null;
         }
 
         @Override
-        public Void visit(TypeParameterType t, Snap.Obj obj) {
+        public Void visit(TypeParameterType t, Obj obj) {
             return null;
         }
 
         @Override
-        public Void visit(SymbolType t, Snap.Obj obj) {
+        public Void visit(SymbolType t, Obj obj) {
             return null;
         }
 
         @Override
-        public Void visit(ClassType t, Snap.Obj obj) {
+        public Void visit(ClassType t, Obj obj) {
             return null;
         }
     }
 
     public static final class NativeClassesMap {
         private final BiMap<Type, String> typeNames;
-        private final Map<Snap.Obj, String> classNames = new HashMap<>();
+        private final BiMap<Snap.Obj, String> classNames = HashBiMap.create();
+        private final Obj global;
 
-        public NativeClassesMap(Map<Type, String> typeNames, Map<Snap.Obj, Type> nativeClasses) {
+        public NativeClassesMap(Map<Type, String> typeNames, Map<Obj, Type> nativeClasses, Obj global) {
+            this.global = global;
             this.typeNames = HashBiMap.create(typeNames);
             nativeClasses.forEach((prototype, type) -> {
                 if (typeNames.containsKey(type)) {
@@ -210,8 +230,35 @@ public class DeclarationParser {
             return typeNames.get(type);
         }
 
-        public String nameFromPrototype(Snap.Obj prototype) {
-            return classNames.get(prototype);
+        public String nameFromPrototype(Obj prototype) {
+            String result = classNames.get(prototype);
+            if (result != null) {
+                return result;
+            }
+            if (prototype.getProperty("constructor") != null && prototype.getProperty("constructor").value instanceof Snap.Obj) {
+                Snap.Obj constructor = (Obj) prototype.getProperty("constructor").value;
+                if (constructor.function != null && constructor.function.constructorSignatures != null && !constructor.function.constructorSignatures.isEmpty()) {
+                    Type type = constructor.function.constructorSignatures.get(0).getResolvedReturnType();
+                    return nameFromType(type);
+                }
+            }
+            return null;
+        }
+
+        public Obj prototypeFromName(String name) {
+            Obj result = classNames.inverse().get(name);
+            if (result != null) {
+                return result;
+            } else {
+                Snap.Property prop = global.getProperty(name);
+                if (prop != null && prop.value instanceof Snap.Obj) {
+                    Snap.Obj obj = (Snap.Obj) prop.value;
+                    if (obj.getProperty("prototype") != null && obj.getProperty("prototype").value instanceof Snap.Obj) {
+                        return (Snap.Obj) obj.getProperty("prototype").value;
+                    }
+                }
+            }
+            return null;
         }
 
         public Type typeFromName(String name) {
