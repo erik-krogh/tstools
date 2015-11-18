@@ -134,7 +134,10 @@ public class TypeFactory {
         if (feature.getDynamicAccessLookupExp() != null) {
             UnionNode lookupType = feature.getDynamicAccessLookupExp();
             UnionNode returnType = feature.getDynamicAccessReturnType();
-            result.addType(new DynamicAccessType(getType(lookupType), getType(returnType)));
+            DynamicAccessType dynamicAccessType = new DynamicAccessType(getType(lookupType), getType(returnType));
+            InterfaceType dynamicInterface = new InterfaceType();
+            dynamicInterface.dynamicAccess = dynamicAccessType;
+            result.addType(dynamicInterface);
         }
 
         if (result.types.size() == 0) {
@@ -166,7 +169,7 @@ public class TypeFactory {
                 .map(LibraryClass::getPrototype)
                 .map(nativeClasses::nameFromPrototype)
                 .filter(Util::notNull)
-                .map(name -> Util.removeSuffix(name, "Constructor"))
+                .map(name -> name.endsWith("Constructor") ? Util.removeSuffix(name, "Constructor") : name)
                 .map(NamedObjectType::new)
                 .map(TypeFactory::filterPrimitives)
                 .filter(Util::notNull)
