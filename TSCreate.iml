@@ -18,5 +18,6 @@
     <orderEntry type="library" name="ts-type-reader" level="project" />
     <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="library" name="selenium-server-standalone-2.48.2" level="project" />
+    <orderEntry type="library" name="functionaljava" level="project" />
   </component>
 </module>
