@@ -26,20 +26,19 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
  */
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        Options options = new Options();
-
-        options.interProceduralAnalysisWithHeap = true;
-
         long start = System.currentTimeMillis();
 
-        options.createInstances = false; // This doesn't work with jQuery.
-        runAnalysis("Test script", "tests/test.js", null, options, LanguageLevel.ES5);
+        runBenchmark(BenchMark.test);
 
         long end = System.currentTimeMillis();
 
         System.out.println("Ran in " + (end - start) + "ms");
 
         System.exit(0);
+    }
+
+    public static void runBenchmark(BenchMark benchMark) throws IOException {
+        runAnalysis(benchMark.name, benchMark.scriptPath, benchMark.declarationPath, benchMark.options, benchMark.languageLevel);
     }
 
     public static void runAnalysis(String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) throws IOException {
