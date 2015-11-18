@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
+import dk.au.cs.casa.typescript.types.GenericType;
+import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
@@ -7,10 +9,10 @@ import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.analysis.unionFind.PrimitiveNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
-import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -43,35 +45,53 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
 
     @Override
     public DeclarationType reduce(UnnamedObjectType unnamedObjectType, NamedObjectType named) {
-        Snap.Property prop = global.getProperty(named.getName());
-        if (prop == null) {
-            // Can't say anything, so we assume that the object does contain it.
-            return named;
-        }
-        if (objectMatchPrototype(unnamedObjectType, (Snap.Obj) prop.value, nativeClasses.typeFromName(named.getName()))) {
+        if (objectMatchPrototype(unnamedObjectType, named)) {
             return named;
         } else {
             return null;
         }
     }
 
-    public boolean objectMatchPrototype(UnnamedObjectType object, Snap.Obj prototype, Type type) {
-        Set<String> keys = getKeys(prototype);
-        if (type != null) {
-            Map<String, UnionNode> objectFields = this.solver.union(this.nativeFactory.fromType(type)).getFeature().getObjectFields();
-            if (objectFields != null) {
-                keys.addAll(objectFields.keySet());
+    public boolean objectMatchPrototype(UnnamedObjectType object, NamedObjectType type) {
+        HashSet<String> keysNotAccountedFor = new HashSet<>(object.getDeclarations().keySet());
+
+        removeKeys(type.getName(), keysNotAccountedFor);
+
+        for (String name : type.getKnownSubTypes()) {
+            if (keysNotAccountedFor.isEmpty()) {
+                return true;
             }
+            removeKeys(name, keysNotAccountedFor);
         }
-        return object.getDeclarations().keySet().stream().allMatch(keys::contains);
+
+        return keysNotAccountedFor.isEmpty();
     }
 
-    public static Set<String> getKeys(Snap.Obj obj) {
-        HashSet<String> result = new HashSet<>();
-        result.addAll(obj.getPropertyMap().keySet());
-        if (obj.prototype != null && obj != obj.prototype) {
-            result.addAll(getKeys(obj.prototype));
+
+    private Map<String, Set<String>> nameToPropertiesCache = new HashMap<>();
+    private void removeKeys(String name, Set<String> toRemoveFrom) {
+        if (!nameToPropertiesCache.containsKey(name)) {
+            HashSet<String> keys = new HashSet<>();
+            nameToPropertiesCache.put(name, keys);
+
+            Snap.Obj prototype = this.nativeClasses.prototypeFromName(name);
+
+            while (prototype != null) {
+                keys.addAll(prototype.getPropertyMap().keySet());
+                if (prototype == prototype.prototype) {
+                    break;
+                }
+                prototype = prototype.prototype;
+            }
+
+            Type type = this.nativeClasses.typeFromName(name);
+            if (type instanceof InterfaceType) {
+                keys.addAll(((InterfaceType) type).getDeclaredProperties().keySet());
+            } else if (type instanceof GenericType) {
+                keys.addAll(((GenericType) type).getDeclaredProperties().keySet());
+            }
         }
-        return result;
+
+        toRemoveFrom.removeAll(nameToPropertiesCache.get(name));
     }
 }
