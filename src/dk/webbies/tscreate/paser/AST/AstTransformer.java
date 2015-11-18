@@ -6,6 +6,7 @@ import com.google.javascript.jscomp.parsing.parser.Token;
 import com.google.javascript.jscomp.parsing.parser.TokenType;
 import com.google.javascript.jscomp.parsing.parser.trees.*;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.paser.AST.ObjectLiteral.Property;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 
@@ -18,12 +19,17 @@ import static dk.webbies.tscreate.util.Util.cast;
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
 public class AstTransformer {
+    private DeclarationParser.Environment environment;
 
-    public static AstNode convert(ParseTree tree) {
+    public AstTransformer(DeclarationParser.Environment environment) {
+        this.environment = environment;
+    }
+
+    public AstNode convert(ParseTree tree) {
         SourceRange loc = tree.location;
         if (tree instanceof VariableStatementTree) {
             VariableStatementTree variables = (VariableStatementTree) tree;
-            List<Statement> statements = variables.declarations.declarations.stream().map(AstTransformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
+            List<Statement> statements = variables.declarations.declarations.stream().map(this::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
             return new BlockStatement(loc, statements);
         } else if (tree instanceof VariableDeclarationTree) {
             VariableDeclarationTree variable = (VariableDeclarationTree) tree;
@@ -36,7 +42,7 @@ public class AstTransformer {
             return new VariableNode(variable.location, (Expression)convert(variable.lvalue), initialize);
         } else if (tree instanceof VariableDeclarationListTree) {
             VariableDeclarationListTree list = (VariableDeclarationListTree) tree;
-            return new BlockStatement(loc, cast(Statement.class, list.declarations.stream().map(AstTransformer::convert).collect(Collectors.toList())));
+            return new BlockStatement(loc, cast(Statement.class, list.declarations.stream().map(this::convert).collect(Collectors.toList())));
         } else if (tree instanceof IdentifierExpressionTree) {
             IdentifierExpressionTree id = (IdentifierExpressionTree) tree;
             return new Identifier(id.location, id.identifierToken.value);
@@ -75,7 +81,7 @@ public class AstTransformer {
             }
         } else if (tree instanceof FunctionDeclarationTree) {
             FunctionDeclarationTree funcDec = (FunctionDeclarationTree) tree;
-            List<Identifier> arguments = cast(Identifier.class, funcDec.formalParameterList.parameters.stream().map(AstTransformer::convert).collect(Collectors.toList()));
+            List<Identifier> arguments = cast(Identifier.class, funcDec.formalParameterList.parameters.stream().map(this::convert).collect(Collectors.toList()));
             AstNode body = convert(funcDec.functionBody);
             Identifier name = null;
             if (funcDec.name != null) {
@@ -84,13 +90,13 @@ public class AstTransformer {
             return new FunctionExpression(loc, name, (BlockStatement) body, arguments);
         } else if (tree instanceof BlockTree) {
             BlockTree block = (BlockTree) tree;
-            List<Statement> statements = block.statements.stream().map(AstTransformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
+            List<Statement> statements = block.statements.stream().map(this::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
             return new BlockStatement(loc, statements);
         } else if (tree instanceof ReturnStatementTree) {
             Expression expression = null;
             ReturnStatementTree aReturn = (ReturnStatementTree) tree;
             if (aReturn.expression != null) {
-                expression = (Expression) AstTransformer.convert(aReturn.expression);
+                expression = (Expression) this.convert(aReturn.expression);
             } else {
                 expression = new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0));
             }
@@ -102,7 +108,7 @@ public class AstTransformer {
             return convert(((ParenExpressionTree) tree).expression);
         } else if (tree instanceof CallExpressionTree) {
             CallExpressionTree call = (CallExpressionTree) tree;
-            List<Expression> arguments = cast(Expression.class, call.arguments.arguments.stream().map(AstTransformer::convert).collect(Collectors.toList()));
+            List<Expression> arguments = cast(Expression.class, call.arguments.arguments.stream().map(this::convert).collect(Collectors.toList()));
             Expression operand = (Expression) convert(call.operand);
             if (operand instanceof MemberExpression) {
                 MemberExpression memberExpression = (MemberExpression) operand;
@@ -139,11 +145,17 @@ public class AstTransformer {
                         properties.add(new Property(value, (Expression) convert(prop.value)));
                     }
                 } else if (untypedProp instanceof GetAccessorTree) {
+                    if (environment.ESversion < 6) {
+                        throw new RuntimeException();
+                    }
                     GetAccessorTree prop = (GetAccessorTree) untypedProp;
                     Token name = prop.propertyName;
                     BlockStatement body = (BlockStatement) convert(prop.body);
                     properties.add(new Property(name.asIdentifier().value, new GetterExpression(prop.body.location, body)));
                 } else if (untypedProp instanceof SetAccessorTree) {
+                    if (environment.ESversion < 6) {
+                        throw new RuntimeException();
+                    }
                     SetAccessorTree prop = (SetAccessorTree) untypedProp;
                     Token name = prop.propertyName;
                     BlockStatement converted = (BlockStatement) convert(prop.body);
@@ -165,19 +177,19 @@ public class AstTransformer {
             NewExpressionTree newExp = (NewExpressionTree) tree;
             List<Expression> arguments = new ArrayList<>();
             if (newExp.arguments != null) {
-                arguments = cast(Expression.class, newExp.arguments.arguments.stream().map(AstTransformer::convert).collect(Collectors.toList()));
+                arguments = cast(Expression.class, newExp.arguments.arguments.stream().map(this::convert).collect(Collectors.toList()));
             }
             Expression operand = (Expression) convert(newExp.operand);
             return new NewExpression(loc, operand, arguments);
         } else if (tree instanceof SwitchStatementTree) {
             SwitchStatementTree switchStatement = (SwitchStatementTree) tree;
-            List<Map.Entry<Expression, Statement>> cases = switchStatement.caseClauses.stream().filter(clause -> clause instanceof CaseClauseTree).map(clause -> (CaseClauseTree) clause).map(AstTransformer::convertCaseClause).collect(Collectors.toList());
+            List<Map.Entry<Expression, Statement>> cases = switchStatement.caseClauses.stream().filter(clause -> clause instanceof CaseClauseTree).map(clause -> (CaseClauseTree) clause).map(this::convertCaseClause).collect(Collectors.toList());
 
             Optional<ParseTree> defaultClauseTreeOptional = switchStatement.caseClauses.stream().filter(clause -> clause instanceof DefaultClauseTree).findAny();
             BlockStatement defaultClause = new BlockStatement(loc, Collections.EMPTY_LIST);
             if (defaultClauseTreeOptional.isPresent()) {
                 DefaultClauseTree defaultClauseTree = (DefaultClauseTree) defaultClauseTreeOptional.get();
-                defaultClause = new BlockStatement(defaultClauseTree.location, cast(Statement.class, defaultClauseTree.statements.stream().map(AstTransformer::convert).collect(Collectors.toList())));
+                defaultClause = new BlockStatement(defaultClauseTree.location, cast(Statement.class, defaultClauseTree.statements.stream().map(this::convert).collect(Collectors.toList())));
             }
 
             return new SwitchStatement(loc, (Expression) convert(switchStatement.expression), cases, defaultClause);
@@ -213,12 +225,12 @@ public class AstTransformer {
             return new DynamicAccessExpression(loc, operand, lookupKey);
         } else if (tree instanceof CommaExpressionTree) {
             CommaExpressionTree commaExp = (CommaExpressionTree) tree;
-            return new CommaExpression(loc, cast(Expression.class, commaExp.expressions.stream().map(AstTransformer::convert).collect(Collectors.toList())));
+            return new CommaExpression(loc, cast(Expression.class, commaExp.expressions.stream().map(this::convert).collect(Collectors.toList())));
         } else if (tree instanceof NullTree) {
             return new NullLiteral(loc);
         } else if (tree instanceof ArrayLiteralExpressionTree) {
             ArrayLiteralExpressionTree array = (ArrayLiteralExpressionTree) tree;
-            List<AstNode> arguments = array.elements.stream().map(AstTransformer::convert).collect(Collectors.toList());
+            List<AstNode> arguments = array.elements.stream().map(this::convert).collect(Collectors.toList());
 
             // Adding this special to the arguments, so that the further analysis doesn't think that the arguments are actual arguments to the Array Constructor.
             arguments.add(0, new UnaryExpression(loc, Operator.VOID, new NumberLiteral(loc, 0)));
@@ -272,8 +284,8 @@ public class AstTransformer {
         throw new RuntimeException("Cannot yet handle that kind of expression: " + tree.getClass().getName());
     }
 
-    private static Map.Entry<Expression, Statement> convertCaseClause(CaseClauseTree caseClause) {
-        BlockStatement statement = new BlockStatement(caseClause.location, cast(Statement.class, caseClause.statements.stream().map(AstTransformer::convert).collect(Collectors.toList())));
+    private Map.Entry<Expression, Statement> convertCaseClause(CaseClauseTree caseClause) {
+        BlockStatement statement = new BlockStatement(caseClause.location, cast(Statement.class, caseClause.statements.stream().map(this::convert).collect(Collectors.toList())));
         return new AbstractMap.SimpleEntry<>((Expression) convert(caseClause.expression), statement);
     }
 

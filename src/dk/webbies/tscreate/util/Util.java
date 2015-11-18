@@ -277,4 +277,8 @@ public class Util {
         runOnCommon(one, two, result::add);
         return result;
     }
+
+    public static<T> T evaluate(Supplier<T> supplier) {
+        return supplier.get();
+    }
 }

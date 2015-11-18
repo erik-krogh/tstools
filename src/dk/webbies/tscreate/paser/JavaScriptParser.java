@@ -12,6 +12,8 @@ import com.google.javascript.jscomp.parsing.parser.trees.ProgramTree;
 import com.google.javascript.jscomp.parsing.parser.util.SourcePosition;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import com.google.javascript.rhino.ErrorReporter;
+import dk.webbies.tscreate.Main;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.paser.AST.*;
 
 import java.util.*;
@@ -26,12 +28,15 @@ import java.util.stream.Collectors;
 public class JavaScriptParser {
     private final Mode mode;
     private final Config config;
+    private final DeclarationParser.Environment environment;
 
     /**
      * Constructs a new parser.
+     * @param languageMode
      */
-    public JavaScriptParser(Mode languageMode) {
-        this.mode = languageMode;
+    public JavaScriptParser(Main.LanguageLevel languageMode) {
+        this.mode = languageMode.closureCompilerMode;
+        this.environment = languageMode.environment;
         LanguageMode m;
         switch (mode) {
             case ES3:
@@ -82,7 +87,7 @@ public class JavaScriptParser {
         if (errors.isEmpty()) {
             programAST = new Parser(new Parser.Config(mode), new MutedErrorReporter(), new SourceFile(name, contents)).parseProgram();
         }
-        return new ParseResult(programAST, errors, warnings);
+        return new ParseResult(programAST, errors, warnings, environment);
     }
 
     /**
@@ -127,11 +132,13 @@ public class JavaScriptParser {
         private final List<SyntaxMesssage> errors;
 
         private final List<SyntaxMesssage> warnings;
+        private DeclarationParser.Environment environment;
 
-        private ParseResult(ProgramTree programAST, List<SyntaxMesssage> errors, List<SyntaxMesssage> warnings) {
+        private ParseResult(ProgramTree programAST, List<SyntaxMesssage> errors, List<SyntaxMesssage> warnings, DeclarationParser.Environment environment) {
             this.programAST = programAST;
             this.errors = errors;
             this.warnings = warnings;
+            this.environment = environment;
         }
 
         /**
@@ -156,7 +163,8 @@ public class JavaScriptParser {
         }
 
         public FunctionExpression toTSCreateAST() {
-            List<Statement> body = this.programAST.sourceElements.stream().map(AstTransformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
+            AstTransformer transformer = new AstTransformer(environment);
+            List<Statement> body = this.programAST.sourceElements.stream().map(transformer::convert).map(JavaScriptParser::toStatement).collect(Collectors.toList());
             if (body.isEmpty()) {
                 SourcePosition position = new SourcePosition(new SourceFile("empty", ""), 0, 0, 0);
                 SourceRange location = new SourceRange(position, position);

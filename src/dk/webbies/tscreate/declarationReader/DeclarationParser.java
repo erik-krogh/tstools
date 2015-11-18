@@ -267,14 +267,19 @@ public class DeclarationParser {
     }
 
     public enum Environment {
-        ES5Core("es5"),
-        ES5DOM("es5-dom"),
-        ES6Core("es6"),
-        ES6DOM("es6-dom");
+        ES5Core("es5", 5),
+        ES5DOM("es5-dom", 5),
+        ES6Core("es6", 6),
+        ES6DOM("es6-dom", 6);
 
         private final String cliArgument;
-        Environment(String cliArgument) {
+        public final int ESversion;
+
+        Environment(String cliArgument, int ESversion) {
             this.cliArgument = cliArgument;
+            this.ESversion = ESversion;
         }
+
+
     }
 }

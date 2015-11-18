@@ -46,7 +46,7 @@ public class Main {
         String resultDeclarationFilePath = scriptPath + ".gen.d.ts";
 
         String script = Util.readFile(scriptPath);
-        FunctionExpression program = SSA.toSSA(new JavaScriptParser(languageLevel.closureCompilerMode).parse(name, script).toTSCreateAST());
+        FunctionExpression program = SSA.toSSA(new JavaScriptParser(languageLevel).parse(name, script).toTSCreateAST());
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath, options), program);
 
         NativeClassesMap nativeClasses = markNatives(globalObject, languageLevel.environment);
