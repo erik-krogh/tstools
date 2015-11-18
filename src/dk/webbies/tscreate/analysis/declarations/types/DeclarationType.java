@@ -11,6 +11,13 @@ import java.util.stream.Collectors;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public abstract class DeclarationType {
+    private static int instanceCounter = 0;
+    public final int counter;
+
+    public DeclarationType() {
+        this.counter = instanceCounter++;
+    }
+
     public abstract <T> T accept(DeclarationTypeVisitor<T> visitor);
 
     public abstract <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument);
