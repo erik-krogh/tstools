@@ -12,7 +12,6 @@ import java.util.function.Predicate;
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
 public class DeclarationPrinter {
-    private final Map<DeclarationType, Integer> countMap;
     private final OutputStream out;
     private final Map<String, DeclarationType> declarations;
 
@@ -29,15 +28,39 @@ public class DeclarationPrinter {
         this.out = out;
         this.declarations = declarations;
 
+//        recursiveDefinitionCycleDetection(declarations); // TODO: Improve this or something.
+
+        useCounterCycleDetection(declarations);
+    }
+
+    private void recursiveDefinitionCycleDetection(Map<String, DeclarationType> declarations) {
+        DeclarationCycleDetector cycleDetector = new DeclarationCycleDetector();
+        declarations.values().forEach(cycleDetector::addType);
+
+        for (DeclarationType type : cycleDetector.getCyclicTypes()) {
+            if (type instanceof FunctionType) {
+                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.counter++);
+                interfaceType.function = (FunctionType) type;
+                printsAsInterface.put(type, interfaceType);
+            }
+            if (type instanceof UnnamedObjectType) {
+                InterfaceType interfaceType = new InterfaceType();
+                interfaceType.object = (UnnamedObjectType) type;
+                printsAsInterface.put(type, interfaceType);
+            }
+        }
+    }
+
+    private void useCounterCycleDetection(Map<String, DeclarationType> declarations) {
         DeclarationTypeUseCounter useCounter = new DeclarationTypeUseCounter();
         for (DeclarationType type : declarations.values()) {
             type.accept(useCounter);
         }
 
         // This countmap mostly exists so that every type is visisted, and thus resolved (as in, resolving CombinationTypes and UnresolvedDeclarationsTypes).
-        this.countMap = useCounter.getCountMap();
-        this.countMap.forEach((type, count) -> {
-            if (count > 1 && type instanceof FunctionType) {
+        Map<DeclarationType, Integer> countMap = useCounter.getCountMap();
+        countMap.forEach((type, count) -> {
+            if (type instanceof FunctionType) {
                 InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.counter++);
                 interfaceType.function = (FunctionType) type;
                 printsAsInterface.put(type, interfaceType);
