@@ -191,7 +191,7 @@ public class ClassHierarchyExtractor {
                 for (Snap.Property prop : obj.env.getPropertyMap().values()) {
                     visitProp(prop);
                 }
-            } else {
+            } else if (obj.env != null){
                 throw new RuntimeException();
             }
 
