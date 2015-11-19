@@ -1,9 +1,6 @@
 package dk.webbies.tscreate.paser.AST;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by hamid on 10/22/15.

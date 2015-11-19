@@ -31,6 +31,11 @@ public class SSA {
             h.Helper.printDebug("~", "~");
 
         }
+
+        h.Helper.printDebug("SIZE_N: " + CFGNode.cfgNodes.size());
+        for (CFGNode n : CFGNode.cfgNodes) {
+            h.Helper.printDebug(n.toString(), n.getSuccessors().size() + " ");
+        }
         CFGNode rootNode = cfgbuilder.functionExpression2CFGNode.get(functionExpression);
         PrintWriter w = new PrintWriter(new File("out/graph.dot"));
         CFGBuilder.toDot(w, rootNode);

@@ -48,9 +48,10 @@ public class CFGBuilder {
     class CFGExprVisitor implements  CFGExpressionVisitor<CFGEnv> {
         @Override
         public CFGEnv visit(BinaryExpression binOp, CFGEnv au) {
-            if (au == null) {
+            //h.Helper.printDebug("lhs, rhs: ", binOp.getLhs().toString() + ", " + binOp.getRhs().toString());
+            if (false && au == null) {
                 throw new RuntimeException(binOp.toString());
-                //au = DUMMY_ENV;
+                // see the case for PLUS/MINUS/MULT;
             }
             printAstNode(binOp);
             switch (binOp.getOperator()) {
@@ -64,7 +65,7 @@ public class CFGBuilder {
                     CFGEnv aux = binOp.getRhs().accept(exprVisitor, au);
                     if (aux == null) {
                         throw new RuntimeException();
-                        //aux = DUMMY_ENV;
+
                     }
                     CFGNode defNode = new CFGDef(binOp, id);
                     CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode);
@@ -75,6 +76,11 @@ public class CFGBuilder {
                 case PLUS:
                 case MINUS:
                 case MULT:
+                case EQUAL_EQUAL:
+                case LESS_THAN_EQUAL:
+                case LESS_THAN:
+                case GREATER_THAN:
+                case GREATER_THAN_EQUAL:
                 {
 
                     // creates a CFGUseNode if necessary (otherwise use the one under construction)
@@ -85,12 +91,19 @@ public class CFGBuilder {
 
                     Expression lhs = binOp.getLhs();
                     Expression rhs = binOp.getRhs();
-                    lhs.accept(exprVisitor, null);
-                    rhs.accept(exprVisitor, null);
-                    ;
+                    if (lhs instanceof Identifier)
+                        currUseNode.addUse(lhs);
+                    else
+                        lhs.accept(exprVisitor, null);
+                    if (rhs instanceof Identifier)
+                        currUseNode.addUse(rhs);
+                    else
+                        rhs.accept(exprVisitor, null);
+
                     if (isTopUseNode) {
                         CFGUse useNode = getCurrentAndResetUseNode();
                         assert (useNode == currUseNode);
+                        if (au == null) throw new RuntimeException();
                         CFGEnv outEnv = CFGEnv.createOutCfgEnv(au.getAppendNode(), useNode);
                         assert (useNodeUnderconstruction == null);
                         return outEnv;
@@ -231,6 +244,26 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(UnaryExpression unaryExpression, CFGEnv aux) {
             printAstNode(unaryExpression);
+            // creates a CFGUseNode if necessary (otherwise use the one under construction)
+            boolean isTopUseNode = (useNodeUnderconstruction == null);
+            CFGUse currUseNode = makeUseNode(unaryExpression);
+
+            Expression expr = unaryExpression.getExpression();
+
+            if (expr instanceof Identifier)
+                currUseNode.addUse(expr);
+            else
+                expr.accept(exprVisitor, null);
+
+            if (isTopUseNode) {
+                CFGUse useNode = getCurrentAndResetUseNode();
+                assert (useNode == currUseNode);
+                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode);
+                assert (useNodeUnderconstruction == null);
+                return outEnv;
+            }
+
+
             unaryExpression.getExpression().accept(exprVisitor,null);
             return null;
         }
@@ -254,6 +287,8 @@ public class CFGBuilder {
             printAstNode(block);
             for (Statement stmt : block.getStatements()) {
                 aux = stmt.accept(stmtVisitor, aux);
+                //if (aux.getAppendNode().getAstNode() == null) throw new RuntimeException("processed stmt: " + stmt );
+                h.Helper.printDebug("?????????????????????");
             }
             return aux;
         }
@@ -287,11 +322,7 @@ public class CFGBuilder {
 
         @Override
         public CFGEnv visit(IfStatement ifStatement, CFGEnv aux) {
-            printAstNode(ifStatement);
-            ifStatement.getCondition().accept(exprVisitor, null);
-            ifStatement.getIfBranch().accept(stmtVisitor, null);
-            ifStatement.getElseBranch().accept(stmtVisitor,null);
-            return null;
+            return makeConditional(ifStatement.getCondition(), ifStatement.getIfBranch(), ifStatement.getElseBranch(), aux);
         }
 
         @Override
@@ -376,6 +407,14 @@ public class CFGBuilder {
     public CFGBuilder() {
         //DUMMY_ENV  = CFGEnv.createInCfgEnv();
     }
+    private CFGEnv makeConditional(Expression condition, Statement left, Statement right, CFGEnv aux) {
+        CFGEnv branchEnv = condition.accept(exprVisitor, aux);
+        CFGEnv leftEnv = left.accept(stmtVisitor, branchEnv);
+        CFGEnv rightEnv = right.accept(stmtVisitor, branchEnv);
+        CFGJoin joinNode = new CFGJoin();
+        return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode);
+
+    }
     public void processMain(FunctionExpression mainFunction) {
         exprVisitor.visit(mainFunction, null);
     }
@@ -385,12 +424,16 @@ public class CFGBuilder {
         HashSet<CFGNode> visited = new HashSet<>();
         Queue<CFGNode> q = new LinkedList<>();
         q.add(root);
+        visited.add(root);
         while (!q.isEmpty()) {
             CFGNode n = q.remove();
             nodes.add(n);
-            visited.add(n);
+            //visited.add(n);
             for (CFGNode succ : n.getSuccessors()) {
-                if (!visited.contains(succ)) q.add(succ);
+                if (!visited.contains(succ)) {
+                    q.add(succ);
+                    visited.add(succ);
+                }
             }
         }
         h.Helper.printDebug("nodes size ", nodes.size() + " ");
@@ -407,13 +450,14 @@ public class CFGBuilder {
         w.println("digraph {");
         for (CFGNode n : nodes) {
             String s;
-            if (n.getAstNode() == null)
-                s = "entry";//String.valueOf(n.hashCode());
+            if (n instanceof CFGNop)
+                s = "entry: " + String.valueOf(n.hashCode());
             else
-                s = Util.escString(n.getAstNode().toString());
+                s = Util.escString(n.toString());
             String src = "\"" + s + "\"";
             for (CFGNode succ : n.getSuccessors()) {
-                w.println(src + " -> \"" + Util.escString(succ.getAstNode().toString()) +"\"");
+                //w.println(n.hashCode() + " -> " + succ.hashCode());
+                w.println(src + " -> \"" + Util.escString(succ.toString()) +"\"");
             }
 
 
