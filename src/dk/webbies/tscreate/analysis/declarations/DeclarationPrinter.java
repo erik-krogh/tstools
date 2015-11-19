@@ -28,7 +28,7 @@ public class DeclarationPrinter {
         this.out = out;
         this.declarations = declarations;
 
-//        recursiveDefinitionCycleDetection(declarations); // TODO: Improve this or something.
+//        recursiveDefinitionCycleDetection(declarations); // TODO Try the following: Recurse the tree until cycle is found, then add that found element as a cyclic element (and in a queue to check later), and back-up until the element that had the cyclic element, and continue from there. (And remember to stop whenever a known cyclic element is hit.)
 
         useCounterCycleDetection(declarations);
     }
