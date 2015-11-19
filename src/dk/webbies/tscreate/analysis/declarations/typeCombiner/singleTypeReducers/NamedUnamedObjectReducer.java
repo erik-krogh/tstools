@@ -76,13 +76,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
 
             Snap.Obj prototype = this.nativeClasses.prototypeFromName(name);
 
-            while (prototype != null) {
-                keys.addAll(prototype.getPropertyMap().keySet());
-                if (prototype == prototype.prototype) {
-                    break;
-                }
-                prototype = prototype.prototype;
-            }
+            addAllProperties(keys, prototype);
 
             Type type = this.nativeClasses.typeFromName(name);
             if (type instanceof InterfaceType) {
@@ -90,8 +84,23 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
             } else if (type instanceof GenericType) {
                 keys.addAll(((GenericType) type).getDeclaredProperties().keySet());
             }
+
+            if (this.nativeClasses.objectFromName(name) != null) {
+                Snap.Obj obj = this.nativeClasses.objectFromName(name);
+                addAllProperties(keys, obj);
+            }
         }
 
         toRemoveFrom.removeAll(nameToPropertiesCache.get(name));
+    }
+
+    private void addAllProperties(HashSet<String> keys, Snap.Obj prototype) {
+        while (prototype != null) {
+            keys.addAll(prototype.getPropertyMap().keySet());
+            if (prototype == prototype.prototype) {
+                break;
+            }
+            prototype = prototype.prototype;
+        }
     }
 }
