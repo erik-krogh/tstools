@@ -75,24 +75,27 @@ public class NativeTypeFactory {
         return functionNode;
     }
 
-    private List<UnionNode> fromType(Type parameter, boolean isArgument) {
-        return parameter.accept(new UnionNativeTypeVisitor(isArgument));
-    }
-
-    public List<UnionNode> fromType(Type parameter) {
-        return fromType(parameter, false);
+    private Map<Type, UnionNode> typeCache = new HashMap<>();
+    private UnionNode fromType(Type type, boolean isArgument) {
+        if (isArgument && type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any) {
+            return primitiveFactory.nonVoid();
+        }
+        if (typeCache.containsKey(type)) {
+            return new IncludeNode(solver, typeCache.get(type));
+        } else {
+            EmptyNode node = new EmptyNode(solver);
+            typeCache.put(type, node);
+            List<UnionNode> result = type.accept(new UnionNativeTypeVisitor());
+            solver.union(node, result);
+            return new IncludeNode(solver, node);
+        }
     }
 
     private Map<GenericType, List<UnionNode>> genericTypeCache = new HashMap<>();
     private Map<InterfaceType, List<UnionNode>> interfaceCache = new HashMap<>();
 
     private class UnionNativeTypeVisitor implements TypeVisitor<List<UnionNode>> {
-        private final boolean isArgument;
         private Map<InterfaceType, GenericType> convertedTypeMap = new HashMap<>();
-
-        private UnionNativeTypeVisitor(boolean isArgument) {
-            this.isArgument = isArgument;
-        }
 
         private UnionNode recurse(Type t) {
             List<UnionNode> nodes = t.accept(this);
@@ -186,12 +189,7 @@ public class NativeTypeFactory {
         @Override
         public List<UnionNode> visit(SimpleType t) {
             switch (t.getKind()) {
-                case Any:
-                    if (this.isArgument) {
-                        return Arrays.asList(primitiveFactory.nonVoid());
-                    } else {
-                        return Arrays.asList(primitiveFactory.any());
-                    }
+                case Any: return Arrays.asList(primitiveFactory.any());
                 case Boolean: return Arrays.asList(primitiveFactory.bool());
                 case Enum: throw new UnsupportedOperationException();
                 case Number: return Arrays.asList(primitiveFactory.number());
