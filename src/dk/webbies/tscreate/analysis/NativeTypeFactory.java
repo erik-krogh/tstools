@@ -2,9 +2,8 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
-import dk.webbies.tscreate.util.Util;
 import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.*;
@@ -95,6 +94,15 @@ public class NativeTypeFactory {
             this.isArgument = isArgument;
         }
 
+        private UnionNode recurse(Type t) {
+            List<UnionNode> nodes = t.accept(this);
+            if (nodes.isEmpty()) {
+                return new EmptyNode(solver);
+            } else {
+                return new IncludeNode(solver, nodes);
+            }
+        }
+
         @Override
         public List<UnionNode> visit(AnonymousType t) {
             return Collections.EMPTY_LIST;
@@ -115,7 +123,7 @@ public class NativeTypeFactory {
 
             InterfaceType interfaceType = t.toInterface();
             convertedTypeMap.put(interfaceType, t);
-            result.addAll(interfaceType.accept(this));
+            result.add(recurse(interfaceType));
             return result;
         }
 
@@ -141,35 +149,30 @@ public class NativeTypeFactory {
 
             result.add(obj);
 
-            List<Map.Entry<UnionNode, List<UnionNode>>> delayedUnions = new ArrayList<>();
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
                 String key = entry.getKey();
                 Type type = entry.getValue();
 
                 EmptyNode fieldNode = new EmptyNode(solver);
                 obj.addField(key, fieldNode);
-                delayedUnions.add(new AbstractMap.SimpleEntry<>(fieldNode, type.accept(this)));
+                solver.union(fieldNode, recurse(type));
             }
 
             if (!t.getDeclaredCallSignatures().isEmpty()) {
                 List<FunctionNode> functionNodes = t.getDeclaredCallSignatures().stream().map(sig -> fromSignature(sig, null, null)).collect(Collectors.toList());
-                result.addAll(functionNodes);
+                result.add(new IncludeNode(solver, functionNodes));
             }
 
             if (!t.getDeclaredConstructSignatures().isEmpty()) {
                 List<FunctionNode> functionNodes = t.getDeclaredConstructSignatures().stream().map(sig -> fromSignature(sig, null, null)).collect(Collectors.toList());
-                result.addAll(functionNodes);
+                result.add(new IncludeNode(solver, functionNodes));
             }
 
             if (t.getDeclaredStringIndexType() != null) {
-                result.add(new DynamicAccessNode(solver.union(t.getDeclaredStringIndexType().accept(this)), primitiveFactory.string(), solver));
+                result.add(new DynamicAccessNode(solver.union(recurse(t.getDeclaredStringIndexType())), primitiveFactory.string(), solver));
             }
             if (t.getDeclaredNumberIndexType() != null) {
-                result.add(new DynamicAccessNode(solver.union(t.getDeclaredNumberIndexType().accept(this)), primitiveFactory.number(), solver));
-            }
-
-            for (Map.Entry<UnionNode, List<UnionNode>> entry : delayedUnions) {
-                solver.union(entry.getKey(), entry.getValue());
+                result.add(new DynamicAccessNode(solver.union(recurse(t.getDeclaredNumberIndexType())), primitiveFactory.number(), solver));
             }
 
             return result;
@@ -177,7 +180,7 @@ public class NativeTypeFactory {
 
         @Override
         public List<UnionNode> visit(ReferenceType t) {
-            return t.getTarget().accept(this);
+            return Arrays.asList(recurse(t.getTarget()));
         }
 
         @Override
@@ -207,7 +210,7 @@ public class NativeTypeFactory {
 
         @Override
         public List<UnionNode> visit(UnionType t) {
-            return t.getElements().stream().map(type -> type.accept(this)).reduce(new ArrayList<>(), Util::reduceList);
+            return t.getElements().stream().map(this::recurse).collect(Collectors.toList());
         }
 
         @Override

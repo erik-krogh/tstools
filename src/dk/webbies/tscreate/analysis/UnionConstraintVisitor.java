@@ -632,7 +632,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     case "native": {
                         boolean constructorCalls = this.constructorCalls;
                         List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, constructorCalls, nativeTypeFactory);
-                        solver.union(functionNode, signatures);
+                        solver.union(functionNode, new IncludeNode(solver, signatures));
                         break;
                     }
                     case "unknown":
