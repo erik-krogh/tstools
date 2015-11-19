@@ -9,28 +9,27 @@ import dk.webbies.tscreate.util.Util;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static dk.webbies.tscreate.jsnap.Snap.*;
+import static dk.webbies.tscreate.jsnap.Snap.Obj;
+import static dk.webbies.tscreate.jsnap.Snap.Value;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static NativeClassesMap markNatives(Obj global, Environment env) {
-        SpecReader spec = getTypeSpecification(env);
+    public static NativeClassesMap markNatives(Obj global, Environment env, List<String> dependencyDeclarations) {
+        SpecReader spec = getTypeSpecification(env, dependencyDeclarations);
 
         Map<Type, String> typeNames = new HashMap<>();
 
         markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
 
         Map<Obj, Type> prototypes = new HashMap<>();
+        HashMap<Obj, String> namedObjects = new HashMap<>();
         Obj globalProto = global;
         while (globalProto != null) {
-            spec.getGlobal().accept(new MarkNativesVisitor(prototypes), globalProto);
+            spec.getGlobal().accept(new MarkNativesVisitor(prototypes, typeNames, namedObjects), globalProto);
             globalProto = globalProto.prototype;
         }
 
@@ -49,10 +48,14 @@ public class DeclarationParser {
             }
         }
 
-        return new NativeClassesMap(typeNames, prototypes, global);
+        return new NativeClassesMap(typeNames, prototypes, namedObjects, global);
     }
 
     public static SpecReader getTypeSpecification(Environment env, String... declarationFilePaths) {
+        return getTypeSpecification(env, Arrays.asList(declarationFilePaths));
+    }
+
+    public static SpecReader getTypeSpecification(Environment env, Collection<String> declarationFilePaths) {
         String runString = "lib/ts-type-reader/src/CLI.js --env " + env.cliArgument;
         for (String declarationFile : declarationFilePaths) {
             runString += " \"" + declarationFile + "\"";
@@ -89,10 +92,14 @@ public class DeclarationParser {
 
     private static class MarkNativesVisitor implements TypeVisitorWithArgument<Void, Snap.Obj> {
         Set<Type> seen = new HashSet<>();
-        private Map<Snap.Obj, Type> nativeClasses;
+        private Map<Snap.Obj, Type> prototypes;
+        private Map<Type, String> typeNames;
+        private HashMap<Obj, String> namedObjects;
 
-        public MarkNativesVisitor(Map<Snap.Obj, Type> nativeClasses) {
-            this.nativeClasses = nativeClasses;
+        public MarkNativesVisitor(Map<Obj, Type> prototypes, Map<Type, String> typeNames, HashMap<Obj, String> namedObjects) {
+            this.prototypes = prototypes;
+            this.typeNames = typeNames;
+            this.namedObjects = namedObjects;
         }
 
         @Override
@@ -123,12 +130,15 @@ public class DeclarationParser {
                 return null;
             }
             seen.add(t);
+            if (typeNames.containsKey(t)) {
+                this.namedObjects.put(obj, typeNames.get(t));
+            }
             if (obj.function != null) {
                 obj.function.type = "native";
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
-                    this.nativeClasses.put((Obj)obj.getProperty("prototype").value, t);
+                    this.prototypes.put((Obj)obj.getProperty("prototype").value, t);
                 }
             }
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
@@ -149,12 +159,15 @@ public class DeclarationParser {
                 return null;
             }
             seen.add(t);
+            if (typeNames.containsKey(t)) {
+                this.namedObjects.put(obj, typeNames.get(t));
+            }
             if (obj.function != null) {
                 obj.function.type = "native";
                 obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
-                    this.nativeClasses.put((Obj)obj.getProperty("prototype").value, t);
+                    this.prototypes.put((Obj)obj.getProperty("prototype").value, t);
                 }
             }
             for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
@@ -214,9 +227,11 @@ public class DeclarationParser {
     public static final class NativeClassesMap {
         private final BiMap<Type, String> typeNames;
         private final BiMap<Snap.Obj, String> classNames = HashBiMap.create();
+        private BiMap<Obj, String> namedObjects;
         private final Obj global;
 
-        public NativeClassesMap(Map<Type, String> typeNames, Map<Obj, Type> nativeClasses, Obj global) {
+        public NativeClassesMap(Map<Type, String> typeNames, Map<Obj, Type> nativeClasses, HashMap<Obj, String> namedObjects, Obj global) {
+            this.namedObjects = HashBiMap.create(namedObjects);
             this.global = global;
             this.typeNames = HashBiMap.create(typeNames);
             nativeClasses.forEach((prototype, type) -> {
@@ -263,6 +278,14 @@ public class DeclarationParser {
 
         public Type typeFromName(String name) {
             return typeNames.inverse().get(name);
+        }
+
+        public String nameFromObject(Obj obj) {
+            return this.namedObjects.get(obj);
+        }
+
+        public Obj objectFromName(String name) {
+            return this.namedObjects.inverse().get(name);
         }
     }
 
