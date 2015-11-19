@@ -14,14 +14,10 @@ import dk.webbies.tscreate.jsnap.Snap;
 public class NamedObjectReducer implements SingleTypeReducer<NamedObjectType, NamedObjectType> {
     private final Snap.Obj global;
     private final NativeClassesMap nativeClasses;
-    private final UnionFindSolver solver;
-    private final NativeTypeFactory nativeFactory;
 
     public NamedObjectReducer(Snap.Obj global, NativeClassesMap nativeClasses) {
         this.global = global;
         this.nativeClasses = nativeClasses;
-        this.solver = new UnionFindSolver();
-        this.nativeFactory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, global), solver, nativeClasses);
     }
 
     @Override

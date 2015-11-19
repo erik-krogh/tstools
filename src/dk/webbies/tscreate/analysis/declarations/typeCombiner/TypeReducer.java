@@ -45,7 +45,7 @@ public class TypeReducer {
         register(new ClassObjectReducer(globalObject, this));
         register(new FunctionReducer(this));
         register(new PrimitiveReducer());
-        register(new NamedUnamedObjectReducer(globalObject, nativeClasses));
+        register(new NamedUnamedObjectReducer(nativeClasses));
         register(new UnnamedObjectReducer(this));
         register(new ClassInstanceUnnamedObjectReducer());
         register(new ClassInstanceReducer());

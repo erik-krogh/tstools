@@ -3,12 +3,9 @@ package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducer
 import dk.au.cs.casa.typescript.types.GenericType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
-import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
-import dk.webbies.tscreate.analysis.unionFind.PrimitiveNode;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 
@@ -21,16 +18,10 @@ import java.util.Set;
  * Created by Erik Krogh Kristensen on 18-10-2015.
  */
 public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObjectType, NamedObjectType> {
-    private final Snap.Obj global;
-    private final NativeTypeFactory nativeFactory;
     private NativeClassesMap nativeClasses;
-    private final UnionFindSolver solver;
 
-    public NamedUnamedObjectReducer(Snap.Obj global, NativeClassesMap nativeClasses) {
-        this.global = global;
+    public NamedUnamedObjectReducer(NativeClassesMap nativeClasses) {
         this.nativeClasses = nativeClasses;
-        this.solver = new UnionFindSolver();
-        this.nativeFactory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, global), solver, nativeClasses);
     }
 
     @Override
