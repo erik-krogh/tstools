@@ -63,8 +63,11 @@ public class DeclarationParser {
 
         String cachePath = "declaration-" + env.cliArgument + "-" + runString.hashCode() + ".json";
 
+        List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("lib/ts-type-reader")));
+        declarationFilePaths.stream().map(File::new).forEach(toCheckAgainst::add);
+
         try {
-            String specification = Util.getCachedOrRun(cachePath, new File("lib/ts-type-reader"), runString);
+            String specification = Util.getCachedOrRunNode(cachePath, toCheckAgainst, runString);
             return new SpecReader(specification.split("\\n")[1]);
         } catch (IOException e) {
             throw new RuntimeException(e);

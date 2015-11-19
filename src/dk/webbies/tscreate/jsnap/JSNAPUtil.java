@@ -40,12 +40,17 @@ public class JSNAPUtil {
             cachePath += "+" + dependency + "";
         }
 
+        List<File> filesToCheckAgainst = new ArrayList<>();
+        if (checkAgainst != null) {
+            filesToCheckAgainst.add(new File(checkAgainst));
+        }
+        dependencies.stream().map(File::new).forEach(filesToCheckAgainst::add);
+
         if (options.runtime == Options.Runtime.CHROME) {
-            File fileToCheckAgainst = checkAgainst == null ? null : new File(checkAgainst);
 
-            String instrumented = Util.getCachedOrRun(cachePath + ".instrumented", fileToCheckAgainst, jsnapPath + " --onlyInstrument " + scriptPath);
+            String instrumented = Util.getCachedOrRunNode(cachePath + ".instrumented", filesToCheckAgainst, jsnapPath + " --onlyInstrument " + scriptPath);
 
-            return Util.getCachedOrRun(cachePath + ".selinium", fileToCheckAgainst, () -> {
+            return Util.getCachedOrRun(cachePath + ".selinium", filesToCheckAgainst, () -> {
                 return SeleniumDriver.executeScript(instrumented);
             });
         } else if (options.runtime == Options.Runtime.NODE || options.runtime == Options.Runtime.PHANTOM) {
@@ -56,7 +61,7 @@ public class JSNAPUtil {
                 default:
                     throw new RuntimeException("Dont know runtime: " + options.runtime);
             }
-            return Util.getCachedOrRun(cachePath, new File(scriptPath), nodeArgs);
+            return Util.getCachedOrRunNode(cachePath, filesToCheckAgainst, nodeArgs);
         } else {
             throw new RuntimeException("Unknwon runtime environment " + options.runtime);
         }
