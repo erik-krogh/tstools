@@ -62,12 +62,17 @@ public class HeapValueFactory {
         if (primitive != null) {
             return primitive;
         }
+        // From here we know that is in an Snap.Obj
 
         List<UnionNode> result = new ArrayList<>();
         ObjectNode objectNode = new ObjectNode(solver);
         result.add(objectNode);
 
         Snap.Obj obj = (Snap.Obj) value;
+        if (this.typeAnalysis.nativeClasses.nameFromObject(obj) != null) {
+            objectNode.setTypeName(this.typeAnalysis.nativeClasses.nameFromObject(obj));
+        }
+
         if (obj.prototype != null) {
             LibraryClass libraryClass = libraryClasses.get(obj.prototype);
             result.add(new HasPrototypeNode(solver, obj.prototype));
