@@ -24,6 +24,7 @@ public class CFGUse extends CFGNode {
         useNodes.add(this);
     }
 
+    public String toString() { return "Use(" + uses + ") @ " + getAstNode(); }
     public Collection<Expression> getUses() {
         return Collections.unmodifiableCollection(uses);
     }

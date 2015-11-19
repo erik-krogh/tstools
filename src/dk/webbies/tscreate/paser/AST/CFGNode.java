@@ -13,6 +13,7 @@ public abstract class CFGNode {
     public static  List<CFGNode> cfgNodes = new LinkedList<>();
     private AstNode astNode;
     private List<CFGNode> successors = new LinkedList<>();
+    private List<CFGNode> predecessors = new LinkedList<>();
 
     CFGNode() {
         cfgNodes.add(this);
@@ -25,6 +26,7 @@ public abstract class CFGNode {
 
     void addSuccessor(CFGNode succ) {
         successors.add(succ);
+        succ.predecessors.add(this);
     }
 
     public AstNode getAstNode() {

@@ -5,4 +5,5 @@ package dk.webbies.tscreate.paser.AST;
  * Used for no operation (e.g. function entry) and branches
  */
 public class CFGNop extends CFGNode {
+    public String toString() { return "NOP"; }
 }

@@ -33,5 +33,12 @@ public class CFGEnv {
         ret.type = CFGEnvType.Out;
         return ret;
     }
-
+    public static final CFGEnv createOutCfgEnv(CFGNode[] preds, CFGNode outNode) {
+        CFGEnv ret = new CFGEnv(outNode);
+        ret.type = CFGEnvType.Out;
+        for (CFGNode pred : preds) {
+            pred.addSuccessor(outNode);
+        }
+        return ret;
+    }
 }

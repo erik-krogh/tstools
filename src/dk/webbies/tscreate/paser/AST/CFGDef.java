@@ -22,4 +22,7 @@ public class CFGDef extends CFGNode {
     public Identifier getDefinition() {
         return definition;
     }
+    public String toString() {
+        return "def(" + definition.getName() + ") @ " + getAstNode().toString();
+    }
 }
