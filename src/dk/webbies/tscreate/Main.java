@@ -28,7 +28,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-        runBenchmark(BenchMark.test);
+        runAnalysis(BenchMark.test);
 
         long end = System.currentTimeMillis();
 
@@ -37,31 +37,28 @@ public class Main {
         System.exit(0);
     }
 
-    public static void runBenchmark(BenchMark benchMark) throws IOException {
-        runAnalysis(benchMark.name, benchMark.scriptPath, benchMark.declarationPath, benchMark.options, benchMark.languageLevel);
-    }
+    public static void runAnalysis(BenchMark benchMark) throws IOException {
+        String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
 
-    public static void runAnalysis(String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) throws IOException {
-        String resultDeclarationFilePath = scriptPath + ".gen.d.ts";
+        String script = Util.readFile(benchMark.scriptPath);
+        FunctionExpression program = SSA.toSSA(new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST());
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), program);
 
-        String script = Util.readFile(scriptPath);
-        FunctionExpression program = SSA.toSSA(new JavaScriptParser(languageLevel).parse(name, script).toTSCreateAST());
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(scriptPath, options), program);
+        NativeClassesMap nativeClasses = markNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations());
 
-        NativeClassesMap nativeClasses = markNatives(globalObject, languageLevel.environment);
-
-        Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, options);
+        Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, benchMark.options, benchMark.dependencyScripts());
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
-        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, options, globalObject, nativeClasses).buildDeclaration();
+        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
 
         BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(resultDeclarationFilePath)));
         OutputStream out = new MultiOutputStream(fileOut, System.out);
         new DeclarationPrinter(out, declaration).print();
         fileOut.close();
 
-        if (declarationPath != null) {
-            DeclarationEvaluator.Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, declarationPath, languageLevel.environment).createEvaluation();
+        if (benchMark.declarationPath != null) {
+            // FIXME: Doesn't handle dependencies yet.
+            DeclarationEvaluator.Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark.declarationPath, benchMark.languageLevel.environment).createEvaluation();
 
             System.out.println(evaluation.toString());
         }

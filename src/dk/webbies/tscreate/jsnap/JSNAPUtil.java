@@ -17,24 +17,29 @@ import java.util.*;
 
 public class JSNAPUtil {
 
-    public static String getJsnapRaw(String path, Options options) throws IOException {
-        return getJsnapRaw(path, options, path + ".jsnap", path);
+    public static String getJsnapRaw(String path, Options options, List<String> dependencies) throws IOException {
+        return getJsnapRaw(path, options, path + ".jsnap", path, dependencies);
     }
 
-    private static String getEmptyJSNAP(Options options) throws IOException {
+    private static String getEmptyJSNAP(Options options, List<String> dependencies) throws IOException {
         if (options.runtime == Options.Runtime.CHROME) {
-            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/selenium");
+            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/selenium", dependencies);
         } else {
-            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/jsnap/node_modules/phantomjs/lib/phantom");
+            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/jsnap/node_modules/phantomjs/lib/phantom", dependencies);
         }
     }
 
-    private static String getJsnapRaw(String scriptPath, Options options, String cachePath, String checkAgainst) throws IOException {
+    private static String getJsnapRaw(String scriptPath, Options options, String cachePath, String checkAgainst, List<String> dependencies) throws IOException {
         String jsnapPath = "lib/jsnap/jsnap.js";
         if (options.createInstances) {
             jsnapPath += " --createInstances";
             cachePath += ".createdInstances";
         }
+        for (String dependency : dependencies) {
+            jsnapPath += " --dependency " + dependency;
+            cachePath += "+" + dependency + "";
+        }
+
         if (options.runtime == Options.Runtime.CHROME) {
             File fileToCheckAgainst = checkAgainst == null ? null : new File(checkAgainst);
 
@@ -57,9 +62,9 @@ public class JSNAPUtil {
         }
     }
 
-    public static Snap.Obj extractUnique(Snap.Obj librarySnap, Options options) throws IOException {
+    public static Snap.Obj extractUnique(Snap.Obj librarySnap, Options options, List<String> dependencies) throws IOException {
         FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
-        Snap.Obj domSnap = JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAP(options), emptyProgram);
+        Snap.Obj domSnap = JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAP(options, dependencies), emptyProgram);
         return extractUnique(librarySnap, domSnap);
     }
 
