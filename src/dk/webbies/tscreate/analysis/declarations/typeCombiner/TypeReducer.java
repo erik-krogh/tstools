@@ -1,17 +1,15 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 
-import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
+import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
-import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static dk.webbies.tscreate.analysis.declarations.types.UnresolvedDeclarationType.*;
-import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
+import static dk.webbies.tscreate.analysis.declarations.types.UnresolvedDeclarationType.NotResolvedException;
+import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 
 /**
  * Created by Erik Krogh Kristensen on 16-10-2015.
@@ -54,9 +52,10 @@ public class TypeReducer {
         register(new DynamicAccessReducer(this));
         register(new NamedObjectReducer(globalObject, nativeClasses));
         register(new DynamicAccessNamedObjectReducer(globalObject, nativeClasses));
+        register(new FunctionNamedObjectReducer(nativeClasses));
 
         // The ones that I cant do anything about. // FIXME: Look to see if any of these can actually be handled.
-        register(new CantReduceReducer(FunctionType.class, NamedObjectType.class));
+
         register(new CantReduceReducer(FunctionType.class, PrimitiveDeclarationType.class));
         register(new CantReduceReducer(DynamicAccessType.class, UnnamedObjectType.class));
         register(new CantReduceReducer(DynamicAccessType.class, FunctionType.class));
