@@ -25,15 +25,17 @@ public class TypeAnalysis {
 
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
+    private final NativeTypeFactory nativeTypeFactory;
 
     public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
+        this.solver = new UnionFindSolver();
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.globalObject = globalObject;
         this.nativeClasses = nativeClasses;
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
-        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this);
-        this.solver = new UnionFindSolver();
+        this.nativeTypeFactory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
+        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this, nativeTypeFactory);
         this.heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, this);
     }
 
@@ -125,7 +127,7 @@ public class TypeAnalysis {
 
         new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, identifierMap, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
 
-        new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, analyzedFunctions).visit(closure.function.astNode);
+        new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, analyzedFunctions, this.nativeTypeFactory).visit(closure.function.astNode);
     }
 
     private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj obj, HashSet<Snap.Obj> seen) {

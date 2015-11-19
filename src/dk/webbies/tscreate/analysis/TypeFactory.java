@@ -20,19 +20,19 @@ import java.util.stream.Collectors;
  */
 public class TypeFactory {
     private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
-    private final Snap.Obj globalObject;
     private final NativeClassesMap nativeClasses;
     private TypeAnalysis typeAnalysis;
+    private NativeTypeFactory nativeTypeFactory;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
     public final TypeReducer typeReducer;
 
-    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
-        this.globalObject = globalObject;
+    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis, NativeTypeFactory nativeTypeFactory) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.nativeClasses = nativeClasses;
         this.typeAnalysis = typeAnalysis;
+        this.nativeTypeFactory = nativeTypeFactory;
         this.typeReducer = new TypeReducer(globalObject, nativeClasses);
     }
 
@@ -396,15 +396,14 @@ public class TypeFactory {
         if (closure.function.callSignatures.isEmpty()) {
             return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
         }
-        UnionFindSolver solver = new UnionFindSolver();
-        NativeTypeFactory factory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
-        EmptyNode unionNode = new EmptyNode(solver);
+        UnionNode unionNode = new EmptyNode(typeAnalysis.solver);
         for (Signature signature : closure.function.callSignatures) {
-            FunctionNode functionNode = factory.fromSignature(signature, closure, null);
-            solver.union(unionNode, functionNode);
+            FunctionNode functionNode = nativeTypeFactory.fromSignature(signature, closure, null);
+            typeAnalysis.solver.union(unionNode, new IncludeNode(typeAnalysis.solver, functionNode));
         }
-        solver.finish();
+        typeAnalysis.solver.finish();
 
+        // FIXME: This is wrong, doesn't handle includes.
         registerFunction(closure, unionNode.getFeature().getFunctionFeature());
         return getPureFunction(closure);
     }

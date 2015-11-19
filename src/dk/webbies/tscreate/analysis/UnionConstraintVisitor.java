@@ -26,6 +26,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private final PrimitiveNode.Factory primitiveFactory;
     private HeapValueFactory heapFactory;
     private Set<Snap.Obj> analyzedFunction;
+    private NativeTypeFactory nativeTypeFactory;
 
     public UnionConstraintVisitor(
             Snap.Obj function,
@@ -35,7 +36,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
             TypeAnalysis typeAnalysis,
-            Set<Snap.Obj> analyzedFunction) {
+            Set<Snap.Obj> analyzedFunction,
+            NativeTypeFactory nativeTypeFactory) {
         this.closure = function;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -44,6 +46,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.analyzedFunction = analyzedFunction;
+        this.nativeTypeFactory = nativeTypeFactory;
         this.primitiveFactory = new PrimitiveNode.Factory(solver, typeAnalysis.globalObject);
     }
 
@@ -277,7 +280,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new UnionConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, analyzedFunction).visit(function.getBody());
+            new UnionConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, analyzedFunction, this.nativeTypeFactory).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 solver.union(function.getArguments().get(i).accept(this), result.arguments.get(i), primitiveFactory.nonVoid());
             }
@@ -516,7 +519,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final UnionNode thisNode;
         private final CallGraphResolver callResolver;
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
-        private final NativeTypeFactory nativeTypeFactory;
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode, Expression callExpression) {
             this.function = function;
@@ -524,7 +526,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.thisNode = thisNode;
             this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyNode(solver), callExpression);
             this.callResolver.constructorCalls = true;
-            this.nativeTypeFactory = new NativeTypeFactory(UnionConstraintVisitor.this.primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.nativeClasses);
         }
 
         @Override
@@ -538,7 +539,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true, nativeTypeFactory);
                         for (FunctionNode signature : signatures) {
-                            solver.union(signature.returnNode, this.thisNode);
+                            solver.union(signature.returnNode, new IncludeNode(solver, this.thisNode));
                         }
                         break;
                     case "user":
@@ -573,7 +574,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         boolean constructorCalls;
         private HashSet<Snap.Obj> seenHeap = new HashSet<>();
         private final FunctionNode functionNode;
-        private NativeTypeFactory nativeTypeFactory;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, EmptyNode returnNode, Expression callExpression) {
             solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, solver));
@@ -588,8 +588,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
             solver.union(functionNode.returnNode, returnNode);
             solver.union(functionNode.thisNode, thisNode);
-            
-            this.nativeTypeFactory = new NativeTypeFactory(primitiveFactory, UnionConstraintVisitor.this.solver, UnionConstraintVisitor.this.typeAnalysis.nativeClasses);
         }
 
         @Override
@@ -624,7 +622,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                                     UnionConstraintVisitor.this.functionNodes,
                                     UnionConstraintVisitor.this.heapFactory,
                                     typeAnalysis,
-                                    UnionConstraintVisitor.this.analyzedFunction).
+                                    UnionConstraintVisitor.this.analyzedFunction,
+                                    UnionConstraintVisitor.this.nativeTypeFactory).
                                     visit(closure.function.astNode);
                         }
                         break;
@@ -644,7 +643,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
+//    private static int counter = 0;
+    // FIXME: This function is being called exponentially many times.
     private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, List<UnionNode> args, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
+//        System.out.println(counter++);
         List<Signature> signatures;
         if (constructorCalls) {
             signatures = closure.function.constructorSignatures;
