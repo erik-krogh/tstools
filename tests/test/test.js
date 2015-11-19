@@ -765,6 +765,56 @@ Klass.prototype.getField = function () {
 })();*/
 
 
+/*
 function test(className) {
     return document.getElementsByClassName(className);
+}
+*/
+
+/*
+var test = function () {
+    return {
+        x: test
+    };
+}*/
+/*
+
+var _createImg = function (src, el) {
+    el = el || document.createElement('img');
+    el.src = src;
+    return el;
+};
+
+
+*/
+
+
+/*function myIntTest() {
+    return getRandomInt("wrongSeed");
+}*/
+
+/*
+var test = $("body");
+
+var anotherTest = function () {
+    return $;
+};
+*/
+
+/*
+function jQueryTest() {
+    return test.children();
+}*/
+
+
+function test () {
+    return myValue;
+}
+
+function returnJquery() {
+    return jQuery;
+}
+
+function returnJquery2() {
+    return $;
 }
