@@ -13,8 +13,12 @@ import java.util.stream.Collectors;
 public class IncludeNode extends UnionNode {
     private final List<UnionNode> nodes;
     public IncludeNode(UnionFindSolver solver, UnionNode... nodes) {
+        this(solver, Arrays.asList(nodes));
+    }
+
+    public IncludeNode(UnionFindSolver solver, List<? extends UnionNode> nodes) {
         super(solver);
-        this.nodes = Arrays.asList(nodes).stream().filter(Util::notNull).collect(Collectors.toList());
+        this.nodes = nodes.stream().filter(Util::notNull).collect(Collectors.toList());
         if (this.nodes.size() == 0) {
             throw new IllegalArgumentException();
         }

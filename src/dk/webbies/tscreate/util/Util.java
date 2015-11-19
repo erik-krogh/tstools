@@ -78,7 +78,7 @@ public class Util {
         }
     }
 
-    public static String getCachedOrRun(String cachePath, File checkAgainst, String nodeArgs) throws IOException {
+    public static String getCachedOrRunNode(String cachePath, List<File> checkAgainst, String nodeArgs) throws IOException {
         return getCachedOrRun(cachePath, checkAgainst, () -> {
             try {
                 return Util.runNodeScript(nodeArgs);
@@ -88,12 +88,12 @@ public class Util {
         });
     }
 
-    public static String getCachedOrRun(String cachePath, File checkAgainst, Supplier<String> run) throws IOException {
+    public static String getCachedOrRun(String cachePath, List<File> checkAgainst, Supplier<String> run) throws IOException {
         cachePath = cachePath.replaceAll("/", "");
         cachePath = cachePath.replaceAll(":", "");
         cachePath = cachePath.replaceAll("\\\\", "");
 
-        if (checkAgainst != null && !checkAgainst.exists()) {
+        if (!checkAgainst.stream().allMatch(File::exists)) {
             throw new RuntimeException("I cannot check against something that doesn't exist.");
         }
 
@@ -104,10 +104,14 @@ public class Util {
             recreate = true;
         } else {
             long jsnapLastModified = getLastModified(cache);
-            long jsLastModified = getLastModified(checkAgainst);
-            if (jsnapLastModified < jsLastModified) {
-                recreate = true;
+            for (File fileToCheckAgainst : checkAgainst) {
+                long jsLastModified = getLastModified(fileToCheckAgainst);
+                if (jsnapLastModified < jsLastModified) {
+                    recreate = true;
+                    break;
+                }
             }
+
         }
 
         if (recreate) {
