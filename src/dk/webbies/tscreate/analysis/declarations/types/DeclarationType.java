@@ -4,7 +4,6 @@ import dk.webbies.tscreate.util.MappedCollection;
 import dk.webbies.tscreate.util.Tarjan;
 
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -37,7 +36,7 @@ public abstract class DeclarationType {
     }
 
 
-    private TarjanNode tarjanNode = new TarjanNode();
+    private FindReachableTarjanNode reachableTypesTarjanNode = new FindReachableTarjanNode();
 
     private List<DeclarationType> getChildren() {
         if (this instanceof UnresolvedDeclarationType) {
@@ -68,10 +67,10 @@ public abstract class DeclarationType {
         return Collections.EMPTY_LIST;
     }
 
-    private class TarjanNode extends Tarjan.Node<TarjanNode> {
+    private class FindReachableTarjanNode extends Tarjan.Node<FindReachableTarjanNode> {
         @Override
-        public Collection<TarjanNode> getEdges() {
-            return new MappedCollection<>(getChildren(), (dec) -> dec.tarjanNode);
+        public Collection<FindReachableTarjanNode> getEdges() {
+            return new MappedCollection<>(getChildren(), (dec) -> dec.reachableTypesTarjanNode);
         }
 
         DeclarationType getType() {
@@ -80,13 +79,13 @@ public abstract class DeclarationType {
     }
 
     public static List<List<DeclarationType>> getStronglyConnectedComponents(Collection<DeclarationType> types) {
-        List<TarjanNode> nodes = types.stream().map((dec) -> dec.tarjanNode).collect(Collectors.toList());
-        return new Tarjan<TarjanNode>().getSCComponents(nodes).stream().map((decList) -> {
-            return decList.stream().map(TarjanNode::getType).collect(Collectors.toList());
+        List<FindReachableTarjanNode> nodes = types.stream().map((dec) -> dec.reachableTypesTarjanNode).collect(Collectors.toList());
+        return new Tarjan<FindReachableTarjanNode>().getSCComponents(nodes).stream().map((decList) -> {
+            return decList.stream().map(FindReachableTarjanNode::getType).collect(Collectors.toList());
         }).collect(Collectors.toList());
     }
 
     public List<DeclarationType> getReachable() {
-        return new Tarjan<TarjanNode>().getReachableSet(tarjanNode).stream().map(TarjanNode::getType).collect(Collectors.toList());
+        return new Tarjan<FindReachableTarjanNode>().getReachableSet(reachableTypesTarjanNode).stream().map(FindReachableTarjanNode::getType).collect(Collectors.toList());
     }
 }
