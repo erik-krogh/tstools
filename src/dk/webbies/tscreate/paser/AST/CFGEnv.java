@@ -22,14 +22,16 @@ public class CFGEnv {
     }
 
     public static final CFGEnv createInCfgEnv() {
-        CFGNode appendNode = new CFGNop();
+        CFGNode appendNode = new CFGEntry();
         CFGEnv ret = new CFGEnv(appendNode);
         ret.type = CFGEnvType.In;
         return ret;
     }
-    public static final CFGEnv createOutCfgEnv(CFGNode predNode, CFGNode outNode) {
+    public static final CFGEnv createOutCfgEnv(CFGNode predNode, CFGNode outNode/*, SSAEnv env*/) {
         CFGEnv ret = new CFGEnv(outNode);
         predNode.addSuccessor(outNode);
+        // SSA hook below!
+
         ret.type = CFGEnvType.Out;
         return ret;
     }
@@ -41,4 +43,5 @@ public class CFGEnv {
         }
         return ret;
     }
+
 }
