@@ -19,6 +19,10 @@ public class FunctionNode extends UnionNodeWithFields {
 
     private final List<String> argumentNames;
 
+    public static final String FIELD_ARGUMENT_PREFIX = "function-argument-";
+    public static final String FIELD_RETURN = "function-return";
+    public static final String FIELD_THIS = "function-this";
+
     private FunctionNode(List<String> argumentNames, UnionFindSolver solver) {
         super(solver);
         this.argumentNames = argumentNames;
@@ -27,10 +31,10 @@ public class FunctionNode extends UnionNodeWithFields {
         for (int i = 0; i < argumentNames.size(); i++) {
             EmptyNode node = new EmptyNode(solver);
             arguments.add(node);
-            addField("function-argument-" + i, node);
+            addField(FIELD_ARGUMENT_PREFIX + i, node);
         }
-        addField("function-return", returnNode);
-        addField("function-this", thisNode);
+        addField(FIELD_RETURN, returnNode);
+        addField(FIELD_THIS, thisNode);
     }
 
     public static  FunctionNode create(List<String> argumentNames, UnionFindSolver solver) {

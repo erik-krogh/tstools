@@ -12,6 +12,7 @@ import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -346,7 +347,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         solver.union(lookupKey, primitiveFactory.stringOrNumber());
         DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(returnType, lookupKey, solver);
         solver.union(operand, dynamicAccessNode);
-        solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, solver));
+        solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
         return returnType;
     }
 
@@ -389,7 +390,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             solver.union(object, objectExp);
             solver.union(primitiveFactory.nonVoid(), result);
             solver.runWhenChanged(object, new MemberResolver(member, objectExp, result));
-            solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, solver));
+            solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, ObjectNode.FIELD_PREFIX + member.getProperty()));
 
             if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
                 solver.union(UnionConstraintVisitor.this.functionNode.thisNode, objectExp);
@@ -427,11 +428,15 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     private final class IncludesWithFieldsResolver implements Runnable {
         private final UnionNode node;
-        private UnionFindSolver solver;
+        private final List<String> fields;
 
-        public IncludesWithFieldsResolver(UnionNode node, UnionFindSolver solver) {
+        public IncludesWithFieldsResolver(UnionNode node, String field, String... fields) {
+            this(node, Stream.concat(Stream.of(field), Stream.of(fields)).collect(Collectors.toList()));
+        }
+
+        public IncludesWithFieldsResolver(UnionNode node, List<String> fields) {
             this.node = node;
-            this.solver = solver;
+            this.fields = fields;
         }
 
         @Override
@@ -453,7 +458,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 if (otherFields == null) {
                     continue;
                 }
-                for (String key : Util.intersection(myFields.keySet(), otherFields.keySet())) {
+                for (String key : this.fields) {
+                    if (!myFields.containsKey(key) || !otherFields.containsKey(key)) {
+                        continue;
+                    }
                     UnionNode myField = myFields.get(key);
                     UnionNode otherField = otherFields.get(key);
                     if (myField.getUnionClass().includes == null || !myField.getUnionClass().includes.contains(otherField.findParent())) {
@@ -576,7 +584,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, EmptyNode returnNode, Expression callExpression) {
-            solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, solver));
+            solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, getFunctionFields(args.size())));
 
             this.args = args;
             this.callExpression = callExpression;
@@ -588,6 +596,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
             solver.union(functionNode.returnNode, returnNode);
             solver.union(functionNode.thisNode, thisNode);
+        }
+
+        private List<String> getFunctionFields(int numberOfArgs) {
+            ArrayList<String> result = new ArrayList<>();
+            result.add(FunctionNode.FIELD_RETURN);
+            result.add(FunctionNode.FIELD_THIS);
+            for (int i = 0; i < numberOfArgs; i++) {
+                result.add(FunctionNode.FIELD_ARGUMENT_PREFIX + i);
+            }
+            return result;
         }
 
         @Override

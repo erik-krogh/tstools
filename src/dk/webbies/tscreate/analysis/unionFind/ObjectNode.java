@@ -8,6 +8,7 @@ import java.util.Map;
  * Created by Erik Krogh Kristensen on 05-09-2015.
  */
 public class ObjectNode extends UnionNodeWithFields {
+    public static final String FIELD_PREFIX = "field-";
     private Map<String, UnionNode> objectFields = new HashMap<>();
     private String typeName;
 
@@ -36,7 +37,7 @@ public class ObjectNode extends UnionNodeWithFields {
     }
     public void addField(String fieldName, UnionNode node) {
         this.objectFields.put(fieldName, node);
-        super.addField("field-" + fieldName, node);
+        super.addField(FIELD_PREFIX + fieldName, node);
     }
 
     public void setTypeName(String typeName) {

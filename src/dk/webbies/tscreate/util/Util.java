@@ -50,6 +50,20 @@ public class Util {
         return str.substring(0, str.length() - suffix.length());
     }
 
+    public static String listToString(List<String> list) {
+        if (list.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("[");
+        builder.append(list.get(0));
+        for (int i = 1; i < list.size(); i++) {
+            builder.append(", ").append(list.get(i));
+        }
+        builder.append("]");
+        return builder.toString();
+    }
+
     private static class StreamGobbler extends Thread {
         BufferedInputStream is;
         private CountDownLatch latch;
@@ -276,7 +290,7 @@ public class Util {
         smallSet.stream().filter(bigSet::contains).forEach(callback::accept);
     }
 
-    public static<T> ArrayList<T> intersection(Set<T> one, Set<T> two) {
+    public static<T> List<T> intersection(Set<T> one, Set<T> two) {
         ArrayList<T> result = new ArrayList<>();
         runOnCommon(one, two, result::add);
         return result;
