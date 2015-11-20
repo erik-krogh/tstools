@@ -1,9 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import dk.au.cs.casa.typescript.types.UnionType;
-import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
-import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,12 +14,16 @@ public class CombinationType extends DeclarationType {
 
     private boolean hasBeenUnfolded = false;
 
-    public CombinationType(TypeReducer combiner, DeclarationType... types) {
+    public CombinationType(TypeReducer combiner, List<DeclarationType> types) {
         this.combiner = combiner;
         this.combiner.registerUnresolved(this);
         for (DeclarationType type : types) {
             addType(type);
         }
+    }
+
+    public CombinationType(TypeReducer combiner, DeclarationType... types) {
+        this(combiner, Arrays.asList(types));
     }
 
     public void addType(DeclarationType type) {

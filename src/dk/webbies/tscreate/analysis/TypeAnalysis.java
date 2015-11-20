@@ -76,7 +76,8 @@ public class TypeAnalysis {
             solver.finish();
 
             UnionFeature feature = functionNode.getFeature();
-            typeFactory.registerFunction(functionClosure, feature.getFunctionFeature());
+            assert UnionFeature.getReachable(functionNode.getFeature()).size() == 1;
+            typeFactory.registerFunction(functionClosure, Arrays.asList(feature.getFunctionFeature()));
 
             typeFactory.currentClosure = functionClosure;
             typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));

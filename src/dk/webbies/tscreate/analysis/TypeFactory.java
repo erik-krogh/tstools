@@ -2,17 +2,21 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.javascript.jscomp.newtypes.Declaration;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.FunctionReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.analysis.unionFind.UnionFeature.FunctionFeature;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -276,7 +280,7 @@ public class TypeFactory {
 
         Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
 
-        List<UnionFeature.FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
+        List<FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
         constructorFunctionFeatures.forEach(constructorFeature -> {
             createFunctionType(constructorFeature).forEach(constructorType::addType);
         });
@@ -363,7 +367,7 @@ public class TypeFactory {
     }
 
     public Snap.Obj currentClosure; // Set by TypeAnalysis, to set which closure we have just finished analyzing, and therefore should create the type of.
-    public List<DeclarationType> createFunctionType(UnionFeature.FunctionFeature feature) {
+    public List<DeclarationType> createFunctionType(FunctionFeature feature) {
         if (!feature.getClosures().isEmpty()) {
             return feature.getClosures().stream().map(closure -> {
                 boolean isUserDefined = closure.function.type.equals("user") || closure.function.type.equals("bind");
@@ -396,15 +400,15 @@ public class TypeFactory {
         if (closure.function.callSignatures.isEmpty()) {
             return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
         }
-        UnionNode unionNode = new EmptyNode(typeAnalysis.solver);
+        UnionNode node = new EmptyNode(typeAnalysis.solver);
         for (Signature signature : closure.function.callSignatures) {
             FunctionNode functionNode = nativeTypeFactory.fromSignature(signature, closure, null);
-            typeAnalysis.solver.union(unionNode, new IncludeNode(typeAnalysis.solver, functionNode));
+            typeAnalysis.solver.union(node, new IncludeNode(typeAnalysis.solver, functionNode));
         }
         typeAnalysis.solver.finish();
 
-        // FIXME: This is wrong, doesn't handle includes.
-        registerFunction(closure, unionNode.getFeature().getFunctionFeature());
+        List<FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Util::notNull).collect(Collectors.toList());
+        registerFunction(closure, functionFeatures);
         return getPureFunction(closure);
     }
 
@@ -416,18 +420,37 @@ public class TypeFactory {
         return Util.getWithDefault(pureFunctionCache, closure, new UnresolvedDeclarationType());
     }
 
-    public void registerFunction(Snap.Obj closure, UnionFeature.FunctionFeature feature) {
+    public void registerFunction(Snap.Obj closure, List<FunctionFeature> features) {
         UnresolvedDeclarationType unresolved = getPureFunction(closure);
 
-        DeclarationType returnType = getType(feature.getReturnNode());
+        DeclarationType returnType = constructCombinationType(features, (feature) -> getType(feature.getReturnNode()));
 
-        List<FunctionType.Argument> arguments = feature.getArguments().stream().map((arg) -> {
-            DeclarationType type = getType(arg.node);
-            return new FunctionType.Argument(arg.name, type);
+        List<FunctionType.Argument> argumentsTypes = getArguments(features).stream().map((arguments) -> {
+            String name = FunctionReducer.getBestArgumentName(arguments.stream().map(argument -> argument.name).collect(Collectors.toList()));
+            return new FunctionType.Argument(name, constructCombinationType(arguments, arg -> getType(arg.node)));
         }).collect(Collectors.toList());
 
-        FunctionType result = new FunctionType(returnType, arguments);
+        FunctionType result = new FunctionType(returnType, argumentsTypes);
 
         unresolved.setResolvedType(result);
+    }
+
+    private<T> CombinationType constructCombinationType(Collection<T> collection, Function<T, DeclarationType> mapper) {
+        return new CombinationType(typeReducer, collection.stream().map(mapper).collect(Collectors.toList()));
+    }
+
+    private static List<List<FunctionFeature.Argument>> getArguments(List<FunctionFeature> features) {
+        ArrayList<List<FunctionFeature.Argument>> result = new ArrayList<>();
+        for (FunctionFeature feature : features) {
+            for (int i = 0; i < feature.getArguments().size(); i++) {
+                FunctionFeature.Argument argument = feature.getArguments().get(i);
+                if (result.size() > i) {
+                    result.get(i).add(argument);
+                } else {
+                    result.add(new ArrayList<>(Arrays.asList(argument)));
+                }
+            }
+        }
+        return result;
     }
 }

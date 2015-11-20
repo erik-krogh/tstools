@@ -6,6 +6,8 @@ import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Created by Erik Krogh Kristensen on 18-10-2015.
@@ -37,12 +39,7 @@ public class FunctionReducer implements SingleTypeReducer<FunctionType, Function
         for (int i = 0; i < Math.min(one.getArguments().size(), two.getArguments().size()); i++) {
             FunctionType.Argument oneArg = one.getArguments().get(i);
             FunctionType.Argument twoArg = two.getArguments().get(i);
-            String name = oneArg.getName();
-            if (name.startsWith("arg")) {
-                name = twoArg.getName();
-            } else if (name.length() < twoArg.getName().length()) {
-                name = twoArg.getName();
-            }
+            String name = getBestArgumentName(oneArg.getName(), twoArg.getName());
 
             CombinationType argType = new CombinationType(combiner);
             argType.addType(oneArg.getType());
@@ -57,5 +54,28 @@ public class FunctionReducer implements SingleTypeReducer<FunctionType, Function
         }
 
         return new FunctionType(returnType, arguments);
+    }
+
+    private static String getBestArgumentName(String one, String two) {
+        if (one.startsWith("arg")) {
+            return two;
+        } else if (one.length() < two.length()) {
+            return two;
+        }
+        return one;
+    }
+
+    public static String getBestArgumentName(List<String> names) {
+        if (names.isEmpty()) {
+            throw new RuntimeException();
+        } else if (names.size() == 1) {
+            return names.iterator().next();
+        } else {
+            String name = names.get(0);
+            for (int i = 1; i < names.size(); i++) {
+                name = getBestArgumentName(name, names.get(i));
+            }
+            return name;
+        }
     }
 }

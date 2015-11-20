@@ -459,7 +459,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     continue;
                 }
                 for (String key : this.fields) {
-                    if (!myFields.containsKey(key) || !otherFields.containsKey(key)) {
+                    assert myFields.containsKey(key);
+                    if (!otherFields.containsKey(key)) {
                         continue;
                     }
                     UnionNode myField = myFields.get(key);
