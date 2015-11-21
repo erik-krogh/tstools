@@ -63,44 +63,34 @@ public class HeapValueFactory {
             return primitive;
         }
         // From here we know that is in an Snap.Obj
-
-        List<UnionNode> result = new ArrayList<>();
-        ObjectNode objectNode = new ObjectNode(solver);
-        result.add(objectNode);
-
         Snap.Obj obj = (Snap.Obj) value;
-        if (this.typeAnalysis.nativeClasses.nameFromObject(obj) != null) {
-            objectNode.setTypeName(this.typeAnalysis.nativeClasses.nameFromObject(obj));
-        }
-
-        if (obj.prototype != null) {
-            LibraryClass libraryClass = libraryClasses.get(obj.prototype);
-            result.add(new HasPrototypeNode(solver, obj.prototype));
-            if (libraryClass != null && !libraryClass.isNativeClass()) {
-                if (typeAnalysis.options.classOptions.unionThisFromObjectsInTheHeap) {
-                    solver.union(libraryClass.getNewThisNode(solver), objectNode);
-                }
-                Snap.Property constructorProp = obj.prototype.getProperty("constructor");
-                if (constructorProp != null && typeAnalysis.options.classOptions.useConstructorUsages) {
-                    solver.union(libraryClass.getNewConstructorNode(solver), innerFromProperty(constructorProp));
-                }
-            }
-        }
-        if (obj.function != null) {
-            result.addAll(getFunctionNode(obj));
-        }
 
         if (cache.containsKey(obj)) {
-            result.add(new IncludeNode(solver, cache.get(obj)));
+            return new IncludeNode(solver, cache.get(obj));
         } else {
+            List<UnionNode> result = new ArrayList<>();
+            ObjectNode objectNode = new ObjectNode(solver);
+            result.add(objectNode);
+            if (this.typeAnalysis.nativeClasses.nameFromObject(obj) != null) {
+                objectNode.setTypeName(this.typeAnalysis.nativeClasses.nameFromObject(obj));
+            }
+
+            if (obj.prototype != null) {
+                result.add(new HasPrototypeNode(solver, obj.prototype));
+            }
+
+            if (obj.function != null) {
+                result.addAll(getFunctionNode(obj));
+            }
+
             cache.put(obj, objectNode);
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
                     objectNode.addField(property.name, this.innerFromProperty(property));
                 }
             }
+            return new IncludeNode(solver, solver.union(result));
         }
-        return solver.union(result);
     }
 
     private Collection<UnionNode> getFunctionNode(Snap.Obj obj) {
@@ -108,14 +98,6 @@ public class HeapValueFactory {
         if (obj.function != null) {
             FunctionNode functionNode = FunctionNode.create(obj, solver);
             result.add(functionNode);
-            if (obj.getProperty("prototype") != null) {
-                Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
-                if (libraryClasses.containsKey(prototype) && !libraryClasses.get(prototype).isNativeClass()) {
-                    if (typeAnalysis.options.classOptions.useConstructorUsages) {
-                        solver.union(functionNode, libraryClasses.get(prototype).getNewConstructorNode(solver));
-                    }
-                }
-            }
         } else {
             // We could parse the signatures here, but we don't know if it is a constructorCall or not.
             // So signature parsing is done in UnionConstraintVisitor.CallGraphResolver.

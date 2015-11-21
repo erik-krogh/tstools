@@ -6,7 +6,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 /**
  * Created by Erik Krogh Kristensen on 17-10-2015.
  */
-public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, UnnamedObjectType> {
+public class    FunctionObjectReducer implements SingleTypeReducer<FunctionType, UnnamedObjectType> {
     private Snap.Obj globalObject;
 
     public FunctionObjectReducer(Snap.Obj globalObject) {
@@ -35,7 +35,7 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
     public static boolean objectMatchFunctionPrototype(UnnamedObjectType object, Snap.Obj globalObject) {
         return object.getDeclarations().keySet().stream().allMatch(key -> {
             boolean matchObject = PrimitiveObjectReducer.objectFieldMatchPrototypeOf(globalObject.getProperty("Object").value, key);
-            boolean matchFunction = key.equals("caller") || key.equals("length") || key.equals("name") || key.equals("arguments") || PrimitiveObjectReducer.objectFieldMatchPrototypeOf(globalObject.getProperty("Function").value, key);
+            boolean matchFunction = key.equals("prototype") || key.equals("caller") || key.equals("length") || key.equals("name") || key.equals("arguments") || PrimitiveObjectReducer.objectFieldMatchPrototypeOf(globalObject.getProperty("Function").value, key);
             return matchObject || matchFunction;
         });
     }

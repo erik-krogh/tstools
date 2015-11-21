@@ -29,9 +29,8 @@ public class Options {
 
         public boolean useConstructorUsages = false;
         public boolean useClassInstancesFromHeap = false;
-
         // If the above is true, these ones are only used as fallback (that is, they are then only used if there are no instances of the class found in the heap).
-        public boolean unionThisFromObjectsInTheHeap = false;
+
         // For every prototype method, use the information gained by the "this" calls.
         public boolean unionThisFromPrototypeMethods = true;
         public boolean unionThisFromConstructor = false; // Except in some very weird situations. This will be more accurately covered when we create an instance of the class.
