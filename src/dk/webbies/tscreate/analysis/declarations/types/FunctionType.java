@@ -9,11 +9,7 @@ public class FunctionType extends DeclarationType {
     private DeclarationType returnType;
     private List<Argument> arguments;
 
-    private static int instanceCounter = 0;
-    private final int counter;
-
     public FunctionType(DeclarationType returnType, List<Argument> arguments) {
-        this.counter = instanceCounter++;
         this.returnType = returnType;
         this.arguments = arguments;
     }
@@ -34,10 +30,6 @@ public class FunctionType extends DeclarationType {
     @Override
     public <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument) {
         return visitor.visit(this, argument);
-    }
-
-    public void setReturnType(DeclarationType returnType) {
-        this.returnType = returnType;
     }
 
     public static class Argument {
