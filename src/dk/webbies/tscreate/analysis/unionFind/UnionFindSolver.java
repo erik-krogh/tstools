@@ -157,14 +157,6 @@ public class UnionFindSolver {
         return one;
     }
 
-    private boolean hasJQUERY(UnionNode node) {
-        return node.getFeature().getTypeNames().contains("JQuery");
-    }
-
-    private boolean hasString(UnionNode node) {
-        return node.getFeature().getPrimitives().stream().anyMatch(prim -> prim.getType() == PrimitiveDeclarationType.Type.STRING);
-    }
-
     /**
      * Given two elements, unions together the sets containing those
      * elements.  If either element is not contained in the set,
@@ -184,10 +176,6 @@ public class UnionFindSolver {
         }
         if (two.parent == null) {
             add(two);
-        }
-
-        if ((hasJQUERY(one) && hasString(two)) || (hasJQUERY(two) && hasString(one))) {
-            System.out.println();
         }
 
 
