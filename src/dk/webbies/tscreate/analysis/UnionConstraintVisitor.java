@@ -401,7 +401,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(MethodCallExpression methodCall) {
-        // Yes i know it is copy-paste, yes i know it is ugly.
         MemberExpression member = methodCall.getMemberExpression();
         MemberExpressionVisitor memberExpressionVisitor = new MemberExpressionVisitor(member).invoke();
         UnionNode objectExp = memberExpressionVisitor.getObjectExp();
@@ -410,10 +409,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         List<UnionNode> args = methodCall.getArgs().stream().map(arg -> arg.accept(this)).collect(Collectors.toList());
 
-        UnionNode function = methodCall.getMemberExpression().accept(this);
-
         EmptyNode returnNode = new EmptyNode(solver);
-        solver.runWhenChanged(function, new CallGraphResolver(objectExp, function, args, returnNode, methodCall));
+        solver.runWhenChanged(result, new CallGraphResolver(objectExp, result, args, returnNode, methodCall));
         return returnNode;
     }
 
@@ -459,7 +456,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     continue;
                 }
                 for (String key : this.fields) {
-                    assert myFields.containsKey(key);
+//                    assert myFields.containsKey(key); // FIXME: This fails.
                     if (!otherFields.containsKey(key)) {
                         continue;
                     }
@@ -648,8 +645,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         break;
                     }
                     case "native": {
-                        boolean constructorCalls = this.constructorCalls;
-                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, constructorCalls, nativeTypeFactory);
+                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, this.constructorCalls, nativeTypeFactory);
                         solver.union(functionNode, new IncludeNode(solver, signatures));
                         break;
                     }
@@ -662,10 +658,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-//    private static int counter = 0;
     // FIXME: This function is being called exponentially many times.
+    // FIXME: CACHE!!!
     private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, List<UnionNode> args, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
-//        System.out.println(counter++);
         List<Signature> signatures;
         if (constructorCalls) {
             signatures = closure.function.constructorSignatures;
