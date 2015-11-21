@@ -543,9 +543,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         if (prototypeProp != null) {
                             solver.union(this.thisNode, new HasPrototypeNode(solver, (Snap.Obj) prototypeProp.value));
                         }
-                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, this.args, true, nativeTypeFactory);
+                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, true, nativeTypeFactory);
                         for (FunctionNode signature : signatures) {
-                            solver.union(signature.returnNode, new IncludeNode(solver, this.thisNode));
+                            solver.union(this.thisNode, new IncludeNode(solver, signature.returnNode));
                         }
                         break;
                     case "user":
@@ -645,7 +645,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         break;
                     }
                     case "native": {
-                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, args, this.constructorCalls, nativeTypeFactory);
+                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
                         solver.union(functionNode, new IncludeNode(solver, signatures));
                         break;
                     }
@@ -658,18 +658,17 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    // FIXME: This function is being called exponentially many times.
-    // FIXME: CACHE!!!
-    private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, List<UnionNode> args, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
+    // FIXME: Cache or stuff, look at this.
+    private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
         List<Signature> signatures;
         if (constructorCalls) {
             signatures = closure.function.constructorSignatures;
         } else {
             signatures = closure.function.callSignatures;
         }
-        ArrayList<FunctionNode> result = new ArrayList<>();
+        List<FunctionNode> result = new ArrayList<>();
         for (Signature signature : signatures) {
-            result.add(functionNodeFactory.fromSignature(signature, closure, args));
+            result.add(functionNodeFactory.fromSignature(signature));
         }
         return result;
     }

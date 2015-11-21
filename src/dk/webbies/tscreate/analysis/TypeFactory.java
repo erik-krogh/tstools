@@ -2,7 +2,6 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.javascript.jscomp.newtypes.Declaration;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
@@ -402,7 +401,7 @@ public class TypeFactory {
         }
         UnionNode node = new EmptyNode(typeAnalysis.solver);
         for (Signature signature : closure.function.callSignatures) {
-            FunctionNode functionNode = nativeTypeFactory.fromSignature(signature, closure, null);
+            FunctionNode functionNode = nativeTypeFactory.fromSignature(signature);
             typeAnalysis.solver.union(node, new IncludeNode(typeAnalysis.solver, functionNode));
         }
         typeAnalysis.solver.finish();

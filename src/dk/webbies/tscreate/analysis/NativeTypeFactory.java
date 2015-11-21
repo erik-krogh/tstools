@@ -4,7 +4,6 @@ import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
-import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,18 +23,12 @@ public class NativeTypeFactory {
         this.nativeClasses = nativeClasses;
     }
 
-    public FunctionNode fromSignature(Signature signature, Snap.Obj closure, List<UnionNode> args) {
-        if (args == null) {
-            args = Collections.EMPTY_LIST;
-        }
+    public FunctionNode fromSignature(Signature signature) {
         if (signatureCache.containsKey(signature)) {
             return signatureCache.get(signature);
         }
         List<String> argumentNames = signature.getParameters().stream().map(Signature.Parameter::getName).collect(Collectors.toList());
-        for (int i = argumentNames.size(); i < args.size(); i++) {
-            argumentNames.add("arg" + i);
-        }
-        FunctionNode functionNode = FunctionNode.create(closure, argumentNames, solver);
+        FunctionNode functionNode = FunctionNode.create(argumentNames, solver);
         signatureCache.put(signature, functionNode);
 
         int normalParameterCount = signature.getParameters().size();
@@ -55,12 +48,6 @@ public class NativeTypeFactory {
 
             if (typeArguments.size() != 1) {
                 throw new RuntimeException();
-            }
-
-            Type typeArgument = Iterables.getLast(typeArguments);
-            for (int i = normalParameterCount; i < args.size(); i++) {
-                solver.union(args.get(i), fromType(typeArgument, true));
-                solver.union(functionNode.arguments.get(i), args.get(i));
             }
         }
         for (int i = 0; i < normalParameterCount; i++) {
@@ -162,12 +149,12 @@ public class NativeTypeFactory {
             }
 
             if (!t.getDeclaredCallSignatures().isEmpty()) {
-                List<FunctionNode> functionNodes = t.getDeclaredCallSignatures().stream().map(sig -> fromSignature(sig, null, null)).collect(Collectors.toList());
+                List<FunctionNode> functionNodes = t.getDeclaredCallSignatures().stream().map(sig -> fromSignature(sig)).collect(Collectors.toList());
                 result.add(new IncludeNode(solver, functionNodes));
             }
 
             if (!t.getDeclaredConstructSignatures().isEmpty()) {
-                List<FunctionNode> functionNodes = t.getDeclaredConstructSignatures().stream().map(sig -> fromSignature(sig, null, null)).collect(Collectors.toList());
+                List<FunctionNode> functionNodes = t.getDeclaredConstructSignatures().stream().map(sig -> fromSignature(sig)).collect(Collectors.toList());
                 result.add(new IncludeNode(solver, functionNodes));
             }
 

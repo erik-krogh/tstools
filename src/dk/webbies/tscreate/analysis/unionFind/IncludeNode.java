@@ -19,9 +19,6 @@ public class IncludeNode extends UnionNode {
     public IncludeNode(UnionFindSolver solver, List<? extends UnionNode> nodes) {
         super(solver);
         this.nodes = nodes.stream().filter(Util::notNull).collect(Collectors.toList());
-        if (this.nodes.size() == 0) {
-            throw new IllegalArgumentException();
-        }
     }
 
     @Override
