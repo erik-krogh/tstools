@@ -211,7 +211,8 @@ public class NativeTypeFactory {
 
         @Override
         public List<UnionNode> visit(SymbolType t) {
-            throw new UnsupportedOperationException();
+            // Does't handle symbols yet.
+            return Collections.EMPTY_LIST;
         }
     }
 }
