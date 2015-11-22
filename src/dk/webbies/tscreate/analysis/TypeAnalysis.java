@@ -107,8 +107,6 @@ public class TypeAnalysis {
             for (Snap.Property property : closure.env.properties) {
                 values.put(property.name, property);
             }
-        } else {
-            throw new RuntimeException();
         }
 
         if (prototypeFunctions.containsKey(closure)) {

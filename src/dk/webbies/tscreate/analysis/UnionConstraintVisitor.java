@@ -196,8 +196,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         UnionNode left = condExp.getLeft().accept(this);
         UnionNode right = condExp.getRight().accept(this);
-        solver.union(left, right);
-        return left;
+        return solver.union(left, right);
     }
 
     @Override
@@ -456,8 +455,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     continue;
                 }
                 for (String key : this.fields) {
-//                    assert myFields.containsKey(key); // FIXME: This fails.
-                    if (!otherFields.containsKey(key)) {
+//                    assert myFields.containsKey(key); // FIXME: This fails in PIXI.
+                    if (!otherFields.containsKey(key) || !myFields.containsKey(key)) {
                         continue;
                     }
                     UnionNode myField = myFields.get(key);

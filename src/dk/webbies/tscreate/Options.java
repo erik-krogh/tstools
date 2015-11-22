@@ -16,7 +16,7 @@ public class Options {
 
     // When we have some unionNode, that includes another union-node, and they both have fields. Something is done to make sure that the fields also know about that include (if the include has a matching field).
     // This option disables that, since it for some libraries (jQuery), runs EXTREMELY slow.
-    public boolean resolveIncludesWithFields = false;
+    public boolean resolveIncludesWithFields = true;
 
     public enum Runtime {
         PHANTOM,
@@ -28,7 +28,7 @@ public class Options {
         public boolean onlyUseThisWithFieldAccesses = true; // So as an example, in "foo(this)", this will not be unified with the functions this-node. But in "this.foo" it will.
 
         public boolean useConstructorUsages = false;
-        public boolean useClassInstancesFromHeap = false;
+        public boolean useClassInstancesFromHeap = true;
         // If the above is true, these ones are only used as fallback (that is, they are then only used if there are no instances of the class found in the heap).
 
         // For every prototype method, use the information gained by the "this" calls.

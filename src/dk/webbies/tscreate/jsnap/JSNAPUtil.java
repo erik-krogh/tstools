@@ -279,7 +279,8 @@ public class JSNAPUtil {
                         } else if (reader.peek() == JsonToken.STRING) {
                             key = Integer.parseInt(reader.nextString());
                         } else if (reader.peek() == JsonToken.BEGIN_OBJECT){
-                            // FIXME This happens in three.js, it is an object with __jsnapHiddenProp__ values defined on it.
+                            // FIXME This happens in three.js, it is an object with __jsnapHiddenProp__ values defined on it. Properly something to do with the ES6 getters and setters.
+                            // There are also some closures, where env.properties == null.
                             reader.beginObject();
                             reader.nextName();
                             reader.nextBoolean();
