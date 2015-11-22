@@ -1,5 +1,6 @@
 package dk.webbies.tscreate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,10 @@ public class BenchMark {
         return this.dependencies.stream().map(dependency -> dependency.declarationPath).collect(Collectors.toList());
     }
 
+    public static final List<BenchMark> allBenchmarks = new ArrayList<>();
+
     private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel, List<Dependency> dependencies) {
+        allBenchmarks.add(this);
         this.name = name;
         this.scriptPath = scriptPath;
         this.declarationPath = declarationPath;
@@ -43,57 +47,45 @@ public class BenchMark {
 
     public static final BenchMark underscore = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = true;
         return new BenchMark("Underscore.js", "tests/underscore/underscore.js", null, options, ES5);
     });
 
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = true;
         return new BenchMark("PIXI", "tests/pixi/pixi.js", null, options, ES5);
     });
 
     public static final BenchMark FabricJS = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = true;
         return new BenchMark("FabricJS", "tests/fabric/fabric.js", null, options, ES5);
     });
 
+    // TODO: test, including includesWithFields.
     public static final BenchMark jQuery = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = false; // Takes too long... but is not very precise without.
-        return new BenchMark("FabricJS", "tests/jquery/jquery.js", null, options, ES5);
+        options.resolveIncludesWithFields = true; // Takes too long... but is not very precise without.
+        return new BenchMark("jQuery", "tests/jquery/jquery.js", null, options, ES5);
     });
 
     public static final BenchMark three = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = true;
         return new BenchMark("three.js", "tests/three/three.js", null, options, ES6);
     });
 
+    // TODO: This is slow in the last phase (combining types).
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = true;
-        return new BenchMark("three.js", "tests/three/three.js", null, options, ES5);
+        return new BenchMark("leaflet.js", "tests/leaflet/leaflet.js", null, options, ES5);
     });
 
+    // TODO: Also slow in last phase (same af leaflet).
     public static final BenchMark D3 = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = true;
         return new BenchMark("D3.js", "tests/d3/d3.js", null, options, ES5);
     });
 
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.resolveIncludesWithFields = true;
 
         Dependency testDependency = new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts");
 
