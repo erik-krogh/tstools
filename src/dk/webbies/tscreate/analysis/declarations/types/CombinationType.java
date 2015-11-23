@@ -87,7 +87,13 @@ public class CombinationType extends DeclarationType {
 
     public DeclarationType getCombined() {
         if (this.combined == null) {
-            throw new NullPointerException();
+            List<DeclarationType> reachable = this.getReachable().stream().filter(CombinationType.class::isInstance).collect(Collectors.toList());
+            List<List<DeclarationType>> levels = DeclarationType.getLevels(reachable);
+            for (List<DeclarationType> level : levels) {
+                for (DeclarationType type : level) {
+                    ((CombinationType) type).createCombined();
+                }
+            }
         }
         return this.combined;
     }

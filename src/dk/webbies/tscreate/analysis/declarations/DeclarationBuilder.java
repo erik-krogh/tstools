@@ -35,7 +35,7 @@ public class DeclarationBuilder {
             declarations.put(property.name, typeFactory.getHeapPropType(property));
         }
 
-        this.typeFactory.typeReducer.resolveCombinationTypes();
+//        this.typeFactory.typeReducer.resolveCombinationTypes(); // TODO: Consider this
 
         return declarations;
     }
