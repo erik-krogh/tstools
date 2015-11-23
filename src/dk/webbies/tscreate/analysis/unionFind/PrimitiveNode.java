@@ -27,7 +27,7 @@ public class PrimitiveNode extends UnionNode {
         if (feature.primitives == null) {
             feature.primitives = new HashSet<>();
         }
-        feature.primitives.add(this.type);
+        feature.primitives.add(this.type.getType());
     }
 
     public static class Factory {

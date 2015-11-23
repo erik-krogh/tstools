@@ -99,7 +99,7 @@ public class TypeFactory {
         }
 
         // Adding primitives
-        feature.getPrimitives().stream().forEach(result::addType);
+        feature.getPrimitives().stream().map(PrimitiveDeclarationType::fromType).forEach(result::addType);
 
         // Adding function
         if (feature.getFunctionFeature() != null) {

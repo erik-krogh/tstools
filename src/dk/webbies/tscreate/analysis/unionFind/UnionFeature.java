@@ -12,7 +12,7 @@ public class UnionFeature {
     public final UnionClass unionClass;
 
     Set<Snap.Obj> prototypes = null;
-    Set<PrimitiveDeclarationType> primitives = null;
+    Set<PrimitiveDeclarationType.Type> primitives = null;
     FunctionFeature functionFeature = null;
     Map<String, UnionNode> objectFields = null;
     public Set<String> typeNames = null;
@@ -74,7 +74,7 @@ public class UnionFeature {
         }
     }
 
-    public Set<PrimitiveDeclarationType> getPrimitives() {
+    public Set<PrimitiveDeclarationType.Type> getPrimitives() {
         if (primitives == null) {
             return Collections.EMPTY_SET;
         }
