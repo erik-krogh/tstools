@@ -38,7 +38,7 @@ public abstract class DeclarationType {
 
     private FindReachableTarjanNode reachableTypesTarjanNode = new FindReachableTarjanNode();
 
-    private List<DeclarationType> getChildren() {
+    private List<? extends DeclarationType> getChildren() {
         if (this instanceof UnresolvedDeclarationType) {
             UnresolvedDeclarationType unresolved = (UnresolvedDeclarationType) this;
             if (unresolved.isResolved()) {
@@ -87,5 +87,10 @@ public abstract class DeclarationType {
 
     public List<DeclarationType> getReachable() {
         return new Tarjan<FindReachableTarjanNode>().getReachableSet(reachableTypesTarjanNode).stream().map(FindReachableTarjanNode::getType).collect(Collectors.toList());
+    }
+
+    public static List<List<DeclarationType>> getLevels(Collection<? extends DeclarationType> types) {
+        List<List<FindReachableTarjanNode>> levels = new Tarjan<FindReachableTarjanNode>().getLevels(new MappedCollection<>(types, (type) -> type.reachableTypesTarjanNode));
+        return levels.stream().map(nodes -> nodes.stream().map(FindReachableTarjanNode::getType).collect(Collectors.toList())).collect(Collectors.toList());
     }
 }

@@ -62,6 +62,43 @@ public class Tarjan<T extends Tarjan.Node<T>> {
         return getReachableSet(graph, iterationCounter++);
     }
 
+    /*
+     * Finds how heep in the tree the different elements are.
+     * The returned list of lists only contain the elements given as input.
+     * The first element is the deepest in the tree (a leaf).
+     */
+    public List<List<T>> getLevels(Collection<T> elements) {
+        return getLevels(elements, iterationCounter++);
+    }
+
+    private List<List<T>> getLevels(Collection<T> elements, int iteration) {
+        for (T element : elements) {
+            markLevel(element, iteration);
+        }
+        List<List<T>> result = new ArrayList<>();
+        for (T element : elements) {
+            for (int i = result.size(); i <= element.low; i++) {
+                result.add(i, new ArrayList<T>());
+            }
+            result.get(element.low).add(element);
+        }
+
+        return result;
+    }
+
+    private int markLevel(T node, int iteration) {
+        if (node.visited == iteration) {
+            return node.low;
+        } else {
+            int max = 0;
+            for (T edge : node.getEdges()) {
+                max = Math.max(max, markLevel(edge, iteration));
+            }
+            node.low = max + 1;
+            return node.low;
+        }
+    }
+
     private List<T> getReachableSet(T graph, int iteration) {
         ArrayList<T> result = new ArrayList<>();
         reachableDfs(graph, iteration, result);
@@ -138,13 +175,12 @@ public class Tarjan<T extends Tarjan.Node<T>> {
         SimpleNode node3 = new SimpleNode("3");
 
         node1.list.add(node2);
-        node2.list.add(node1);
-        node1.list.add(node3);
+        node2.list.add(node3);
 
         Tarjan<SimpleNode> t = new Tarjan<>();
         System.out.println("\nSCC : ");
         /** print all strongly connected components **/
-        List<List<SimpleNode>> scComponents = t.getSCComponents(node3, iterationCounter++);
+        List<List<SimpleNode>> scComponents = t.getLevels(Arrays.asList(node1, node2, node3));
         System.out.println(scComponents);
     }
 }

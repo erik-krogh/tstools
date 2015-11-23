@@ -80,11 +80,19 @@ public class TypeReducer {
     }
 
     public void resolveCombinationTypes() {
+        System.out.println("Resolving combination types");
+        int iteration = 1;
         while (!this.unresolvedTypes.isEmpty()) {
             List<CombinationType> copy = new ArrayList<>(this.unresolvedTypes);
             this.unresolvedTypes.clear();
 
-            copy.forEach(CombinationType::createCombined);
+            List<List<DeclarationType>> levels = DeclarationType.getLevels(copy);
+            System.out.println("Iteration " + iteration++ +  " (" + copy.size() + ") levels(" + levels.size() + ")");
+            for (List<DeclarationType> level : levels) {
+                for (DeclarationType type : level) {
+                    ((CombinationType) type).createCombined();
+                }
+            }
         }
     }
 
