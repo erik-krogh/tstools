@@ -201,6 +201,7 @@ public class DeclarationPrinter {
         }
 
         private void printFunction(FunctionType functionType, boolean insideInterface) {
+            assert insideInterface || printsAsInterface.containsKey(functionType);
             if (!insideInterface && printsAsInterface.containsKey(functionType)) {
                 printsAsInterface.get(functionType).accept(this);
             } else {

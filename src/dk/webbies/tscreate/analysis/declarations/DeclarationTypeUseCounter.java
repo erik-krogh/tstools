@@ -52,9 +52,6 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
         }
         for (Map.Entry<String, DeclarationType> entry : objectType.getDeclarations().entrySet()) {
             DeclarationType type = entry.getValue();
-            if (countMap.containsKey(type)) {
-                increment(objectType); // TODO: Hacky, better way to avoid recursion? (Ignore for now, it works for all current test-cases).
-            }
             type.accept(this);
         }
 
@@ -71,6 +68,9 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
         }
         if (interfaceType.function != null) {
             interfaceType.function.accept(this);
+        }
+        if (interfaceType.getDynamicAccess() != null) {
+            interfaceType.getDynamicAccess().getReturnType().accept(this);
         }
         return null;
     }
