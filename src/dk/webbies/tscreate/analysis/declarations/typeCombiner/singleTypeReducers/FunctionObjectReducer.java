@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.jsnap.Snap;
 

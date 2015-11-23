@@ -39,7 +39,7 @@ public class DeclarationPrinter {
 
         for (DeclarationType type : cycleDetector.getCyclicTypes()) {
             if (type instanceof FunctionType) {
-                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.counter++);
+                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.interfaceCounter++);
                 interfaceType.function = (FunctionType) type;
                 printsAsInterface.put(type, interfaceType);
             }
@@ -61,7 +61,7 @@ public class DeclarationPrinter {
         Map<DeclarationType, Integer> countMap = useCounter.getCountMap();
         countMap.forEach((type, count) -> {
             if (type instanceof FunctionType) {
-                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.counter++);
+                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.interfaceCounter++);
                 interfaceType.function = (FunctionType) type;
                 printsAsInterface.put(type, interfaceType);
             }
@@ -201,7 +201,6 @@ public class DeclarationPrinter {
         }
 
         private void printFunction(FunctionType functionType, boolean insideInterface) {
-            assert insideInterface || printsAsInterface.containsKey(functionType);
             if (!insideInterface && printsAsInterface.containsKey(functionType)) {
                 printsAsInterface.get(functionType).accept(this);
             } else {

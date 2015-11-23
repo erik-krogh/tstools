@@ -15,6 +15,7 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClas
  * Created by Erik Krogh Kristensen on 16-10-2015.
  */
 public class TypeReducer {
+    public final HashMap<DeclarationType, List<DeclarationType>> originals = new HashMap<>();
     private Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
 
     public HashMap<Set<DeclarationType>, DeclarationType> combinationTypeCache = new HashMap<>(); // Used inside combinationType.
@@ -22,6 +23,10 @@ public class TypeReducer {
     private void register(SingleTypeReducer<? extends DeclarationType, ? extends DeclarationType> handler) {
         if (!DeclarationType.class.isAssignableFrom(handler.getAClass()) || !DeclarationType.class.isAssignableFrom(handler.getBClass())) {
             throw new RuntimeException("Only works on declarationTypes and subclasses.");
+        }
+
+        if (handler.getAClass() == handler.getBClass() && !(handler instanceof SameTypeReducer) && !(handler instanceof CantReduceReducer)) {
+            throw new RuntimeException("I have an abstract class, use it for " + handler.getClass().getSimpleName());
         }
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> key1 = new Pair<>(handler.getAClass(), handler.getBClass());
@@ -43,14 +48,14 @@ public class TypeReducer {
         register(new FunctionObjectReducer(globalObject));
         register(new FunctionClassReducer(this));
         register(new ClassObjectReducer(globalObject, this));
-        register(new FunctionReducer(this));
-        register(new PrimitiveReducer());
+        register(new FunctionReducer(this, originals));
+        register(new PrimitiveReducer(originals));
         register(new NamedUnamedObjectReducer(nativeClasses));
-        register(new UnnamedObjectReducer(this));
+        register(new UnnamedObjectReducer(this, originals));
         register(new ClassInstanceUnnamedObjectReducer());
-        register(new ClassInstanceReducer());
-        register(new DynamicAccessReducer(this));
-        register(new NamedObjectReducer(globalObject, nativeClasses));
+        register(new ClassInstanceReducer(originals));
+        register(new DynamicAccessReducer(this, originals));
+        register(new NamedObjectReducer(globalObject, nativeClasses, originals));
         register(new DynamicAccessNamedObjectReducer(nativeClasses));
         register(new FunctionNamedObjectReducer(nativeClasses));
 

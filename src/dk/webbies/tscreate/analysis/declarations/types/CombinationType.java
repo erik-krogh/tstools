@@ -68,8 +68,10 @@ public class CombinationType extends DeclarationType {
         }
     }
 
-    private static Set<DeclarationType> unfold(DeclarationType type) {
-        return type.getReachable().stream().filter((subType) -> {
+    private Set<DeclarationType> unfold(DeclarationType type) {
+        HashSet<DeclarationType> result = new HashSet<>();
+
+        type.getReachable().stream().filter((subType) -> {
             // We have the sub-types of these in the reachables, and we don't need the parents.
             if (subType instanceof UnresolvedDeclarationType) {
                 return false;
@@ -82,7 +84,16 @@ public class CombinationType extends DeclarationType {
             } else {
                 return true;
             }
-        }).collect(Collectors.toSet());
+        }).forEach(subType -> {
+            if (combiner.originals.containsKey(subType)) {
+                result.addAll(combiner.originals.get(subType));
+            } else {
+                result.add(subType);
+            }
+        });
+
+
+        return result;
     }
 
     public DeclarationType getCombined() {

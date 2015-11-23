@@ -1,10 +1,13 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.util.Pair;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType.Type.*;
@@ -12,14 +15,13 @@ import static dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarati
 /**
  * Created by Erik Krogh Kristensen on 18-10-2015.
  */
-public class PrimitiveReducer implements SingleTypeReducer<PrimitiveDeclarationType, PrimitiveDeclarationType> {
-    @Override
-    public Class<PrimitiveDeclarationType> getAClass() {
-        return PrimitiveDeclarationType.class;
+public class PrimitiveReducer extends SameTypeReducer<PrimitiveDeclarationType> {
+    public PrimitiveReducer(Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
     }
 
     @Override
-    public Class<PrimitiveDeclarationType> getBClass() {
+    public Class<PrimitiveDeclarationType> getTheClass() {
         return PrimitiveDeclarationType.class;
     }
 
@@ -47,7 +49,7 @@ public class PrimitiveReducer implements SingleTypeReducer<PrimitiveDeclarationT
     }
 
     @Override
-    public DeclarationType reduce(PrimitiveDeclarationType one, PrimitiveDeclarationType two) {
+    public PrimitiveDeclarationType reduceIt(PrimitiveDeclarationType one, PrimitiveDeclarationType two) {
         if (one.getType() == two.getType()) {
             return one;
         }

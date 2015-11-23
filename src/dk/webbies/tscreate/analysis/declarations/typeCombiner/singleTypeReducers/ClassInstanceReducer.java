@@ -1,25 +1,29 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.ClassInstanceType;
 import dk.webbies.tscreate.analysis.declarations.types.ClassType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by Erik Krogh Kristensen on 27-10-2015.
  */
-public class ClassInstanceReducer implements SingleTypeReducer<ClassInstanceType, ClassInstanceType> {
+public class ClassInstanceReducer extends SameTypeReducer<ClassInstanceType> {
+    public ClassInstanceReducer(Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
+    }
+
     @Override
-    public Class<ClassInstanceType> getAClass() {
+    public Class<ClassInstanceType> getTheClass() {
         return ClassInstanceType.class;
     }
 
     @Override
-    public Class<ClassInstanceType> getBClass() {
-        return ClassInstanceType.class;
-    }
-
-    @Override
-    public DeclarationType reduce(ClassInstanceType one, ClassInstanceType two) {
+    public ClassInstanceType reduceIt(ClassInstanceType one, ClassInstanceType two) {
         if (one.getClazz() == two.getClazz()) {
             return one;
         } else if (isSuperClass(one.getClazz(), two.getClazz())) {

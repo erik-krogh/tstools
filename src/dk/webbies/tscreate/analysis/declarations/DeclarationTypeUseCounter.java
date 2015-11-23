@@ -39,9 +39,6 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
 
     @Override
     public Void visit(PrimitiveDeclarationType primitive) {
-        if (increment(primitive)) {
-            return null;
-        }
         return null;
     }
 
@@ -50,11 +47,7 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
         if (increment(objectType)) {
             return null;
         }
-        for (Map.Entry<String, DeclarationType> entry : objectType.getDeclarations().entrySet()) {
-            DeclarationType type = entry.getValue();
-            type.accept(this);
-        }
-
+        objectType.getDeclarations().values().forEach(type -> type.accept(this));
         return null;
     }
 
@@ -71,6 +64,7 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
         }
         if (interfaceType.getDynamicAccess() != null) {
             interfaceType.getDynamicAccess().getReturnType().accept(this);
+            interfaceType.getDynamicAccess().getLookupType().accept(this);
         }
         return null;
     }
@@ -88,9 +82,6 @@ public class DeclarationTypeUseCounter implements DeclarationTypeVisitor<Void> {
 
     @Override
     public Void visit(NamedObjectType namedObjectType) {
-        if (increment(namedObjectType)) {
-            return null;
-        }
         return null;
     }
 

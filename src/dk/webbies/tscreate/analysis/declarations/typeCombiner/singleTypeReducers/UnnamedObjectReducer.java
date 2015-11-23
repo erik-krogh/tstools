@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducer
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
@@ -9,31 +10,27 @@ import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 18-10-2015.
  */
-public class UnnamedObjectReducer implements SingleTypeReducer<UnnamedObjectType, UnnamedObjectType> {
+public class UnnamedObjectReducer extends SameTypeReducer<UnnamedObjectType> {
     private final TypeReducer combiner;
 
-    public UnnamedObjectReducer(TypeReducer combiner) {
+    public UnnamedObjectReducer(TypeReducer combiner, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.combiner = combiner;
     }
 
     @Override
-    public Class<UnnamedObjectType> getAClass() {
+    public Class<UnnamedObjectType> getTheClass() {
         return UnnamedObjectType.class;
     }
 
     @Override
-    public Class<UnnamedObjectType> getBClass() {
-        return UnnamedObjectType.class;
-    }
-
-    @Override
-    public DeclarationType reduce(UnnamedObjectType one, UnnamedObjectType two) {
-
+    public UnnamedObjectType reduceIt(UnnamedObjectType one, UnnamedObjectType two) {
         Multimap<String, DeclarationType> declarations = ArrayListMultimap.create();
         for (Map.Entry<String, DeclarationType> entry : one.getDeclarations().entrySet()) {
             declarations.put(entry.getKey(), entry.getValue());

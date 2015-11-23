@@ -1,37 +1,34 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
-import dk.webbies.tscreate.analysis.NativeTypeFactory;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
-import dk.webbies.tscreate.analysis.unionFind.PrimitiveNode;
-import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 08-11-2015.
  */
-public class NamedObjectReducer implements SingleTypeReducer<NamedObjectType, NamedObjectType> {
+public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> {
     private final Snap.Obj global;
     private final NativeClassesMap nativeClasses;
 
-    public NamedObjectReducer(Snap.Obj global, NativeClassesMap nativeClasses) {
+    public NamedObjectReducer(Snap.Obj global, NativeClassesMap nativeClasses, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.global = global;
         this.nativeClasses = nativeClasses;
     }
 
     @Override
-    public Class<NamedObjectType> getAClass() {
+    public Class<NamedObjectType> getTheClass() {
         return NamedObjectType.class;
     }
 
     @Override
-    public Class<NamedObjectType> getBClass() {
-        return NamedObjectType.class;
-    }
-
-    @Override
-    public DeclarationType reduce(NamedObjectType one, NamedObjectType two) {
+    public NamedObjectType reduceIt(NamedObjectType one, NamedObjectType two) {
         if (one.getName().equals(two.getName())) {
             return returnSuper(one, two);
         } else {

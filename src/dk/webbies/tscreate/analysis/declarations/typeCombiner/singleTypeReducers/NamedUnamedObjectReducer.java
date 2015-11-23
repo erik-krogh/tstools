@@ -3,6 +3,7 @@ package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducer
 import dk.au.cs.casa.typescript.types.GenericType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
