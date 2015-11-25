@@ -204,11 +204,19 @@ public class TypeFactory {
         if (libraryClass == null) {
             return null;
         }
+        boolean hardCodedClassName = false;
         if (options.isClassNames.stream().anyMatch(str -> str.equals(libraryClass.getName()))) {
+            hardCodedClassName = true;
             libraryClass.isUsedAsClass = true;
         }
         if (!libraryClass.isUsedAsClass) {
             return null;
+        }
+        if (!hardCodedClassName) {
+            String firstLetter = libraryClass.getName().substring(0, 1);
+            if (!firstLetter.equals(firstLetter.toUpperCase())) {
+                return null;
+            }
         }
         Snap.Obj constructor = libraryClass.getConstructor();
         if (constructor == null) {
