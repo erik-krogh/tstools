@@ -72,24 +72,36 @@ public class BenchMark {
         return new BenchMark("three.js", "tests/three/three.js", null, options, ES6);
     });
 
-    // TODO: This is slow in the last phase (combining types).
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("leaflet.js", "tests/leaflet/leaflet.js", null, options, ES5);
     });
 
-    // TODO: Also slow in last phase (same af leaflet).
     public static final BenchMark D3 = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("D3.js", "tests/d3/d3.js", null, options, ES5);
     });
+
+    // TODO: Way way way to much is a class. 
+    public static final BenchMark prototype = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5);
+    });
+
+    // Crasher JSnap
+    /*public static final BenchMark ace = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("ace.js", "tests/ace/ace.js", null, options, ES5);
+    });*/
+
+
 
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
 
         Dependency testDependency = new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts");
 
-        return new BenchMark("Test file", "tests/test/test.js", null, options, ES5, Arrays.asList(testDependency, Dependency.jQuery));
+        return new BenchMark("Test file", "tests/test/test.js", null, options, ES5/*, Arrays.asList(testDependency, Dependency.jQuery)*/);
     });
 
     public static final class Dependency {

@@ -36,8 +36,8 @@ public class ClassType extends DeclarationType{
         return staticFields;
     }
 
-    public ClassType getSuperClass() {
-        return (ClassType) DeclarationType.resolve(superClass);
+    public DeclarationType getSuperClass() {
+        return DeclarationType.resolve(superClass);
     }
 
     public String getName() {

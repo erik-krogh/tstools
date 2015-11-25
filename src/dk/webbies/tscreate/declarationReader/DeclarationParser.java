@@ -5,6 +5,7 @@ import com.google.common.collect.HashBiMap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.File;
@@ -18,7 +19,7 @@ import static dk.webbies.tscreate.jsnap.Snap.Value;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static NativeClassesMap markNatives(Obj global, Environment env, List<String> dependencyDeclarations) {
+    public static NativeClassesMap markNatives(Obj global, Environment env, List<String> dependencyDeclarations, HashMap<Obj, LibraryClass> libraryClasses) {
         SpecReader spec = getTypeSpecification(env, dependencyDeclarations);
 
         Map<Type, String> typeNames = new HashMap<>();
@@ -30,6 +31,9 @@ public class DeclarationParser {
         Obj globalProto = global;
         while (globalProto != null) {
             spec.getGlobal().accept(new MarkNativesVisitor(prototypes, typeNames, namedObjects), globalProto);
+            if (globalProto == globalProto.prototype) {
+                break;
+            }
             globalProto = globalProto.prototype;
         }
 
@@ -48,7 +52,7 @@ public class DeclarationParser {
             }
         }
 
-        return new NativeClassesMap(typeNames, prototypes, namedObjects, global);
+        return new NativeClassesMap(typeNames, prototypes, namedObjects, global, libraryClasses);
     }
 
     public static SpecReader getTypeSpecification(Environment env, String... declarationFilePaths) {
@@ -232,8 +236,10 @@ public class DeclarationParser {
         private final BiMap<Snap.Obj, String> classNames = HashBiMap.create();
         private BiMap<Obj, String> namedObjects;
         private final Obj global;
+        private HashMap<Obj, LibraryClass> libraryClasses;
 
-        public NativeClassesMap(Map<Type, String> typeNames, Map<Obj, Type> nativeClasses, HashMap<Obj, String> namedObjects, Obj global) {
+        public NativeClassesMap(Map<Type, String> typeNames, Map<Obj, Type> nativeClasses, HashMap<Obj, String> namedObjects, Obj global, HashMap<Obj, LibraryClass> libraryClasses) {
+            this.libraryClasses = libraryClasses;
             this.namedObjects = HashBiMap.create(namedObjects);
             this.global = global;
             this.typeNames = HashBiMap.create(typeNames);
@@ -253,12 +259,10 @@ public class DeclarationParser {
             if (result != null) {
                 return result;
             }
-            if (prototype.getProperty("constructor") != null && prototype.getProperty("constructor").value instanceof Snap.Obj) {
-                Snap.Obj constructor = (Obj) prototype.getProperty("constructor").value;
-                if (constructor.function != null && constructor.function.constructorSignatures != null && !constructor.function.constructorSignatures.isEmpty()) {
-                    Type type = constructor.function.constructorSignatures.get(0).getResolvedReturnType();
-                    return nameFromType(type);
-                }
+            Obj constructor = this.libraryClasses.get(prototype).getConstructor();
+            if (constructor != null && constructor.function.constructorSignatures != null && !constructor.function.constructorSignatures.isEmpty()) {
+                Type type = constructor.function.constructorSignatures.get(0).getResolvedReturnType();
+                return nameFromType(type);
             }
             return null;
         }

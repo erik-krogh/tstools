@@ -128,18 +128,19 @@ public class HeapValueFactory {
     }
 
     private FunctionNode getGetterSetterNode(Snap.Obj closure) {
-        if (this.getterSetterCache.containsKey(closure)) {
-            return this.getterSetterCache.get(closure);
+        if (closure == null || closure.function == null || closure.function.type == null) {
+            System.out.printf("");
         }
-
-        FunctionNode functionNode = FunctionNode.create(closure, solver);
-        Map<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
-        functionNodes.put(closure, functionNode);
-
-        this.getterSetterCache.put(closure, functionNode);
-
-        this.typeAnalysis.analyse(closure, functionNodes, this.solver, functionNode, this, new HashSet<>());
-
-        return functionNode;
+        switch (closure.function.type) {
+            case "unknown": return FunctionNode.create(closure, solver);
+            case "user":
+            case "bind":
+                assert this.typeAnalysis.functionNodes.containsKey(closure);
+                return this.typeAnalysis.functionNodes.get(closure);
+            case "native":
+                throw new UnsupportedOperationException();
+            default:
+                throw new RuntimeException();
+        }
     }
 }

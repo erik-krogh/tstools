@@ -42,7 +42,11 @@ public class ClassInstanceReducer extends SameTypeReducer<ClassInstanceType> {
             if (superClass == subClass) {
                 return true;
             }
-            subClass = subClass.getSuperClass();
+            if (subClass.getSuperClass() instanceof ClassType) {
+                subClass = (ClassType) subClass.getSuperClass();
+            } else {
+                break;
+            }
         }
         return false;
     }

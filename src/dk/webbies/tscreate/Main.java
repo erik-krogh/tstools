@@ -27,8 +27,8 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-        runAnalysis(BenchMark.test);
-
+        runAnalysis(BenchMark.prototype);
+//
 //        for (BenchMark benchmark : BenchMark.allBenchmarks) {
 //            runAnalysis(benchmark);
 //        }
@@ -48,14 +48,14 @@ public class Main {
         FunctionExpression program = SSA.toSSA(new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST());
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), program);
 
-        NativeClassesMap nativeClasses = markNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations());
-
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, benchMark.options, benchMark.dependencyScripts());
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
+        NativeClassesMap nativeClasses = markNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses);
+
         Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
 
-        String printedDeclaration = new DeclarationPrinter(declaration).print();
+        String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
         System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);

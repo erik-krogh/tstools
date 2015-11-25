@@ -122,7 +122,9 @@ public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> {
             if (superProto == subProto) {
                 return true;
             }
-
+            if (subProto == subProto.prototype) {
+                break;
+            }
             subProto = subProto.prototype;
         }
 

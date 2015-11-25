@@ -7,8 +7,6 @@ import java.util.Collection;
  * Created by Erik Krogh Kristensen on 15-09-2015.
  */
 public class Options {
-    // Whether or not the heap should be resolved when recursively resolving other functions than the one we are currently analyzing (potentially expensive).
-    public boolean interProceduralAnalysisWithHeap = true;
     public Collection<String> isClassNames = Arrays.asList("_");
 
     public Runtime runtime = Runtime.CHROME;

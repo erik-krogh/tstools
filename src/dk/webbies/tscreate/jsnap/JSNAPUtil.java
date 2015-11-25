@@ -86,6 +86,9 @@ public class JSNAPUtil {
         result.key = librarySnap.key;
         result.function = librarySnap.function;
         result.properties = new ArrayList<>();
+        if (librarySnap.properties == null) {
+            librarySnap.properties = Collections.EMPTY_LIST;
+        }
         for (Snap.Property property : librarySnap.properties) {
             if (domSnap.getProperty(property.name) == null) {
                 if (property.value != null && property.value instanceof Snap.Obj) {
@@ -153,7 +156,7 @@ public class JSNAPUtil {
     public static Map<String, Snap.Property> createPropertyMap(Snap.Obj obj) {
         HashMap<String, Snap.Property> result = new HashMap<>();
         obj.properties.forEach(prop -> result.put(prop.name, prop));
-        if (obj.prototype != null) {
+        if (obj.prototype != null && obj != obj.prototype) {
             result.putAll(createPropertyMap(obj.prototype));
         }
         return result;
@@ -199,34 +202,53 @@ public class JSNAPUtil {
             obj.key = i;
         }
         for (Snap.Obj obj : stateDump.heap) {
-            if (obj == null || obj.properties == null) {
-                continue;
-            }
-            if (obj.function != null && obj.function.instance != null) {
-                int key = obj.function.instance.key;
-                obj.function.instance = getHeapObject(stateDump, key);
-            }
-            for (Snap.Property prop : obj.properties) {
-                if (prop.value instanceof Snap.Obj) {
-                    prop.value = getHeapObject(stateDump, ((Snap.Obj) prop.value).key);
-
-                    Snap.Obj propValue = (Snap.Obj) prop.value;
-                    if (propValue.env != null) {
-                        propValue.env = getHeapObject(stateDump, (propValue.env).key);
-                    }
-                    if (propValue.prototype != null) {
-                        propValue.prototype = getHeapObject(stateDump, (propValue.prototype).key);
-                    }
-                }
-                if (prop.get != null && prop.get instanceof Snap.Obj) {
-                    prop.get = getHeapObject(stateDump, ((Snap.Obj) prop.get).key);
-                }
-                if (prop.set != null && prop.set instanceof Snap.Obj) {
-                    prop.set = getHeapObject(stateDump, ((Snap.Obj) prop.set).key);
-                }
-            }
+            resolveKeys(stateDump, obj);
+        }
+        List<Snap.Obj> allObjects = JSNAPUtil.getAllObjects(stateDump.getGlobal());
+        for (Snap.Obj obj : allObjects) {
+            resolveKeys(stateDump, obj);
+        }
+        allObjects = JSNAPUtil.getAllObjects(stateDump.getGlobal());
+        for (Snap.Obj obj : allObjects) {
+            resolveKeys(stateDump, obj);
+        }
+        allObjects = JSNAPUtil.getAllObjects(stateDump.getGlobal());
+        for (Snap.Obj obj : allObjects) {
+            resolveKeys(stateDump, obj);
         }
 
+    }
+
+    private static void resolveKeys(Snap.StateDump stateDump, Snap.Obj obj) {
+        if (obj == null || obj.properties == null) {
+            return;
+        }
+        if (obj.function != null && obj.function.instance != null) {
+            int key = obj.function.instance.key;
+            obj.function.instance = getHeapObject(stateDump, key);
+        }
+        if (obj.env != null) {
+            obj.env = getHeapObject(stateDump, obj.env.key);
+        }
+        for (Snap.Property prop : obj.properties) {
+            if (prop.value instanceof Snap.Obj) {
+                prop.value = getHeapObject(stateDump, ((Snap.Obj) prop.value).key);
+
+                Snap.Obj propValue = (Snap.Obj) prop.value;
+                if (propValue.env != null) {
+                    propValue.env = getHeapObject(stateDump, (propValue.env).key);
+                }
+                if (propValue.prototype != null) {
+                    propValue.prototype = getHeapObject(stateDump, (propValue.prototype).key);
+                }
+            }
+            if (prop.get != null && prop.get instanceof Snap.Obj) {
+                prop.get = getHeapObject(stateDump, ((Snap.Obj) prop.get).key);
+            }
+            if (prop.set != null && prop.set instanceof Snap.Obj) {
+                prop.set = getHeapObject(stateDump, ((Snap.Obj) prop.set).key);
+            }
+        }
     }
 
     private static Snap.Obj getHeapObject(Snap.StateDump stateDump, int key) {
@@ -234,6 +256,7 @@ public class JSNAPUtil {
         if (result == null) { // Happens in Chrome.
             Snap.Obj obj = new Snap.Obj();
             obj.properties = new ArrayList<>();
+            stateDump.heap.set(key, obj);
             return obj;
         }
         return result;
@@ -301,6 +324,54 @@ public class JSNAPUtil {
                     return (T) obj;
                 }
             };
+        }
+    }
+
+    public static List<Snap.Obj> getAllObjects(Snap.Obj root) {
+        return getAllObjects(root, new HashSet<>());
+    }
+
+    private static List<Snap.Obj> getAllObjects(Snap.Obj obj, Set<Snap.Obj> seen) {
+        if (seen.contains(obj)) {
+            return Collections.EMPTY_LIST;
+        }
+
+        seen.add(obj);
+
+        ArrayList<Snap.Obj> result = new ArrayList<>();
+        result.add(obj);
+        if (obj.properties != null) {
+            for (Snap.Property property : obj.properties) {
+                addAllPropertyFunctions(seen, result, property);
+            }
+        }
+
+        if (obj.prototype != null && obj.prototype.properties != null) {
+            for (Snap.Property property : obj.prototype.properties) {
+                addAllPropertyFunctions(seen, result, property);
+            }
+        }
+
+        if (obj.env != null) {
+            result.addAll(getAllObjects(obj.env, seen));
+        }
+
+        if (obj.function != null && obj.function.instance != null) {
+            result.addAll(getAllObjects(obj.function.instance, seen));
+        }
+
+        return result;
+    }
+
+    private static void addAllPropertyFunctions(Set<Snap.Obj> seen, ArrayList<Snap.Obj> result, Snap.Property property) {
+        if (property.value != null && property.value instanceof Snap.Obj) {
+            result.addAll(getAllObjects((Snap.Obj) property.value, seen));
+        }
+        if (property.set != null && !(property.set instanceof Snap.UndefinedConstant)) {
+            result.addAll(getAllObjects((Snap.Obj) property.set, seen));
+        }
+        if (property.get != null && !(property.get instanceof Snap.UndefinedConstant)) {
+            result.addAll(getAllObjects((Snap.Obj) property.get, seen));
         }
     }
 }

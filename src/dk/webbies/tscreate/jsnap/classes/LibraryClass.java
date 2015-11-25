@@ -24,6 +24,7 @@ public class LibraryClass {
     public final Snap.Obj prototype;
 
     public List<Snap.Obj> instances = new ArrayList<>();
+    private Snap.Obj constructor;
 
     public LibraryClass(String pathSeen, Snap.Obj prototype) {
         this.pathsSeen.add(pathSeen);
@@ -81,13 +82,25 @@ public class LibraryClass {
     }
 
     public boolean isNativeClass() {
-        Snap.Property constructorProp = this.prototype.getProperty("constructor");
-        if (constructorProp == null) {
-            return false;
-        }
-        Snap.Obj constructor = (Snap.Obj) constructorProp.value;
-        return constructor.function.type.equals("native");
+        Snap.Obj constructor = getConstructor();
+        return constructor != null && constructor.function.type.equals("native");
     }
 
+    public void setConstructor(Snap.Obj constructor) {
+        this.constructor = constructor;
+    }
+
+    public Snap.Obj getConstructor() {
+        if (constructor == null) {
+            Snap.Property constructorProp = this.prototype.getProperty("constructor");
+            if (constructorProp != null && constructorProp.value instanceof Snap.Obj) {
+                Snap.Obj constructor = (Snap.Obj) constructorProp.value;
+                if (constructor.function != null) {
+                    return constructor;
+                }
+            }
+        }
+        return constructor;
+    }
 }
 

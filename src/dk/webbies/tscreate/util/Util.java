@@ -85,8 +85,7 @@ public class Util {
                 result = IOUtils.toString(is);
                 is.close();
                 latch.countDown();
-            }
-            catch (IOException ioe) {
+            } catch (IOException ioe) {
                 ioe.printStackTrace();
             }
         }
@@ -167,6 +166,7 @@ public class Util {
 
 
     private static final ExecutorService threadPool = Executors.newCachedThreadPool();
+
     public static void runAll(Runnable... runs) throws Throwable {
         CountDownLatch latch = new CountDownLatch(runs.length);
         final Throwable[] exception = {null};
@@ -198,7 +198,7 @@ public class Util {
                 throw new ClassCastException("Cannot cast : " + t + " to class " + clazz.getName());
             }
         }
-        return (ColS)list;
+        return (ColS) list;
     }
 
     public static <T, S> List<S> filter(Class<S> clazz, List<T> list) {
@@ -216,9 +216,9 @@ public class Util {
     }
 
     // http://stackoverflow.com/questions/17640754/zipping-streams-using-jdk8-with-lambda-java-util-stream-streams-zip#answer-23529010
-    public static<A, B, C> Stream<C> zip(Stream<? extends A> a,
-                                         Stream<? extends B> b,
-                                         BiFunction<? super A, ? super B, ? extends C> zipper) {
+    public static <A, B, C> Stream<C> zip(Stream<? extends A> a,
+                                          Stream<? extends B> b,
+                                          BiFunction<? super A, ? super B, ? extends C> zipper) {
         Objects.requireNonNull(zipper);
         @SuppressWarnings("unchecked")
         Spliterator<A> aSpliterator = (Spliterator<A>) Objects.requireNonNull(a).spliterator();
@@ -252,28 +252,33 @@ public class Util {
     }
 
 
-
-    public static<A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a,
-                                         Stream<? extends B> b) {
+    public static <A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a,
+                                                Stream<? extends B> b) {
         return zip(a, b, Pair::new);
     }
 
-    public static<E> List<E> reduceList(List<E> acc, List<E> elem) {
+    public static <E> List<E> reduceList(List<E> acc, List<E> elem) {
         acc.addAll(elem);
         return acc;
-    };
+    }
 
-    public static<E> ArrayList<E> reduceList(ArrayList<E> acc, ArrayList<E> elem) {
+    ;
+
+    public static <E> ArrayList<E> reduceList(ArrayList<E> acc, ArrayList<E> elem) {
         acc.addAll(elem);
         return acc;
-    };
+    }
 
-    public static<E> Set<E> reduceSet(Set<E> acc, Set<E> elem) {
+    ;
+
+    public static <E> Set<E> reduceSet(Set<E> acc, Set<E> elem) {
         acc.addAll(elem);
         return acc;
-    };
+    }
 
-    public static<S, T, T1 extends T, S1 extends S> T getWithDefault(Map<S, T> map, S1 key, T1 defaultValue) {
+    ;
+
+    public static <S, T, T1 extends T, S1 extends S> T getWithDefault(Map<S, T> map, S1 key, T1 defaultValue) {
         if (map.containsKey(key)) {
             return map.get(key);
         } else {
@@ -282,7 +287,7 @@ public class Util {
         }
     }
 
-    public static<T> void runOnCommon(Set<T> one, Set<T> two, Consumer<T> callback) {
+    public static <T> void runOnCommon(Set<T> one, Set<T> two, Consumer<T> callback) {
         Set<T> smallSet;
         Set<T> bigSet;
         if (one.size() <= two.size()) {
@@ -296,13 +301,22 @@ public class Util {
         smallSet.stream().filter(bigSet::contains).forEach(callback::accept);
     }
 
-    public static<T> List<T> intersection(Set<T> one, Set<T> two) {
+    public static <T> List<T> intersection(Set<T> one, Set<T> two) {
         ArrayList<T> result = new ArrayList<>();
         runOnCommon(one, two, result::add);
         return result;
     }
 
-    public static<T> T evaluate(Supplier<T> supplier) {
+    public static <T> T evaluate(Supplier<T> supplier) {
         return supplier.get();
+    }
+
+    public static boolean isInteger(String str) {
+        try {
+            int i = Integer.parseInt(str);
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+        return true;
     }
 }

@@ -512,7 +512,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 return heapFactory.fromProperty(property);
             }
 
-            return lookupProperty(obj.prototype, name);
+            if (obj != obj.prototype) {
+                return lookupProperty(obj.prototype, name);
+            } else {
+                return new EmptyNode(solver);
+            }
         }
     }
 
@@ -613,34 +617,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 switch (closure.function.type) {
                     case "user":
                     case "bind": {
-                        FunctionNode functionNode;
-                        if (UnionConstraintVisitor.this.functionNodes.containsKey(closure)) {
-                            functionNode = UnionConstraintVisitor.this.functionNodes.get(closure);
-                        } else {
-                            functionNode = FunctionNode.create(closure, solver);
-                            UnionConstraintVisitor.this.functionNodes.put(closure, functionNode);
-                        }
-                        solver.union(functionNode, this.functionNode);
-                        if (UnionConstraintVisitor.this.analyzedFunction.contains(closure)) {
-                            break;
-                        }
-                        UnionConstraintVisitor.this.analyzedFunction.add(closure);
-
-                        if (typeAnalysis.options.interProceduralAnalysisWithHeap) {
-                            typeAnalysis.analyse(closure, UnionConstraintVisitor.this.functionNodes, solver, functionNode, heapFactory, analyzedFunction);
-                        } else {
-                            new UnionConstraintVisitor(
-                                    closure,
-                                    UnionConstraintVisitor.this.solver,
-                                    UnionConstraintVisitor.this.identifierMap,
-                                    functionNode,
-                                    UnionConstraintVisitor.this.functionNodes,
-                                    UnionConstraintVisitor.this.heapFactory,
-                                    typeAnalysis,
-                                    UnionConstraintVisitor.this.analyzedFunction,
-                                    UnionConstraintVisitor.this.nativeTypeFactory).
-                                    visit(closure.function.astNode);
-                        }
+                        assert UnionConstraintVisitor.this.functionNodes.containsKey(closure);
+                        solver.union(this.functionNode, new IncludeNode(solver, UnionConstraintVisitor.this.functionNodes.get(closure)));
                         break;
                     }
                     case "native": {

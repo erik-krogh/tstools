@@ -10,6 +10,8 @@ import dk.webbies.tscreate.paser.AST.Identifier;
 import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -26,6 +28,7 @@ public class TypeAnalysis {
     private final TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
     private final NativeTypeFactory nativeTypeFactory;
+    final Map<Snap.Obj, FunctionNode> functionNodes;
 
     public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
         this.solver = new UnionFindSolver();
@@ -35,6 +38,8 @@ public class TypeAnalysis {
         this.nativeClasses = nativeClasses;
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
         this.nativeTypeFactory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
+        List<Snap.Obj> functions = getAllFunctionInstances(globalObject);
+        this.functionNodes = functions.stream().collect(Collectors.toMap(Function.identity(), obj -> FunctionNode.create(obj, solver)));
         this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this, nativeTypeFactory);
         this.heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, this);
     }
@@ -58,20 +63,15 @@ public class TypeAnalysis {
 
     public void analyseFunctions() {
 
-        List<Snap.Obj> functions = getAllFunctionInstances(globalObject, new HashSet<>());
+        System.out.println("Analyzing " + functionNodes.size() + " functions");
 
-        System.out.println("Analyzing " + functions.size() + " functions");
+        int counter = 0;
+        for (Snap.Obj functionClosure : functionNodes.keySet()) {
+            System.out.println(++counter + "/" + functionNodes.size());
 
-        int counter = 1;
-        for (Snap.Obj functionClosure : functions) {
-            System.out.println(counter++ + "/" + functions.size());
+            FunctionNode functionNode = functionNodes.get(functionClosure);
 
-            FunctionNode functionNode = FunctionNode.create(functionClosure, solver);
-
-            Map<Snap.Obj, FunctionNode> subFunctionNodes = new HashMap<>();
-            subFunctionNodes.put(functionClosure, FunctionNode.create(functionClosure, solver));
-
-            analyse(functionClosure, subFunctionNodes, solver, functionNode, heapFactory, new HashSet<>());
+            analyse(functionClosure, functionNodes, solver, functionNode, heapFactory, new HashSet<>());
 
             solver.finish();
 
@@ -129,41 +129,7 @@ public class TypeAnalysis {
         new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, analyzedFunctions, this.nativeTypeFactory).visit(closure.function.astNode);
     }
 
-    private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj obj, HashSet<Snap.Obj> seen) {
-        if (seen.contains(obj)) {
-            return Collections.EMPTY_LIST;
-        }
-        seen.add(obj);
-
-        ArrayList<Snap.Obj> result = new ArrayList<>();
-        if (obj.function != null && (obj.function.type.equals("user") || obj.function.type.equals("bind"))) {
-            result.add(obj);
-        }
-        if (obj.properties != null) {
-            for (Snap.Property property : obj.properties) {
-                if (property.value != null && property.value instanceof Snap.Obj) {
-                    result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));
-                }
-            }
-        }
-
-        if (obj.prototype != null && obj.prototype.properties != null) {
-            for (Snap.Property property : obj.prototype.properties) {
-                if (property.value != null && property.value instanceof Snap.Obj) {
-                    result.addAll(getAllFunctionInstances((Snap.Obj) property.value, seen));
-                }
-            }
-        }
-
-        if (obj.env != null) {
-            result.addAll(getAllFunctionInstances(obj.env, seen));
-        }
-
-        if (obj.function != null && obj.function.instance != null) {
-            result.addAll(getAllFunctionInstances(obj.function.instance, seen));
-        }
-
-        return result;
+    private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj root) {
+        return JSNAPUtil.getAllObjects(root).stream().filter(obj -> obj.function != null && (obj.function.type.equals("bind") ||obj.function.type.equals("user"))).collect(Collectors.toList());
     }
-
 }

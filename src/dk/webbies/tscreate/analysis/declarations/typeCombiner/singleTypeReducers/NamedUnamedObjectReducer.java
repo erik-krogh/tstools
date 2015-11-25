@@ -9,11 +9,13 @@ import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 18-10-2015.
@@ -46,7 +48,6 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
 
     public boolean objectMatchPrototype(UnnamedObjectType object, NamedObjectType type) {
         HashSet<String> keysNotAccountedFor = new HashSet<>(object.getDeclarations().keySet());
-
         removeKeys(type.getName(), keysNotAccountedFor);
 
         for (String name : type.getKnownSubTypes()) {
@@ -62,6 +63,10 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
 
     private Map<String, Set<String>> nameToPropertiesCache = new HashMap<>();
     private void removeKeys(String name, Set<String> toRemoveFrom) {
+        if (name.equals("Array")) {
+            toRemoveFrom.removeAll(toRemoveFrom.stream().filter(Util::isInteger).collect(Collectors.toList()));
+        }
+
         if (!nameToPropertiesCache.containsKey(name)) {
             HashSet<String> keys = new HashSet<>();
             nameToPropertiesCache.put(name, keys);

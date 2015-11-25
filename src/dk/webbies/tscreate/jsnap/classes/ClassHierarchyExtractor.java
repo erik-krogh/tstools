@@ -68,7 +68,10 @@ public class ClassHierarchyExtractor {
         if (classes.containsKey(prototype)) {
             return;
         }
-        protoTypeToClass(path, classes, prototype);
+        LibraryClass libraryClass = protoTypeToClass(path, classes, prototype);
+        if (libraryClass != null) {
+            libraryClass.setConstructor(obj);
+        }
     }
 
     private LibraryClass protoTypeToClass(String path, Map<Snap.Obj, LibraryClass> classes, Snap.Obj prototype) {

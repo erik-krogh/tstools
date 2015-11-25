@@ -210,16 +210,14 @@ public class TypeFactory {
         if (!libraryClass.isUsedAsClass) {
             return null;
         }
-        Snap.Property constructorProp = libraryClass.prototype.getProperty("constructor");
-        if (constructorProp == null) {
+        Snap.Obj constructor = libraryClass.getConstructor();
+        if (constructor == null) {
             return null;
         }
 
-        // Handling the native case here, because there we never end up in a recursive type.
-        Snap.Obj constructor = (Snap.Obj) libraryClass.prototype.getProperty("constructor").value;
         switch (constructor.function.type) {
             case "native":
-                // This should never be hit.
+                // Native classes should be handled before entering this method.
                 throw new RuntimeException();
             case "unknown": // Well we cant do anything with this one.
                 return null;
@@ -249,8 +247,7 @@ public class TypeFactory {
 
     // This is only to be used from within resolveClassTypes.
     private DeclarationType createClassType(LibraryClass libraryClass) {
-        Snap.Property constructorProp = libraryClass.prototype.getProperty("constructor");
-        Snap.Obj constructor = (Snap.Obj) constructorProp.value;
+        Snap.Obj constructor = libraryClass.getConstructor();
         switch (constructor.function.type) {
             case "user":
                 CombinationType constructorType = createConstructorType(libraryClass, constructor);
@@ -265,7 +262,13 @@ public class TypeFactory {
                 Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass, constructor);
 
                 ClassType classType = new ClassType(libraryClass.getName(), constructorType, prototypeProperties, staticFields);
-                classType.setSuperClass(getClassType(libraryClass.superClass));
+                if (libraryClass.superClass != null) {
+                    if (libraryClass.superClass.isNativeClass()) {
+                        classType.setSuperClass(new NamedObjectType(nativeClasses.nameFromPrototype(libraryClass.superClass.prototype)));
+                    } else {
+                        classType.setSuperClass(getClassType(libraryClass.superClass));
+                    }
+                }
                 return classType;
             default: // Case "native" should already be handled here.
                 throw new UnsupportedOperationException("unhandled type for creating a class type: " + constructor.function.type);
@@ -308,6 +311,7 @@ public class TypeFactory {
             if (constructor.function.instance != null) {
                 instances.add(constructor.function.instance);
             }
+            instances.removeAll(libraryClasses.keySet()); // Sometimes the prototype of one Klass, is an instance of another class. But we don't want that.
 
             for (Snap.Obj instance : instances) {
                 for (Snap.Property property : instance.properties) {

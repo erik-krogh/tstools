@@ -34,9 +34,13 @@ public class Snap {
 
         public Map<String, Property> getPropertyMap() {
             if (propertyMap == null) {
-                propertyMap = new HashMap<>();
-                for (Property property : this.properties) {
-                    propertyMap.put(property.name, property);
+                if (this.properties == null) {
+                    propertyMap = Collections.EMPTY_MAP;
+                } else {
+                    propertyMap = new HashMap<>();
+                    for (Property property : this.properties) {
+                        propertyMap.put(property.name, property);
+                    }
                 }
             }
             return propertyMap;

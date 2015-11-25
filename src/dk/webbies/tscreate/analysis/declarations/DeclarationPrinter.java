@@ -2,6 +2,8 @@ package dk.webbies.tscreate.analysis.declarations;
 
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.*;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.jsnap.Snap;
 import fj.F;
 import fj.pre.Ord;
 import fj.pre.Ordering;
@@ -18,6 +20,7 @@ import java.util.function.Predicate;
  */
 public class DeclarationPrinter {
     private final Map<String, DeclarationType> declarations;
+    private DeclarationParser.NativeClassesMap nativeClasses;
 
     private final List<InterfaceType> interfacesToPrint = new ArrayList<>();
     private final List<ClassType> classesToPrint = new ArrayList<>();
@@ -28,8 +31,9 @@ public class DeclarationPrinter {
     // That we therefore print as an interface instead.
     private final Map<DeclarationType, InterfaceType> printsAsInterface = new HashMap<>();
 
-    public DeclarationPrinter(Map<String, DeclarationType> declarations) {
+    public DeclarationPrinter(Map<String, DeclarationType> declarations, DeclarationParser.NativeClassesMap nativeClasses) {
         this.declarations = declarations;
+        this.nativeClasses = nativeClasses;
     }
 
     private void addPrintAsInterface(DeclarationType type) {
@@ -290,7 +294,7 @@ public class DeclarationPrinter {
                         write(builder, ", ");
                     }
                 }
-                write(builder, "} ");
+                write(builder, "}");
                 String declarationsString = builder.toString();
                 if (declarationsString.contains("\n") || declarationsString.length() > 50) {
                     throw new GotCyclic(objectType);
@@ -355,7 +359,13 @@ public class DeclarationPrinter {
             List<DeclarationType> types = union.getTypes();
             for (int i = 0; i < types.size(); i++) {
                 DeclarationType type = types.get(i);
-                type.accept(this, arg);
+                if (type.resolve() instanceof FunctionType) {
+                    write(arg.builder, "(");
+                    type.accept(this, arg);
+                    write(arg.builder, ")");
+                } else {
+                    type.accept(this, arg);
+                }
                 if (i != types.size() - 1) {
                     write(arg.builder, " | ");
                 }
@@ -401,8 +411,15 @@ public class DeclarationPrinter {
                 write(arg.builder, "interface " + classType.getName());
                 if (classType.getSuperClass() != null) {
                     write(arg.builder, " extends ");
-                    write(arg.builder, classType.getSuperClass().getName());
-                    classesToPrint.add(classType.getSuperClass());
+                    if (classType.getSuperClass() instanceof ClassType) {
+                        ClassType superClass = (ClassType) classType.getSuperClass();
+                        write(arg.builder, superClass.getName());
+                        classesToPrint.add(superClass);
+                    } else if (classType.getSuperClass() instanceof NamedObjectType) {
+                        write(arg.builder, ((NamedObjectType) classType.getSuperClass()).getName());
+                    } else {
+                        throw new RuntimeException();
+                    }
                 }
                 write(arg.builder, " {\n");
 
@@ -424,11 +441,22 @@ public class DeclarationPrinter {
             return null;
         }
 
-        private Predicate<Map.Entry<String, DeclarationType>> filterSuperclassFields(ClassType superClass) {
+        private Predicate<Map.Entry<String, DeclarationType>> filterSuperclassFields(DeclarationType superClass) {
             Set<String> fieldsInSuper = new HashSet<>();
             while (superClass != null) {
-                fieldsInSuper.addAll(superClass.getPrototypeFields().keySet());
-                superClass = superClass.getSuperClass();
+                if (superClass instanceof ClassType) {
+                    fieldsInSuper.addAll(((ClassType)superClass).getPrototypeFields().keySet());
+                    superClass = ((ClassType)superClass).getSuperClass();
+                } else if (superClass instanceof NamedObjectType) {
+                    Snap.Obj proto = nativeClasses.prototypeFromName(((NamedObjectType) superClass).getName());
+                    while (proto != null && proto != proto.prototype) {
+                        fieldsInSuper.addAll(proto.getPropertyMap().keySet());
+                        proto = proto.prototype;
+                    }
+                    break;
+                } else {
+                    throw new RuntimeException();
+                }
             }
             return (entry) -> !fieldsInSuper.contains(entry.getKey());
         }
