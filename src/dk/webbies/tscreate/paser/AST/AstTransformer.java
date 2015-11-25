@@ -279,6 +279,9 @@ public class AstTransformer {
         } else if (tree instanceof LabelledStatementTree) {
             LabelledStatementTree labelled = (LabelledStatementTree) tree;
             return new LabeledStatement(loc, (Statement) convert(labelled.statement), labelled.name.value);
+        } else if (tree instanceof DebuggerStatementTree) {
+            // Ignoring debugger statements.
+            return new BlockStatement(loc, Collections.EMPTY_LIST);
         }
 
         throw new RuntimeException("Cannot yet handle that kind of expression: " + tree.getClass().getName());
