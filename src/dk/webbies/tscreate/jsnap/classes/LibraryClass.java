@@ -12,7 +12,7 @@ import java.util.List;
  * Created by webbies on 02-09-2015.
  */
 public class LibraryClass {
-    public List<String> pathsSeen = new ArrayList<>();
+    private List<String> pathsSeen = new ArrayList<>();
     public LibraryClass superClass;
     private String name = null;
 
@@ -39,6 +39,13 @@ public class LibraryClass {
         EmptyNode result = new EmptyNode(solver);
         constructorNodes.add(result);
         return result;
+    }
+
+    public void addPathSeen(String path) {
+        if (!this.pathsSeen.contains(path)) {
+            this.pathsSeen.add(path);
+        }
+        assert this.name == null;
     }
 
     public UnionNode getNewThisNode(UnionFindSolver solver) {

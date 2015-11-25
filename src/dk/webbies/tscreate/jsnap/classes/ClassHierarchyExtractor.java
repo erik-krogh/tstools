@@ -20,8 +20,8 @@ public class ClassHierarchyExtractor {
             Snap.Property prototype = obj.getProperty("prototype");
             if (prototype != null && prototype.value != null && prototype.value instanceof Snap.Obj) {
                 LibraryClass klass = classes.get(prototype.value);
-                if (klass != null && !klass.pathsSeen.contains(prefixPath)) {
-                    klass.pathsSeen.add(prefixPath);
+                if (klass != null) {
+                    klass.addPathSeen(prefixPath);
                 }
             }
             return Collections.EMPTY_LIST;
