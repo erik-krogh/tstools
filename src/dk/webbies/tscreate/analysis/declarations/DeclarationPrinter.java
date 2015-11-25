@@ -2,17 +2,21 @@ package dk.webbies.tscreate.analysis.declarations;
 
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.*;
+import fj.F;
+import fj.pre.Ord;
+import fj.pre.Ordering;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
 public class DeclarationPrinter {
-    private final OutputStream out;
     private final Map<String, DeclarationType> declarations;
 
     private final List<InterfaceType> interfacesToPrint = new ArrayList<>();
@@ -24,97 +28,67 @@ public class DeclarationPrinter {
     // That we therefore print as an interface instead.
     private final Map<DeclarationType, InterfaceType> printsAsInterface = new HashMap<>();
 
-    public DeclarationPrinter(OutputStream out, Map<String, DeclarationType> declarations) {
-        this.out = out;
+    public DeclarationPrinter(Map<String, DeclarationType> declarations) {
         this.declarations = declarations;
-
-//        recursiveDefinitionCycleDetection(declarations); // TODO Try the following: Recurse the tree until cycle is found, then add that found element as a cyclic element (and in a queue to check later), and back-up until the element that had the cyclic element, and continue from there. (And remember to stop whenever a known cyclic element is hit.)
-
-        useCounterCycleDetection(declarations);
     }
 
-    private void recursiveDefinitionCycleDetection(Map<String, DeclarationType> declarations) {
-        DeclarationCycleDetector cycleDetector = new DeclarationCycleDetector();
-        declarations.values().forEach(cycleDetector::addType);
-
-        for (DeclarationType type : cycleDetector.getCyclicTypes()) {
-            if (type instanceof FunctionType) {
-                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.interfaceCounter++);
-                interfaceType.function = (FunctionType) type;
-                printsAsInterface.put(type, interfaceType);
-            }
-            if (type instanceof UnnamedObjectType) {
-                InterfaceType interfaceType = new InterfaceType();
-                interfaceType.object = (UnnamedObjectType) type;
-                printsAsInterface.put(type, interfaceType);
-            }
-        }
-    }
-
-    private void useCounterCycleDetection(Map<String, DeclarationType> declarations) {
-        DeclarationTypeUseCounter useCounter = new DeclarationTypeUseCounter();
-        for (DeclarationType type : declarations.values()) {
-            type.accept(useCounter);
-        }
-
-        // This countmap mostly exists so that every type is visisted, and thus resolved (as in, resolving CombinationTypes and UnresolvedDeclarationsTypes).
-        Map<DeclarationType, Integer> countMap = useCounter.getCountMap();
-        countMap.forEach((type, count) -> {
-            if (type instanceof FunctionType) {
-                InterfaceType interfaceType = new InterfaceType("function_" + InterfaceType.interfaceCounter++);
-                interfaceType.function = (FunctionType) type;
-                printsAsInterface.put(type, interfaceType);
-            }
-            if (type instanceof UnnamedObjectType) {
-                InterfaceType interfaceType = new InterfaceType();
-                interfaceType.object = (UnnamedObjectType) type;
-                printsAsInterface.put(type, interfaceType);
-            }
-        });
-    }
-
-    private void writeln(String str) {
-        ident();
-        write(str);
-        write("\n");
-    }
-
-    private void ident() {
-        for (int i = 0; i < ident; i++) {
-            write("\t");
-        }
-    }
-
-    private void write(String str) {
-        try {
-            out.write(str.getBytes());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void writeName(String str) {
-        if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*")) {
-            write(str);
+    private void addPrintAsInterface(DeclarationType type) {
+        type = type.resolve();
+        if (type instanceof FunctionType) {
+            FunctionType func = (FunctionType) type;
+            InterfaceType inter = new InterfaceType("function_" + InterfaceType.interfaceCounter++);
+            inter.function = func;
+            printsAsInterface.put(func, inter);
+        } else if (type instanceof UnnamedObjectType) {
+            UnnamedObjectType object = (UnnamedObjectType) type;
+            InterfaceType inter = new InterfaceType();
+            inter.object = object;
+            printsAsInterface.put(object, inter);
+        } else if (type instanceof DynamicAccessType) {
+            DynamicAccessType dynamic = (DynamicAccessType) type;
+            InterfaceType inter = new InterfaceType();
+            inter.dynamicAccess = dynamic;
+            printsAsInterface.put(dynamic, inter);
         } else {
-            write("\"" + str + "\"");
+            throw new RuntimeException();
+        }
+    }
+
+    private void writeln(String str, StringBuilder builder) {
+        ident(builder);
+        write(builder, str);
+        write(builder, "\n");
+    }
+
+    private void ident(StringBuilder builder) {
+        for (int i = 0; i < ident; i++) {
+            write(builder, "\t");
+        }
+    }
+
+    private void write(StringBuilder builder, String str) {
+        builder.append(str);
+    }
+
+    private void writeName(StringBuilder builder, String str) {
+        if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*")) {
+            write(builder, str);
+        } else {
+            write(builder, "\"" + str + "\"");
         }
     }
 
     private Set<InterfaceType> printedInterfaces = new HashSet<>();
     private Set<ClassType> printedClasses = new HashSet<>();
 
-    private void finish() {
+    private void finish(StringBuilder outerBuilder) {
         finishing = true;
 
         while (classesToPrint.size() > 0) {
             ArrayList<ClassType> copy = new ArrayList<>(classesToPrint);
             classesToPrint.clear();
             for (ClassType classType : copy) {
-                if (!printedClasses.contains(classType)) {
-                    printedClasses.add(classType);
-                    classType.accept(new TypeVisitor());
-                }
+                printInterface(outerBuilder, classType, printedClasses);
             }
         }
 
@@ -123,242 +97,327 @@ public class DeclarationPrinter {
             ArrayList<InterfaceType> copy = new ArrayList<>(interfacesToPrint);
             interfacesToPrint.clear();
             for (InterfaceType type : copy) {
-                if (!printedInterfaces.contains(type)) {
-                    printedInterfaces.add(type);
-                    type.accept(new TypeVisitor());
-                }
+                printInterface(outerBuilder, type, printedInterfaces);
             }
         }
 
         if (interfacesToPrint.size() > 0 || classesToPrint.size() > 0) {
-            finish();
+            finish(outerBuilder);
         }
     }
 
-    public void print() {
+    private <T extends DeclarationType> void printInterface(StringBuilder outerBuilder, T type, Set<T> printed) {
+        if (!printed.contains(type)) {
+            printed.add(type);
+            StringBuilder builder;
+            while (true) {
+                try {
+                    finishing = true;
+                    type.accept(new TypeVisitor(), new VisitorArg(builder = new StringBuilder(), emptySet()));
+                    break;
+                } catch (GotCyclic e) {
+                    ident = 0;
+                    addPrintAsInterface(e.type);
+                }
+            }
+            outerBuilder.append(builder);
+        }
+    }
+
+    public String print() {
         if (ident != 0) {
             throw new RuntimeException("Can only print top-level declarations with this method");
         }
-        this.declarations.forEach(this::printDeclaration);
-        finish();
+        StringBuilder outerBuilder = new StringBuilder();
+        this.declarations.forEach((name, type) -> {
+            StringBuilder builder;
+            while (true) {
+                try {
+                    printDeclaration(new VisitorArg(builder = new StringBuilder(), emptySet()), name, type);
+                    break;
+                } catch (GotCyclic e) {
+                    ident = 0;
+                    addPrintAsInterface(e.type);
+                }
+            }
+            outerBuilder.append(builder);
+        });
+        finish(outerBuilder);
+        return outerBuilder.toString();
     }
 
-    private void printDeclaration(String name, DeclarationType type) {
-        printDeclaration(name, type, "declare");
+    private void printDeclaration(VisitorArg arg, String name, DeclarationType type) {
+        printDeclaration(arg, name, type, "declare");
     }
 
-    private void printDeclaration(String name, DeclarationType type, String prefix) {
+    private void printDeclaration(VisitorArg arg, String name, DeclarationType type, String prefix) {
+        type = type.resolve();
         if (type instanceof FunctionType) {
             FunctionType functionType = (FunctionType) type;
-            ident();
-            write(prefix + " function " + name + "(");
+            ident(arg.builder);
+            write(arg.builder, prefix + " function " + name + "(");
             List<FunctionType.Argument> args = functionType.getArguments();
-            printArguments(args);
-            write("): ");
-            functionType.getReturnType().accept(new TypeVisitor());
+            printArguments(arg, args);
+            write(arg.builder, "): ");
+            functionType.getReturnType().accept(new TypeVisitor(), arg);
 
-            write(";\n");
+            write(arg.builder, ";\n");
         } else if (type instanceof UnnamedObjectType) {
             UnnamedObjectType module = (UnnamedObjectType) type;
-            ident();
-            write(prefix + " module " + name + " {\n");
+            ident(arg.builder);
+            write(arg.builder, prefix + " module " + name + " {\n");
             ident++;
 
             for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet()) {
-                printDeclaration(entry.getKey(), entry.getValue(), "export");
+                printDeclaration(arg, entry.getKey(), entry.getValue(), "export");
             }
 
             ident--;
-            writeln("}");
+            writeln("}", arg.builder);
         } else {
-            ident();
-            write(prefix + " var ");
-            write(name);
-            write(": ");
-            type.accept(new TypeVisitor());
-            write(";\n");
+            ident(arg.builder);
+            write(arg.builder, prefix + " var ");
+            write(arg.builder, name);
+            write(arg.builder, ": ");
+            type.accept(new TypeVisitor(), arg);
+            write(arg.builder, ";\n");
         }
     }
 
-    private void printArguments(List<FunctionType.Argument> args) {
+    private void printArguments(VisitorArg visitorArg, List<FunctionType.Argument> args) {
         for (int i = 0; i < args.size(); i++) {
             FunctionType.Argument arg = args.get(i);
-            write(arg.getName());
-            write(": ");
-            arg.getType().accept(new TypeVisitor());
+            write(visitorArg.builder, arg.getName());
+            write(visitorArg.builder, ": ");
+            arg.getType().accept(new TypeVisitor(), visitorArg);
             if (i != args.size() - 1) {
-                write(", ");
+                write(visitorArg.builder, ", ");
             }
         }
     }
 
-    private class TypeVisitor implements DeclarationTypeVisitor<Void> {
+    private static final class VisitorArg {
+        final StringBuilder builder;
+        final fj.data.Set<DeclarationType> seen;
+
+        VisitorArg(StringBuilder builder, fj.data.Set<DeclarationType> seen) {
+            this.builder = builder;
+            this.seen = seen;
+        }
+
+        VisitorArg cons(DeclarationType type) {
+            return new VisitorArg(builder, seen.insert(type));
+        }
+
+        boolean contains(DeclarationType type) {
+            return seen.member(type);
+        }
+    }
+
+    private static final class GotCyclic extends RuntimeException {
+        final DeclarationType type;
+
+        private GotCyclic(DeclarationType type) {
+            this.type = type;
+        }
+    }
+
+
+    private class TypeVisitor implements DeclarationTypeVisitorWithArgument<Void, VisitorArg> {
 
         @Override
-        public Void visit(FunctionType functionType) {
-            printFunction(functionType, false);
+        public Void visit(FunctionType functionType, VisitorArg arg) {
+            printFunction(arg, functionType, false);
             return null;
         }
 
-        private void printFunction(FunctionType functionType, boolean insideInterface) {
+        private void printFunction(VisitorArg arg, FunctionType functionType, boolean insideInterface) {
             if (!insideInterface && printsAsInterface.containsKey(functionType)) {
-                printsAsInterface.get(functionType).accept(this);
+                printsAsInterface.get(functionType).accept(this, arg);
             } else {
-                write("(");
+                if (arg.contains(functionType)) {
+                    throw new GotCyclic(functionType);
+                }
+                arg = arg.cons(functionType);
+
+                write(arg.builder, "(");
                 List<FunctionType.Argument> args = functionType.getArguments();
                 for (int i = 0; i < args.size(); i++) {
-                    FunctionType.Argument arg = args.get(i);
-                    write(arg.getName());
-                    write(": ");
-                    arg.getType().accept(this);
+                    FunctionType.Argument argument = args.get(i);
+                    write(arg.builder, argument.getName());
+                    write(arg.builder, ": ");
+                    argument.getType().accept(this, arg);
                     if (i != args.size() - 1) {
-                        write(", ");
+                        write(arg.builder, ", ");
                     }
                 }
                 if (insideInterface) {
-                    write(") : ");
+                    write(arg.builder, ") : ");
                 } else {
-                    write(") => ");
+                    write(arg.builder, ") => ");
                 }
-                functionType.getReturnType().accept(this);
+                functionType.getReturnType().accept(this, arg);
             }
         }
 
         @Override
-        public Void visit(PrimitiveDeclarationType primitive) {
-            write(primitive.getPrettyString());
+        public Void visit(PrimitiveDeclarationType primitive, VisitorArg arg) {
+            write(arg.builder, primitive.getPrettyString());
             return null;
         }
 
         @Override
-        public Void visit(UnnamedObjectType objectType) {
+        public Void visit(UnnamedObjectType objectType, VisitorArg arg) {
             if (printsAsInterface.containsKey(objectType)) {
-                return printsAsInterface.get(objectType).accept(this);
+                return printsAsInterface.get(objectType).accept(this, arg);
             } else {
-                InterfaceType interfaceType = new InterfaceType();
-                interfaceType.object = objectType;
-                printsAsInterface.put(objectType, interfaceType);
-                return interfaceType.accept(this);
+                if (arg.contains(objectType)) {
+                    throw new GotCyclic(objectType);
+                }
+                arg = arg.cons(objectType);
+
+                StringBuilder builder = new StringBuilder();
+                VisitorArg subArg = new VisitorArg(builder, arg.seen);
+                write(builder, "{");
+                ArrayList<String> keys = new ArrayList<>(objectType.getDeclarations().keySet());
+                for (int i = 0; i < keys.size(); i++) {
+                    String name = keys.get(i);
+                    writeName(builder, name);
+                    write(builder, ": ");
+                    DeclarationType type = objectType.getDeclarations().get(name);
+                    type.accept(this, subArg);
+                    if (i != keys.size() - 1) {
+                        write(builder, ", ");
+                    }
+                }
+                write(builder, "} ");
+                String declarationsString = builder.toString();
+                if (declarationsString.contains("\n") || declarationsString.length() > 50) {
+                    throw new GotCyclic(objectType);
+                } else {
+                    arg.builder.append(declarationsString);
+                }
+                return null;
             }
         }
 
         @Override
-        public Void visit(InterfaceType interfaceType) {
+        public Void visit(InterfaceType interfaceType, VisitorArg arg) {
             if (finishing) {
                 finishing = false;
-                writeln("interface " + interfaceType.name + " {");
+                writeln("interface " + interfaceType.name + " {", arg.builder);
                 ident++;
                 if (interfaceType.getFunction() != null) {
-                    ident();
-                    printFunction(interfaceType.getFunction(), true);
-                    write(";\n");
+                    ident(arg.builder);
+                    printFunction(arg, interfaceType.getFunction(), true);
+                    write(arg.builder, ";\n");
                 }
                 // [s: string]: PropertyDescriptor;
                 if (interfaceType.getDynamicAccess() != null) {
-                    ident();
-                    write("[");
+                    ident(arg.builder);
+                    write(arg.builder, "[");
                     DeclarationType resolvedLookup = interfaceType.getDynamicAccess().getLookupType().resolve();
                     if (resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER) {
-                        write("index: number");
+                        write(arg.builder, "index: number");
                     } else {
-                        write("s: string");
+                        write(arg.builder, "s: string");
                     }
-                    write("]: ");
-                    interfaceType.getDynamicAccess().getReturnType().accept(this);
-                    write(";\n");
+                    write(arg.builder, "]: ");
+                    interfaceType.getDynamicAccess().getReturnType().accept(this, arg);
+                    write(arg.builder, ";\n");
 
                 }
                 if (interfaceType.getObject() != null) {
-                    interfaceType.getObject().getDeclarations().forEach(this::printObjectField);
+                    interfaceType.getObject().getDeclarations().forEach((name, type) -> printObjectField(arg, name, type));
                 }
                 ident--;
-                writeln("}");
-                write("\n");
+                writeln("}", arg.builder);
+                write(arg.builder, "\n");
                 finishing = true;
             } else {
-                write(interfaceType.name);
+                write(arg.builder, interfaceType.name);
                 interfacesToPrint.add(interfaceType);
             }
 
             return null;
         }
 
-        private void printObjectField(String name, DeclarationType type) {
-            ident();
-            writeName(name);
-            write(": ");
-            type.accept(this);
-            write(";\n");
+        private void printObjectField(VisitorArg arg, String name, DeclarationType type) {
+            ident(arg.builder);
+            writeName(arg.builder, name);
+            write(arg.builder, ": ");
+            type.accept(this, arg);
+            write(arg.builder, ";\n");
         }
 
         @Override
-        public Void visit(UnionDeclarationType union) {
+        public Void visit(UnionDeclarationType union, VisitorArg arg) {
             List<DeclarationType> types = union.getTypes();
             for (int i = 0; i < types.size(); i++) {
                 DeclarationType type = types.get(i);
-                type.accept(this);
+                type.accept(this, arg);
                 if (i != types.size() - 1) {
-                    write(" | ");
+                    write(arg.builder, " | ");
                 }
             }
             return null;
         }
 
         @Override
-        public Void visit(NamedObjectType namedObjectType) {
+        public Void visit(NamedObjectType namedObjectType, VisitorArg arg) {
             switch (namedObjectType.getName()) {
                 case "Array":
-                    write("Array<any>");
+                    write(arg.builder, "Array<any>");
                     break;
                 case "NodeListOf":
-                    write("NodeListOf<any>");
+                    write(arg.builder, "NodeListOf<any>");
                     break;
                 default:
-                    write(namedObjectType.getName());
+                    write(arg.builder, namedObjectType.getName());
                     break;
             }
             return null;
         }
 
         @Override
-        public Void visit(ClassType classType) {
+        public Void visit(ClassType classType, VisitorArg arg) {
             if (finishing) {
                 finishing = false;
                 // First an constructor interface.
-                writeln("interface " + classType.getName() + "Constructor {");
+                writeln("interface " + classType.getName() + "Constructor {", arg.builder);
                 ident++;
-                ident();
-                write("new (");
-                printArguments(classType.getConstructorType().getArguments());
-                write(") : " + classType.getName() + "\n");
+                ident(arg.builder);
+                write(arg.builder, "new (");
+                printArguments(arg, classType.getConstructorType().getArguments());
+                write(arg.builder, ") : " + classType.getName() + "\n");
 
-                classType.getStaticFields().forEach(this::printObjectField);
+                classType.getStaticFields().forEach((name, type) -> printObjectField(arg, name, type));
 
                 ident--;
-                writeln("}");
-                write("\n");
+                writeln("}", arg.builder);
+                write(arg.builder, "\n");
 
-                ident();
-                write("interface " + classType.getName());
+                ident(arg.builder);
+                write(arg.builder, "interface " + classType.getName());
                 if (classType.getSuperClass() != null) {
-                    write(" extends ");
-                    write(classType.getSuperClass().getName());
+                    write(arg.builder, " extends ");
+                    write(arg.builder, classType.getSuperClass().getName());
                     classesToPrint.add(classType.getSuperClass());
                 }
-                write(" {\n");
+                write(arg.builder, " {\n");
 
 
                 ident++;
                 classType.getPrototypeFields().entrySet().stream().filter(this.filterSuperclassFields(classType.getSuperClass())).forEach((entry) -> {
-                    this.printObjectField(entry.getKey(), entry.getValue());
+                    this.printObjectField(arg, entry.getKey(), entry.getValue());
                 });
 
                 ident--;
-                writeln("}");
-                write("\n");
+                writeln("}", arg.builder);
+                write(arg.builder, "\n");
                 finishing = true;
             } else {
-                write(classType.getName() + "Constructor");
+                write(arg.builder, classType.getName() + "Constructor");
                 classesToPrint.add(classType);
             }
 
@@ -375,10 +434,24 @@ public class DeclarationPrinter {
         }
 
         @Override
-        public Void visit(ClassInstanceType instanceType) {
-            write(instanceType.getClazz().getName());
+        public Void visit(ClassInstanceType instanceType, VisitorArg arg) {
+            write(arg.builder, instanceType.getClazz().getName());
             classesToPrint.add(instanceType.getClazz());
             return null;
         }
+    }
+
+    // Functional set things
+    private static final Ord<DeclarationType> ordering = Ord.ord(new F<DeclarationType, F<DeclarationType, Ordering>>() {
+        public F<DeclarationType, Ordering> f(DeclarationType one) {
+            return two -> {
+                int x = Integer.compare(one.counter, two.counter);
+                return x < 0 ? Ordering.LT : (x == 0 ? Ordering.EQ : Ordering.GT);
+            };
+        }
+    });
+
+    private static fj.data.Set<DeclarationType> emptySet() {
+        return fj.data.Set.empty(ordering);
     }
 }

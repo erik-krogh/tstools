@@ -89,7 +89,7 @@ public class BenchMark {
 
         Dependency testDependency = new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts");
 
-        return new BenchMark("D3.js", "tests/test/test.js", null, options, ES5, Arrays.asList(testDependency, Dependency.jQuery));
+        return new BenchMark("Test file", "tests/test/test.js", null, options, ES5, Arrays.asList(testDependency, Dependency.jQuery));
     });
 
     public static final class Dependency {

@@ -12,10 +12,9 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.paser.SSA;
-import dk.webbies.tscreate.util.MultiOutputStream;
 import dk.webbies.tscreate.util.Util;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +29,10 @@ public class Main {
 
         runAnalysis(BenchMark.test);
 
+//        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+//            runAnalysis(benchmark);
+//        }
+
         long end = System.currentTimeMillis();
 
         System.out.println("Ran in " + (end - start) + "ms");
@@ -38,6 +41,7 @@ public class Main {
     }
 
     public static void runAnalysis(BenchMark benchMark) throws IOException {
+        System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
 
         String script = Util.readFile(benchMark.scriptPath);
@@ -51,10 +55,10 @@ public class Main {
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
 
-        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(resultDeclarationFilePath)));
-        OutputStream out = new MultiOutputStream(fileOut, System.out);
-        new DeclarationPrinter(out, declaration).print();
-        fileOut.close();
+        String printedDeclaration = new DeclarationPrinter(declaration).print();
+        System.out.println(printedDeclaration);
+
+        Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
         if (benchMark.declarationPath != null) {
             // FIXME: Doesn't handle dependencies yet.

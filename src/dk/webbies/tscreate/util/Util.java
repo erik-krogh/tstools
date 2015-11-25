@@ -209,6 +209,12 @@ public class Util {
         return new String(Files.readAllBytes(Paths.get(path)));
     }
 
+    public static void writeFile(String content, String path) throws IOException {
+        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(content)));
+        IOUtils.write(path, fileOut);
+        fileOut.close();
+    }
+
     // http://stackoverflow.com/questions/17640754/zipping-streams-using-jdk8-with-lambda-java-util-stream-streams-zip#answer-23529010
     public static<A, B, C> Stream<C> zip(Stream<? extends A> a,
                                          Stream<? extends B> b,

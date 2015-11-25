@@ -105,6 +105,7 @@ public class CombinationType extends DeclarationType {
                     ((CombinationType) type).createCombined();
                 }
             }
+            assert this.combined != null;
         }
         return this.combined;
     }
