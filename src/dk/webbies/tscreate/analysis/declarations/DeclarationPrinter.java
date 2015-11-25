@@ -74,8 +74,9 @@ public class DeclarationPrinter {
         builder.append(str);
     }
 
+    private static Set<String> keyWords = new HashSet<>(Arrays.asList("abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function goto if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield".split(" ")));
     private void writeName(StringBuilder builder, String str) {
-        if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*")) {
+        if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str)) {
             write(builder, str);
         } else {
             write(builder, "\"" + str + "\"");
@@ -169,7 +170,9 @@ public class DeclarationPrinter {
         } else if (type instanceof UnnamedObjectType) {
             UnnamedObjectType module = (UnnamedObjectType) type;
             ident(arg.builder);
-            write(arg.builder, prefix + " module " + name + " {\n");
+            write(arg.builder, prefix + " module ");
+            writeName(arg.builder, name);
+            write(arg.builder, " {\n");
             ident++;
 
             for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet()) {
