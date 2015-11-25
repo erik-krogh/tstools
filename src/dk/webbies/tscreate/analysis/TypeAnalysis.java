@@ -66,21 +66,25 @@ public class TypeAnalysis {
         System.out.println("Analyzing " + functionNodes.size() + " functions");
 
         int counter = 0;
-        for (Snap.Obj functionClosure : functionNodes.keySet()) {
+        for (Snap.Obj closure : functionNodes.keySet()) {
             System.out.println(++counter + "/" + functionNodes.size());
 
-            FunctionNode functionNode = functionNodes.get(functionClosure);
+            FunctionNode functionNode = functionNodes.get(closure);
 
-            analyse(functionClosure, functionNodes, solver, functionNode, heapFactory, new HashSet<>());
+            analyse(closure, functionNodes, solver, functionNode, heapFactory, new HashSet<>());
 
             solver.finish();
+        }
+
+        for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
+            Snap.Obj closure = entry.getKey();
+            FunctionNode functionNode = entry.getValue();
 
             UnionFeature feature = functionNode.getFeature();
             assert UnionFeature.getReachable(functionNode.getFeature()).size() == 1;
-            typeFactory.registerFunction(functionClosure, Arrays.asList(feature.getFunctionFeature()));
-
-            typeFactory.currentClosure = functionClosure;
-            typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));
+            typeFactory.registerFunction(closure, Arrays.asList(feature.getFunctionFeature()));
+            typeFactory.currentClosure = closure;
+            typeFactory.putResolvedFunctionType(closure, typeFactory.getTypeNoCache(feature));
             typeFactory.currentClosure = null;
         }
 
@@ -130,6 +134,6 @@ public class TypeAnalysis {
     }
 
     private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj root) {
-        return JSNAPUtil.getAllObjects(root).stream().filter(obj -> obj.function != null && (obj.function.type.equals("bind") ||obj.function.type.equals("user"))).collect(Collectors.toList());
+        return JSNAPUtil.getAllObjects(root).stream().filter(obj -> obj.function != null && (obj.function.type.equals("bind") || obj.function.type.equals("user"))).collect(Collectors.toList());
     }
 }
