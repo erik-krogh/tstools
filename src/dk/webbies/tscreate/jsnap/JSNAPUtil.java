@@ -187,7 +187,7 @@ public class JSNAPUtil {
             } else if (function.type.equals("bind")) {
                 function.target = getHeapObject(stateDump, (function.target).key);
                 if (!function.target.function.type.equals("user")) {
-                    throw new RuntimeException();
+                    function.type = "unknown"; // Such an edge case, i choose to ignore it (happens in React). // TODO: Not.
                 }
             }
         }
