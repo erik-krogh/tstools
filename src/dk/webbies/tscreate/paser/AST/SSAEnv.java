@@ -1,14 +1,15 @@
 package dk.webbies.tscreate.paser.AST;
 
-import java.util.HashMap;
-import java.util.Map;
+import h.Helper;
+
+import java.util.*;
 
 /**
  * Created by hamid on 11/20/15.
  */
 public class SSAEnv {
     // identifier_name  -> subscript where subscript indicates last value (definition) of the variable
-    private Map<String, Integer> id2last;
+    public Map<String, Integer> id2last;
 
     private SSAEnv() {
         id2last = new HashMap<>();
@@ -36,6 +37,24 @@ public class SSAEnv {
     public SSAEnv copy() {
         SSAEnv ret = new SSAEnv();
         ret.id2last.putAll(this.id2last);
+        return ret;
+    }
+
+    public static SSAEnv MergeSSAEnv(SSAEnv... inEnvs) {
+        SSAEnv ret = createEmptySSAEnv();
+        Map<String, Set<Integer>> id2subscripts = new HashMap<>();
+        for (SSAEnv env : inEnvs) {
+           for (Map.Entry<String, Integer> entry : env.id2last.entrySet()) {
+               Set<Integer> subscripts = id2subscripts.get(entry.getKey());
+               if (subscripts == null) {
+                   subscripts = new HashSet<>();
+                   id2subscripts.put(entry.getKey(), subscripts);
+               }
+               subscripts.add(entry.getValue());
+           }
+        }
+        Helper.printDebug("phis ", id2subscripts.toString());
+
         return ret;
     }
 }

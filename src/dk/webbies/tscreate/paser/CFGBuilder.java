@@ -419,9 +419,14 @@ public class CFGBuilder {
         CFGEnv branchEnv = condition.accept(exprVisitor, aux);
         CFGJoin joinNode = new CFGJoin(branchEnv.getCopyOfSSAEnv()); // SSAEnv() should work as well
 
-        CFGEnv leftEnv = left.accept(stmtVisitor, branchEnv.copy()); // so each one can make changes to its CFGEnv.ssaEnv
-        CFGEnv rightEnv = right.accept(stmtVisitor, branchEnv.copy());
+        CFGEnv inEnvLeft = branchEnv.copy();
+        h.Helper.printDebug("input env: ", inEnvLeft.ssaEnv.id2last.toString());
+        CFGEnv leftEnv = left.accept(stmtVisitor, inEnvLeft); // so each one can make changes to its CFGEnv.ssaEnv
+        h.Helper.printDebug("modified env: ", inEnvLeft.ssaEnv.id2last.toString());
+        CFGEnv inEnvRight = inEnvLeft.copy();
+        CFGEnv rightEnv = right.accept(stmtVisitor, inEnvRight);
 
+        SSAEnv.MergeSSAEnv(branchEnv.ssAEnv(), inEnvLeft.ssAEnv(), inEnvRight.ssAEnv());
         return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, null);
 
     }
