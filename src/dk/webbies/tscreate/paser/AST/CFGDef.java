@@ -14,15 +14,35 @@ public class CFGDef extends CFGNode {
     public static  List<CFGDef> defNodes = new LinkedList<>();
 
     private Identifier definition;
+    private int subscript; // SSA subscript
+
+    private PhiNodeExpression phiNodeExpression;
+
     public CFGDef(AstNode astNode, Identifier def) {
         super(astNode);
         this.definition = def;
+        phiNodeExpression = null;
+        subscript = -1;
         defNodes.add(this);
     }
+
     public Identifier getDefinition() {
         return definition;
     }
+
+    public boolean isPhiDef() { return (phiNodeExpression != null); }
+    public PhiNodeExpression getPhiNodeExpression() {
+        return phiNodeExpression;
+    }
+    public void setAsPhiDef(PhiNodeExpression phiNodeExpression) {
+
+        this.phiNodeExpression = phiNodeExpression;
+    }
+
     public String toString() {
-        return "def(" + definition.getName() + ") @ " + getAstNode().toString();
+        return "def(" + definition.getName() +" [" + subscript + "]) @ " + getAstNode().toString();
+    }
+    public void setSubscript(int subscript) {
+        this.subscript = subscript;
     }
 }

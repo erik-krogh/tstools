@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.paser.AST;
 
 import dk.webbies.tscreate.hashing.ExpressionHashingStrategy;
+import gnu.trove.map.hash.TCustomHashMap;
 import gnu.trove.set.hash.TCustomHashSet;
 import gnu.trove.strategy.HashingStrategy;
 
@@ -16,20 +17,24 @@ import static dk.webbies.tscreate.Util.ord;
 public class CFGUse extends CFGNode {
     public static Set<CFGUse> useNodes = new HashSet<>();
 
-    private TCustomHashSet<Expression> uses;
+    private TCustomHashMap<Expression, Integer> uses;
     public CFGUse(AstNode astNode) {
 
         super(astNode);
-        uses = new TCustomHashSet<>(new ExpressionHashingStrategy());
+        uses = new TCustomHashMap<>(new ExpressionHashingStrategy());
         useNodes.add(this);
     }
 
     public String toString() { return "Use(" + uses + ") @ " + getAstNode(); }
     public Collection<Expression> getUses() {
-        return Collections.unmodifiableCollection(uses);
+        return Collections.unmodifiableCollection(uses.keySet());
     }
 
-    public boolean addUse(Expression use) {
-        return uses.add(use);
+    public void addUse(Expression use) {
+        assert (!uses.keySet().contains(use));
+        uses.put(use, null);
+    }
+    public void setSubscript(Expression use, int subscript) {
+        uses.put(use, subscript);
     }
 }

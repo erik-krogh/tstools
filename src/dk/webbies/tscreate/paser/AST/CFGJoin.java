@@ -10,8 +10,15 @@ import java.util.Set;
  */
 public class CFGJoin extends CFGNode {
     // This is used _only_ during SSA computations (See the paper Single Pass generation of SSA for structured languages).
-    private Map<Expression, Expression> backupValues = new HashMap<>();
+    //private Map<String, Integer> backupValues = new HashMap<>(); // id -> subscript
+    private SSAEnv backupValues;
+    private Map<Identifier, CFGDef> defNodes; // every defNode has a PhiExpr (def = phi(...))
 
-    private Set<PhiNodeExpression> phiNodes = new HashSet<>();
+    public SSAEnv getBackupValues() { return backupValues; }
+    public CFGJoin(SSAEnv backupValues) {
+        this.backupValues = backupValues;
+    }
     public String toString() { return "JOIN: " + this.hashCode();}
+
+    // addDef / addPhi
 }
