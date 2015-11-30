@@ -1,6 +1,7 @@
 package dk.webbies.tscreate;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -92,30 +93,30 @@ public class BenchMark {
         return new BenchMark("Knockout", "tests/knockout/knockout.js", null, options, ES5);
     });
 
-    // The stress test to rule all stress-tests. 10MB of JavaScript.
-    // TODO: Crashes in chrome.
+    // The stress test to rule all stress-tests. 10MB of JavaScript, 220000 lines of code.
     public static final BenchMark ExtJS = evaluate(() -> {
         Options options = new Options();
+        options.createInstances = false;
         return new BenchMark("Ext JS", "tests/extjs/ext.js", null, options, ES5);
     });
 
-    // TODO: Also crashes chrome.
     public static final BenchMark ember = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Ember.js", "tests/ember/ember.js", null, options, ES5);
+        options.createInstances = false;
+        return new BenchMark("Ember.js", "tests/ember/ember.js", null, options, ES5, Arrays.asList(Dependency.jQuery));
     });
 
-    // TODO: One more that crashes chrome.
     public static final BenchMark backbone = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", null, options, ES5);
+        options.createInstances = false;
+        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", null, options, ES5, Arrays.asList(Dependency.underscore));
     });
 
-    // TODO: Runs in an infinite loop with createInstances.
     // TODO: Lots of classes with duplicate names.
     public static final BenchMark mooTools = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false;
+        options.createInstances = true;
+        options.createInstancesClassFilter = true;
         return new BenchMark("MooTools", "tests/mootools/mootools.js", null, options, ES5);
     });
 
@@ -125,11 +126,16 @@ public class BenchMark {
         return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5);
     });
 
-    // Crasher JSnap
-    /*public static final BenchMark ace = evaluate(() -> {
+    // Interresting altough useless benchmark, uses RequireJS to get the library. Therefore my analysis cannot find anything on the heap it can output (it is only in an environment).
+    public static final BenchMark ace = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("ace.js", "tests/ace/ace.js", null, options, ES5);
-    });*/
+        return new BenchMark("ace.js", "tests/ace/ace.js", null, options, ES5, Arrays.asList(Dependency.requireJS));
+    });
+
+    public static final BenchMark require = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("requireJS", "tests/requireJS/require.js", null, options, ES5);
+    });
 
 
 
@@ -153,5 +159,7 @@ public class BenchMark {
         }
 
         private static final Dependency jQuery = new Dependency("tests/jquery/jquery.js", "tests/jquery/jquery.d.ts");
+        private static final Dependency underscore = new Dependency("tests/underscore/underscore.js", "tests/underscore/underscore.d.ts");
+        private static final Dependency requireJS = new Dependency("tests/requireJS/require.js", "tests/requireJS/require.d.ts");
     }
 }
