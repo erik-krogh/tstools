@@ -11,6 +11,7 @@ public class Options {
 
     public Runtime runtime = Runtime.CHROME;
     public boolean createInstances = true; // Should JSNAP instrument the code to dynamically create instances of every function it meets, which can be used to find the existence and types of fields in classes.
+    public boolean createInstancesClassFilter = false; // Filters the above, to only create instances for functions that "look" like a class (very simple filter).
 
     // When we have some unionNode, that includes another union-node, and they both have fields. Something is done to make sure that the fields also know about that include (if the include has a matching field).
     // This option disables that, since it for some libraries (jQuery), runs EXTREMELY slow.
