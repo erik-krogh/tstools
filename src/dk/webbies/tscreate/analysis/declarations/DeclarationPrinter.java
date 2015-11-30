@@ -157,6 +157,14 @@ public class DeclarationPrinter {
 
     private void printDeclaration(VisitorArg arg, String name, DeclarationType type, String prefix) {
         type = type.resolve();
+        if ((type instanceof FunctionType || type instanceof UnnamedObjectType) && printsAsInterface.containsKey(type)) {
+            type = printsAsInterface.get(type);
+        } else {
+            if (arg.contains(type)) {
+                throw new GotCyclic(type);
+            }
+            arg = arg.cons(type);
+        }
         if (type instanceof FunctionType) {
             FunctionType functionType = (FunctionType) type;
             ident(arg.builder);
