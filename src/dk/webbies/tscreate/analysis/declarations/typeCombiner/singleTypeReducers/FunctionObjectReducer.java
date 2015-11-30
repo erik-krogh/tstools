@@ -7,7 +7,8 @@ import dk.webbies.tscreate.jsnap.Snap;
 /**
  * Created by Erik Krogh Kristensen on 17-10-2015.
  */
-public class    FunctionObjectReducer implements SingleTypeReducer<FunctionType, UnnamedObjectType> {
+// FIXME: Make it possible to remove the fields that are on the prototype. As in returning two types.
+public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, UnnamedObjectType> {
     private Snap.Obj globalObject;
 
     public FunctionObjectReducer(Snap.Obj globalObject) {
