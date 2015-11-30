@@ -137,6 +137,11 @@ public class BenchMark {
         return new BenchMark("requireJS", "tests/requireJS/require.js", null, options, ES5);
     });
 
+    public static final BenchMark handlebars = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("handlebars", "tests/handlebars/handlebars-v4.0.5.js", null, options, ES5);
+    });
+
 
 
     public static final BenchMark test = evaluate(() -> {
