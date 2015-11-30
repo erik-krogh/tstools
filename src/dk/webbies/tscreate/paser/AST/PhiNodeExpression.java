@@ -25,7 +25,7 @@ public class PhiNodeExpression extends Expression {
         for (CFGDef d : defNodes) this.defNodes.add(d);
     }
 
-    public PhiNodeExpression makePhiNodeExpression(CFGDef... defs) {
+    public static PhiNodeExpression makePhiNodeExpression(CFGDef... defs) {
         Set<CFGDef> key = new HashSet<CFGDef>();
         for (CFGDef d : defs) key.add(d);
 
@@ -51,6 +51,14 @@ public class PhiNodeExpression extends Expression {
     public int hashCode() {
         int ret = 0;
         for (CFGDef d : defNodes) ret += d.hashCode();
+        return ret;
+    }
+
+    public String toString() {
+        String ret = "";
+        for (CFGDef d : defNodes) {
+            ret += ";" + d.getShortName();
+        }
         return ret;
     }
 }

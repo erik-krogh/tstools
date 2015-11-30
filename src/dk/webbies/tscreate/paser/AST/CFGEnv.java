@@ -62,7 +62,7 @@ public class CFGEnv {
         if (outNode instanceof CFGDef) {
 
             CFGDef cfgdef = (CFGDef) outNode;
-            int subscript = ssaEnv.setNewSubscriptFor(cfgdef.getDefinition());
+            int subscript = ssaEnv.setNewSubscriptFor(cfgdef.getDefinition(), cfgdef);
             cfgdef.setSubscript(subscript);
             ret.setSSAEnv(ssaEnv);
         } else if (outNode instanceof CFGUse) {
@@ -73,8 +73,8 @@ public class CFGEnv {
             }
             ret.setSSAEnv(ssaEnv);
         } else if (outNode instanceof CFGJoin) {
-            // TODO: process the J node and create a good ssaenv
-            ret.setSSAEnv(SSAEnv.createEmptySSAEnv());
+
+            ret.setSSAEnv(ssaEnv);
         }
         //else  { throw new RuntimeException("unexpected outnode: " + outNode.getClass()); }
 

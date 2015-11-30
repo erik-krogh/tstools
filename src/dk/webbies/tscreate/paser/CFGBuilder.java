@@ -426,8 +426,8 @@ public class CFGBuilder {
         CFGEnv inEnvRight = inEnvLeft.copy();
         CFGEnv rightEnv = right.accept(stmtVisitor, inEnvRight);
 
-        SSAEnv.MergeSSAEnv(branchEnv.ssAEnv(), inEnvLeft.ssAEnv(), inEnvRight.ssAEnv());
-        return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, null);
+        SSAEnv mergedSSAEnv = SSAEnv.MergeSSAEnvs(branchEnv.ssAEnv(), inEnvLeft.ssAEnv(), inEnvRight.ssAEnv());
+        return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, mergedSSAEnv);
 
     }
     public void processMain(FunctionExpression mainFunction) {

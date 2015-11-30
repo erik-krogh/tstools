@@ -42,6 +42,9 @@ public class CFGDef extends CFGNode {
     public String toString() {
         return "def(" + definition.getName() +" [" + subscript + "]) @ " + getAstNode().toString();
     }
+    public String getShortName() {
+        return definition.getName() + "[" + subscript +"]";
+    }
     public void setSubscript(int subscript) {
         this.subscript = subscript;
     }
