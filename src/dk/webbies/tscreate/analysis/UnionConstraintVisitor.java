@@ -142,6 +142,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         UnionNode result;
         switch (unOp.getOperator()) {
+            // TODO: I don't know if Plus or Minus should be handled differently.
             case MINUS:
             case PLUS:
             case MINUS_MINUS:
