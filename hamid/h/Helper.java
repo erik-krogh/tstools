@@ -15,8 +15,11 @@ public class Helper {
 		}
 	}
 	public static String getText(AstNode astnode) {
+		if (astnode == null) return "AST_NULL";
+		if (astnode.location == null) return "LOC_NULL";
 		StringBuilder ret = new StringBuilder();
 		ret.append("clazz: " + astnode.getClass().getName() + "\n");
+
 		SourcePosition start = astnode.location.start;
 		SourcePosition end = astnode.location.end;
 		//assert (start.source.contents.equals(end.source.contents));
