@@ -70,6 +70,7 @@ public class BenchMark {
 
     public static final BenchMark angular = evaluate(() -> {
         Options options = new Options();
+        options.createInstancesClassFilter = true;
         return new BenchMark("AngularJS", "tests/angular/angular.js", null, options, ES5);
     });
 
