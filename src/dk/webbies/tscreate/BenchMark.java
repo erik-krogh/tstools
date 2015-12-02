@@ -68,6 +68,11 @@ public class BenchMark {
         return new BenchMark("jQuery", "tests/jquery/jquery.js", null, options, ES5);
     });
 
+    public static final BenchMark angular = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("AngularJS", "tests/angular/angular.js", null, options, ES5);
+    });
+
     public static final BenchMark three = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("three.js", "tests/three/three.js", null, options, ES6);
