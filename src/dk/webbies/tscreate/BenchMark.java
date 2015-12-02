@@ -61,10 +61,8 @@ public class BenchMark {
         return new BenchMark("FabricJS", "tests/fabric/fabric.js", null, options, ES5);
     });
 
-    // TODO: test, including includesWithFields.
     public static final BenchMark jQuery = evaluate(() -> {
         Options options = new Options();
-        options.resolveIncludesWithFields = true; // Takes too long... but is not very precise without.
         return new BenchMark("jQuery", "tests/jquery/jquery.js", null, options, ES5);
     });
 
