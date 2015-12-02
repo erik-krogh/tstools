@@ -115,7 +115,7 @@ public class BenchMark {
     public static final BenchMark backbone = evaluate(() -> {
         Options options = new Options();
         options.createInstances = false;
-        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", null, options, ES5, Arrays.asList(Dependency.underscore));
+        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", null, options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery));
     });
 
     // TODO: Lots of classes with duplicate names.
