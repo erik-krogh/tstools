@@ -635,7 +635,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    // FIXME: Cache or stuff, look at this.
     private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
         List<Signature> signatures;
         if (constructorCalls) {
