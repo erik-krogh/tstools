@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-        runAnalysis(BenchMark.prototype);
+        runAnalysis(BenchMark.jQuery);
 //
 //        for (BenchMark benchmark : BenchMark.allBenchmarks) {
 //            runAnalysis(benchmark);
@@ -36,7 +36,6 @@ public class Main {
         long end = System.currentTimeMillis();
 
         System.out.println("Ran in " + (end - start) + "ms");
-
         System.exit(0);
     }
 
@@ -46,6 +45,13 @@ public class Main {
 
         String script = Util.readFile(benchMark.scriptPath);
         FunctionExpression program = SSA.toSSA(new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST());
+
+        new FindSSAVisitor().visit(program);
+
+        if (true) {
+            return;
+        }
+
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), program);
 
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, benchMark.options, benchMark.dependencyScripts());
