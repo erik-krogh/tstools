@@ -1,5 +1,5 @@
 x=8;
-var b = 130;
+var b = 100;
 if (b==10) {
     y= 8 + x;
 } else {

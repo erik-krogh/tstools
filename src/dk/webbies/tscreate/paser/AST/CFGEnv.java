@@ -64,21 +64,21 @@ public class CFGEnv {
             CFGDef cfgdef = (CFGDef) outNode;
             int subscript = ssaEnv.setNewSubscriptFor(cfgdef.getDefinition(), cfgdef);
             cfgdef.setSubscript(subscript);
-            ret.setSSAEnv(ssaEnv);
+            //ret.setSSAEnv(ssaEnv);
         } else if (outNode instanceof CFGUse) {
             CFGUse cfguse = (CFGUse) outNode;
             for (Expression u : cfguse.getUses()) {
                 // record u -> lastSubscript(u) in outNode
                 cfguse.setSubscript(u, ssaEnv.getLastSubscript((Identifier) u));
             }
-            ret.setSSAEnv(ssaEnv);
+            //ret.setSSAEnv(ssaEnv);
         } else if (outNode instanceof CFGJoin) {
 
-            ret.setSSAEnv(ssaEnv);
+            //ret.setSSAEnv(ssaEnv);
         }
         //else  { throw new RuntimeException("unexpected outnode: " + outNode.getClass()); }
 
-
+        ret.setSSAEnv(ssaEnv);
         return ret;
     }
 

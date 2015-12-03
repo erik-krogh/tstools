@@ -159,12 +159,14 @@ public class CFGBuilder {
             printAstNode(functionExpression);
 
             CFGEnv inCfgEnv = CFGEnv.createInCfgEnv();
-            CFGJoin artificialJoin = new CFGJoin(inCfgEnv.getCopyOfSSAEnv()); // see paper Single pass generation of SSA ...
+            //CFGJoin artificialJoin = new CFGJoin(inCfgEnv.getCopyOfSSAEnv()); // see paper Single pass generation of SSA ...
+            CFGJoin artificialJoin = new CFGJoin(67);
             CFGNode entry = inCfgEnv.getAppendNode();
             functionExpression2CFGNode.put(functionExpression, entry);
             CFGEnv realExit =  functionExpression.getBody().accept(stmtVisitor, inCfgEnv);
             // we can process artificialJoin (mainly backup vaues) here if necessary (***)
-            return CFGEnv.createOutCfgEnv(new CFGNode[] {entry, realExit.getAppendNode()}, artificialJoin, artificialJoin.getBackupValues()); // TODO:***
+            artificialJoin.ssaEnv = realExit.getCopyOfSSAEnv();
+            return CFGEnv.createOutCfgEnv(new CFGNode[] {entry, realExit.getAppendNode()}, artificialJoin, realExit.ssAEnv()); // TODO:***
         }
 
         @Override
@@ -417,7 +419,7 @@ public class CFGBuilder {
     private CFGEnv makeConditional(Expression condition, Statement left, Statement right, CFGEnv aux) {
         if (aux.ssAEnv() == null) throw new RuntimeException();
         CFGEnv branchEnv = condition.accept(exprVisitor, aux);
-        CFGJoin joinNode = new CFGJoin(branchEnv.getCopyOfSSAEnv()); // SSAEnv() should work as well
+        CFGJoin joinNode = new CFGJoin(67); // SSAEnv() should work as well
 
         CFGEnv inEnvLeft = branchEnv.copy();
         h.Helper.printDebug("input env: ", inEnvLeft.ssaEnv.id2last.toString());
@@ -427,6 +429,7 @@ public class CFGBuilder {
         CFGEnv rightEnv = right.accept(stmtVisitor, inEnvRight);
 
         SSAEnv mergedSSAEnv = SSAEnv.MergeSSAEnvs(branchEnv.ssAEnv(), inEnvLeft.ssAEnv(), inEnvRight.ssAEnv());
+        joinNode.ssaEnv = mergedSSAEnv.copy();
         return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, mergedSSAEnv);
 
     }
@@ -463,6 +466,8 @@ public class CFGBuilder {
 
 
         w.println("digraph {");
+        w.println("node[shape=record]");
+        w.println("rankdir=TD");
         for (CFGNode n : nodes) {
             String s;
 

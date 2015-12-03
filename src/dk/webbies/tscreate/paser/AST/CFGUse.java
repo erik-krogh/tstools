@@ -25,7 +25,18 @@ public class CFGUse extends CFGNode {
         useNodes.add(this);
     }
 
-    public String toString() { return "Use(" + uses + ") @ " + getAstNode(); }
+    public String toString() {
+        if (true) {
+            String ret = "use ";
+            for (Map.Entry<Expression, Integer> entry : uses.entrySet()) {
+                Identifier expr = (Identifier) entry.getKey();
+                ret += " " + expr.getName() + "[" + entry.getValue() + "]";
+            }
+            ret += " @ " + getAstNode();
+            return ret;
+        }
+        return "Use(" + uses + ") @ " + getAstNode();
+    }
     public Collection<Expression> getUses() {
         return Collections.unmodifiableCollection(uses.keySet());
     }

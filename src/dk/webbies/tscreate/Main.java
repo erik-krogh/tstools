@@ -38,7 +38,7 @@ public class Main {
 
         long start = System.currentTimeMillis();
 
-        runAnalysis("Test script", "tests/ssa/if3.js", null, options, LanguageLevel.ES5);
+        runAnalysis("Test script", "tests/ssa/if.js", null, options, LanguageLevel.ES5);
 
         long end = System.currentTimeMillis();
 
