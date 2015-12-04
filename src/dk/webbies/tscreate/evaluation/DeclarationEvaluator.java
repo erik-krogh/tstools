@@ -187,7 +187,7 @@ public class DeclarationEvaluator {
                     evaluation.addParameterCountMismatch();
                 } else {
                     Util.zip(realSignature.getParameters().stream(), resultSignature.getParameters().stream()).forEach(pair -> {
-                        pair.left.getType().accept(this, pair.right.getType());
+                        pair.first.getType().accept(this, pair.second.getType());
                     });
                 }
             } else {

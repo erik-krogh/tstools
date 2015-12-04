@@ -19,7 +19,7 @@ public class SSAEnv {
     public static SSAEnv createEmptySSAEnv() { return new SSAEnv(); }
     //public CFGJoin getJoinNode() { return joinNode; }
     public int getLastSubscript(Identifier id) {
-        Integer r = id2last.get(id.getName()).left;
+        Integer r = id2last.get(id.getName()).first;
         if (r==null) throw new RuntimeException("No previous definition for " + id.getName());
         return r;
     }
@@ -29,7 +29,7 @@ public class SSAEnv {
             id2last.put(id.getName(), new Pair<>(0, cfgDef));
             return 0;
         }
-        int subscript = r.left + 1;
+        int subscript = r.first + 1;
         id2last.put(id.getName(), new Pair<>(subscript, cfgDef));
         return subscript;
     }
@@ -74,13 +74,13 @@ public class SSAEnv {
     private static CFGDef[] extractCFGDefs(Collection<Pair<Integer, CFGDef>> pairs) {
         CFGDef[] ret = new CFGDef[pairs.size()];
         int i = 0;
-        for (Pair<Integer,CFGDef> pair : pairs) ret[i++]=pair.right;
+        for (Pair<Integer,CFGDef> pair : pairs) ret[i++]=pair.second;
         return ret;
     }
     private static int getMaximumSubscript(Collection<Pair<Integer, CFGDef>> pairs) {
         int max = 0;
         for (Pair<Integer,CFGDef> pair : pairs) {
-            if (pair.left > max) max = pair.left;
+            if (pair.first > max) max = pair.first;
         }
         return max;
     }

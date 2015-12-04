@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-        runAnalysis(BenchMark.jQuery);
+        runAnalysis(BenchMark.MPL);
 //
 //        for (BenchMark benchmark : BenchMark.allBenchmarks) {
 //            runAnalysis(benchmark);
@@ -39,7 +39,7 @@ public class Main {
         System.exit(0);
     }
 
-    private static final boolean SSA_DEBUG = false;
+    private static final boolean SSA_DEBUG = true;
 
     public static void runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
