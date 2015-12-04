@@ -51,6 +51,7 @@ public class BenchMark {
         return new BenchMark("Underscore.js", "tests/underscore/underscore.js", null, options, ES5);
     });
 
+    // TODO: in the declaration, RenderTexture does not have a render method. It really should have, because of the dynamic instance creation.
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("PIXI", "tests/pixi/pixi.js", null, options, ES5);
@@ -124,9 +125,11 @@ public class BenchMark {
         return new BenchMark("MooTools", "tests/mootools/mootools.js", null, options, ES5);
     });
 
-    // TODO: Way way way to much is a class.
+    // TODO: Lots of interfaces that are really just functions.
+    // TODO: A little naming conflict.
     public static final BenchMark prototype = evaluate(() -> {
         Options options = new Options();
+        options.createInstancesClassFilter = true; // Needed, otherwise instances of functions end up in the wrong places, causing everything to become a method.
         return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5);
     });
 
