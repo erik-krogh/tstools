@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.paser.AST;
 
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+import dk.webbies.tscreate.paser.CFGStatementVisitor;
 import dk.webbies.tscreate.paser.StatementVisitor;
 
 /**
@@ -13,4 +14,5 @@ public abstract class Statement extends AstNode {
     }
 
     public abstract <T> T accept(StatementVisitor<T> visitor);
+    public abstract <T> T accept(CFGStatementVisitor<T> visitor, T aux);
 }

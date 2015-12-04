@@ -32,6 +32,11 @@ public class SetterExpression extends Expression {
         return visitor.visit(this);
     }
 
+    @Override
+    public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {
+        return visitor.visit(this, aux);
+    }
+
     FunctionExpression function = null;
     private static int setterCounter = 0;
     public FunctionExpression asFunction() {

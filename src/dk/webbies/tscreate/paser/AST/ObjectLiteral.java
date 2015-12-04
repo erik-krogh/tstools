@@ -25,6 +25,11 @@ public class ObjectLiteral extends Expression {
         return visitor.visit(this);
     }
 
+    @Override
+    public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {
+        return visitor.visit(this, aux);
+    }
+
     public static final class Property {
         public final String name;
         public final Expression expression;

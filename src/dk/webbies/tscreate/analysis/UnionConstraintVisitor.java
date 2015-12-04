@@ -293,8 +293,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         String type = closure.function.type;
         if (type.equals("user")) {
             return function == closure.function.astNode;
-        }
-        if (type.equals("bind")) {
+        } else if (type.equals("bind")) {
             return function == closure.function.target.function.astNode;
         }
         throw new RuntimeException("Unknown type: " + type);
@@ -456,7 +455,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     continue;
                 }
                 for (String key : this.fields) {
-//                    assert myFields.containsKey(key); // FIXME: This fails in PIXI.
+                    assert myFields.containsKey(key);
                     if (!otherFields.containsKey(key) || !myFields.containsKey(key)) {
                         continue;
                     }
@@ -636,7 +635,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    // FIXME: Cache or stuff, look at this.
     private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
         List<Signature> signatures;
         if (constructorCalls) {

@@ -19,5 +19,6 @@
     <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="library" name="selenium-server-standalone-2.48.2" level="project" />
     <orderEntry type="library" name="functionaljava" level="project" />
+    <orderEntry type="library" name="trove-3.0.3" level="project" />
   </component>
 </module>

@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.paser.AST;
 
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
+import dk.webbies.tscreate.paser.CFGStatementVisitor;
 import dk.webbies.tscreate.paser.StatementVisitor;
 
 import java.util.List;
@@ -37,4 +38,9 @@ public class SwitchStatement extends Statement {
     public <T> T accept(StatementVisitor<T> visitor) {
         return visitor.visit(this);
     }
+    @Override
+    public <T> T accept(CFGStatementVisitor<T> visitor, T aux) {
+        return visitor.visit(this, aux);
+    }
+
 }

@@ -51,6 +51,7 @@ public class BenchMark {
         return new BenchMark("Underscore.js", "tests/underscore/underscore.js", null, options, ES5);
     });
 
+    // TODO: in the declaration, RenderTexture does not have a render method. It really should have, because of the dynamic instance creation.
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("PIXI", "tests/pixi/pixi.js", null, options, ES5);
@@ -61,11 +62,15 @@ public class BenchMark {
         return new BenchMark("FabricJS", "tests/fabric/fabric.js", null, options, ES5);
     });
 
-    // TODO: test, including includesWithFields.
     public static final BenchMark jQuery = evaluate(() -> {
         Options options = new Options();
-        options.resolveIncludesWithFields = true; // Takes too long... but is not very precise without.
         return new BenchMark("jQuery", "tests/jquery/jquery.js", null, options, ES5);
+    });
+
+    public static final BenchMark angular = evaluate(() -> {
+        Options options = new Options();
+        options.createInstancesClassFilter = true;
+        return new BenchMark("AngularJS", "tests/angular/angular.js", null, options, ES5);
     });
 
     public static final BenchMark three = evaluate(() -> {
@@ -109,7 +114,7 @@ public class BenchMark {
     public static final BenchMark backbone = evaluate(() -> {
         Options options = new Options();
         options.createInstances = false;
-        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", null, options, ES5, Arrays.asList(Dependency.underscore));
+        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", null, options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery));
     });
 
     // TODO: Lots of classes with duplicate names.
@@ -120,9 +125,11 @@ public class BenchMark {
         return new BenchMark("MooTools", "tests/mootools/mootools.js", null, options, ES5);
     });
 
-    // TODO: Way way way to much is a class.
+    // TODO: Lots of interfaces that are really just functions.
+    // TODO: A little naming conflict.
     public static final BenchMark prototype = evaluate(() -> {
         Options options = new Options();
+        options.createInstancesClassFilter = true; // Needed, otherwise instances of functions end up in the wrong places, causing everything to become a method.
         return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5);
     });
 

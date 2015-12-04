@@ -39,16 +39,19 @@ public class Main {
         System.exit(0);
     }
 
+    private static final boolean SSA_DEBUG = false;
+
     public static void runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
 
         String script = Util.readFile(benchMark.scriptPath);
-        FunctionExpression program = SSA.toSSA(new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST());
 
-        new FindSSAVisitor().visit(program);
+        FunctionExpression program = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST();
 
-        if (true) {
+        if (SSA_DEBUG) {
+            SSA.toSSA_(program); // Hamid entry-point.
+
             return;
         }
 

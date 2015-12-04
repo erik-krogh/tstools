@@ -42,10 +42,10 @@ public class LibraryClass {
     }
 
     public void addPathSeen(String path) {
+        assert this.name == null;
         if (!this.pathsSeen.contains(path)) {
             this.pathsSeen.add(path);
         }
-        assert this.name == null;
     }
 
     public UnionNode getNewThisNode(UnionFindSolver solver) {

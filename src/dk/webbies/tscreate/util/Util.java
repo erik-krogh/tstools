@@ -21,6 +21,7 @@ import java.util.stream.StreamSupport;
  * Created by erik1 on 01-09-2015.
  */
 public class Util {
+    private static final boolean alwaysRecreate = false;
     private static String runNodeScript(String args) throws IOException {
         Process process = Runtime.getRuntime().exec("node " + args);
 
@@ -127,7 +128,8 @@ public class Util {
 
         }
 
-        if (recreate) {
+        //noinspection PointlessBooleanExpression
+        if (recreate || alwaysRecreate) {
             System.out.println("Creating " + cache.getPath() + " from scratch.");
             String jsnap = run.get();
             BufferedWriter writer = new BufferedWriter(new FileWriter(cache));
@@ -276,7 +278,30 @@ public class Util {
         return acc;
     }
 
-    ;
+    // Added by Hamid
+    // FIXME: Check where this is used, isn't hashcode better?
+    public static int ord(String s) {
+        int ret = 0;
+        for (int i=0; i < s.length(); i++) {
+            ret += ((int)s.charAt(i));
+        }
+        return ret;
+    }
+
+    // borrowed (and adapted) from typechef project (DotGraph.scala)
+    public static String escString(String i)  {
+        return i.replace("\n", "\\l").
+                replace("{", "\\{").
+                replace("}", "\\}").
+                replace("<", "\\<").
+                replace(">", "\\>").
+                replace("\"", "\\\"").
+                replace("|", "\\|").
+                replace(" ", "\\ ").
+                replace("\\\"", "\\\\\"").
+                replace("\\\\\"", "\\\\\\\"").
+                replace("\\\\\\\\\"", "\\\\\\\"");
+    }
 
     public static <S, T, T1 extends T, S1 extends S> T getWithDefault(Map<S, T> map, S1 key, T1 defaultValue) {
         if (map.containsKey(key)) {

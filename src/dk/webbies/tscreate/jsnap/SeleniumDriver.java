@@ -63,6 +63,7 @@ public class SeleniumDriver {
         LogEntries logEntries = driver.manage().logs().get(LogType.BROWSER);
 
         driver.close();
+        driver.quit();
 
         LogEntry jsnapEntry = findJsnapEntry(logEntries);
 
