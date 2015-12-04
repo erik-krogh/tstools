@@ -26,7 +26,7 @@ public class PhiNodeExpression extends Expression {
     }
 
     public static PhiNodeExpression makePhiNodeExpression(CFGDef... defs) {
-        Set<CFGDef> key = new HashSet<CFGDef>();
+        Set<CFGDef> key = new HashSet<>();
         for (CFGDef d : defs) key.add(d);
 
         PhiNodeExpression r = phiNodes.get(key);;

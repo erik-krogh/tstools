@@ -8,7 +8,7 @@ import java.util.*;
 public abstract class CFGNode {
 
     public static  List<CFGNode> cfgNodes = new LinkedList<>();
-    private AstNode astNode;
+    protected AstNode astNode;
     private List<CFGNode> successors = new LinkedList<>();
     private List<CFGNode> predecessors = new LinkedList<>();
 
@@ -31,6 +31,5 @@ public abstract class CFGNode {
     }
     public Collection<CFGNode> getSuccessors() {
         return Collections.unmodifiableList(successors);
-        //return successors;
     }
 }

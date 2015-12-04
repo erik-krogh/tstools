@@ -32,7 +32,7 @@ public class SSA {
 
         }
 
-        h.Helper.printDebug("SIZE_N: " + CFGNode.cfgNodes.size());
+        h.Helper.printDebug("DEFS ");
         for (CFGNode n : CFGNode.cfgNodes) {
             h.Helper.printDebug(n.toString(), n.getSuccessors().size() + " ");
         }

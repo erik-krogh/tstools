@@ -57,11 +57,16 @@ public class SSAEnv {
 
         SSAEnv ret = createEmptySSAEnv();
         for (Map.Entry<String, Set<Pair<Integer, CFGDef>>> entry : id2subscripts.entrySet()) {
-            PhiNodeExpression phiExpr = PhiNodeExpression.makePhiNodeExpression(extractCFGDefs(entry.getValue()));
-            CFGDef defPhi = new CFGDef(phiExpr, new Identifier(null, entry.getKey()));
-            int subscript = getMaximumSubscript(entry.getValue()) + 1;
-            defPhi.setSubscript(subscript);
-            ret.id2last.put(entry.getKey(), new Pair(subscript, defPhi));
+            if (entry.getValue().size() == 1) {
+                Pair<Integer, CFGDef> pair = entry.getValue().iterator().next();
+                ret.id2last.put(entry.getKey(), pair);
+            } else {
+                PhiNodeExpression phiExpr = PhiNodeExpression.makePhiNodeExpression(extractCFGDefs(entry.getValue()));
+                CFGDef defPhi = new CFGDef(phiExpr, new Identifier(null, entry.getKey()));
+                int subscript = getMaximumSubscript(entry.getValue()) + 1;
+                defPhi.setSubscript(subscript);
+                ret.id2last.put(entry.getKey(), new Pair(subscript, defPhi));
+            }
         }
         h.Helper.printDebug("Merged", ret.id2last.entrySet().toString());
         return ret;

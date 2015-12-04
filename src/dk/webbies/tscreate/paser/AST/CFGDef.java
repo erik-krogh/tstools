@@ -16,7 +16,6 @@ public class CFGDef extends CFGNode {
     private Identifier definition;
     private int subscript; // SSA subscript
 
-    //private PhiNodeExpression phiNodeExpression;
 
     public CFGDef(AstNode astNode, Identifier def) {
         super(astNode);
@@ -30,14 +29,8 @@ public class CFGDef extends CFGNode {
         return definition;
     }
 
-    //public boolean isPhiDef() { return (phiNodeExpression != null); }
-    //public PhiNodeExpression getPhiNodeExpression() {
-        //return phiNodeExpression;
-    //}
-    /*public void setAsPhiDef(PhiNodeExpression phiNodeExpression) {
+    public boolean isPhiDef() { return (astNode instanceof PhiNodeExpression); }
 
-        this.phiNodeExpression = phiNodeExpression;
-    }*/
 
     public String toString() {
         return "def(" + definition.getName() +" [" + subscript + "]) @ " + getAstNode().toString();

@@ -295,7 +295,6 @@ public class CFGBuilder {
                 aux = stmt.accept(stmtVisitor, aux);
 
                 if (aux.ssAEnv() == null) throw new RuntimeException("exc: " + stmt);
-                h.Helper.printDebug("?????????????????????");
             }
             return aux;
         }
@@ -330,7 +329,7 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(IfStatement ifStatement, CFGEnv aux) {
             CFGEnv joinNode = makeConditional(ifStatement.getCondition(), ifStatement.getIfBranch(), ifStatement.getElseBranch(), aux);
-            // TODO: update joinNode (create defs in it, etc)
+
             return joinNode;
         }
 
@@ -414,7 +413,7 @@ public class CFGBuilder {
         }
     }
     public CFGBuilder() {
-        //DUMMY_ENV  = CFGEnv.createInCfgEnv();
+        
     }
     private CFGEnv makeConditional(Expression condition, Statement left, Statement right, CFGEnv aux) {
         if (aux.ssAEnv() == null) throw new RuntimeException();
