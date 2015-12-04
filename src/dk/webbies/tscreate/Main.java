@@ -46,12 +46,6 @@ public class Main {
         String script = Util.readFile(benchMark.scriptPath);
         FunctionExpression program = SSA.toSSA(new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST());
 
-        new FindSSAVisitor().visit(program);
-
-        if (true) {
-            return;
-        }
-
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), program);
 
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, benchMark.options, benchMark.dependencyScripts());
