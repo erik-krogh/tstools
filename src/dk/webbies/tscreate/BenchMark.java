@@ -142,6 +142,10 @@ public class BenchMark {
         return new BenchMark("handlebars", "tests/handlebars/handlebars-v4.0.5.js", null, options, ES5);
     });
 
+    public static final BenchMark MPL = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/mpl/mpl.js", null, options, ES5);
+    });
 
 
     public static final BenchMark test = evaluate(() -> {
