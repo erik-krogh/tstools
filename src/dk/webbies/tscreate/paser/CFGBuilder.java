@@ -93,11 +93,11 @@ public class CFGBuilder {
                     Expression lhs = binOp.getLhs();
                     Expression rhs = binOp.getRhs();
                     if (lhs instanceof Identifier)
-                        currUseNode.addUse(lhs);
+                        currUseNode.addUse((Identifier) lhs);
                     else
                         lhs.accept(exprVisitor, au); // we used to pass null as aux here! but hey, we want to pass ssaEnv (along with it aux)
                     if (rhs instanceof Identifier)
-                        currUseNode.addUse(rhs);
+                        currUseNode.addUse((Identifier) rhs);
                     else
                         rhs.accept(exprVisitor, au); // we used to pass null as aux here!
 
@@ -174,8 +174,13 @@ public class CFGBuilder {
         public CFGEnv visit(Identifier identifier, CFGEnv aux) {
             printAstNode(identifier);
             if (useNodeUnderconstruction != null) {
-                // we are making a use node
+                // we are making a use node (e.g. for cond in if (cond) ...)
                 useNodeUnderconstruction.addUse(identifier);
+                CFGUse useNode = getCurrentAndResetUseNode();
+                if (aux == null) throw new RuntimeException();
+                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode, aux.ssAEnv());
+                assert (useNodeUnderconstruction == null);
+                return outEnv;
             }
             return aux;
         }
@@ -257,7 +262,7 @@ public class CFGBuilder {
             Expression expr = unaryExpression.getExpression();
 
             if (expr instanceof Identifier)
-                currUseNode.addUse(expr);
+                currUseNode.addUse((Identifier) expr);
             else
                 expr.accept(exprVisitor, null);
 
@@ -437,6 +442,10 @@ public class CFGBuilder {
     }
     private CFGEnv makeConditional(Expression condition, Statement left, Statement right, CFGEnv aux) {
         if (aux.ssAEnv() == null) throw new RuntimeException();
+        if (condition instanceof Identifier) {
+            assert (useNodeUnderconstruction == null);
+            makeUseNode(condition);
+        }
         CFGEnv branchEnv = condition.accept(exprVisitor, aux);
         CFGJoin joinNode = new CFGJoin(67); // SSAEnv() should work as well
 

@@ -163,6 +163,22 @@ public class BenchMark {
         return new BenchMark("Test file", "tests/test/test.js", null, options, ES5/*, Arrays.asList(testDependency, Dependency.jQuery)*/);
     });
 
+    // SSA tests
+    public static final BenchMark if0 = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/ssa/if0.js", null, options, ES5);
+    });
+
+    public static final BenchMark ifNested = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/ssa/if_nested.js", null, options, ES5);
+    });
+
+    public static final BenchMark If = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/ssa/if.js", null, options, ES5);
+    });
+
     public static final class Dependency {
         public final String scriptPath;
         public final String declarationPath;
