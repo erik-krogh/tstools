@@ -4,7 +4,7 @@ package dk.webbies.tscreate.paser.AST;
  * Created by hamid on 10/20/15.
  */
 public class CFGEnv {
-    public SSAEnv ssAEnv() {
+    public SSAEnv ssaEnv() {
         return ssaEnv;
     }
 

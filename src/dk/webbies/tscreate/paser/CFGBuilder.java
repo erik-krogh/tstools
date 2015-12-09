@@ -69,7 +69,7 @@ public class CFGBuilder {
 
                     }
                     CFGNode defNode = new CFGDef(binOp, id);
-                    CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode, aux.ssAEnv()); // pass aux.SSAEnv
+                    CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode, aux.ssaEnv()); // pass aux.SSAEnv
                     //var.accept(exprVisitor, null); // debug purposes only
 
                     return outEnv;
@@ -105,7 +105,7 @@ public class CFGBuilder {
                         CFGUse useNode = getCurrentAndResetUseNode();
                         assert (useNode == currUseNode);
                         if (au == null) throw new RuntimeException();
-                        CFGEnv outEnv = CFGEnv.createOutCfgEnv(au.getAppendNode(), useNode, au.ssAEnv());
+                        CFGEnv outEnv = CFGEnv.createOutCfgEnv(au.getAppendNode(), useNode, au.ssaEnv());
                         assert (useNodeUnderconstruction == null);
                         return outEnv;
                     }
@@ -167,7 +167,7 @@ public class CFGBuilder {
             CFGEnv realExit =  functionExpression.getBody().accept(stmtVisitor, inCfgEnv);
             // we can process artificialJoin (mainly backup vaues) here if necessary (***)
             artificialJoin.ssaEnv = realExit.getCopyOfSSAEnv();
-            return CFGEnv.createOutCfgEnv(new CFGNode[] {entry, realExit.getAppendNode()}, artificialJoin, realExit.ssAEnv()); // TODO:***
+            return CFGEnv.createOutCfgEnv(new CFGNode[] {entry, realExit.getAppendNode()}, artificialJoin, realExit.ssaEnv()); // TODO:***
         }
 
         @Override
@@ -178,7 +178,7 @@ public class CFGBuilder {
                 useNodeUnderconstruction.addUse(identifier);
                 CFGUse useNode = getCurrentAndResetUseNode();
                 if (aux == null) throw new RuntimeException();
-                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode, aux.ssAEnv());
+                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode, aux.ssaEnv());
                 assert (useNodeUnderconstruction == null);
                 return outEnv;
             }
@@ -269,7 +269,7 @@ public class CFGBuilder {
             if (isTopUseNode) {
                 CFGUse useNode = getCurrentAndResetUseNode();
                 assert (useNode == currUseNode);
-                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode, aux.ssAEnv());
+                CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode, aux.ssaEnv());
                 assert (useNodeUnderconstruction == null);
                 return outEnv;
             }
@@ -308,11 +308,11 @@ public class CFGBuilder {
          @Override
         public CFGEnv visit(BlockStatement block, CFGEnv aux) {
             printAstNode(block);
-            if (aux.ssAEnv() == null) throw new RuntimeException();
+            if (aux.ssaEnv() == null) throw new RuntimeException();
             for (Statement stmt : block.getStatements()) {
                 aux = stmt.accept(stmtVisitor, aux);
 
-                if (aux.ssAEnv() == null) throw new RuntimeException("exc: " + stmt);
+                if (aux.ssaEnv() == null) throw new RuntimeException("exc: " + stmt);
             }
             return aux;
         }
@@ -395,7 +395,7 @@ public class CFGBuilder {
 
             CFGNode defNode = new CFGDef(variableNode, id);
             //aux.getAppendNode().getSuccessors().add(defNode);
-            CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode, aux.ssAEnv());
+            CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), defNode, aux.ssaEnv());
 
             //var.accept(exprVisitor, aux); // debug purposes only
 
@@ -441,23 +441,29 @@ public class CFGBuilder {
         
     }
     private CFGEnv makeConditional(Expression condition, Statement left, Statement right, CFGEnv aux) {
-        if (aux.ssAEnv() == null) throw new RuntimeException();
+        if (aux.ssaEnv() == null) throw new RuntimeException();
         if (condition instanceof Identifier) {
             assert (useNodeUnderconstruction == null);
             makeUseNode(condition);
         }
         CFGEnv branchEnv = condition.accept(exprVisitor, aux);
-        CFGJoin joinNode = new CFGJoin(67); // SSAEnv() should work as well
+        //Helper.printDebug("inja branch env: ", branchEnv.ssaEnv().id2last.toString());
+        CFGJoin joinNode = new CFGJoin(67);
 
         CFGEnv inEnvLeft = branchEnv.copy();
-        Helper.printDebug("input env: ", inEnvLeft.ssaEnv.id2last.toString());
         CFGEnv leftEnv = left.accept(stmtVisitor, inEnvLeft); // so each one can make changes to its CFGEnv.ssaEnv
-        Helper.printDebug("modified env: ", inEnvLeft.ssaEnv.id2last.toString());
+
         CFGEnv inEnvRight = inEnvLeft.copy();
         CFGEnv rightEnv = right.accept(stmtVisitor, inEnvRight);
 
-        SSAEnv mergedSSAEnv = SSAEnv.MergeSSAEnvs(branchEnv.ssAEnv(), inEnvLeft.ssAEnv(), inEnvRight.ssAEnv());
+        Helper.printDebug("branch env: ", branchEnv.ssaEnv().id2last.toString());
+        Helper.printDebug("left env: ", leftEnv.ssaEnv().id2last.toString());
+        Helper.printDebug("right env: ", rightEnv.ssaEnv().id2last.toString());
+
+        SSAEnv mergedSSAEnv = SSAEnv.MergeSSAEnvs(branchEnv.ssaEnv(), leftEnv.ssaEnv(), rightEnv.ssaEnv());
+        Helper.printDebug("merged: ", mergedSSAEnv.id2last.toString());
         joinNode.ssaEnv = mergedSSAEnv.copy();
+
         return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, mergedSSAEnv);
 
     }
