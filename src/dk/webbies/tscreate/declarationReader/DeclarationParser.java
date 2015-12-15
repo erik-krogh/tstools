@@ -19,9 +19,13 @@ import static dk.webbies.tscreate.jsnap.Snap.Value;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static NativeClassesMap markNatives(Obj global, Environment env, List<String> dependencyDeclarations, HashMap<Obj, LibraryClass> libraryClasses) {
+    public static NativeClassesMap parseNatives(Obj global, Environment env, List<String> dependencyDeclarations, HashMap<Obj, LibraryClass> libraryClasses) {
         SpecReader spec = getTypeSpecification(env, dependencyDeclarations);
 
+        return parseNatives(global, libraryClasses, spec);
+    }
+
+    public static NativeClassesMap parseNatives(Obj global, HashMap<Obj, LibraryClass> libraryClasses, SpecReader spec) {
         Map<Type, String> typeNames = new HashMap<>();
 
         markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
@@ -57,6 +61,13 @@ public class DeclarationParser {
 
     public static SpecReader getTypeSpecification(Environment env, String... declarationFilePaths) {
         return getTypeSpecification(env, Arrays.asList(declarationFilePaths));
+    }
+
+    public static SpecReader getTypeSpecification(Environment env, Collection<String> dependencies, String declarationFilePath) {
+        ArrayList<String> specs = new ArrayList<>();
+        specs.addAll(dependencies);
+        specs.add(declarationFilePath);
+        return getTypeSpecification(env, specs);
     }
 
     public static SpecReader getTypeSpecification(Environment env, Collection<String> declarationFilePaths) {
@@ -293,6 +304,10 @@ public class DeclarationParser {
 
         public Obj objectFromName(String name) {
             return this.namedObjects.inverse().get(name);
+        }
+
+        public Set<String> getNames() {
+            return this.typeNames.values();
         }
     }
 

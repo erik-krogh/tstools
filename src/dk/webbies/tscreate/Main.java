@@ -5,13 +5,13 @@ import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
+import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
-import dk.webbies.tscreate.paser.SSA;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-        runAnalysis(BenchMark.jQuery);
+        runAnalysis(BenchMark.FabricJS);
 //
 //        for (BenchMark benchmark : BenchMark.allBenchmarks) {
 //            runAnalysis(benchmark);
@@ -39,8 +39,6 @@ public class Main {
         System.exit(0);
     }
 
-    private static final boolean SSA_DEBUG = false;
-
     public static void runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
@@ -49,18 +47,12 @@ public class Main {
 
         FunctionExpression program = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST();
 
-        if (SSA_DEBUG) {
-            SSA.toSSA_(program); // Hamid entry-point.
-
-            return;
-        }
-
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), program);
 
         Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, benchMark.options, benchMark.dependencyScripts());
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
-        NativeClassesMap nativeClasses = markNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses);
+        NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses);
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
 
@@ -71,9 +63,9 @@ public class Main {
 
         if (benchMark.declarationPath != null) {
             // FIXME: Doesn't handle dependencies yet.
-            DeclarationEvaluator.Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark.declarationPath, benchMark.languageLevel.environment).createEvaluation();
+            Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses).getEvaluation();
 
-            System.out.println(evaluation.toString());
+            System.out.println(evaluation.print());
         }
 
     }

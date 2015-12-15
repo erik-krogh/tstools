@@ -59,12 +59,12 @@ public class BenchMark {
 
     public static final BenchMark FabricJS = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("FabricJS", "tests/fabric/fabric.js", null, options, ES5);
+        return new BenchMark("FabricJS", "tests/fabric/fabric.js", "tests/fabric/fabricjs.d.ts", options, ES5);
     });
 
     public static final BenchMark jQuery = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("jQuery", "tests/jquery/jquery.js", null, options, ES5);
+        return new BenchMark("jQuery", "tests/jquery/jquery.js", "tests/jquery/jquery.d.ts", options, ES5);
     });
 
     public static final BenchMark angular = evaluate(() -> {
@@ -156,7 +156,7 @@ public class BenchMark {
 
         Dependency testDependency = new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts");
 
-        return new BenchMark("Test file", "tests/test/test.js", null, options, ES5/*, Arrays.asList(testDependency, Dependency.jQuery)*/);
+        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5/*, Arrays.asList(testDependency, Dependency.jQuery)*/);
     });
 
     public static final class Dependency {

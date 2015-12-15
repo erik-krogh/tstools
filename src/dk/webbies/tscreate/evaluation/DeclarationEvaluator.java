@@ -1,267 +1,125 @@
 package dk.webbies.tscreate.evaluation;
 
 import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
-import dk.webbies.tscreate.util.Pair;
+import dk.au.cs.casa.typescript.types.InterfaceType;
+import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tscreate.BenchMark;
+import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
 /**
  * Created by Erik Krogh Kristensen on 05-10-2015.
  */
 public class DeclarationEvaluator {
-    private SpecReader realDeclaration;
-    private SpecReader myDeclaration;
-    private SpecReader emptyDeclaration;
+    private final Evaluation evaluation = new Evaluation();
+    private Snap.Obj global;
+    private HashMap<Snap.Obj, LibraryClass> libraryClasses;
 
-    public DeclarationEvaluator(String resultFilePath, String comparisonFilePath, DeclarationParser.Environment env) {
-        String relativePath = "";
-        try {
-            Util.runAll(() -> {
-                realDeclaration = DeclarationParser.getTypeSpecification(env, relativePath + comparisonFilePath);
-            }, () -> {
-                myDeclaration = DeclarationParser.getTypeSpecification(env, relativePath + resultFilePath);
-            }, () -> {
-                emptyDeclaration = DeclarationParser.getTypeSpecification(env);
-            });
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
+    public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
+        this.global = global;
+        this.libraryClasses = libraryClasses;
+        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark).invoke();
+        InterfaceType realDeclaration = parsedDeclaration.getRealDeclaration();
+        InterfaceType myDeclaration = parsedDeclaration.getMyDeclaration();
+        Set<String> properties = parsedDeclaration.getProperties();
+        Set<Type> nativeTypesInReal = parsedDeclaration.getNativeTypesInReal();
+
+
+        realDeclaration.getDeclaredProperties().keySet().retainAll(properties);
+        myDeclaration.getDeclaredProperties().keySet().retainAll(properties);
+
+        queue.add(() -> new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal).visit(realDeclaration, myDeclaration));
+
+        while (!queue.isEmpty()) {
+            ArrayList<Runnable> copy = new ArrayList<>(queue);
+            queue.clear();
+            copy.forEach(Runnable::run);
         }
     }
 
+    List<Runnable> queue = new ArrayList<>();
 
-    public Evaluation createEvaluation() {
-        Evaluation result = new Evaluation();
-        realDeclaration.getGlobal().accept(new EvaluationVisitor(result), myDeclaration.getGlobal());
 
-        Evaluation baselineEvaluation = new Evaluation();
-        realDeclaration.getGlobal().accept(new EvaluationVisitor(baselineEvaluation), emptyDeclaration.getGlobal());
-
-        result.matchedProperties -= baselineEvaluation.matchedProperties;
-
-        return result;
+    public Evaluation getEvaluation() {
+        return evaluation;
     }
 
-    public static class Evaluation {
-        public int matchedProperties = 0;
-        public int missedProperties = 0;
-        private int simpleTypeMismatches = 0;
-        private int signatureMismatches = 0;
-        private int parameterCountMismatches = 0;
-        private int missingSignatures = 0;
-        public final Map<Pair<Class<? extends Type>, Class<? extends Type>>, Integer> typeMisMatch = new HashMap<>();
+    private class ParsedDeclaration {
+        private String resultFilePath;
+        private BenchMark benchMark;
+        private AtomicReference<SpecReader> realDeclaration;
+        private AtomicReference<SpecReader> myDeclaration;
+        private Set<String> properties;
+        private Set<Type> nativeTypesInReal;
 
-        private void addTypeMismatch(Type shouldBe, Type was) {
-            Pair<Class<? extends Type>, Class<? extends Type>> pair = new Pair<>(shouldBe.getClass(), was.getClass());
-            if (typeMisMatch.containsKey(pair)) {
-                typeMisMatch.put(pair, typeMisMatch.get(pair) + 1);
-            } else {
-                typeMisMatch.put(pair, 1);
+        public ParsedDeclaration(String resultFilePath, BenchMark benchMark) {
+            this.resultFilePath = resultFilePath;
+            this.benchMark = benchMark;
+        }
+
+        public InterfaceType getRealDeclaration() {
+            return (InterfaceType) realDeclaration.get().getGlobal();
+        }
+
+        public InterfaceType getMyDeclaration() {
+            return (InterfaceType) myDeclaration.get().getGlobal();
+        }
+
+        public Set<String> getProperties() {
+            return properties;
+        }
+
+        public Set<Type> getNativeTypesInReal() {
+            return nativeTypesInReal;
+        }
+
+        public ParsedDeclaration invoke() {
+            Environment env = benchMark.languageLevel.environment;
+            List<String> dependencies = benchMark.dependencies.stream().map(dep -> dep.declarationPath).collect(Collectors.toList());
+            realDeclaration = new AtomicReference<>();
+            myDeclaration = new AtomicReference<>();
+            AtomicReference<SpecReader> emptyDeclaration = new AtomicReference<>();
+            try {
+                Util.runAll(() -> {
+                    realDeclaration.set(getTypeSpecification(env, dependencies, benchMark.declarationPath));
+                }, () -> {
+                    myDeclaration.set(getTypeSpecification(env, dependencies, resultFilePath));
+                }, () -> {
+                    emptyDeclaration.set(getTypeSpecification(env, dependencies));
+                });
+            } catch (Throwable throwable) {
+                throw new RuntimeException(throwable);
             }
 
-        }
+            properties = new HashSet<>();
 
-        public void addSimpleTypeMismatch(SimpleType t, SimpleType type) {
-            this.simpleTypeMismatches++;
-        }
+            Set<String> realProperties = ((InterfaceType)realDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
+            Set<String> myProperties = ((InterfaceType)myDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
+            properties.addAll(realProperties);
+            properties.addAll(myProperties);
 
-        public void addSignatureMismatch(List<Signature> realDeclaredCallSignatures, List<Signature> resultDeclaredCallSignatures) {
-            this.signatureMismatches++;
-        }
+            Set<String> existingProperties = ((InterfaceType)emptyDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
+            properties.removeAll(existingProperties);
 
-        public void addParameterCountMismatch() {
-            this.parameterCountMismatches++;
-        }
+            NativeClassesMap realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get());
+            NativeClassesMap emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
 
-        public void addMissingSignature() {
-            this.missingSignatures++;
-        }
-
-        @Override
-        public String toString() {
-            return "Evaluation{" +
-                    "matchedProperties=" + matchedProperties +
-                    ", missedProperties=" + missedProperties +
-                    ", simpleTypeMismatches=" + simpleTypeMismatches +
-                    ", signatureMismatches=" + signatureMismatches +
-                    ", parameterCountMismatches=" + parameterCountMismatches +
-                    ", missingSignatures=" + missingSignatures +
-                    ", typeMisMatch=" + typeMisMatch +
-                    '}';
-        }
-    }
-
-    private static class EvaluationVisitor implements TypeVisitorWithArgument<Void,Type> {
-        private Set<Type> seen = new HashSet<>();
-        private Evaluation evaluation;
-
-        public EvaluationVisitor(Evaluation evaluation) {
-            this.evaluation = evaluation;
-        }
-
-        @Override
-        public Void visit(AnonymousType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Void visit(ClassType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Void visit(GenericType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            // TODO: Ignoring generics for now, just making it info an interface.
-            if (!(type instanceof GenericType)) {
-                evaluation.addTypeMismatch(t, type);
-                t.getDeclaredProperties().values().forEach(propertyType -> propertyType.accept(this, null));
-                t.getDeclaredCallSignatures().forEach(signature -> compareSignatures(signature, null));
-                t.getDeclaredConstructSignatures().forEach(signature -> compareSignatures(signature, null));
-            } else {
-                compareInterfaces(t.toInterface(), ((GenericType) type).toInterface());
-            }
-            return null;
-        }
-
-        @Override
-        public Void visit(InterfaceType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            if (!(type instanceof InterfaceType)) {
-                evaluation.addTypeMismatch(t, type);
-            } else {
-                compareInterfaces(t, (InterfaceType) type);
-            }
-            return null;
-        }
-
-        private void compareInterfaces(InterfaceType real, InterfaceType result) {
-            real.getDeclaredProperties().forEach((name, type) -> {
-                if (result.getDeclaredProperties().containsKey(name)) {
-                    evaluation.matchedProperties++;
-                    type.accept(this, result.getDeclaredProperties().get(name));
-                } else {
-                    evaluation.missedProperties++;
-                }
-            });
-
-            for (int i = 0; i < real.getDeclaredCallSignatures().size(); i++) {
-                Signature realSignature = real.getDeclaredCallSignatures().get(i);
-                Signature resultSignature = result.getDeclaredCallSignatures().size() > i ? result.getDeclaredCallSignatures().get(i) : null;
-                compareSignatures(realSignature, resultSignature);
+            nativeTypesInReal = new HashSet<>(); // FIXME: Make sure this makes sense.
+            for (String name : emptyNativeClasses.getNames()) {
+                Type type = realNativeClasses.typeFromName(name);
+                assert type != null;
+                nativeTypesInReal.add(type);
             }
 
-            for (int i = 0; i < real.getDeclaredConstructSignatures().size(); i++) {
-                Signature realSignature = real.getDeclaredConstructSignatures().get(i);
-                Signature resultSignature = result.getDeclaredConstructSignatures().size() > i ? result.getDeclaredConstructSignatures().get(i) : null;
-                compareSignatures(realSignature, resultSignature);
-            }
 
-        }
-
-        private void compareSignatures(Signature realSignature, Signature resultSignature) {
-            if (resultSignature != null) {
-                realSignature.getResolvedReturnType().accept(this, resultSignature.getResolvedReturnType());
-
-                if (realSignature.getParameters().size() != resultSignature.getParameters().size()) {
-                    evaluation.addParameterCountMismatch();
-                } else {
-                    Util.zip(realSignature.getParameters().stream(), resultSignature.getParameters().stream()).forEach(pair -> {
-                        pair.left.getType().accept(this, pair.right.getType());
-                    });
-                }
-            } else {
-                evaluation.addMissingSignature();
-            }
-        }
-
-        @Override
-        public Void visit(ReferenceType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            if (!(type instanceof ReferenceType)) {
-                evaluation.addTypeMismatch(t, type);
-            } else {
-                t.getTarget().accept(this, ((ReferenceType) type).getTarget());
-                // TODO: Ignoring type-arguments for now.
-            }
-
-            return null;
-        }
-
-        @Override
-        public Void visit(SimpleType t, Type type) {
-            if (!(type instanceof SimpleType)) {
-                evaluation.addTypeMismatch(t, type);
-            } else {
-                if (t.getKind() != ((SimpleType)type).getKind()) {
-                    evaluation.addSimpleTypeMismatch(t, (SimpleType)type);
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public Void visit(TupleType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Void visit(UnionType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Void visit(UnresolvedType t, Type type) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public Void visit(TypeParameterType t, Type type) {
-            return null; // Completely ignored for now.
-        }
-
-        @Override
-        public Void visit(SymbolType t, Type type) {
-            if (seen.contains(t)) {
-                return null;
-            }
-            seen.add(t);
-
-            throw new UnsupportedOperationException();
+            return this;
         }
     }
 }

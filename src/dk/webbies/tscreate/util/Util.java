@@ -36,7 +36,7 @@ public class Util {
         }
 
         if (!errGobbler.getResult().isEmpty()) {
-            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
+//            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult()); // FIXME: Compiler warnings also show up here.
         }
 
         return inputGobbler.getResult();
