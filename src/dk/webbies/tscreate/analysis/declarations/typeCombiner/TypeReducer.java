@@ -158,10 +158,15 @@ public class TypeReducer {
                     DeclarationType combinedType = combineTypes(one, two, avoidUnresolved);
                     if (combinedType == null) {
                         continue;
+                    } else if (combinedType instanceof UnionDeclarationType) {
+                        List<DeclarationType> unfoldedTypes = ((UnionDeclarationType) combinedType).getTypes();
+                        types.addAll(unfoldedTypes);
+                    } else {
+                        types.add(combinedType);
                     }
                     fixPoint = false;
-                    types.set(i, combinedType);
                     types.remove(j);
+                    types.remove(i);
                     i--;
                     break;
                 }
