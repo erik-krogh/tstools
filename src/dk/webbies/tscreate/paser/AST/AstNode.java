@@ -14,10 +14,8 @@ public abstract class AstNode {
     public String toString() {
         AstNode astnode = this;
         StringBuilder ret = new StringBuilder();
-        //ret.append(astnode.getClass().getName() + "\n");
         SourcePosition start = astnode.location.start;
         SourcePosition end = astnode.location.end;
-        //assert (start.source.contents.equals(end.source.contents));
         String contents = start.source.contents;
 
         for (int i = start.offset; i < end.offset; i++) {

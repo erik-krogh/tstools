@@ -4,7 +4,7 @@ package dk.webbies.tscreate.paser.AST;
  * Created by hamid on 10/20/15.
  */
 public class CFGEnv {
-    public SSAEnv ssAEnv() {
+    public SSAEnv ssaEnv() {
         return ssaEnv;
     }
 
@@ -64,19 +64,19 @@ public class CFGEnv {
             CFGDef cfgdef = (CFGDef) outNode;
             int subscript = ssaEnv.setNewSubscriptFor(cfgdef.getDefinition(), cfgdef);
             cfgdef.setSubscript(subscript);
-            //ret.setSSAEnv(ssaEnv);
         } else if (outNode instanceof CFGUse) {
             CFGUse cfguse = (CFGUse) outNode;
-            for (Expression u : cfguse.getUses()) {
+            for (Identifier u : cfguse.getUses()) {
                 // record u -> lastSubscript(u) in outNode
                 cfguse.setSubscript(u, ssaEnv.getLastSubscript((Identifier) u));
             }
-            //ret.setSSAEnv(ssaEnv);
         } else if (outNode instanceof CFGJoin) {
 
-            //ret.setSSAEnv(ssaEnv);
+
         }
-        //else  { throw new RuntimeException("unexpected outnode: " + outNode.getClass()); }
+        else  {
+            throw new RuntimeException("unexpected outnode: " + outNode.getClass());
+        }
 
         ret.setSSAEnv(ssaEnv);
         return ret;

@@ -93,8 +93,8 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         List<Evaluation> evaluations = new ArrayList<>();
 
         for (Pair<Type, Type> typePair : typePairs) {
-            Type left = typePair.left;
-            Type right = typePair.right;
+            Type left = typePair.first;
+            Type right = typePair.second;
 
             Evaluation subEvaluation = new Evaluation();
             EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, new HashSet<>(seen));
