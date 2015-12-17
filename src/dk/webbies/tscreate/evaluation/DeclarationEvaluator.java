@@ -4,11 +4,13 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.BenchMark;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -35,16 +37,27 @@ public class DeclarationEvaluator {
         realDeclaration.getDeclaredProperties().keySet().retainAll(properties);
         myDeclaration.getDeclaredProperties().keySet().retainAll(properties);
 
-        queue.add(() -> new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal).visit(realDeclaration, myDeclaration));
+
+        AtomicBoolean hasRun = new AtomicBoolean(false);
+        Runnable doneCallback = () -> {
+            assert queue.isEmpty();
+            hasRun.set(true);
+        };
+        queue.add(() -> {
+            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>())
+                    .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback));
+        });
 
         while (!queue.isEmpty()) {
             ArrayList<Runnable> copy = new ArrayList<>(queue);
             queue.clear();
             copy.forEach(Runnable::run);
         }
+
+        assert hasRun.get();
     }
 
-    List<Runnable> queue = new ArrayList<>();
+    List<Runnable> queue = new ArrayList<>(); // FIXME: Queue as priority-queue.
 
 
     public Evaluation getEvaluation() {
@@ -58,6 +71,9 @@ public class DeclarationEvaluator {
         private AtomicReference<SpecReader> myDeclaration;
         private Set<String> properties;
         private Set<Type> nativeTypesInReal;
+        private NativeClassesMap realNativeClasses;
+        private NativeClassesMap emptyNativeClasses;
+        private NativeClassesMap myNativeClasses;
 
         public ParsedDeclaration(String resultFilePath, BenchMark benchMark) {
             this.resultFilePath = resultFilePath;
@@ -78,6 +94,18 @@ public class DeclarationEvaluator {
 
         public Set<Type> getNativeTypesInReal() {
             return nativeTypesInReal;
+        }
+
+        public NativeClassesMap getRealNativeClasses() {
+            return realNativeClasses;
+        }
+
+        public NativeClassesMap getEmptyNativeClasses() {
+            return emptyNativeClasses;
+        }
+
+        public NativeClassesMap getMyNativeClasses() {
+            return myNativeClasses;
         }
 
         public ParsedDeclaration invoke() {
@@ -108,8 +136,9 @@ public class DeclarationEvaluator {
             Set<String> existingProperties = ((InterfaceType)emptyDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
             properties.removeAll(existingProperties);
 
-            NativeClassesMap realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get());
-            NativeClassesMap emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
+            realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get());
+            emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
+            myNativeClasses = parseNatives(global, libraryClasses, myDeclaration.get());
 
             nativeTypesInReal = new HashSet<>(); // FIXME: Make sure this makes sense.
             for (String name : emptyNativeClasses.getNames()) {

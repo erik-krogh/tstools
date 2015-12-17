@@ -7,31 +7,33 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 14-12-2015.
  */
+// FIXME: The last depth is always 100% precision and recall.
 public class Evaluation {
     int maxDepth = -1;
+    Map<Integer, Integer> falseNegatives = new HashMap<>();
+    Map<Integer, Integer> falsePositives = new HashMap<>();
+    Map<Integer, Integer> truePositive = new HashMap<>();
 
     private void add(int depth, Map<Integer, Integer> map) {
-        maxDepth = Math.max(depth, maxDepth);
-        if (map.containsKey(depth)) {
-            map.put(depth, 1 + map.get(depth));
-        } else {
-            map.put(depth, 1);
-        }
+        add(depth, map, 1);
     }
 
-    Map<Integer, Integer> falseNegatives = new HashMap<>();
+    private void add(int depth, Map<Integer, Integer> map, int count) {
+        maxDepth = Math.max(depth, maxDepth);
+        if (map.containsKey(depth)) {
+            map.put(depth, count + map.get(depth));
+        } else {
+            map.put(depth, count);
+        }
+    }
 
     public void addFalseNegative(int depth) {
         add(depth, falseNegatives);
     }
 
-    Map<Integer, Integer> falsePositives = new HashMap<>();
-
     public void addFalsePositive(int depth) {
         add(depth, falsePositives);
     }
-
-    Map<Integer, Integer> truePositive = new HashMap<>();
 
     public void addTruePositive(int depth) {
         add(depth, truePositive);
@@ -40,13 +42,26 @@ public class Evaluation {
     public String print() {
         StringBuilder builder = new StringBuilder();
         for (int depth = 0; depth <= maxDepth; depth++) {
+            if (Double.isNaN(precision(depth)) || Double.isNaN(recall(depth))) {
+                continue;
+            }
             builder.append("depth: ").append(depth).append(" ");
             builder.append("precision: ").append(toFixed(precision(depth), 2));
             builder.append(" recall: ").append(toFixed(recall(depth), 2));
+            builder.append(" thereIs(").append(thereIs(depth)).append(")");
+            builder.append(" iFound(").append(IFound(depth)).append(")");
             builder.append("\n");
         }
 
         return builder.toString();
+    }
+
+    private int IFound(int depth) {
+        return get(depth, this.truePositive) + get(depth, this.falsePositives);
+    }
+
+    private int thereIs(int depth) {
+        return get(depth, this.truePositive) + get(depth, this.falseNegatives);
     }
 
     private int get(int depth, Map<Integer, Integer> map) {
@@ -57,14 +72,14 @@ public class Evaluation {
         }
     }
 
-    private double precision(int depth) {
+    double precision(int depth) {
         double fn = get(depth, this.falseNegatives);
         double fp = get(depth, this.falsePositives);
         double tp = get(depth, this.truePositive);
         return tp / (tp + fp);
     }
 
-    private double recall(int depth) {
+    double recall(int depth) {
         double fn = get(depth, this.falseNegatives);
         double fp = get(depth, this.falsePositives);
         double tp = get(depth, this.truePositive);
@@ -72,8 +87,29 @@ public class Evaluation {
     }
 
     private String toFixed(double number, int decimals) {
+        if (Double.isInfinite(number)) {
+            return number > 0 ? "Infinite" : "-Infinite";
+        } else if (Double.isNaN(number)) {
+            return "NaN";
+        }
         BigDecimal numberBigDecimal = new BigDecimal(number);
         numberBigDecimal = numberBigDecimal.setScale(decimals, BigDecimal.ROUND_HALF_UP);
         return numberBigDecimal.toString();
+    }
+
+    public void add(Evaluation evaluation) {
+        addAll(evaluation.falseNegatives, this.falseNegatives);
+        addAll(evaluation.falsePositives, this.falsePositives);
+        addAll(evaluation.truePositive, this.truePositive);
+    }
+
+    private void addAll(Map<Integer, Integer> from, Map<Integer, Integer> to) {
+        from.forEach((depth, count) -> {
+            add(depth, to, count);
+        });
+    }
+
+    public int getTruePositives(int depth) {
+        return get(depth, this.truePositive);
     }
 }

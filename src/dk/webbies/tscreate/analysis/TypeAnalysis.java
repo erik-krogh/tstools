@@ -67,7 +67,7 @@ public class TypeAnalysis {
 
         int counter = 0;
         for (Snap.Obj closure : functionNodes.keySet()) {
-            System.out.println(++counter + "/" + functionNodes.size());
+//            System.out.println(++counter + "/" + functionNodes.size());
 
             FunctionNode functionNode = functionNodes.get(closure);
 
