@@ -1,8 +1,10 @@
-// Type definitions for Pixi.js [dev 01/Oct]
-// Project: https://github.com/GoodBoyDigital/pixi.js/
-// Definitions by: clark-stevenson <https://github.com/pixijs/pixi-typescript>
-// Definitions: https://github.com/borisyankov/DefinitelyTyped
-
+/**
+ * Pixi v3.0.7+ Commit History Reviewed: 19/Aug
+ *
+ * https://github.com/GoodBoyDigital/pixi.js/
+ *
+ * The definitions will follow the Dev Branch for now.
+ */
 declare class PIXI {
 
     static VERSION: string;
@@ -10,7 +12,7 @@ declare class PIXI {
     static RAD_TO_DEG: number;
     static DEG_TO_RAD: number;
     static TARGET_FPMS: number;
-    static RENDERER_TYPE: {
+    static RENDER_TYPE: {
         UNKNOWN: number;
         WEBGL: number;
         CANVAS: number;
@@ -291,7 +293,7 @@ declare module PIXI {
         drawRoundedRect(x: number, y: number, width: number, height: number, radius: number): Graphics;
         drawCircle(x: number, y: number, radius: number): Graphics;
         drawEllipse(x: number, y: number, width: number, height: number): Graphics;
-        drawPolygon(path: number[] | Point[]): Graphics;
+        drawPolygon(path: number[]| Point[]): Graphics;
         clear(): Graphics;
         //todo
         generateTexture(renderer: WebGLRenderer | CanvasRenderer, resolution?: number, scaleMode?: number): Texture;
@@ -507,7 +509,6 @@ declare module PIXI {
         forceFXAA?: boolean;
         roundPixels?: boolean;
         backgroundColor?: number;
-
     }
     export class SystemRenderer extends EventEmitter {
 
@@ -529,7 +530,6 @@ declare module PIXI {
         blendModes: any; //todo?
         preserveDrawingBuffer: boolean;
         clearBeforeRender: boolean;
-        roundPixels: boolean;
         backgroundColor: number;
 
         render(object: DisplayObject): void;
@@ -844,7 +844,6 @@ declare module PIXI {
 
         map(rect: Rectangle, rect2: Rectangle): void;
         upload(): void;
-        destroy(): void;
 
     }
 
@@ -1076,7 +1075,7 @@ declare module PIXI {
     export class VideoBaseTexture extends BaseTexture {
 
         static fromVideo(video: HTMLVideoElement, scaleMode?: number): VideoBaseTexture;
-        static fromUrl(videoSrc: string | any | string[] | any[]): VideoBaseTexture;
+        static fromUrl(videoSrc: string | any | string[]| any[]): VideoBaseTexture;
 
         protected _loaded: boolean;
 
@@ -1100,11 +1099,11 @@ declare module PIXI {
         static uuid(): number;
         static hex2rgb(hex: number, out?: number[]): number[];
         static hex2String(hex: number): string;
-        static rgb2hex(rgb: Number[]): number;
+        static rbg2hex(rgb: Number[]): number;
         static canUseNewCanvasBlendModel(): boolean;
         static getNextPowerOfTwo(number: number): number;
         static isPowerOfTwo(width: number, height: number): boolean;
-        static getResolutionOfUrl(url: string): number;
+        static getResolutionOfUrl(url: string): boolean;
         static sayHello(type: string): void;
         static isWebGLSupported(): boolean;
         static sign(n: number): number;
