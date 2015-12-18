@@ -21,7 +21,7 @@ public class JSNAPUtil {
         return getJsnapRaw(path, options, path + ".jsnap", path, dependencies);
     }
 
-    private static String getEmptyJSNAP(Options options, List<String> dependencies) throws IOException {
+    public static String getEmptyJSNAPString(Options options, List<String> dependencies) throws IOException {
         if (options.runtime == Options.Runtime.CHROME) {
             return getJsnapRaw("", options, "onlyDom.jsnap", "lib/selenium", dependencies);
         } else {
@@ -71,48 +71,8 @@ public class JSNAPUtil {
         }
     }
 
-    public static Snap.Obj extractUnique(Snap.Obj librarySnap, Options options, List<String> dependencies) throws IOException {
-        FunctionExpression emptyProgram = new FunctionExpression(null, new Identifier(null, ":program"), new BlockStatement(null, Collections.EMPTY_LIST), Collections.EMPTY_LIST);
-        Snap.Obj domSnap = JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAP(options, dependencies), emptyProgram);
-        return extractUnique(librarySnap, domSnap);
-    }
-
-    public static Snap.Obj extractUnique(Snap.Obj librarySnap, Snap.Obj domSnap) {
-        // Keys for the objects in the library, that are also in the DOM.
-        Set<Integer> libraryKeysInDom = getKeysSharedWithDom(librarySnap, domSnap, new HashSet<>());
-
-        return extractUnique(librarySnap, domSnap, libraryKeysInDom, new Snap.Obj(), new HashMap<>());
-    }
-
-    private static Snap.Obj extractUnique(Snap.Obj librarySnap, Snap.Obj domSnap, Set<Integer> libraryKeysInDom, Snap.Obj result, Map<Integer, Snap.Obj> alreadyCreated) {
-        result.env = librarySnap.env;
-        result.prototype = librarySnap.prototype;
-        result.key = librarySnap.key;
-        result.function = librarySnap.function;
-        result.properties = new ArrayList<>();
-        if (librarySnap.properties == null) {
-            librarySnap.properties = Collections.EMPTY_LIST;
-        }
-        for (Snap.Property property : librarySnap.properties) {
-            if (domSnap.getProperty(property.name) == null) {
-                if (property.value != null && property.value instanceof Snap.Obj) {
-                    Snap.Obj obj = (Snap.Obj) property.value;
-                    if (!libraryKeysInDom.contains(obj.key)) {
-                        if (alreadyCreated.containsKey(obj.key)) {
-                            property.value = alreadyCreated.get(obj.key);
-                        } else {
-                            Snap.Obj subResult = new Snap.Obj();
-                            alreadyCreated.put(obj.key, subResult);
-                            property.value = extractUnique(obj, new Snap.Obj(), libraryKeysInDom, subResult, alreadyCreated);
-                        }
-                        result.properties.add(property);
-                    }
-                } else {
-                    result.properties.add(property);
-                }
-            }
-        }
-        return result;
+    public static Snap.Obj getEmptyJSnap(Options options, List<String> dependencies, FunctionExpression emptyProgram) throws IOException {
+        return JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAPString(options, dependencies), emptyProgram);
     }
 
     private static Set<Integer> getKeysSharedWithDom(Snap.Obj librarySnap, Snap.Obj domSnap, HashSet<Integer> result) {
@@ -134,7 +94,6 @@ public class JSNAPUtil {
                 }
             }
         }
-
 
         return result;
     }

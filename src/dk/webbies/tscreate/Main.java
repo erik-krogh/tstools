@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-        runAnalysis(BenchMark.FabricJS);
+        runAnalysis(BenchMark.D3);
 //
 //        for (BenchMark benchmark : BenchMark.allBenchmarks) {
 //            runAnalysis(benchmark);
@@ -39,6 +39,7 @@ public class Main {
         System.exit(0);
     }
 
+    // FIXME: Consider making a simple library-snap, where only globally properties are considered. 
     public static void runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
@@ -49,12 +50,12 @@ public class Main {
 
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), program);
 
-        Snap.Obj librarySnap = JSNAPUtil.extractUnique(globalObject, benchMark.options, benchMark.dependencyScripts());
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
         NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses);
 
-        Map<String, DeclarationType> declaration = new DeclarationBuilder(librarySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
+        Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.options, benchMark.dependencyScripts(), program); // Not empty, just the one without the library we are analyzing.
+        Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
         System.out.println(printedDeclaration);
