@@ -83,7 +83,6 @@ public class BenchMark {
         return new BenchMark("leaflet.js", "tests/leaflet/leaflet.js", "tests/leaflet/leaflet.d.ts", options, ES5); // TODO: Something goes wrong when parsing the d.ts file, classes like Events are on the global object according to the parser.
     });
 
-    // FIXME: Way to many functions are printed as interfaces.
     public static final BenchMark D3 = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("D3.js", "tests/d3/d3.js", "tests/d3/d3.d.ts", options, ES5);

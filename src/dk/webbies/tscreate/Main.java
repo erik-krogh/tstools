@@ -39,7 +39,6 @@ public class Main {
         System.exit(0);
     }
 
-    // FIXME: Consider making a simple library-snap, where only globally properties are considered. 
     public static void runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
