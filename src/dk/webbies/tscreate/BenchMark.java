@@ -75,7 +75,7 @@ public class BenchMark {
 
     public static final BenchMark three = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("three.js", "tests/three/three.js", null/*"tests/three/three.d.ts"*/, options, ES6); // TODO: TypeScript crashes on the definition file.
+        return new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
     });
 
     public static final BenchMark leaflet = evaluate(() -> {
@@ -90,7 +90,7 @@ public class BenchMark {
 
     public static final BenchMark react = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("React", "tests/react/react.js", null/*"tests/react/react.d.ts"*/, options, ES5); // TODO: TypeScript crashes on the declaration file.
+        return new BenchMark("React", "tests/react/react.js", null/*"tests/react/react.d.ts"*/, options, ES5);
     });
 
     public static final BenchMark knockout = evaluate(() -> {
@@ -114,7 +114,7 @@ public class BenchMark {
     public static final BenchMark backbone = evaluate(() -> {
         Options options = new Options();
         options.createInstances = false;
-        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", null/*"tests/backbone/backbone.d.ts"*/, options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery)); // TODO: TypeScript crashes on the declaration
+        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", "tests/backbone/backbone.d.ts", options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery)); // TODO: Some TypeScript crash. But it works in ts-type-reader.
     });
 
     // TODO: Lots of classes with duplicate names.
@@ -146,7 +146,7 @@ public class BenchMark {
 
     public static final BenchMark handlebars = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("handlebars", "tests/handlebars/handlebars-v4.0.5.js", null/*"tests/handlebars/handlebars.d.ts"*/, options, ES5); // TODO: Another TypeScript crash
+        return new BenchMark("handlebars", "tests/handlebars/handlebars-v4.0.5.js", "tests/handlebars/handlebars.d.ts", options, ES5);
     });
 
     public static final BenchMark MPL = evaluate(() -> {
@@ -160,7 +160,7 @@ public class BenchMark {
 
         Dependency testDependency = new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts");
 
-        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5/*, Arrays.asList(testDependency, Dependency.jQuery)*/);
+        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5, Arrays.asList(testDependency, Dependency.jQuery));
     });
 
     // SSA tests
