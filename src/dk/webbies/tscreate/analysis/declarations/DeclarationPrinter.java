@@ -18,8 +18,10 @@ import java.util.function.Predicate;
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
+// FIXME: Make it so that classes can be printed as classes, and to get the constructor type, typeof "blab" is then used.
 public class DeclarationPrinter {
     private final Map<String, DeclarationType> declarations;
+    private Map<ClassType, String> classNames;
     private DeclarationParser.NativeClassesMap nativeClasses;
 
     private final List<InterfaceType> interfacesToPrint = new ArrayList<>();
@@ -58,7 +60,7 @@ public class DeclarationPrinter {
         }
     }
 
-    private void writeln(String str, StringBuilder builder) {
+    private void writeln(StringBuilder builder, String str) {
         ident(builder);
         write(builder, str);
         write(builder, "\n");
@@ -74,7 +76,7 @@ public class DeclarationPrinter {
         builder.append(str);
     }
 
-    private static Set<String> keyWords = new HashSet<>(Arrays.asList("abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function goto if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield".split(" ")));
+    private static Set<String> keyWords = new HashSet<>(Arrays.asList("set get abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function goto if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield".split(" ")));
     private void writeName(StringBuilder builder, String str) {
         if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str)) {
             write(builder, str);
@@ -118,7 +120,7 @@ public class DeclarationPrinter {
             while (true) {
                 try {
                     finishing = true;
-                    type.accept(new TypeVisitor(), new VisitorArg(builder = new StringBuilder(), emptySet()));
+                    type.accept(new TypeVisitor(), new VisitorArg(builder = new StringBuilder(), emptySet(), null));
                     break;
                 } catch (GotCyclic e) {
                     ident = 0;
@@ -133,28 +135,35 @@ public class DeclarationPrinter {
         if (ident != 0) {
             throw new RuntimeException("Can only print top-level declarations with this method");
         }
-        StringBuilder outerBuilder = new StringBuilder();
-        this.declarations.forEach((name, type) -> {
-            StringBuilder builder;
-            while (true) {
-                try {
-                    printDeclaration(new VisitorArg(builder = new StringBuilder(), emptySet()), name, type);
-                    break;
-                } catch (GotCyclic e) {
-                    ident = 0;
-                    addPrintAsInterface(e.type);
+        StringBuilder builder;
+        while (true) {
+            builder = new StringBuilder();
+            this.classNames = new ClassNameFinder(declarations, printsAsInterface).getClassNames();
+            try {
+                for (Map.Entry<String, DeclarationType> entry : this.declarations.entrySet()) {
+                    String name = entry.getKey();
+                    DeclarationType type = entry.getValue();
+                    printDeclaration(new VisitorArg(builder, emptySet(), name), name, type);
                 }
+            } catch (GotCyclic e) {
+                ident = 0;
+                addPrintAsInterface(e.type);
+                printedClasses.clear();
+                continue;
             }
-            outerBuilder.append(builder);
-        });
-        finish(outerBuilder);
-        return outerBuilder.toString();
+            break;
+        }
+
+
+        finish(builder);
+        return builder.toString();
     }
 
     private void printDeclaration(VisitorArg arg, String name, DeclarationType type) {
         printDeclaration(arg, name, type, "declare");
     }
 
+    @SuppressWarnings("Duplicates")
     private void printDeclaration(VisitorArg arg, String name, DeclarationType type, String prefix) {
         type = type.resolve();
         if ((type instanceof FunctionType || type instanceof UnnamedObjectType) && printsAsInterface.containsKey(type)) {
@@ -163,9 +172,9 @@ public class DeclarationPrinter {
             if (arg.contains(type)) {
                 throw new GotCyclic(type);
             }
-            arg = arg.cons(type);
         }
         if (type instanceof FunctionType) {
+            arg = arg.cons(type, true);
             FunctionType functionType = (FunctionType) type;
             ident(arg.builder);
             write(arg.builder, prefix + " function " + name + "(");
@@ -176,6 +185,7 @@ public class DeclarationPrinter {
 
             write(arg.builder, ";\n");
         } else if (type instanceof UnnamedObjectType) {
+            arg = arg.cons(type, false);
             UnnamedObjectType module = (UnnamedObjectType) type;
             ident(arg.builder);
             write(arg.builder, prefix + " module ");
@@ -184,12 +194,61 @@ public class DeclarationPrinter {
             ident++;
 
             for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet()) {
-                printDeclaration(arg, entry.getKey(), entry.getValue(), "export");
+                printDeclaration(arg.addPath(entry.getKey()), entry.getKey(), entry.getValue(), "export");
             }
 
             ident--;
-            writeln("}", arg.builder);
+            writeln(arg.builder, "}");
+        } else if (type instanceof ClassType && arg.path.equals(classNames.get(type))) {
+            ClassType clazz = (ClassType) type;
+            if (printedClasses.contains(clazz)) {
+                throw new RuntimeException();
+            }
+            printedClasses.add(clazz);
+
+            ident(arg.builder);
+            write(arg.builder, prefix + " class " + name);
+            if (clazz.getSuperClass() != null) {
+                write(arg.builder, " extends ");
+                if (clazz.getSuperClass() instanceof ClassType) {
+                    ClassType superClass = (ClassType) clazz.getSuperClass();
+                    if (classNames.containsKey(superClass)) {
+                        write(arg.builder, classNames.get(superClass));
+                    } else {
+                        write(arg.builder, superClass.getName());
+                        classesToPrint.add(superClass);
+                    }
+                } else if (clazz.getSuperClass() instanceof NamedObjectType) {
+                    write(arg.builder, ((NamedObjectType) clazz.getSuperClass()).getName());
+                } else {
+                    throw new RuntimeException();
+                }
+            }
+            write(arg.builder, " {\n");
+            ident++;
+            ident(arg.builder);
+            write(arg.builder, "constructor (");
+            printArguments(arg, clazz.getConstructorType().getArguments());
+            write(arg.builder, ");\n");
+
+            Predicate<Map.Entry<String, DeclarationType>> notInSuperClassStatic = notStaticInSuperClassTest(clazz.getSuperClass());
+            for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet()) {
+                if (notInSuperClassStatic.test(entry)) {
+                    printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
+                }
+            }
+
+            Predicate<Map.Entry<String, DeclarationType>> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
+            for (Map.Entry<String, DeclarationType> entry : clazz.getPrototypeFields().entrySet()) {
+                if (notInSuperClass.test(entry)) {
+                    this.printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor());
+                }
+            }
+
+            ident--;
+            writeln(arg.builder, "}");
         } else {
+            arg = arg.cons(type, false);
             ident(arg.builder);
             write(arg.builder, prefix + " var ");
             write(arg.builder, name);
@@ -214,14 +273,27 @@ public class DeclarationPrinter {
     private static final class VisitorArg {
         final StringBuilder builder;
         final fj.data.Set<DeclarationType> seen;
+        final String path;
 
-        VisitorArg(StringBuilder builder, fj.data.Set<DeclarationType> seen) {
+        VisitorArg(StringBuilder builder, fj.data.Set<DeclarationType> seen, String path) {
             this.builder = builder;
             this.seen = seen;
+            this.path = path;
         }
 
-        VisitorArg cons(DeclarationType type) {
-            return new VisitorArg(builder, seen.insert(type));
+        VisitorArg cons(DeclarationType type, boolean nullPath) {
+            String path = this.path;
+            if (nullPath) {
+                path = null;
+            }
+            return new VisitorArg(builder, seen.insert(type), path);
+        }
+
+        VisitorArg addPath(String propName) {
+            if (this.path == null) {
+                return this;
+            }
+            return new VisitorArg(builder, seen, this.path.isEmpty() ? propName : this.path + "." + propName);
         }
 
         boolean contains(DeclarationType type) {
@@ -235,6 +307,22 @@ public class DeclarationPrinter {
         private GotCyclic(DeclarationType type) {
             this.type = type;
         }
+    }
+
+    private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor) {
+        printObjectField(arg, name, type, visitor, null);
+    }
+
+    private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor, String prefix) {
+        ident(arg.builder);
+        if (prefix != null) {
+            write(arg.builder, prefix);
+            write(arg.builder, " ");
+        }
+        writeName(arg.builder, name);
+        write(arg.builder, ": ");
+        type.accept(visitor, arg);
+        write(arg.builder, ";\n");
     }
 
 
@@ -253,7 +341,7 @@ public class DeclarationPrinter {
                 if (arg.contains(functionType)) {
                     throw new GotCyclic(functionType);
                 }
-                arg = arg.cons(functionType);
+                arg = arg.cons(functionType, true);
 
                 write(arg.builder, "(");
                 List<FunctionType.Argument> args = functionType.getArguments();
@@ -289,10 +377,10 @@ public class DeclarationPrinter {
                 if (arg.contains(objectType)) {
                     throw new GotCyclic(objectType);
                 }
-                arg = arg.cons(objectType);
+                arg = arg.cons(objectType, false);
 
                 StringBuilder builder = new StringBuilder();
-                VisitorArg subArg = new VisitorArg(builder, arg.seen);
+                VisitorArg subArg = new VisitorArg(builder, arg.seen, arg.path);
                 write(builder, "{");
                 ArrayList<String> keys = new ArrayList<>(objectType.getDeclarations().keySet());
                 for (int i = 0; i < keys.size(); i++) {
@@ -300,7 +388,7 @@ public class DeclarationPrinter {
                     writeName(builder, name);
                     write(builder, ": ");
                     DeclarationType type = objectType.getDeclarations().get(name);
-                    type.accept(this, subArg);
+                    type.accept(this, subArg.addPath(name));
                     if (i != keys.size() - 1) {
                         write(builder, ", ");
                     }
@@ -320,7 +408,7 @@ public class DeclarationPrinter {
         public Void visit(InterfaceType interfaceType, VisitorArg arg) {
             if (finishing) {
                 finishing = false;
-                writeln("interface " + interfaceType.name + " {", arg.builder);
+                writeln(arg.builder, "interface " + interfaceType.name + " {");
                 ident++;
                 if (interfaceType.getFunction() != null) {
                     ident(arg.builder);
@@ -343,10 +431,10 @@ public class DeclarationPrinter {
 
                 }
                 if (interfaceType.getObject() != null) {
-                    interfaceType.getObject().getDeclarations().forEach((name, type) -> printObjectField(arg, name, type));
+                    interfaceType.getObject().getDeclarations().forEach((name, type) -> printObjectField(arg, name, type, this));
                 }
                 ident--;
-                writeln("}", arg.builder);
+                writeln(arg.builder, "}");
                 write(arg.builder, "\n");
                 finishing = true;
             } else {
@@ -355,14 +443,6 @@ public class DeclarationPrinter {
             }
 
             return null;
-        }
-
-        private void printObjectField(VisitorArg arg, String name, DeclarationType type) {
-            ident(arg.builder);
-            writeName(arg.builder, name);
-            write(arg.builder, ": ");
-            type.accept(this, arg);
-            write(arg.builder, ";\n");
         }
 
         @Override
@@ -405,17 +485,17 @@ public class DeclarationPrinter {
             if (finishing) {
                 finishing = false;
                 // First an constructor interface.
-                writeln("interface " + classType.getName() + "Constructor {", arg.builder);
+                writeln(arg.builder, "interface " + classType.getName() + "Constructor {");
                 ident++;
                 ident(arg.builder);
                 write(arg.builder, "new (");
                 printArguments(arg, classType.getConstructorType().getArguments());
                 write(arg.builder, ") : " + classType.getName() + "\n");
 
-                classType.getStaticFields().forEach((name, type) -> printObjectField(arg, name, type));
+                classType.getStaticFields().forEach((name, type) -> printObjectField(arg, name, type, this));
 
                 ident--;
-                writeln("}", arg.builder);
+                writeln(arg.builder, "}");
                 write(arg.builder, "\n");
 
                 ident(arg.builder);
@@ -436,40 +516,24 @@ public class DeclarationPrinter {
 
 
                 ident++;
-                classType.getPrototypeFields().entrySet().stream().filter(this.filterSuperclassFields(classType.getSuperClass())).forEach((entry) -> {
-                    this.printObjectField(arg, entry.getKey(), entry.getValue());
+                classType.getPrototypeFields().entrySet().stream().filter(notInSuperClassTest(classType.getSuperClass())).forEach((entry) -> {
+                    printObjectField(arg, entry.getKey(), entry.getValue(), this);
                 });
 
                 ident--;
-                writeln("}", arg.builder);
+                writeln(arg.builder, "}");
                 write(arg.builder, "\n");
                 finishing = true;
             } else {
-                write(arg.builder, classType.getName() + "Constructor");
-                classesToPrint.add(classType);
+                if (classNames.containsKey(classType)) {
+                    write(arg.builder, "typeof " + classNames.get(classType));
+                } else {
+                    write(arg.builder, classType.getName() + "Constructor");
+                    classesToPrint.add(classType);
+                }
             }
 
             return null;
-        }
-
-        private Predicate<Map.Entry<String, DeclarationType>> filterSuperclassFields(DeclarationType superClass) {
-            Set<String> fieldsInSuper = new HashSet<>();
-            while (superClass != null) {
-                if (superClass instanceof ClassType) {
-                    fieldsInSuper.addAll(((ClassType)superClass).getPrototypeFields().keySet());
-                    superClass = ((ClassType)superClass).getSuperClass();
-                } else if (superClass instanceof NamedObjectType) {
-                    Snap.Obj proto = nativeClasses.prototypeFromName(((NamedObjectType) superClass).getName());
-                    while (proto != null && proto != proto.prototype) {
-                        fieldsInSuper.addAll(proto.getPropertyMap().keySet());
-                        proto = proto.prototype;
-                    }
-                    break;
-                } else {
-                    throw new RuntimeException();
-                }
-            }
-            return (entry) -> !fieldsInSuper.contains(entry.getKey());
         }
 
         @Override
@@ -478,6 +542,41 @@ public class DeclarationPrinter {
             classesToPrint.add(instanceType.getClazz());
             return null;
         }
+    }
+
+    private Predicate<Map.Entry<String, DeclarationType>> notInSuperClassTest(DeclarationType superClass) {
+        Set<String> fieldsInSuper = new HashSet<>();
+        while (superClass != null) {
+            if (superClass instanceof ClassType) {
+                fieldsInSuper.addAll(((ClassType)superClass).getPrototypeFields().keySet());
+                superClass = ((ClassType)superClass).getSuperClass();
+            } else if (superClass instanceof NamedObjectType) {
+                Snap.Obj proto = nativeClasses.prototypeFromName(((NamedObjectType) superClass).getName()); // FIXME: GO after the type instead of the object.
+                while (proto != null && proto != proto.prototype) {
+                    fieldsInSuper.addAll(proto.getPropertyMap().keySet());
+                    proto = proto.prototype;
+                }
+                break;
+            } else {
+                throw new RuntimeException();
+            }
+        }
+        return (entry) -> !fieldsInSuper.contains(entry.getKey());
+    }
+
+    private Predicate<Map.Entry<String, DeclarationType>> notStaticInSuperClassTest(DeclarationType superClass) {
+        Set<String> fieldsInSuper = new HashSet<>();
+        while (superClass != null) {
+            if (superClass instanceof ClassType) {
+                fieldsInSuper.addAll(((ClassType)superClass).getStaticFields().keySet());
+                superClass = ((ClassType)superClass).getSuperClass();
+            } else if (superClass instanceof NamedObjectType) {
+                throw new RuntimeException();
+            } else {
+                throw new RuntimeException();
+            }
+        }
+        return (entry) -> !fieldsInSuper.contains(entry.getKey());
     }
 
     // Functional set things
@@ -490,7 +589,7 @@ public class DeclarationPrinter {
         }
     });
 
-    private static fj.data.Set<DeclarationType> emptySet() {
+    static fj.data.Set<DeclarationType> emptySet() {
         return fj.data.Set.empty(ordering);
     }
 }
