@@ -4,6 +4,7 @@ package dk.webbies.tscreate.analysis.unionFind;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.jsnap.Snap;
 
+import java.util.Collections;
 import java.util.HashSet;
 
 /**
@@ -85,6 +86,10 @@ public class PrimitiveNode extends UnionNode {
 
         public UnionNode nonVoid() {
             return new PrimitiveNode(PrimitiveDeclarationType.NonVoid(), solver);
+        }
+
+        public UnionNode function() {
+            return solver.union(getPrototype("Function"), FunctionNode.create(Collections.EMPTY_LIST, solver));
         }
     }
 }

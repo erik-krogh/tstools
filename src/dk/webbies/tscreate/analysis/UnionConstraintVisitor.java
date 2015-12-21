@@ -258,6 +258,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     @Override
     public UnionNode visit(FunctionExpression function) {
         if (closureMatch(function, this.closure)) {
+            // It is the function we are currently analyzing, special treatment.
             function.getBody().accept(this);
             List<UnionNode> arguments = function.getArguments().stream().map(arg -> solver.union(arg.accept(this), primitiveFactory.nonVoid())).collect(Collectors.toList());
 
@@ -276,6 +277,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             }
             return null;
         } else {
+            // It is some nested function
             FunctionNode result = FunctionNode.create(function, solver);
             if (function.getName() != null) {
                 solver.union(function.getName().accept(this), result);
@@ -285,6 +287,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             for (int i = 0; i < function.getArguments().size(); i++) {
                 solver.union(function.getArguments().get(i).accept(this), result.arguments.get(i), primitiveFactory.nonVoid());
             }
+            solver.union(result, primitiveFactory.function());
             return result;
         }
     }
