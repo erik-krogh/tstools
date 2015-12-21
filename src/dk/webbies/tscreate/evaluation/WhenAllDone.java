@@ -27,9 +27,6 @@ public class WhenAllDone {
     private Set<Integer> returnedCallbacks = new HashSet<>();
     private static int counter = 0;
     public Runnable newSubCallback(int i) {
-        if (counter == 3135) {
-            System.out.println();
-        }
         returnedCallbacks.add(counter++);
         notDoneCounter++;
         return () -> {

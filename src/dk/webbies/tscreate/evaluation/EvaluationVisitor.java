@@ -52,9 +52,6 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         seen.add(realType);
 
         queue.add(() -> {
-            if (counter == 1152) {
-                System.out.println();
-            }
             if (realType instanceof UnionType && myType instanceof UnionType) {
                 ArrayList<Pair<Type, Type>> typePairs = new ArrayList<>();
 
