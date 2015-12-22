@@ -6,14 +6,20 @@ import dk.webbies.tscreate.util.Helper;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 
 /**
  * Created by hamid on 10/9/15.
  */
 public class SSA {
-    public static FunctionExpression toSSA(FunctionExpression functionExpression) {
-        return functionExpression;
+    private static FunctionExpression toSSA() {
+        for (CFGDef cfgdef : CFGDef.defNodes) {
+            cfgdef.changeDefinitionName();
+
+        }
+        return null;
     }
+
     public static FunctionExpression toSSA_(FunctionExpression functionExpression) throws IOException {
         CFGBuilder cfgbuilder = new CFGBuilder();
         cfgbuilder.processMain(functionExpression);
@@ -38,9 +44,39 @@ public class SSA {
             Helper.printDebug(n.toString(), n.getSuccessors().size() + " ");
         }
         CFGNode rootNode = cfgbuilder.functionExpression2CFGNode.get(functionExpression);
-        PrintWriter w = new PrintWriter(new File("out/graph.dot"));
-        CFGBuilder.toDot(w, rootNode);
-        w.close();
+
+        //CFGBuilder.toDot(w, rootNode);
+        int fi=0;
+        for (Map.Entry<FunctionExpression,CFGNode> func_node : cfgbuilder.functionExpression2CFGNode.entrySet()) {
+            FunctionExpression f = func_node.getKey();
+            PrintWriter w = new PrintWriter(new File("out/graph_"+ (fi++) +".dot"));
+            CFGBuilder.toDot(w, func_node.getValue());
+            w.close();
+        }
+
+
+        toSSA();
+
+        Helper.printDebug("DEFS_modified", "");
+        for (CFGDef d : CFGDef.defNodes) {
+            Helper.printDebug("ID", d.getDefinition().getName());
+            Helper.printDebug("AST", Helper.getText(d.getAstNode()));
+            AstNode ast = d.getAstNode();
+            Helper.printDebug("ast calss", ast.getClass().toString());
+            if (ast instanceof BinaryExpression) {
+                Expression lhs = ((BinaryExpression) ast).getLhs();
+                Helper.printDebug("new_name: ", ((Identifier) lhs).getName());
+            } else if (ast instanceof VariableNode) {
+                Expression lhs = ((VariableNode) ast).getlValue();
+                Helper.printDebug("new_name: ", ((Identifier) lhs).getName());
+
+            }
+            Helper.printDebug("~", "~");
+
+        }
+
+
+
         return null;
     }
 
