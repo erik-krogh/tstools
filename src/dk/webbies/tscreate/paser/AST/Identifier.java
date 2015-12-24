@@ -7,7 +7,7 @@ import dk.webbies.tscreate.paser.ExpressionVisitor;
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
 public class Identifier extends Expression {
-    private final String name;
+    private  String name;
     public Identifier declaration = null;
     public boolean isGlobal = false;
 
@@ -31,6 +31,9 @@ public class Identifier extends Expression {
     @Override
     public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {
         return visitor.visit(this, aux);
+    }
+    public void setName(String newName) {
+        this.name = newName;
     }
 
 }

@@ -180,10 +180,27 @@ public class BenchMark {
         return new BenchMark("mpl", "tests/ssa/if_nested.js", null, options, ES5);
     });
 
+    public static final BenchMark funcs = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/ssa/funcs.js", null, options, ES5);
+    });
+
+    public static final BenchMark fa = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/ssa/fa.js", null, options, ES5);
+    });
+
+
     public static final BenchMark If = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("mpl", "tests/ssa/if.js", null, options, ES5);
     });
+
+    public static final BenchMark if01 = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/ssa/if01.js", null, options, ES5);
+    });
+
 
     public static final class Dependency {
         public final String scriptPath;

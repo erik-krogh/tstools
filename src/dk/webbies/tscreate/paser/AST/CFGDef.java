@@ -41,4 +41,7 @@ public class CFGDef extends CFGNode {
     public void setSubscript(int subscript) {
         this.subscript = subscript;
     }
+    public void changeDefinitionName() {
+        definition.setName(definition.getName() +"_" +subscript);
+    }
 }

@@ -57,6 +57,9 @@ public class CFGBuilder {
             printAstNode(binOp);
             switch (binOp.getOperator()) {
                 case EQUAL:
+                case PLUS_EQUAL:
+                case MINUS_EQUAL:
+                case MULT_EQUAL:
                 {
                     // preparing for creating defnode: def(lhs)
                     Expression var = binOp.getLhs();
@@ -112,7 +115,7 @@ public class CFGBuilder {
 
                 }
                 default:
-                    return au;
+                    throw new RuntimeException("unhandled bin operator " + binOp);
             }
 
             //binOp.getLhs().accept(exprVisitor, null);
@@ -140,18 +143,20 @@ public class CFGBuilder {
         public CFGEnv visit(CommaExpression commaExpression, CFGEnv aux) {
             printAstNode(commaExpression);
             for (Expression expr : commaExpression.getExpressions()) {
-                expr.accept(exprVisitor,null);
+                aux = expr.accept(exprVisitor, aux);
             }
             return aux;
         }
 
         @Override
-        public CFGEnv visit(ConditionalExpression conditionalExpression, CFGEnv aux) {
-            printAstNode(conditionalExpression);
+        public CFGEnv visit(ConditionalExpression conditionalExpression, CFGEnv aux) { // TODO:
+            /*printAstNode(conditionalExpression);
             conditionalExpression.getCondition().accept(exprVisitor,null);
             conditionalExpression.getLeft().accept(exprVisitor,null);
             conditionalExpression.getRight().accept(exprVisitor,null);
-            return null;
+            return null;*/
+            return aux;
+            //return makeConditional(conditionalExpression.getCondition(), conditionalExpression.getLeft(), conditionalExpression.getRight(), aux);
         }
 
         @Override
@@ -188,28 +193,26 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(MemberExpression memberExpression, CFGEnv aux) {
             printAstNode(memberExpression);
-            Helper.printDebug("property", memberExpression.getProperty());
-            memberExpression.getExpression().accept(exprVisitor,null);
-            return null;
+            return memberExpression.getExpression().accept(exprVisitor,aux);
         }
 
         @Override
-        public CFGEnv visit(DynamicAccessExpression memberLookupExpression, CFGEnv aux) {
+        public CFGEnv visit(DynamicAccessExpression memberLookupExpression, CFGEnv aux) {// TODO: a use of operand
             printAstNode(memberLookupExpression);
-            memberLookupExpression.getOperand().accept(exprVisitor,null);
-            memberLookupExpression.getLookupKey().accept(exprVisitor,null);
-            return null;
+            return memberLookupExpression.getOperand().accept(exprVisitor, aux);
+            //memberLookupExpression.getLookupKey().accept(exprVisitor,null);
+            //return aux;
         }
 
         @Override
         public CFGEnv visit(MethodCallExpression methodCallExpression, CFGEnv aux) {
             printAstNode(methodCallExpression);
-            methodCallExpression.getMemberExpression().accept(exprVisitor,null);
+            methodCallExpression.getMemberExpression().accept(exprVisitor,aux); //TODO: it cab a use
             for (Expression arg : methodCallExpression.getArgs()) {
-                arg.accept(exprVisitor, null);
+                aux = arg.accept(exprVisitor, aux);
             }
 
-            return null;
+            return aux;
         }
 
         @Override
