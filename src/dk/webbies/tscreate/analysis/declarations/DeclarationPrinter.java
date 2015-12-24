@@ -538,8 +538,12 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(ClassInstanceType instanceType, VisitorArg arg) {
-            write(arg.builder, instanceType.getClazz().getName());
-            classesToPrint.add(instanceType.getClazz());
+            if (classNames.containsKey(instanceType.getClazz())) {
+                write(arg.builder, classNames.get(instanceType.getClazz()));
+            } else {
+                write(arg.builder, instanceType.getClazz().getName());
+                classesToPrint.add(instanceType.getClazz());
+            }
             return null;
         }
     }
