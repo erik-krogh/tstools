@@ -78,6 +78,12 @@ public class BenchMark {
         return new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
     });
 
+    // TODO: Why so many void?
+    public static final BenchMark sugar = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("Sugar", "tests/sugar/sugar.js", null, options, ES5);
+    });
+
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("leaflet.js", "tests/leaflet/leaflet.js", "tests/leaflet/leaflet.d.ts", options, ES5); // TODO: Something goes wrong when parsing the d.ts file, classes like Events are on the global object according to the parser.
