@@ -130,17 +130,23 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(CallExpression callExpression, CFGEnv aux) {
+        public CFGEnv visit(CallExpression callExpression, CFGEnv aux) {//TODO: test
             printAstNode(callExpression);
-            callExpression.getFunction().accept(exprVisitor,null);
+            Expression expr = callExpression.getFunction();
+            if (expr instanceof Identifier) {
+                assert (useNodeUnderconstruction == null);
+                makeUseNode(expr);
+            }
+            expr.accept(exprVisitor, aux);
             for (Expression arg : callExpression.getArgs()) {
-                arg.accept(exprVisitor,null);
+                makeUseNodeIfIdentifier(arg);
+                aux = arg.accept(exprVisitor,aux);
             }
             return aux;
         }
 
         @Override
-        public CFGEnv visit(CommaExpression commaExpression, CFGEnv aux) {
+        public CFGEnv visit(CommaExpression commaExpression, CFGEnv aux) {// TODO: what is comma expr?
             printAstNode(commaExpression);
             for (Expression expr : commaExpression.getExpressions()) {
                 aux = expr.accept(exprVisitor, aux);
@@ -149,14 +155,14 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(ConditionalExpression conditionalExpression, CFGEnv aux) { // TODO:
+        public CFGEnv visit(ConditionalExpression conditionalExpression, CFGEnv aux) { // TODO: test this case
             /*printAstNode(conditionalExpression);
             conditionalExpression.getCondition().accept(exprVisitor,null);
             conditionalExpression.getLeft().accept(exprVisitor,null);
             conditionalExpression.getRight().accept(exprVisitor,null);
             return null;*/
-            return aux;
-            //return makeConditional(conditionalExpression.getCondition(), conditionalExpression.getLeft(), conditionalExpression.getRight(), aux);
+
+            return makeConditional(conditionalExpression.getCondition(), conditionalExpression.getLeft(), conditionalExpression.getRight(), aux);
         }
 
         @Override
@@ -193,7 +199,13 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(MemberExpression memberExpression, CFGEnv aux) {
             printAstNode(memberExpression);
-            return memberExpression.getExpression().accept(exprVisitor,aux);
+            Expression expr = memberExpression.getExpression();
+            if (expr instanceof Identifier) {
+                assert (useNodeUnderconstruction == null);
+                makeUseNode(expr);
+            }
+
+            return expr.accept(exprVisitor, aux);
         }
 
         @Override
@@ -207,22 +219,30 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(MethodCallExpression methodCallExpression, CFGEnv aux) {
             printAstNode(methodCallExpression);
-            methodCallExpression.getMemberExpression().accept(exprVisitor,aux); //TODO: it cab a use
-            for (Expression arg : methodCallExpression.getArgs()) {
-                aux = arg.accept(exprVisitor, aux);
+            Expression expr = methodCallExpression.getMemberExpression();
+            if (expr instanceof Identifier) {
+                assert (useNodeUnderconstruction == null);
+                makeUseNode(expr);
             }
 
+
+            for (Expression arg : methodCallExpression.getArgs()) {
+                makeUseNodeIfIdentifier(arg);
+                aux = arg.accept(exprVisitor, aux);
+            }
+            aux = expr.accept(exprVisitor, aux);
             return aux;
         }
 
         @Override
         public CFGEnv visit(NewExpression newExpression, CFGEnv aux) {
             printAstNode(newExpression);
-            newExpression.getOperand().accept(exprVisitor, null);
+            makeUseNodeIfIdentifier(newExpression.getOperand());
+            aux = newExpression.getOperand().accept(exprVisitor, aux);
             for (Expression arg : newExpression.getArgs()) {
-                arg.accept(exprVisitor, null);
+                aux  = arg.accept(exprVisitor, aux);
             }
-            return null;
+            return aux;
         }
 
         @Override
@@ -256,7 +276,7 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(UnaryExpression unaryExpression, CFGEnv aux) {
+        public CFGEnv visit(UnaryExpression unaryExpression, CFGEnv aux) {//TODO: test
             printAstNode(unaryExpression);
             // creates a CFGUseNode if necessary (otherwise use the one under construction)
             boolean isTopUseNode = (useNodeUnderconstruction == null);
@@ -279,7 +299,7 @@ public class CFGBuilder {
 
 
             unaryExpression.getExpression().accept(exprVisitor,null);
-            return null;
+            return aux;
         }
 
         @Override
@@ -290,20 +310,19 @@ public class CFGBuilder {
 
         @Override
         public CFGEnv visit(PhiNodeExpression phiNode, CFGEnv aux) {
-            printAstNode(phiNode);
-            return null;
+            throw new RuntimeException();
         }
 
         @Override
-        public CFGEnv visit(GetterExpression getter, CFGEnv aux) {
+        public CFGEnv visit(GetterExpression getter, CFGEnv aux) {//TODO:
             printAstNode(getter);
-            return null;
+            return aux;
         }
 
         @Override
-        public CFGEnv visit(SetterExpression setter, CFGEnv aux) {
+        public CFGEnv visit(SetterExpression setter, CFGEnv aux) { //TODO
             printAstNode(setter);
-            return null;
+            return aux;
         }
     }
 
@@ -321,15 +340,15 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(BreakStatement breakStatement, CFGEnv aux) {
+        public CFGEnv visit(BreakStatement breakStatement, CFGEnv aux) {//TODO:
             printAstNode(breakStatement);
-            return null;
+            return aux;
         }
 
         @Override
-        public CFGEnv visit(ContinueStatement continueStatement, CFGEnv aux) {
+        public CFGEnv visit(ContinueStatement continueStatement, CFGEnv aux) {//TODO:
             printAstNode(continueStatement);
-            return null;
+            return aux;
         }
 
         @Override
@@ -342,9 +361,9 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(ForStatement forStatement, CFGEnv aux) {
+        public CFGEnv visit(ForStatement forStatement, CFGEnv aux) {//TODO: handle properly
             printAstNode(forStatement);
-            return null;
+            return makeConditional(forStatement.getCondition(), forStatement.getBody(),new BlockStatement(forStatement.location, Collections.emptyList()), aux);
         }
 
         @Override
@@ -357,26 +376,27 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(Return aReturn, CFGEnv aux) {
             printAstNode(aReturn);
-            aReturn.getExpression().accept(exprVisitor, null);
-            return null;
+            makeUseNodeIfIdentifier(aReturn.getExpression());
+            return aReturn.getExpression().accept(exprVisitor, aux);
+
         }
 
         @Override
-        public CFGEnv visit(SwitchStatement switchStatement, CFGEnv aux) {
+        public CFGEnv visit(SwitchStatement switchStatement, CFGEnv aux) {//TODO:
             printAstNode(switchStatement);
             switchStatement.getExpression().accept(exprVisitor, null);
             for (Map.Entry<Expression, Statement> entry : switchStatement.getCases()) {
                 entry.getKey().accept(exprVisitor, null);
                 entry.getValue().accept(stmtVisitor,null);
             }
-            return null;
+            return aux;
         }
 
         @Override
         public CFGEnv visit(ThrowStatement throwStatement, CFGEnv aux) {
             printAstNode(throwStatement);
             throwStatement.getExpression().accept(exprVisitor,null);
-            return null;
+            return aux;
         }
 
         @Override
@@ -406,11 +426,11 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(WhileStatement whileStatement, CFGEnv aux) {
+        public CFGEnv visit(WhileStatement whileStatement, CFGEnv aux) {// TODO: handle properly (soundly)
             printAstNode(whileStatement);
-            whileStatement.getCondition().accept(exprVisitor,null);
-            whileStatement.getBody().accept(stmtVisitor,null);
-            return null;
+            //whileStatement.getCondition().accept(exprVisitor,null);
+            //whileStatement.getBody().accept(stmtVisitor,null);
+            return makeConditional(whileStatement.getCondition(), whileStatement.getBody(), new BlockStatement(whileStatement.location, Collections.emptyList()), aux);
         }
 
         @Override
@@ -424,20 +444,20 @@ public class CFGBuilder {
         public CFGEnv visit(TryStatement tryStatement, CFGEnv aux) {
             printAstNode(tryStatement);
 
-            return null;
+            return tryStatement.getTryBlock().accept(stmtVisitor, aux);
         }
 
         @Override
         public CFGEnv visit(CatchStatement catchStatement, CFGEnv aux) {
             printAstNode(catchStatement);
-            return null;
+            return aux;
         }
 
         @Override
         public CFGEnv visit(LabeledStatement labeledStatement, CFGEnv aux) {
             printAstNode(labeledStatement);
             labeledStatement.getStatement().accept(stmtVisitor, aux);
-            return null;
+            return aux;
         }
     }
     public CFGBuilder() {
@@ -470,11 +490,47 @@ public class CFGBuilder {
         return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, mergedSSAEnv);
 
     }
+
+    private CFGEnv makeConditional(Expression condition, Expression left, Expression right, CFGEnv aux) {
+        if (aux.ssaEnv() == null) throw new RuntimeException();
+        if (condition instanceof Identifier) {
+            assert (useNodeUnderconstruction == null);
+            makeUseNode(condition);
+        }
+        CFGEnv branchEnv = condition.accept(exprVisitor, aux);
+        //Helper.printDebug("inja branch env: ", branchEnv.ssaEnv().id2last.toString());
+        CFGJoin joinNode = new CFGJoin(67);
+
+        CFGEnv inEnvLeft = branchEnv.copy();
+        CFGEnv leftEnv = left.accept(exprVisitor, inEnvLeft); // so each one can make changes to its CFGEnv.ssaEnv
+
+        CFGEnv inEnvRight = inEnvLeft.copy();
+        CFGEnv rightEnv = right.accept(exprVisitor, inEnvRight);
+
+        Helper.printDebug("branch env: ", branchEnv.ssaEnv().id2last.toString());
+        Helper.printDebug("left env: ", leftEnv.ssaEnv().id2last.toString());
+        Helper.printDebug("right env: ", rightEnv.ssaEnv().id2last.toString());
+
+        SSAEnv mergedSSAEnv = SSAEnv.MergeSSAEnvs(branchEnv.ssaEnv(), leftEnv.ssaEnv(), rightEnv.ssaEnv());
+        Helper.printDebug("merged: ", mergedSSAEnv.id2last.toString());
+        joinNode.ssaEnv = mergedSSAEnv.copy();
+
+        return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, mergedSSAEnv);
+
+    }
+
     public void processMain(FunctionExpression mainFunction) {
         exprVisitor.visit(mainFunction, null);
     }
-    //public static CFGEnv DUMMY_ENV = CFGEnv.createInCfgEnv();
-    public static void toDot(PrintWriter w, CFGNode root) {
+    private final void makeUseNodeIfIdentifier(Expression expr) {
+        if (expr instanceof Identifier) {
+            assert (useNodeUnderconstruction == null);
+            makeUseNode(expr);
+        }
+    }
+    private static String toDot(String clusterName, CFGNode root) {
+        StringBuilder ret = new StringBuilder();
+
         List<CFGNode> nodes = new LinkedList<>();
         HashSet<CFGNode> visited = new HashSet<>();
         Queue<CFGNode> q = new LinkedList<>();
@@ -495,16 +551,16 @@ public class CFGBuilder {
         // TODO id(node)=node.hashCode() id [label="{ ... }"]->
         if (false) {
             for (CFGNode n : nodes) {
-                w.print(n.getClass() + "::");
-                w.println(n.hashCode() + " : " + (n.getAstNode() == null ? "E" : n.getAstNode().toString()));
+                ret.append(n.getClass() + "::");   //w.print(n.getClass() + "::");
+                ret.append(n.hashCode() + " : " + (n.getAstNode() == null ? "E" : n.getAstNode().toString()));  //w.println(n.hashCode() + " : " + (n.getAstNode() == null ? "E" : n.getAstNode().toString()));
             }
-            w.println(root.getAstNode()==null?"E":root.getAstNode().toString());
+            ret.append(root.getAstNode()==null?"E":root.getAstNode().toString()); //w.println(root.getAstNode()==null?"E":root.getAstNode().toString());
         }
 
 
-        w.println("digraph {");
-        w.println("node[shape=record]");
-        w.println("rankdir=TD");
+        ret.append("subgraph " +clusterName +" {");//w.println("digraph {");
+        ret.append("node[shape=record]");//w.println("node[shape=record]");
+        ret.append("rankdir=TD");//w.println("rankdir=TD");
         for (CFGNode n : nodes) {
             String s;
 
@@ -512,11 +568,24 @@ public class CFGBuilder {
             String src = "\"" + s + "\"";
             for (CFGNode succ : n.getSuccessors()) {
                 //w.println(n.hashCode() + " -> " + succ.hashCode());
-                w.println(src + " -> \"" + Util.escString(succ.toString()) +"\"");
+                ret.append(src + " -> \"" + Util.escString(succ.toString()) +"\"");//w.println(src + " -> \"" + Util.escString(succ.toString()) +"\"");
             }
 
 
         }
+        ret.append("}");//w.println("}");
+        return ret.toString();
+    }
+
+    public void toDot(PrintWriter w) {
+        w.println("digraph {\n" +
+                "compound=true");
+        int nFunc = 0;
+        for (Map.Entry<FunctionExpression,CFGNode> func_node : functionExpression2CFGNode.entrySet()) {
+           String cluster = toDot("clutster_" + (nFunc++), func_node.getValue());
+            w.println(cluster);
+        }
         w.println("}");
     }
+
 }

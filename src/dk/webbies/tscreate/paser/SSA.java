@@ -45,14 +45,9 @@ public class SSA {
         }
         CFGNode rootNode = cfgbuilder.functionExpression2CFGNode.get(functionExpression);
 
-        //CFGBuilder.toDot(w, rootNode);
-        int fi=0;
-        for (Map.Entry<FunctionExpression,CFGNode> func_node : cfgbuilder.functionExpression2CFGNode.entrySet()) {
-            FunctionExpression f = func_node.getKey();
-            PrintWriter w = new PrintWriter(new File("out/graph_"+ (fi++) +".dot"));
-            CFGBuilder.toDot(w, func_node.getValue());
-            w.close();
-        }
+        PrintWriter w = new PrintWriter(new File("out/graph.dot"));
+        cfgbuilder.toDot(w);
+        w.close();
 
 
         toSSA();
