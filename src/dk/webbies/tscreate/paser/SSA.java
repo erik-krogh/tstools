@@ -60,10 +60,10 @@ public class SSA {
             Helper.printDebug("ast calss", ast.getClass().toString());
             if (ast instanceof BinaryExpression) {
                 Expression lhs = ((BinaryExpression) ast).getLhs();
-                Helper.printDebug("new_name: ", ((Identifier) lhs).getName());
+                if (lhs instanceof Identifier) Helper.printDebug("new_name: ", ((Identifier) lhs).getName());
             } else if (ast instanceof VariableNode) {
                 Expression lhs = ((VariableNode) ast).getlValue();
-                Helper.printDebug("new_name: ", ((Identifier) lhs).getName());
+                if (lhs instanceof Identifier) Helper.printDebug("new_name: ", ((Identifier) lhs).getName());
 
             }
             Helper.printDebug("~", "~");

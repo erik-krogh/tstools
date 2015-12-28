@@ -63,8 +63,13 @@ public class CFGBuilder {
                 {
                     // preparing for creating defnode: def(lhs)
                     Expression var = binOp.getLhs();
-                    if (!(var instanceof Identifier)) throw new RuntimeException();
-                    Identifier id = (Identifier) var;
+                    Identifier id;
+                    if (var instanceof ThisExpression) return au;
+                    if (var instanceof Identifier) {
+                        id = (Identifier) var;
+                    } else if (var instanceof MemberExpression || var instanceof DynamicAccessExpression) {
+                        return binOp.getRhs().accept(exprVisitor, au);
+                    }else throw new RuntimeException(var.getClass().toString());
                     // process rhs first
                     CFGEnv aux = binOp.getRhs().accept(exprVisitor, au);
                     if (aux == null) {
@@ -81,10 +86,15 @@ public class CFGBuilder {
                 case MINUS:
                 case MULT:
                 case EQUAL_EQUAL:
+                case NOT_EQUAL_EQUAL:
                 case LESS_THAN_EQUAL:
                 case LESS_THAN:
                 case GREATER_THAN:
                 case GREATER_THAN_EQUAL:
+                case INSTANCEOF:
+                case AND:
+                case OR:
+                case EQUAL_EQUAL_EQUAL:
                 {
 
                     // creates a CFGUseNode if necessary (otherwise use the one under construction)
@@ -98,7 +108,7 @@ public class CFGBuilder {
                     if (lhs instanceof Identifier)
                         currUseNode.addUse((Identifier) lhs);
                     else
-                        lhs.accept(exprVisitor, au); // we used to pass null as aux here! but hey, we want to pass ssaEnv (along with it aux)
+                        lhs.accept(exprVisitor, au); // we used to pass null as aux here! but hey, we want to pass ssaEnv (along with its aux)
                     if (rhs instanceof Identifier)
                         currUseNode.addUse((Identifier) rhs);
                     else
@@ -112,10 +122,10 @@ public class CFGBuilder {
                         assert (useNodeUnderconstruction == null);
                         return outEnv;
                     }
-
+                    return null;
                 }
                 default:
-                    throw new RuntimeException("unhandled bin operator " + binOp);
+                    throw new RuntimeException("unhandled bin operator " + binOp + ", " + binOp.getOperator());
             }
 
             //binOp.getLhs().accept(exprVisitor, null);
@@ -134,13 +144,14 @@ public class CFGBuilder {
             printAstNode(callExpression);
             Expression expr = callExpression.getFunction();
             if (expr instanceof Identifier) {
-                assert (useNodeUnderconstruction == null);
-                makeUseNode(expr);
+                //assert (useNodeUnderconstruction == null);
+                //makeUseNode(expr);
+                aux = createUseEnv((Identifier) expr, aux);
             }
             expr.accept(exprVisitor, aux);
             for (Expression arg : callExpression.getArgs()) {
-                makeUseNodeIfIdentifier(arg);
-                aux = arg.accept(exprVisitor,aux);
+                if (arg instanceof Identifier) aux = createUseEnv((Identifier) arg, aux);
+                else aux = arg.accept(exprVisitor,aux);
             }
             return aux;
         }
@@ -176,15 +187,15 @@ public class CFGBuilder {
             CFGNode entry = inCfgEnv.getAppendNode();
             functionExpression2CFGNode.put(functionExpression, entry);
             CFGEnv realExit =  functionExpression.getBody().accept(stmtVisitor, inCfgEnv);
-            // we can process artificialJoin (mainly backup vaues) here if necessary (***)
+            // we can process artificialJoin (mainly backup values) here if necessary (***)
             artificialJoin.ssaEnv = realExit.getCopyOfSSAEnv();
             return CFGEnv.createOutCfgEnv(new CFGNode[] {entry, realExit.getAppendNode()}, artificialJoin, realExit.ssaEnv()); // TODO:***
         }
 
-        @Override
+         @Override
         public CFGEnv visit(Identifier identifier, CFGEnv aux) {
             printAstNode(identifier);
-            if (useNodeUnderconstruction != null) {
+            /*if (useNodeUnderconstruction != null) {
                 // we are making a use node (e.g. for cond in if (cond) ...)
                 useNodeUnderconstruction.addUse(identifier);
                 CFGUse useNode = getCurrentAndResetUseNode();
@@ -192,7 +203,7 @@ public class CFGBuilder {
                 CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode, aux.ssaEnv());
                 assert (useNodeUnderconstruction == null);
                 return outEnv;
-            }
+            }*/
             return aux;
         }
 
@@ -201,33 +212,46 @@ public class CFGBuilder {
             printAstNode(memberExpression);
             Expression expr = memberExpression.getExpression();
             if (expr instanceof Identifier) {
-                assert (useNodeUnderconstruction == null);
-                makeUseNode(expr);
+                //assert (useNodeUnderconstruction == null);
+                //makeUseNode(expr);
+                return createUseEnv((Identifier) expr, aux);
             }
 
             return expr.accept(exprVisitor, aux);
         }
 
         @Override
-        public CFGEnv visit(DynamicAccessExpression memberLookupExpression, CFGEnv aux) {// TODO: a use of operand
-            printAstNode(memberLookupExpression);
-            return memberLookupExpression.getOperand().accept(exprVisitor, aux);
-            //memberLookupExpression.getLookupKey().accept(exprVisitor,null);
-            //return aux;
+        public CFGEnv visit(DynamicAccessExpression memberExpression, CFGEnv aux) {// TODO: a use of operand
+            Helper.printDebug("dynamic_access: " , memberExpression.toString());
+            printAstNode(memberExpression);
+            Expression expr = memberExpression.getOperand();
+            if (expr instanceof Identifier) {
+                //assert (useNodeUnderconstruction == null);
+                //makeUseNode(expr);
+                return createUseEnv((Identifier) expr, aux);
+            }
+
+            return expr.accept(exprVisitor, aux);
+
         }
 
         @Override
         public CFGEnv visit(MethodCallExpression methodCallExpression, CFGEnv aux) {
+
             printAstNode(methodCallExpression);
             Expression expr = methodCallExpression.getMemberExpression();
             if (expr instanceof Identifier) {
-                assert (useNodeUnderconstruction == null);
-                makeUseNode(expr);
+                //assert (useNodeUnderconstruction == null);
+                //makeUseNode(expr);
+                aux = createUseEnv((Identifier) expr, aux);
             }
 
 
             for (Expression arg : methodCallExpression.getArgs()) {
-                makeUseNodeIfIdentifier(arg);
+                if (arg instanceof Identifier) {
+                    aux = createUseEnv((Identifier) arg, aux);
+                    continue;
+                }
                 aux = arg.accept(exprVisitor, aux);
             }
             aux = expr.accept(exprVisitor, aux);
@@ -237,10 +261,11 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(NewExpression newExpression, CFGEnv aux) {
             printAstNode(newExpression);
-            makeUseNodeIfIdentifier(newExpression.getOperand());
+
             aux = newExpression.getOperand().accept(exprVisitor, aux);
             for (Expression arg : newExpression.getArgs()) {
-                aux  = arg.accept(exprVisitor, aux);
+                if (arg instanceof Identifier) aux = createUseEnv((Identifier) arg, aux);
+                else aux  = arg.accept(exprVisitor, aux);
             }
             return aux;
         }
@@ -376,13 +401,14 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(Return aReturn, CFGEnv aux) {
             printAstNode(aReturn);
-            makeUseNodeIfIdentifier(aReturn.getExpression());
+            if (aReturn.getExpression() instanceof Identifier) return createUseEnv((Identifier) aReturn.getExpression(), aux);
             return aReturn.getExpression().accept(exprVisitor, aux);
 
         }
 
         @Override
         public CFGEnv visit(SwitchStatement switchStatement, CFGEnv aux) {//TODO:
+            if (true) return aux;
             printAstNode(switchStatement);
             switchStatement.getExpression().accept(exprVisitor, null);
             for (Map.Entry<Expression, Statement> entry : switchStatement.getCases()) {
@@ -393,7 +419,8 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(ThrowStatement throwStatement, CFGEnv aux) {
+        public CFGEnv visit(ThrowStatement throwStatement, CFGEnv aux) {//TODO
+            if (true) return aux;
             printAstNode(throwStatement);
             throwStatement.getExpression().accept(exprVisitor,null);
             return aux;
@@ -434,10 +461,10 @@ public class CFGBuilder {
         }
 
         @Override
-        public CFGEnv visit(ForInStatement forinStatement, CFGEnv aux) {
+        public CFGEnv visit(ForInStatement forinStatement, CFGEnv aux) {//TODO
             printAstNode(forinStatement);
-
-            return null;
+            return aux;
+            //return makeConditional(forinStatement.getCondition(), forStatement.getBody(),new BlockStatement(forStatement.location, Collections.emptyList()), aux);
         }
 
         @Override
@@ -490,14 +517,32 @@ public class CFGBuilder {
         return CFGEnv.createOutCfgEnv(new CFGNode[]{leftEnv.getAppendNode(), rightEnv.getAppendNode()}, joinNode, mergedSSAEnv);
 
     }
+    private final CFGEnv createUseEnv(Identifier identifier, CFGEnv aux) {
+        // we are making a use node (e.g. for cond in if (cond) ...)
+        boolean isTopUseNode = (useNodeUnderconstruction == null);
+        CFGUse currUseNode = makeUseNode(identifier);
+
+        useNodeUnderconstruction.addUse(identifier);
+
+        if (isTopUseNode) {
+            CFGUse useNode = getCurrentAndResetUseNode();
+            assert (useNode == currUseNode);
+            if (aux == null) throw new RuntimeException();
+            CFGEnv outEnv = CFGEnv.createOutCfgEnv(aux.getAppendNode(), useNode, aux.ssaEnv());
+            assert (useNodeUnderconstruction == null);
+            return outEnv;
+        }
+        return null;
+    }
 
     private CFGEnv makeConditional(Expression condition, Expression left, Expression right, CFGEnv aux) {
         if (aux.ssaEnv() == null) throw new RuntimeException();
+        CFGEnv branchEnv;
         if (condition instanceof Identifier) {
-            assert (useNodeUnderconstruction == null);
-            makeUseNode(condition);
+            branchEnv = createUseEnv((Identifier) condition, aux);
+        } else {
+            branchEnv = condition.accept(exprVisitor, aux);
         }
-        CFGEnv branchEnv = condition.accept(exprVisitor, aux);
         //Helper.printDebug("inja branch env: ", branchEnv.ssaEnv().id2last.toString());
         CFGJoin joinNode = new CFGJoin(67);
 
@@ -522,12 +567,12 @@ public class CFGBuilder {
     public void processMain(FunctionExpression mainFunction) {
         exprVisitor.visit(mainFunction, null);
     }
-    private final void makeUseNodeIfIdentifier(Expression expr) {
+    /*private final void makeUseNodeIfIdentifier(Expression expr) {
         if (expr instanceof Identifier) {
             assert (useNodeUnderconstruction == null);
             makeUseNode(expr);
         }
-    }
+    }*/
     private static String toDot(String clusterName, CFGNode root) {
         StringBuilder ret = new StringBuilder();
 

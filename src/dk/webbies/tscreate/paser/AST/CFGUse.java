@@ -39,7 +39,7 @@ public class CFGUse extends CFGNode {
 
     public void addUse(Identifier use) {
 
-        assert (!uses.keySet().contains(use));
+        //assert (!uses.keySet().contains(use));
         uses.put(use, null);
     }
     public void setSubscript(Identifier use, int subscript) {

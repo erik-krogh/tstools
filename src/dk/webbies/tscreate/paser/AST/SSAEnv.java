@@ -23,7 +23,13 @@ public class SSAEnv {
 
         //Integer r = id2last.get(id.getName()).first;
         Pair<Integer, CFGDef> pair = id2last.get(id.getName());
-        if (pair == null) throw new RuntimeException(id.getName());
+        if (pair == null) {
+            CFGDef cfgdef = new CFGDef(id, id);
+            int subscript = this.setNewSubscriptFor(cfgdef.getDefinition(), cfgdef);
+            cfgdef.setSubscript(subscript);
+            pair = id2last.get(id.getName());
+        }
+
         Integer r = pair.first;
         if (r==null) throw new RuntimeException("No previous definition for " + id.getName());
         return r;
