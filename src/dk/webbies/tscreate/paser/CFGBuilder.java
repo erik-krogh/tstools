@@ -142,7 +142,17 @@ public class CFGBuilder {
         @Override
         public CFGEnv visit(CallExpression callExpression, CFGEnv aux) {//TODO: test
             printAstNode(callExpression);
+
             Expression expr = callExpression.getFunction();
+            if (true) {
+                Identifier id;
+                if (expr instanceof Identifier) {
+                    id = (Identifier) expr;
+                } else {
+                    id = new Identifier(callExpression.location, "UNiD");
+                }
+                return createUseEnv(id, aux);
+            }
             if (expr instanceof Identifier) {
                 //assert (useNodeUnderconstruction == null);
                 //makeUseNode(expr);
@@ -158,6 +168,7 @@ public class CFGBuilder {
 
         @Override
         public CFGEnv visit(CommaExpression commaExpression, CFGEnv aux) {// TODO: what is comma expr?
+            if (true) return aux;
             printAstNode(commaExpression);
             for (Expression expr : commaExpression.getExpressions()) {
                 aux = expr.accept(exprVisitor, aux);
@@ -240,6 +251,16 @@ public class CFGBuilder {
 
             printAstNode(methodCallExpression);
             Expression expr = methodCallExpression.getMemberExpression();
+            if (true) {
+                Identifier id;
+                if (expr instanceof Identifier) {
+                    id = (Identifier) expr;
+                } else {
+                    id = new Identifier(methodCallExpression.location, "UNiD");
+                }
+                return createUseEnv(id, aux);
+            }
+
             if (expr instanceof Identifier) {
                 //assert (useNodeUnderconstruction == null);
                 //makeUseNode(expr);
@@ -491,12 +512,25 @@ public class CFGBuilder {
         
     }
     private CFGEnv makeConditional(Expression condition, Statement left, Statement right, CFGEnv aux) {
+        //TODO: fix me
+        /*
+         currently the following case is handled incorrectly (as shown):
+         x0 = 0;
+         if (cond) {
+            x1=x0+1;
+         } else {
+            x2 = x1+2; // correct: x2=x0+2
+         }
+        * */
         if (aux.ssaEnv() == null) throw new RuntimeException();
+        CFGEnv branchEnv;
         if (condition instanceof Identifier) {
-            assert (useNodeUnderconstruction == null);
-            makeUseNode(condition);
+            //assert (useNodeUnderconstruction == null);
+            //makeUseNode(condition);
+            branchEnv = createUseEnv((Identifier) condition, aux);
+        } else {
+            branchEnv = condition.accept(exprVisitor, aux);
         }
-        CFGEnv branchEnv = condition.accept(exprVisitor, aux);
         //Helper.printDebug("inja branch env: ", branchEnv.ssaEnv().id2last.toString());
         CFGJoin joinNode = new CFGJoin(67);
 
@@ -603,17 +637,23 @@ public class CFGBuilder {
         }
 
 
-        ret.append("subgraph " +clusterName +" {");//w.println("digraph {");
-        ret.append("node[shape=record]");//w.println("node[shape=record]");
-        ret.append("rankdir=TD");//w.println("rankdir=TD");
+        ret.append("subgraph " +clusterName +" {\n");//w.println("digraph {");
+        ret.append("node[shape=record]\n");//w.println("node[shape=record]");
+        ret.append("rankdir=TD\n");//w.println("rankdir=TD");
         for (CFGNode n : nodes) {
             String s;
 
             s = Util.escString(n.toString());
             String src = "\"" + s + "\"";
             for (CFGNode succ : n.getSuccessors()) {
-                //w.println(n.hashCode() + " -> " + succ.hashCode());
-                ret.append(src + " -> \"" + Util.escString(succ.toString()) +"\"");//w.println(src + " -> \"" + Util.escString(succ.toString()) +"\"");
+                //ret.append(n.hashCode() + " -> " + succ.hashCode());//w.println(n.hashCode() + " -> " + succ.hashCode());
+
+                //String a = n.hashCode()  + src.toString();
+                //String b = succ.hashCode() +  Util.escString(succ.toString());
+                //ret.append(a + " -> " + b);
+
+                ret.append(src + " -> \"" + Util.escString(succ.toString()) +"\"");
+                ret.append("\n");
             }
 
 
@@ -624,7 +664,7 @@ public class CFGBuilder {
 
     public void toDot(PrintWriter w) {
         w.println("digraph {\n" +
-                "compound=true");
+                "compound=true\n");
         int nFunc = 0;
         for (Map.Entry<FunctionExpression,CFGNode> func_node : functionExpression2CFGNode.entrySet()) {
            String cluster = toDot("clutster_" + (nFunc++), func_node.getValue());
