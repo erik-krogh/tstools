@@ -70,6 +70,16 @@ public class SSA {
 
         }
 
+        System.out.println( "joinNodes !!!");
+
+        for (CFGJoin joinNode : CFGJoin.joinNodes) {
+            System.out.println("J: " + joinNode.hashCode());
+            for (CFGDef n : joinNode.getDefNodes()) {
+                System.out.println(n.toString() + " --");
+                System.out.println(CFGBuilder.flat(n).toString() + "\n");
+            }
+            System.out.println(" ** \n");
+        }
 
 
         return null;

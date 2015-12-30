@@ -2,19 +2,17 @@ package dk.webbies.tscreate.paser.AST;
 
 import dk.webbies.tscreate.util.Pair;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Created by hamid on 11/18/15.
  */
 public class CFGJoin extends CFGNode {
-    // This is used _only_ during SSA computations (See the paper Single Pass generation of SSA for structured languages).
-    //private Map<String, Integer> backupValues = new HashMap<>(); // id -> subscript
-    //private SSAEnv backupValues;
-    /*private Map<Identifier, CFGDef> defNodes; // every defNode has a PhiExpr (def = phi(...))
+    public static List<CFGJoin> joinNodes = new LinkedList<>();
 
-    public SSAEnv getBackupValues() { return backupValues; }
-    public CFGJoin(SSAEnv backupValues) {
-        this.backupValues = backupValues;
-    }*/
     public String toString_() { return "JOIN: " + this.hashCode();}
     public String toString() {
         StringBuilder ret = new StringBuilder();
@@ -25,8 +23,15 @@ public class CFGJoin extends CFGNode {
         }
         return ret.toString();
     }
-    public CFGJoin(int a) {}
-    // addDef / addPhi
-
+    public CFGJoin(int a) {
+        joinNodes.add(this);
+    }
+    public Collection<CFGDef> getDefNodes() {
+        List<CFGDef> ret = new LinkedList<>();
+        for (Pair<Integer, CFGDef> pair : ssaEnv.id2last.values()) {
+            ret.add(pair.second);
+        }
+        return ret;
+    }
     public SSAEnv ssaEnv = null;
 }

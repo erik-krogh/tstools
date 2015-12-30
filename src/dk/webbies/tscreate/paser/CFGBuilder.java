@@ -645,14 +645,13 @@ public class CFGBuilder {
 
             s = Util.escString(n.toString());
             String src = "\"" + s + "\"";
+            ret.append(n.hashCode() + " [ label=" + src + "] \n");
             for (CFGNode succ : n.getSuccessors()) {
-                //ret.append(n.hashCode() + " -> " + succ.hashCode());//w.println(n.hashCode() + " -> " + succ.hashCode());
 
-                //String a = n.hashCode()  + src.toString();
-                //String b = succ.hashCode() +  Util.escString(succ.toString());
-                //ret.append(a + " -> " + b);
+                ret.append(n.hashCode() + " -> " + succ.hashCode());
 
-                ret.append(src + " -> \"" + Util.escString(succ.toString()) +"\"");
+                //ret.append(src + " -> \"" + Util.escString(succ.toString()) +"\"");
+
                 ret.append("\n");
             }
 
@@ -671,6 +670,30 @@ public class CFGBuilder {
             w.println(cluster);
         }
         w.println("}");
+    }
+
+    private static Map<CFGDef, Set<CFGDef>> cfgdefFlatCache = new HashMap<>();
+    public static Set<CFGDef> flat(CFGDef defnode) {
+        Set<CFGDef> res = cfgdefFlatCache.get(defnode);
+        if (res != null)  return res;
+        res = new HashSet<>();
+        cfgdefFlatCache.put(defnode, res);
+        Set<CFGDef> visited = new HashSet<>();
+        flatRec(defnode, res, visited);
+        return res;
+    }
+    private static void flatRec(CFGDef cfgdef, Set<CFGDef> res, Set<CFGDef> visited) {
+        if (!cfgdef.isPhiDef()) {
+            res.add(cfgdef);
+            return;
+        }
+        PhiNodeExpression phiNode = (PhiNodeExpression) cfgdef.getAstNode();
+        for (CFGDef n : phiNode.getDefNodes()) {
+            if (!visited.contains(n)) {
+                visited.add(n);
+                flatRec(n, res, visited);
+            }
+        }
     }
 
 }

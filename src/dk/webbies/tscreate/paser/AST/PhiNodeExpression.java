@@ -3,10 +3,7 @@ package dk.webbies.tscreate.paser.AST;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by hamid on 10/20/15.
@@ -60,5 +57,10 @@ public class PhiNodeExpression extends Expression {
             ret += ";" + d.getShortName();
         }
         return ret;
+    }
+
+    public Collection<CFGDef> getDefNodes() {
+        assert (defNodes.size() > 0);
+        return Collections.unmodifiableCollection(defNodes);
     }
 }
