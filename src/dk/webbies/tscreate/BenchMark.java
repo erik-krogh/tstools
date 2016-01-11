@@ -123,6 +123,11 @@ public class BenchMark {
         return new BenchMark("Backbone.js", "tests/backbone/backbone.js", "tests/backbone/backbone.d.ts", options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery)); // TODO: Some TypeScript crash. But it works in ts-type-reader.
     });
 
+    public static final BenchMark materialize = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", null, options, ES5, Arrays.asList(Dependency.jQuery));
+    });
+
     // TODO: Lots of classes with duplicate names.
     public static final BenchMark mooTools = evaluate(() -> {
         Options options = new Options();
