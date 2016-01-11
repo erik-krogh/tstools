@@ -27,11 +27,11 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-        runAnalysis(BenchMark.D3);
-//
-//        for (BenchMark benchmark : BenchMark.allBenchmarks) {
-//            runAnalysis(benchmark);
-//        }
+//        runAnalysis(BenchMark.D3);
+
+        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+            runAnalysis(benchmark);
+        }
 
         long end = System.currentTimeMillis();
 
@@ -59,13 +59,19 @@ public class Main {
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
         System.out.println(printedDeclaration);
 
-        Util.writeFile(resultDeclarationFilePath, printedDeclaration);
-
+        Evaluation evaluation = null;
         if (benchMark.declarationPath != null) {
-            // FIXME: Doesn't handle dependencies yet.
-            Evaluation evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses).getEvaluation();
+            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses).getEvaluation();
 
-            System.out.println(evaluation.print());
+            System.out.println(evaluation);
+
+//            evaluation.debugPrint();
+        }
+
+        if (evaluation == null) {
+            Util.writeFile(resultDeclarationFilePath, printedDeclaration);
+        } else {
+            Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n/*\n" + evaluation.toString() + "\n*/");
         }
 
     }
