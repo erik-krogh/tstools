@@ -1,42 +1,36 @@
 package dk.webbies.tscreate.evaluation;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Erik Krogh Kristensen on 14-12-2015.
  */
-// FIXME: The last depth is always 100% precision and recall.
 public class Evaluation {
     int maxDepth = -1;
-    Map<Integer, Integer> falseNegatives = new HashMap<>();
-    Map<Integer, Integer> falsePositives = new HashMap<>();
-    Map<Integer, Integer> truePositive = new HashMap<>();
+    Map<Integer, List<String>> falseNegatives = new HashMap<>();
+    Map<Integer, List<String>> falsePositives = new HashMap<>();
+    Map<Integer, List<String>> truePositive = new HashMap<>();
 
-    private void add(int depth, Map<Integer, Integer> map) {
-        add(depth, map, 1);
-    }
-
-    private void add(int depth, Map<Integer, Integer> map, int count) {
+    private void add(int depth, Map<Integer, List<String>> map, String description) {
         maxDepth = Math.max(depth, maxDepth);
         if (map.containsKey(depth)) {
-            map.put(depth, count + map.get(depth));
+            map.get(depth).add(description);
         } else {
-            map.put(depth, count);
+            map.put(depth, new ArrayList<>(Arrays.asList(description)));
         }
     }
 
-    public void addFalseNegative(int depth) {
-        add(depth, falseNegatives);
+    public void addFalseNegative(int depth, String description) {
+        add(depth, falseNegatives, description);
     }
 
-    public void addFalsePositive(int depth) {
-        add(depth, falsePositives);
+    public void addFalsePositive(int depth, String description) {
+        add(depth, falsePositives, description);
     }
 
-    public void addTruePositive(int depth) {
-        add(depth, truePositive);
+    public void addTruePositive(int depth, String description) {
+        add(depth, truePositive, description);
     }
 
     public String print() {
@@ -56,6 +50,11 @@ public class Evaluation {
         return builder.toString();
     }
 
+    @Override
+    public String toString() {
+        return print();
+    }
+
     private int IFound(int depth) {
         return get(depth, this.truePositive) + get(depth, this.falsePositives);
     }
@@ -64,9 +63,9 @@ public class Evaluation {
         return get(depth, this.truePositive) + get(depth, this.falseNegatives);
     }
 
-    private int get(int depth, Map<Integer, Integer> map) {
+    private int get(int depth, Map<Integer, List<String>> map) {
         if (map.containsKey(depth)) {
-            return map.get(depth);
+            return map.get(depth).size();
         } else {
             return 0;
         }
@@ -103,13 +102,32 @@ public class Evaluation {
         addAll(evaluation.truePositive, this.truePositive);
     }
 
-    private void addAll(Map<Integer, Integer> from, Map<Integer, Integer> to) {
-        from.forEach((depth, count) -> {
-            add(depth, to, count);
+    private void addAll(Map<Integer, List<String>> from, Map<Integer, List<String>> to) {
+        from.forEach((depth, list) -> {
+            list.forEach(description -> {
+                add(depth, to, description);
+            });
         });
     }
 
     public int getTruePositives(int depth) {
         return get(depth, this.truePositive);
+    }
+
+    public void debugPrint() {
+        HashMap<Integer, List<String>> falses = new HashMap<>();
+        addAll(this.falseNegatives, falses);
+        addAll(this.falsePositives, falses);
+        ArrayList<Integer> keys = new ArrayList<>(falses.keySet());
+        Collections.sort(keys);
+        for (Integer key : keys) {
+            System.out.println();
+            System.out.println();
+            System.out.println();
+            System.out.println();
+            System.out.println("Depth: " + key);
+            List<String> list = falses.get(key);
+            list.forEach(System.out::println);
+        }
     }
 }
