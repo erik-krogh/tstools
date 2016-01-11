@@ -25,6 +25,7 @@ public class LibraryClass {
 
     public List<Snap.Obj> instances = new ArrayList<>();
     private Snap.Obj constructor;
+    public boolean prototypeMethod = false;
 
     public LibraryClass(String pathSeen, Snap.Obj prototype) {
         this.pathsSeen.add(pathSeen);
@@ -95,6 +96,9 @@ public class LibraryClass {
 
     public void setConstructor(Snap.Obj constructor) {
         this.constructor = constructor;
+        if (constructor.function != null && constructor.function.instance != null) {
+            this.instances.add(constructor.function.instance);
+        }
     }
 
     public Snap.Obj getConstructor() {
@@ -108,6 +112,22 @@ public class LibraryClass {
             }
         }
         return constructor;
+    }
+
+    public boolean hasInstanceLookingLikeAClass() {
+        if (this.instances.isEmpty()) {
+            return false;
+        }
+        if (this.prototypeMethod) {
+            return false;
+        }
+        for (Snap.Obj instance : this.instances) {
+            if (!instance.getPropertyMap().isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

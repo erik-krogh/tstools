@@ -133,9 +133,32 @@ public class ClassHierarchyExtractor {
             return null;
         });
 
+        markPrototypeFunctions(libraryClasses);
+
+        for (LibraryClass libraryClass : libraryClasses.values()) {
+            if (libraryClass.hasInstanceLookingLikeAClass()) {
+                libraryClass.isUsedAsClass = true;
+            }
+        }
+
         fixIsUsedAsClass(libraryClasses.values());
 
         return libraryClasses;
+    }
+
+    private void markPrototypeFunctions(HashMap<Snap.Obj, LibraryClass> classes) {
+        for (LibraryClass libraryClass : classes.values()) {
+            for (Snap.Property property : libraryClass.getPrototype().getPropertyMap().values()) {
+                if (property.name.equals("constructor")) {
+                    continue;
+                }
+                Snap.Value value = property.value;
+                if (value instanceof Snap.Obj && ((Snap.Obj) value).function != null && ((Snap.Obj) value).getProperty("prototype") != null) {
+                    Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) value).getProperty("prototype").value;
+                    classes.get(prototype).prototypeMethod = true;
+                }
+            }
+        }
     }
 
     // Sometimes, something is marked as "not a class", even though its super-class is a class.
