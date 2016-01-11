@@ -94,7 +94,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             Type right = typePair.second;
 
             Evaluation subEvaluation = new Evaluation();
-            EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, new HashSet<>(seen));
+            EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen);
 
             visitor.nextDepth(left, right, () -> {
                 evaluations.add(subEvaluation);
@@ -141,7 +141,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
 
 
-        EvaluationVisitor visitor = new EvaluationVisitor(depth + 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, new HashSet<>(seen));
+        EvaluationVisitor visitor = new EvaluationVisitor(depth + 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen);
         realType.accept(visitor, new Arg(myType, callback));
     }
 
@@ -170,6 +170,9 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
 
         Type type = arg.type;
+        if (type instanceof TypeParameterType) {
+            type = ((TypeParameterType) type).getConstraint();
+        }
         if (type instanceof ReferenceType) {
             type = ((ReferenceType) type).getTarget();
         }
@@ -284,7 +287,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 return inter;
             }).collect(Collectors.toList()));
 
-            EvaluationVisitor visitor = new EvaluationVisitor(depth - 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, new HashSet<>(seen));
+            EvaluationVisitor visitor = new EvaluationVisitor(depth - 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen);
             visitor.nextDepth(realUnion, myUnion, callback);
         }
     }
