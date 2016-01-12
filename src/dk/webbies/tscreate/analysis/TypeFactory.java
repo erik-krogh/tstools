@@ -332,8 +332,7 @@ public class TypeFactory {
                 if (name.equals("constructor") || fieldTypes.containsKey(name)) {
                     continue;
                 }
-                assert !properties.isEmpty();
-                fieldTypes.put(name, getHeapPropType(properties));
+                fieldTypes.put(name, getClassFieldType(properties));
             }
         } else {
             for (Map.Entry<String, Collection<UnionNode>> entry : thisNodePropertyMap.asMap().entrySet()) {
@@ -348,19 +347,15 @@ public class TypeFactory {
         return fieldTypes;
     }
 
-    private DeclarationType getHeapPropType(Collection<Snap.Property> properties) {
-        if (properties.size() == 0) {
-            return PrimitiveDeclarationType.Void();
-        } else if (properties.size() == 1) {
-            return getHeapPropType(properties.iterator().next());
-        } else {
-            CombinationType result = new CombinationType(typeReducer);
-            for (Snap.Property property : properties) {
-                result.addType(getHeapPropType(property));
-            }
-
-            return result;
+    private DeclarationType getClassFieldType(Collection<Snap.Property> properties) {
+        assert !properties.isEmpty();
+        CombinationType result = new CombinationType(typeReducer);
+        for (Snap.Property property : properties) {
+            result.addType(getHeapPropType(property));
         }
+        result.addType(PrimitiveDeclarationType.NonVoid()); // TODO: Maybe use the "thisNodes" as a backup, they might provide something more useful than "any".
+
+        return result;
     }
 
     public DeclarationType getHeapPropType(Snap.Property prop) {
