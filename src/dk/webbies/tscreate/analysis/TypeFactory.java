@@ -319,7 +319,7 @@ public class TypeFactory {
             if (constructor.function.instance != null) {
                 instances.add(constructor.function.instance);
             }
-            instances.removeAll(libraryClasses.keySet()); // Sometimes the prototype of one Klass, is an instance of another class. But we don't want that.
+            instances.removeAll(libraryClasses.keySet()); // Sometimes the prototype of one Class, is an instance of another Class. Those are not "valid" instances, so we filter them out.
 
             for (Snap.Obj instance : instances) {
                 for (Snap.Property property : instance.properties) {
@@ -332,16 +332,8 @@ public class TypeFactory {
                 if (name.equals("constructor") || fieldTypes.containsKey(name)) {
                     continue;
                 }
-                DeclarationType fieldType = getHeapPropType(properties);
-                if (fieldType == PrimitiveDeclarationType.Void()) {
-                    fieldType = PrimitiveDeclarationType.NonVoid();
-                }
-                fieldTypes.put(name, fieldType);
-                if (fieldType == PrimitiveDeclarationType.NonVoid()) {
-                    if (thisNodePropertyMap.containsKey(name)) {
-                        fieldTypes.put(name, getType(thisNodePropertyMap.get(name)));
-                    }
-                }
+                assert !properties.isEmpty();
+                fieldTypes.put(name, getHeapPropType(properties));
             }
         } else {
             for (Map.Entry<String, Collection<UnionNode>> entry : thisNodePropertyMap.asMap().entrySet()) {
