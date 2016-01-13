@@ -11,7 +11,6 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 import static dk.webbies.tscreate.jsnap.Snap.Obj;
@@ -169,7 +168,8 @@ public class DeclarationParser {
 
         private void visitInterface(Type t, Obj obj) {
             if (typeNames.containsKey(t)) {
-                this.namedObjects.put(obj, typeNames.get(t));
+                String name = typeNames.get(t);
+                this.namedObjects.put(obj, name);
             }
 
             SyntheticInterface type = new SyntheticInterface(getWithBaseTypes(t, new HashSet<>()));
@@ -325,6 +325,25 @@ public class DeclarationParser {
                 return nameFromType(type);
             }
             return null;
+        }
+
+        public Set<String> getBaseNames(String name) {
+            assert name != null;
+            Type type = typeFromName(name);
+            HashSet<String> result = new HashSet<>();
+            if (type instanceof GenericType) {
+                type = ((GenericType) type).toInterface();
+            }
+            if (!(type instanceof InterfaceType)) {
+                throw new RuntimeException();
+            }
+            for (Type baseType : ((InterfaceType) type).getBaseTypes()) {
+                String baseName = nameFromType(baseType);
+                result.add(baseName);
+                result.addAll(getBaseNames(baseName));
+            }
+            result.remove(null);
+            return result;
         }
 
         public Obj prototypeFromName(String name) {

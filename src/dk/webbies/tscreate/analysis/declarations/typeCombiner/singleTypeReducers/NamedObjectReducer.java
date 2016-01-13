@@ -32,6 +32,13 @@ public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> {
         if (one.getName().equals(two.getName())) {
             return returnSuper(one, two);
         } else {
+            // This is because of Interfaces, and that having an instance of a more specific interface, is not a problem.
+            if (nativeClasses.getBaseNames(one.getName()).contains(two.getName())) {
+                return one;
+            } else if (nativeClasses.getBaseNames(two.getName()).contains(one.getName())) {
+                return two;
+            }
+
             if (isSuperClass(one, two)) {
                 return returnSuper(one, two);
             } else if (isSuperClass(two, one)) {

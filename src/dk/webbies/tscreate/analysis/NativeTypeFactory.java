@@ -166,7 +166,7 @@ public class NativeTypeFactory {
             }
 
             t.getBaseTypes().forEach(type -> {
-//                result.add(new IncludeNode(solver, type.accept(this))); // FIXME: Comment this line in, and make NamedObjectReducer work better, so that document.querySelector returns something sensible.
+                result.add(new IncludeNode(solver, type.accept(this)));
             });
 
             return result;
