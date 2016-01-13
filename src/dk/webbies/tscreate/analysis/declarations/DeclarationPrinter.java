@@ -67,8 +67,8 @@ public class DeclarationPrinter {
     }
 
     private void ident(StringBuilder builder) {
-        for (int i = 0; i < ident; i++) {
-            write(builder, "\t");
+        for (int i = 0; i < ident * 4; i++) {
+            write(builder, " ");
         }
     }
 
