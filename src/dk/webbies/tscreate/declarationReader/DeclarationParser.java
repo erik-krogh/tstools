@@ -2,6 +2,8 @@ package dk.webbies.tscreate.declarationReader;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -151,22 +153,8 @@ public class DeclarationParser {
             if (typeNames.containsKey(t)) {
                 this.namedObjects.put(obj, typeNames.get(t));
             }
-            if (obj.function != null) {
-                obj.function.type = "native";
-                obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
-                obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
-                if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
-                    this.prototypes.put((Obj)obj.getProperty("prototype").value, t);
-                }
-            }
-            for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
-                String key = entry.getKey();
-                Type value = entry.getValue();
-                Value propValue = lookUp(obj, key);
-                if (propValue != null && propValue instanceof Obj) {
-                    value.accept(this, (Obj) propValue);
-                }
-            }
+
+            visitInterface(t, obj);
             return null;
         }
 
@@ -178,17 +166,27 @@ public class DeclarationParser {
             }
             seen.add(t);
             if (typeNames.containsKey(t)) {
-                this.namedObjects.put(obj, typeNames.get(t));
+                this.namedObjects.put(obj, typeNames.get(t)); // TODO: Maybe also add the names for the baseTypes of the interface (remember to duplicate to the above method for GenericTypes).
             }
+
+            visitInterface(t, obj);
+
+            return null;
+        }
+
+        private void visitInterface(Type t, Obj obj) {
+            SyntheticInterface type = new SyntheticInterface(getWithBaseTypes(t, new HashSet<>()));
+
+
             if (obj.function != null) {
                 obj.function.type = "native";
-                obj.function.callSignatures.addAll(t.getDeclaredCallSignatures());
-                obj.function.constructorSignatures.addAll(t.getDeclaredConstructSignatures());
+                obj.function.callSignatures.addAll(type.getDeclaredCallSignatures());
+                obj.function.constructorSignatures.addAll(type.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
                     this.prototypes.put((Obj)obj.getProperty("prototype").value, t);
                 }
             }
-            for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
+            for (Map.Entry<String, Type> entry : type.getDeclaredProperties().entries()) {
                 String key = entry.getKey();
                 Type value = entry.getValue();
                 Value propValue = lookUp(obj, key);
@@ -196,8 +194,63 @@ public class DeclarationParser {
                     value.accept(this, (Obj) propValue);
                 }
             }
+        }
 
-            return null;
+        private static final class SyntheticInterface {
+            private Set<InterfaceType> types;
+
+            public SyntheticInterface(Set<InterfaceType> types) {
+                this.types = types;
+            }
+
+            public List<Signature> getDeclaredCallSignatures() {
+                ArrayList<Signature> result = new ArrayList<>();
+                for (InterfaceType type : types) {
+                    result.addAll(type.getDeclaredCallSignatures());
+                }
+
+                return result;
+            }
+
+            public List<Signature> getDeclaredConstructSignatures() {
+                ArrayList<Signature> result = new ArrayList<>();
+                for (InterfaceType type : types) {
+                    result.addAll(type.getDeclaredConstructSignatures());
+                }
+
+                return result;
+            }
+
+            public Multimap<String, Type> getDeclaredProperties() {
+                HashMultimap<String, Type> result = HashMultimap.create();
+                for (InterfaceType type : types) {
+                    for (Map.Entry<String, Type> entry : type.getDeclaredProperties().entrySet()) {
+                        result.put(entry.getKey(), entry.getValue());
+                    }
+                }
+
+                return result;
+            }
+        }
+
+        private Set<InterfaceType> getWithBaseTypes(Type t, Set<InterfaceType> acc) {
+            List<Type> baseTypes;
+            if (t instanceof InterfaceType) {
+                acc.add((InterfaceType) t);
+                baseTypes = ((InterfaceType) t).getBaseTypes();
+            } else if (t instanceof GenericType) {
+                acc.add(((GenericType) t).toInterface());
+                baseTypes = ((GenericType) t).getBaseTypes();
+            } else {
+                throw new RuntimeException("Nope, don't know how to handle this!");
+            }
+            for (Type type : baseTypes) {
+                if (!acc.contains(type)) {
+                    getWithBaseTypes(type, acc);
+                }
+            }
+
+            return acc;
         }
 
         @Override
