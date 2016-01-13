@@ -84,23 +84,6 @@ public class TypeReducer {
         this.unresolvedTypes.add(type);
     }
 
-    public void resolveCombinationTypes() {
-        System.out.println("Resolving combination types");
-        int iteration = 1;
-        while (!this.unresolvedTypes.isEmpty()) {
-            List<CombinationType> copy = new ArrayList<>(this.unresolvedTypes);
-            this.unresolvedTypes.clear();
-
-            List<List<DeclarationType>> levels = DeclarationType.getLevels(copy);
-            System.out.println("Iteration " + iteration++ +  " (" + copy.size() + ") levels(" + levels.size() + ")");
-            for (List<DeclarationType> level : levels) {
-                for (DeclarationType type : level) {
-                    ((CombinationType) type).createCombined();
-                }
-            }
-        }
-    }
-
     private static Map<PrimitiveDeclarationType.Type, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
     static {
         specialPrimitives.put(PrimitiveDeclarationType.Type.VOID, other -> other);
