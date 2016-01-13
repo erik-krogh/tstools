@@ -122,7 +122,7 @@ public class NativeTypeFactory {
             if (interfaceCache.containsKey(t)) {
                 return interfaceCache.get(t);
             }
-            ArrayList<UnionNode> result = new ArrayList<>();
+            List<UnionNode> result = new ArrayList<>();
             interfaceCache.put(t, result);
 
             ObjectNode obj = new ObjectNode(solver);
@@ -149,12 +149,12 @@ public class NativeTypeFactory {
             }
 
             if (!t.getDeclaredCallSignatures().isEmpty()) {
-                List<FunctionNode> functionNodes = t.getDeclaredCallSignatures().stream().map(sig -> fromSignature(sig)).collect(Collectors.toList());
+                List<FunctionNode> functionNodes = t.getDeclaredCallSignatures().stream().map(NativeTypeFactory.this::fromSignature).collect(Collectors.toList());
                 result.add(new IncludeNode(solver, functionNodes));
             }
 
             if (!t.getDeclaredConstructSignatures().isEmpty()) {
-                List<FunctionNode> functionNodes = t.getDeclaredConstructSignatures().stream().map(sig -> fromSignature(sig)).collect(Collectors.toList());
+                List<FunctionNode> functionNodes = t.getDeclaredConstructSignatures().stream().map(NativeTypeFactory.this::fromSignature).collect(Collectors.toList());
                 result.add(new IncludeNode(solver, functionNodes));
             }
 
@@ -164,6 +164,10 @@ public class NativeTypeFactory {
             if (t.getDeclaredNumberIndexType() != null) {
                 result.add(new DynamicAccessNode(solver.union(recurse(t.getDeclaredNumberIndexType())), primitiveFactory.number(), solver));
             }
+
+            t.getBaseTypes().forEach(type -> {
+//                result.add(new IncludeNode(solver, type.accept(this))); // FIXME: Comment this line in, and make NamedObjectReducer work better, so that document.querySelector returns something sensible.
+            });
 
             return result;
         }

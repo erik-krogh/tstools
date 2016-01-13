@@ -160,6 +160,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return real.toInterface().accept(this, arg);
     }
 
+    // FIXME: This thing ignores InterfaceType::getBaseTypes() for now.
     @Override
     public Void visit(InterfaceType real, Arg arg) {
         if (real.getDeclaredCallSignatures().isEmpty() && real.getDeclaredConstructSignatures().isEmpty() && real.getDeclaredProperties().isEmpty() && real.getDeclaredNumberIndexType() == null && real.getDeclaredStringIndexType() == null) {
