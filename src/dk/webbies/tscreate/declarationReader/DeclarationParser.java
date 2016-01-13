@@ -33,7 +33,7 @@ public class DeclarationParser {
         markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
 
         Map<Obj, Type> prototypes = new HashMap<>();
-        HashMap<Obj, String> namedObjects = new HashMap<>();
+        Map<Obj, String> namedObjects = new HashMap<>();
         Obj globalProto = global;
         while (globalProto != null) {
             spec.getGlobal().accept(new MarkNativesVisitor(prototypes, typeNames, namedObjects), globalProto);
@@ -114,9 +114,9 @@ public class DeclarationParser {
         Set<Type> seen = new HashSet<>();
         private Map<Snap.Obj, Type> prototypes;
         private Map<Type, String> typeNames;
-        private HashMap<Obj, String> namedObjects;
+        private Map<Obj, String> namedObjects;
 
-        public MarkNativesVisitor(Map<Obj, Type> prototypes, Map<Type, String> typeNames, HashMap<Obj, String> namedObjects) {
+        public MarkNativesVisitor(Map<Obj, Type> prototypes, Map<Type, String> typeNames, Map<Obj, String> namedObjects) {
             this.prototypes = prototypes;
             this.typeNames = typeNames;
             this.namedObjects = namedObjects;
@@ -150,10 +150,6 @@ public class DeclarationParser {
                 return null;
             }
             seen.add(t);
-            if (typeNames.containsKey(t)) {
-                this.namedObjects.put(obj, typeNames.get(t));
-            }
-
             visitInterface(t, obj);
             return null;
         }
@@ -165,9 +161,6 @@ public class DeclarationParser {
                 return null;
             }
             seen.add(t);
-            if (typeNames.containsKey(t)) {
-                this.namedObjects.put(obj, typeNames.get(t)); // TODO: Maybe also add the names for the baseTypes of the interface (remember to duplicate to the above method for GenericTypes).
-            }
 
             visitInterface(t, obj);
 
@@ -175,8 +168,11 @@ public class DeclarationParser {
         }
 
         private void visitInterface(Type t, Obj obj) {
-            SyntheticInterface type = new SyntheticInterface(getWithBaseTypes(t, new HashSet<>()));
+            if (typeNames.containsKey(t)) {
+                this.namedObjects.put(obj, typeNames.get(t));
+            }
 
+            SyntheticInterface type = new SyntheticInterface(getWithBaseTypes(t, new HashSet<>()));
 
             if (obj.function != null) {
                 obj.function.type = "native";
@@ -300,9 +296,9 @@ public class DeclarationParser {
         private final BiMap<Snap.Obj, String> classNames = HashBiMap.create();
         private BiMap<Obj, String> namedObjects;
         private final Obj global;
-        private HashMap<Obj, LibraryClass> libraryClasses;
+        private Map<Obj, LibraryClass> libraryClasses;
 
-        public NativeClassesMap(Map<Type, String> typeNames, Map<Obj, Type> nativeClasses, HashMap<Obj, String> namedObjects, Obj global, HashMap<Obj, LibraryClass> libraryClasses) {
+        public NativeClassesMap(Map<Type, String> typeNames, Map<Obj, Type> nativeClasses, Map<Obj, String> namedObjects, Obj global, Map<Obj, LibraryClass> libraryClasses) {
             this.libraryClasses = libraryClasses;
             this.namedObjects = HashBiMap.create(namedObjects);
             this.global = global;
