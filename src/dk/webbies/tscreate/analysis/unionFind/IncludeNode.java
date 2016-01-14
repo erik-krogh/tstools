@@ -1,10 +1,9 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
-import dk.webbies.tscreate.util.Util;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -18,7 +17,7 @@ public class IncludeNode extends UnionNode {
 
     public IncludeNode(UnionFindSolver solver, List<? extends UnionNode> nodes) {
         super(solver);
-        this.nodes = nodes.stream().filter(Util::notNull).collect(Collectors.toList());
+        this.nodes = nodes.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override

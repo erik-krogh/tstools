@@ -107,7 +107,7 @@ public class TypeFactory {
         }
 
         // Adding names object types.
-        feature.getTypeNames().stream().filter(Util::notNull).map(NamedObjectType::new).forEach(result::addType);
+        feature.getTypeNames().stream().filter(Objects::nonNull).map(NamedObjectType::new).forEach(result::addType);
 
         // Adding object instance
         getObjectInstanceType(feature).forEach(result::addType);
@@ -119,10 +119,10 @@ public class TypeFactory {
                 .map(obj -> obj.getProperty("prototype").value)
                 .distinct()
                 .map(this.libraryClasses::get)
-                .filter(Util::notNull)
+                .filter(Objects::nonNull)
                 .filter(clazz -> !clazz.isNativeClass())
                 .map(this::getClassType)
-                .filter(Util::notNull)
+                .filter(Objects::nonNull)
                 .forEach(result::addType);
         }
 
@@ -171,11 +171,11 @@ public class TypeFactory {
                 .filter(LibraryClass::isNativeClass)
                 .map(LibraryClass::getPrototype)
                 .map(nativeClasses::nameFromPrototype)
-                .filter(Util::notNull)
+                .filter(Objects::nonNull)
                 .map(name -> name.endsWith("Constructor") ? Util.removeSuffix(name, "Constructor") : name)
                 .map(NamedObjectType::new)
                 .map(TypeFactory::filterPrimitives)
-                .filter(Util::notNull)
+                .filter(Objects::nonNull)
                 .forEach(result::add);
 
         return result;
@@ -405,7 +405,7 @@ public class TypeFactory {
         }
         typeAnalysis.solver.finish();
 
-        List<FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Util::notNull).collect(Collectors.toList());
+        List<FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
         registerFunction(closure, functionFeatures);
         return getPureFunction(closure);
     }

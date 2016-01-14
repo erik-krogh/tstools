@@ -42,10 +42,6 @@ public class Util {
         return inputGobbler.getResult();
     }
 
-    public static <T> boolean notNull(T t) {
-        return t != null;
-    }
-
     public static String removeSuffix(String str, String suffix) {
         assert str.endsWith(suffix);
         return str.substring(0, str.length() - suffix.length());
