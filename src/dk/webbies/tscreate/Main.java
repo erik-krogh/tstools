@@ -27,11 +27,9 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-//        runAnalysis(BenchMark.D3);
+//        runAnalysis(BenchMark.test);
 
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            runAnalysis(benchmark);
-        }
+        benchAll();
 
         long end = System.currentTimeMillis();
 
@@ -39,7 +37,23 @@ public class Main {
         System.exit(0);
     }
 
-    public static void runAnalysis(BenchMark benchMark) throws IOException {
+    private static void benchAll() throws IOException {
+        double combinedScore = 0;
+        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+            if (benchmark.declarationPath == null) {
+                continue;
+            }
+            double score = runAnalysis(benchmark);
+            if (!Double.isNaN(score)) {
+                combinedScore += score;
+            }
+        }
+
+        System.out.println();
+        System.out.println("Combined score: " + combinedScore);
+    }
+
+    public static double runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
 
@@ -57,7 +71,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
 
         Evaluation evaluation = null;
         if (benchMark.declarationPath != null) {
@@ -70,8 +84,12 @@ public class Main {
 
         if (evaluation == null) {
             Util.writeFile(resultDeclarationFilePath, printedDeclaration);
+            return Double.NaN;
         } else {
             Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n/*\n" + evaluation.toString() + "\n*/");
+            double score = evaluation.score();
+            System.out.println("Score: " + score);
+            return score;
         }
 
     }

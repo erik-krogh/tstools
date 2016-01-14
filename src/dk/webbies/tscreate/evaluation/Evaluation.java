@@ -72,17 +72,41 @@ public class Evaluation {
     }
 
     double precision(int depth) {
-        double fn = get(depth, this.falseNegatives);
         double fp = get(depth, this.falsePositives);
         double tp = get(depth, this.truePositive);
-        return tp / (tp + fp);
+        double result = tp / (tp + fp);
+        if (Double.isNaN(result)) {
+            return 0;
+        }
+        return result;
     }
 
     double recall(int depth) {
         double fn = get(depth, this.falseNegatives);
-        double fp = get(depth, this.falsePositives);
         double tp = get(depth, this.truePositive);
-        return tp / (tp + fn);
+        double result = tp / (tp + fn);
+        if (Double.isNaN(result)) {
+            return 0;
+        }
+        return result;
+    }
+
+    double fMeasure(int depth) {
+        double precision = precision(depth);
+        double recall = recall(depth);
+        double fMeasure = 2 / (1 / precision + 1 / recall);
+        if (Double.isNaN(fMeasure)) {
+            throw new RuntimeException();
+        }
+        return fMeasure;
+    }
+
+    public double score() {
+        double result = 0;
+        for (int depth = 1; depth <= maxDepth; depth++) {
+            result += fMeasure(depth) * Math.pow(2, -depth);
+        }
+        return result;
     }
 
     private String toFixed(double number, int decimals) {
