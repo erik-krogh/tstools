@@ -118,6 +118,15 @@ public class TypeAnalysis {
             if (options.classOptions.unionThisFromPrototypeMethods) {
                 solver.union(functionNode.thisNode, libraryClass.getNewThisNode(solver));
             }
+            solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
+        }
+
+        if (closure.getProperty("prototype") != null) {
+            Snap.Obj prototype = (Snap.Obj) closure.getProperty("prototype").value;
+            if (libraryClasses.containsKey(prototype)) {
+                LibraryClass libraryClass = libraryClasses.get(prototype);
+                solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
+            }
         }
 
         Snap.Obj prototype = closure.getProperty("prototype") != null ? (Snap.Obj) closure.getProperty("prototype").value : null;

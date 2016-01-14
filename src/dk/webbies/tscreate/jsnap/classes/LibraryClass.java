@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.jsnap.classes;
 
+import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;
@@ -7,6 +8,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by webbies on 02-09-2015.
@@ -128,6 +130,10 @@ public class LibraryClass {
         }
 
         return false;
+    }
+
+    public List<UnionNode> getThisNodeFromInstances(HeapValueFactory heapFactory) {
+        return this.instances.stream().map(heapFactory::fromValue).collect(Collectors.toList());
     }
 }
 
