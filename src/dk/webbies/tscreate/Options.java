@@ -18,7 +18,7 @@ public class Options {
     public boolean resolveIncludesWithFields = true;
 
     // If false, then every time a value from the heap is used, it will be treated independently. And will not be unified.
-    public boolean unionHeapIdentifiers = false; // makes next to zero difference.
+    public boolean unionHeapIdentifiers = false; // makes next to zero difference, but false seems to be better.
 
     public enum Runtime {
         PHANTOM,
