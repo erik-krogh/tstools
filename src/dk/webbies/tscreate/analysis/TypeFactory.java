@@ -194,10 +194,6 @@ public class TypeFactory {
         }
     }
 
-    private List<DeclarationType> getPrimitiveType(Set<PrimitiveDeclarationType> primitives) {
-        return new ArrayList<>(primitives);
-    }
-
     private Map<LibraryClass, UnresolvedDeclarationType> libraryClassCache = new HashMap<>();
 
     private DeclarationType getClassType(LibraryClass libraryClass) {
