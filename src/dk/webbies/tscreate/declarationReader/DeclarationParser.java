@@ -60,10 +60,6 @@ public class DeclarationParser {
         return new NativeClassesMap(typeNames, prototypes, namedObjects, global, libraryClasses);
     }
 
-    public static SpecReader getTypeSpecification(Environment env, String... declarationFilePaths) {
-        return getTypeSpecification(env, Arrays.asList(declarationFilePaths));
-    }
-
     public static SpecReader getTypeSpecification(Environment env, Collection<String> dependencies, String declarationFilePath) {
         ArrayList<String> specs = new ArrayList<>();
         specs.addAll(dependencies);

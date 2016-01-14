@@ -1,6 +1,8 @@
 package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
+import dk.webbies.tscreate.analysis.TypeAnalysis;
+import dk.webbies.tscreate.analysis.TypeFactory;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
@@ -27,9 +29,9 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
 
-//        runAnalysis(BenchMark.test);
+        runAnalysis(BenchMark.three);
 
-        benchAll();
+//        benchAll();
 
         long end = System.currentTimeMillis();
 
@@ -59,19 +61,23 @@ public class Main {
 
         String script = Util.readFile(benchMark.scriptPath);
 
-        FunctionExpression program = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST();
+        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST();
 
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), program);
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), AST);
+        Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.options, benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
 
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
 
         NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses);
 
-        Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.options, benchMark.dependencyScripts(), program); // Not empty, just the one without the library we are analyzing.
-        Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, libraryClasses, benchMark.options, globalObject, nativeClasses).buildDeclaration();
+        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+        typeAnalysis.analyseFunctions();
+        TypeFactory typeFactory = typeAnalysis.getTypeFactory();
+
+        Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeFactory).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Evaluation evaluation = null;
         if (benchMark.declarationPath != null) {
@@ -87,9 +93,7 @@ public class Main {
             return Double.NaN;
         } else {
             Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n/*\n" + evaluation.toString() + "\n*/");
-            double score = evaluation.score();
-            System.out.println("Score: " + score);
-            return score;
+            return evaluation.score();
         }
 
     }

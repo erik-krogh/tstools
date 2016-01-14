@@ -189,10 +189,10 @@ public class ClassHierarchyExtractor {
 
     private static final class VisitEntireHeap {
         private final HashSet<Snap.Obj> seen = new HashSet<>();
-        private List<Function<Snap.Value, Void>> functions;
+        private List<Function<Snap.Value, Void>> callbacks;
 
-        private VisitEntireHeap(List<Function<Snap.Value, Void>> functions) {
-            this.functions = functions;
+        private VisitEntireHeap(List<Function<Snap.Value, Void>> callbacks) {
+            this.callbacks = callbacks;
         }
 
         public static void visit(Snap.Obj globalObject, Function<Snap.Value, Void>... functions) {
@@ -206,7 +206,7 @@ public class ClassHierarchyExtractor {
                 return;
             }
 
-            for (Function<Snap.Value, Void> function : functions) {
+            for (Function<Snap.Value, Void> function : callbacks) {
                 function.apply(value);
             }
 

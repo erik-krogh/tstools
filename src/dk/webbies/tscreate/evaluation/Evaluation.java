@@ -47,6 +47,7 @@ public class Evaluation {
             builder.append("\n");
         }
 
+        builder.append("Score: ").append(score());
         return builder.toString();
     }
 

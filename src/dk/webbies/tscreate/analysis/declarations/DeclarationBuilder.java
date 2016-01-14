@@ -1,12 +1,8 @@
 package dk.webbies.tscreate.analysis.declarations;
 
-import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.TypeFactory;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
-import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,12 +15,10 @@ public class DeclarationBuilder {
     private Snap.Obj globalObject;
     private final TypeFactory typeFactory;
 
-    public DeclarationBuilder(Snap.Obj emptySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
+    public DeclarationBuilder(Snap.Obj emptySnap, Snap.Obj globalObject, TypeFactory typeFactory) {
         this.emptySnap = emptySnap;
         this.globalObject = globalObject;
-        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, options, globalObject, nativeClasses);
-        this.typeFactory = typeAnalysis.getTypeFactory();
-        typeAnalysis.analyseFunctions();
+        this.typeFactory = typeFactory;
     }
 
     public Map<String, DeclarationType> buildDeclaration() {
