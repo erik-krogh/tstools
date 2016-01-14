@@ -7,12 +7,13 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.*;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 import dk.webbies.tscreate.paser.StatementTransverse;
-import dk.webbies.tscreate.util.Pair;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static dk.webbies.tscreate.analysis.ResolveEnvironmentVisitor.getIdentifier;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -20,7 +21,7 @@ import java.util.stream.Stream;
 public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
     private final Snap.Obj closure;
     private final UnionFindSolver solver;
-    private final Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap;
+    private final Map<Identifier, UnionNode> identifierMap;
     private final FunctionNode functionNode;
     private final Map<Snap.Obj, FunctionNode> functionNodes;
     private TypeAnalysis typeAnalysis;
@@ -30,16 +31,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private NativeTypeFactory nativeTypeFactory;
 
     public UnionConstraintVisitor(
-            Snap.Obj function,
+            Snap.Obj closure,
             UnionFindSolver solver,
-            Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap,
+            Map<Identifier, UnionNode> identifierMap,
             FunctionNode functionNode,
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
             TypeAnalysis typeAnalysis,
             Set<Snap.Obj> analyzedFunction,
             NativeTypeFactory nativeTypeFactory) {
-        this.closure = function;
+        this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
         this.identifierMap = identifierMap;
@@ -230,9 +231,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         if (identifier.getDeclaration() == null) {
             throw new RuntimeException("Cannot have null declarations");
         }
-        UnionNode identifierNode = ResolveEnvironmentVisitor.getIdentifier(identifier, solver, closure, identifierMap);
-        UnionNode declarationNode = ResolveEnvironmentVisitor.getIdentifier(identifier.getDeclaration(), solver, closure, identifierMap);
-        return solver.union(identifierNode, declarationNode);
+        if (!typeAnalysis.options.unionHeapIdentifiers) {
+            return getIdentifier(identifier, solver, identifierMap);
+        } else {
+            return solver.union(getIdentifier(identifier, solver, identifierMap), getIdentifier(identifier.getDeclaration(), solver, identifierMap));
+        }
     }
 
     @Override

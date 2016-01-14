@@ -17,6 +17,9 @@ public class Options {
     // This option disables that, since it for some libraries (jQuery), runs EXTREMELY slow.
     public boolean resolveIncludesWithFields = true;
 
+    // If false, then every time a value from the heap is used, it will be treated independently. And will not be unified.
+    public boolean unionHeapIdentifiers = false; // makes next to zero difference.
+
     public enum Runtime {
         PHANTOM,
         CHROME,

@@ -7,7 +7,6 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.Identifier;
-import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 import java.util.function.Function;
@@ -126,9 +125,9 @@ public class TypeAnalysis {
             solver.union(libraryClasses.get(prototype).getNewThisNode(solver), functionNode.thisNode);
         }
 
-        Map<Pair<Snap.Obj, Identifier>, UnionNode> identifierMap = new HashMap<>();
+        Map<Identifier, UnionNode> identifierMap = new HashMap<>();
 
-        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, identifierMap, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
+        new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, identifierMap, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses, options).visit(closure.function.astNode);
 
         new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, analyzedFunctions, this.nativeTypeFactory).visit(closure.function.astNode);
     }
