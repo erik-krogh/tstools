@@ -231,6 +231,10 @@ public class DeclarationParser {
 
         private Set<InterfaceType> getWithBaseTypes(Type t, Set<InterfaceType> acc) {
             List<Type> baseTypes;
+            if (t instanceof ReferenceType) {
+                t = ((ReferenceType) t).getTarget();
+            }
+
             if (t instanceof InterfaceType) {
                 acc.add((InterfaceType) t);
                 baseTypes = ((InterfaceType) t).getBaseTypes();
@@ -311,6 +315,9 @@ public class DeclarationParser {
         }
 
         public String nameFromType(Type type) {
+            if (!typeNames.containsKey(type) && type instanceof ReferenceType) {
+                type = ((ReferenceType) type).getTarget();
+            }
             return typeNames.get(type);
         }
 
