@@ -68,6 +68,7 @@ public class CombinationType extends DeclarationType {
         }
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     private Set<DeclarationType> unfold(DeclarationType type) {
         HashSet<DeclarationType> result = new HashSet<>();
 
