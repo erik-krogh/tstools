@@ -16,7 +16,6 @@ public class CombinationType extends DeclarationType {
 
     public CombinationType(TypeReducer combiner, List<DeclarationType> types) {
         this.combiner = combiner;
-        this.combiner.registerUnresolved(this);
         for (DeclarationType type : types) {
             addType(type);
         }

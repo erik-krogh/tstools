@@ -79,12 +79,6 @@ public class TypeReducer {
         register(new CantReduceReducer(ClassInstanceType.class, ClassType.class));
     }
 
-    private List<CombinationType> unresolvedTypes = new ArrayList<>();
-
-    public void registerUnresolved(CombinationType type) {
-        this.unresolvedTypes.add(type);
-    }
-
     private static Map<PrimitiveDeclarationType.Type, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
     static {
         specialPrimitives.put(PrimitiveDeclarationType.Type.VOID, other -> other);
