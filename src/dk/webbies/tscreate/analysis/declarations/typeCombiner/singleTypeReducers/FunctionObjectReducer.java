@@ -1,17 +1,18 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
-import dk.webbies.tscreate.analysis.declarations.types.*;
+import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
+import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.jsnap.Snap;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 17-10-2015.
  */
-// FIXME: Make it possible to remove the fields that are on the prototype. As in returning two types.
+// FIXME: Make it possible to remove the fields that are on the prototype. As in returning two types. This will fix to many prototypes in Prototype
 public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, UnnamedObjectType> {
     private Snap.Obj globalObject;
 
@@ -35,15 +36,6 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
             return function;
         } else {
             return null;
-            /*List<String> matchingProperties = getMatchingProperties(object, globalObject);
-            if (!matchingProperties.isEmpty()) {
-                object = new UnnamedObjectType(new HashMap<>(object.getDeclarations()));
-                object.getDeclarations().keySet().removeAll(matchingProperties);
-
-                return new UnionDeclarationType(function, object);
-            } else {
-                return null;
-            }*/
         }
     }
 

@@ -4,7 +4,6 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.BenchMark;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
@@ -72,7 +71,6 @@ public class DeclarationEvaluator {
         private Set<String> properties;
         private Set<Type> nativeTypesInReal;
         private NativeClassesMap realNativeClasses;
-        private NativeClassesMap emptyNativeClasses;
         private NativeClassesMap myNativeClasses;
 
         public ParsedDeclaration(String resultFilePath, BenchMark benchMark) {
@@ -98,10 +96,6 @@ public class DeclarationEvaluator {
 
         public NativeClassesMap getRealNativeClasses() {
             return realNativeClasses;
-        }
-
-        public NativeClassesMap getEmptyNativeClasses() {
-            return emptyNativeClasses;
         }
 
         public NativeClassesMap getMyNativeClasses() {
@@ -137,10 +131,10 @@ public class DeclarationEvaluator {
             properties.removeAll(existingProperties);
 
             realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get());
-            emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
+            NativeClassesMap emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
             myNativeClasses = parseNatives(global, libraryClasses, myDeclaration.get());
 
-            nativeTypesInReal = new HashSet<>(); // FIXME: Make sure this makes sense.
+            nativeTypesInReal = new HashSet<>();
             for (String name : emptyNativeClasses.getNames()) {
                 Type type = realNativeClasses.typeFromName(name);
                 assert type != null;

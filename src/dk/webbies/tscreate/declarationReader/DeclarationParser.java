@@ -138,7 +138,6 @@ public class DeclarationParser {
             }
         }
 
-        @SuppressWarnings("Duplicates")
         @Override
         public Void visit(GenericType t, Obj obj) {
             if (seen.contains(t)) {
@@ -149,16 +148,13 @@ public class DeclarationParser {
             return null;
         }
 
-        @SuppressWarnings("Duplicates")
         @Override
         public Void visit(InterfaceType t, Obj obj) {
             if (seen.contains(t)) {
                 return null;
             }
             seen.add(t);
-
             visitInterface(t, obj);
-
             return null;
         }
 

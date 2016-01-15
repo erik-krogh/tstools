@@ -1,18 +1,20 @@
 package dk.webbies.tscreate.jsnap;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.util.Util;
-import dk.webbies.tscreate.paser.AST.BlockStatement;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
-import dk.webbies.tscreate.paser.AST.Identifier;
 import dk.webbies.tscreate.paser.AST.NodeTransverse;
+import dk.webbies.tscreate.util.Util;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class JSNAPUtil {
@@ -260,7 +262,7 @@ public class JSNAPUtil {
                         } else if (reader.peek() == JsonToken.STRING) {
                             key = Integer.parseInt(reader.nextString());
                         } else if (reader.peek() == JsonToken.BEGIN_OBJECT){
-                            // FIXME This happens in three.js, it is an object with __jsnapHiddenProp__ values defined on it. Properly something to do with the ES6 getters and setters.
+                            // TODO This happens in three.js, it is an object with __jsnapHiddenProp__ values defined on it. Properly something to do with the ES6 getters and setters.
                             // There are also some closures, where env.properties == null.
                             reader.beginObject();
                             reader.nextName();
