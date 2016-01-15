@@ -94,7 +94,7 @@ public final class UnionClass {
             solver.addDoneCallback(this);
         }
 
-        collapseCycles();
+//        collapseCycles();
     }
 
     private void makeIncludesPointToParent() {
@@ -110,7 +110,7 @@ public final class UnionClass {
     }
 
 
-    private void collapseCycles() {
+    public void collapseCycles() {
         Tarjan<TarjanNode> tarjan = new Tarjan<>();
         List<List<TarjanNode>> components = tarjan.getSCComponents(this.tarjanNode);
         for (List<TarjanNode> component : components) {

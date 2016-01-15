@@ -78,6 +78,7 @@ public class TypeFactory {
         if (unionClass == null) {
             throw new NullPointerException();
         }
+        unionClass.collapseCycles();
         DeclarationType result = cache.get(unionClass);
         if (result != null) {
             return result;
