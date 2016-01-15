@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 17-10-2015.
  */
-// FIXME: Make it possible to remove the fields that are on the prototype. As in returning two types. This will fix to many prototypes in Prototype
 public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, UnnamedObjectType> {
     private Snap.Obj globalObject;
 
@@ -36,6 +35,18 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
             return function;
         } else {
             return null;
+            // The below removes the properties that are defined on all functions. But that makes the score smaller on the benchmarks, so it doesn't run.
+            /*List<String> matchingProperties = getMatchingProperties(object, globalObject);
+            if (matchingProperties.isEmpty()) {
+                return null;
+            } else {
+                HashMap<String, DeclarationType> declarations = new HashMap<>(object.getDeclarations());
+                UnnamedObjectType newObject = new UnnamedObjectType(declarations);
+                for (String matchingProperty : matchingProperties) {
+                    declarations.remove(matchingProperty);
+                }
+                return new UnionDeclarationType(function, newObject);
+            }*/
         }
     }
 
