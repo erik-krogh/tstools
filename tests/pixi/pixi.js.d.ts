@@ -5,19 +5,19 @@
  *
  * The definitions will follow the Dev Branch for now.
  */
-declare class PIXI {
 
-    static VERSION: string;
-    static PI_2: number;
-    static RAD_TO_DEG: number;
-    static DEG_TO_RAD: number;
-    static TARGET_FPMS: number;
-    static RENDER_TYPE: {
+declare module PIXI {
+    export var VERSION:string;
+    export var PI_2:number;
+    export var RAD_TO_DEG:number;
+    export var DEG_TO_RAD:number;
+    export var TARGET_FPMS:number;
+    export var RENDER_TYPE:{
         UNKNOWN: number;
         WEBGL: number;
         CANVAS: number;
     };
-    static BLEND_MODES: {
+    export var BLEND_MODES:{
         NORMAL: number;
         ADD: number;
         MULTIPLY: number;
@@ -37,7 +37,7 @@ declare class PIXI {
         LUMINOSITY: number;
 
     };
-    static DRAW_MODES: {
+    export var DRAW_MODES:{
         POINTS: number;
         LINES: number;
         LINE_LOOP: number;
@@ -46,15 +46,15 @@ declare class PIXI {
         TRIANGLE_STRIP: number;
         TRIANGLE_FAN: number;
     };
-    static SCALE_MODES: {
+    export var SCALE_MODES:{
         DEFAULT: number;
         LINEAR: number;
         NEAREST: number;
     };
-    static RETINA_PREFIX: string;
-    static RESOLUTION: number;
-    static FILTER_RESOLUTION: number;
-    static DEFAULT_RENDER_OPTIONS: {
+    export var RETINA_PREFIX:string;
+    export var RESOLUTION:number;
+    export var FILTER_RESOLUTION:number;
+    export var DEFAULT_RENDER_OPTIONS:{
         view: HTMLCanvasElement;
         resolution: number;
         antialias: boolean;
@@ -66,18 +66,15 @@ declare class PIXI {
         preserveDrawingBuffer: boolean;
         roundPixels: boolean;
     };
-    static SHAPES: {
+    export var SHAPES:{
         POLY: number;
         RECT: number;
         CIRC: number;
         ELIP: number;
         RREC: number;
     };
-    static SPRITE_BATCH_SIZE: number;
+    export var SPRITE_BATCH_SIZE:number;
 
-}
-
-declare module PIXI {
 
     export function autoDetectRenderer(width: number, height: number, options?: PIXI.RendererOptions, noWebGL?: boolean): PIXI.WebGLRenderer | PIXI.CanvasRenderer;
     export var loader: PIXI.loaders.Loader;

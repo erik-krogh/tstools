@@ -6,9 +6,6 @@
 declare module L {
     type LatLngExpression = LatLng | number[] | ({ lat: number; lng: number })
     type LatLngBoundsExpression = LatLngBounds | LatLngExpression[];
-}
-
-declare module L {
 
     export interface AttributionOptions {
 
@@ -25,9 +22,6 @@ declare module L {
         prefix?: string;
 
     }
-}
-
-declare module L {
 
     /**
      * Creates a Bounds object from two coordinates (usually top-left and bottom-right
@@ -101,9 +95,6 @@ declare module L {
          */
         max: Point;
     }
-}
-
-declare module L {
 
     module Browser {
 
@@ -175,10 +166,6 @@ declare module L {
         export var retina: boolean;
 
     }
-}
-
-
-declare module L {
 
     /**
      * Instantiates a circle object given a geographical point, a radius in meters
@@ -222,9 +209,6 @@ declare module L {
         toGeoJSON(): any;
 
     }
-}
-
-declare module L {
 
     /**
      * Instantiates a circle marker given a geographical point and optionally
@@ -260,9 +244,7 @@ declare module L {
          */
         toGeoJSON(): any;
     }
-}
 
-declare module L {
     export interface ClassExtendOptions {
         /**
          * Your class's constructor function, meaning that it gets called when you do 'new MyClass(...)'.
@@ -323,19 +305,16 @@ declare module L {
         function extend(options: ClassExtendOptions): any;
     }
 
-}
-
-declare module L {
     export interface ControlStatic extends ClassStatic {
         /**
          * Creates a control with the given options.
          */
         new(options?: ControlOptions): Control;
 
-        Zoom: Control.ZoomStatic;
-        Attribution: Control.AttributionStatic;
-        Layers: Control.LayersStatic;
-        Scale: Control.ScaleStatic;
+        Zoom: ZoomStatic;
+        Attribution: AttributionStatic;
+        Layers: LayersStatic;
+        Scale: ScaleStatic;
     }
     export var Control: ControlStatic;
 
@@ -382,131 +361,129 @@ declare module L {
         onRemove(map: Map): void;
     }
 
-    namespace Control {
-        export interface ZoomStatic extends ClassStatic {
-            /**
-             * Creates a zoom control.
-             */
-            new (options?: ZoomOptions): Zoom;
-        }
+    export interface ZoomStatic extends ClassStatic {
+        /**
+         * Creates a zoom control.
+         */
+        new (options?: ZoomOptions): Zoom;
+    }
 
-        export interface Zoom extends L.Control {
-        }
+    export interface Zoom extends L.Control {
+    }
 
-        export interface ZoomOptions {
-            /**
-             * The position of the control (one of the map corners).
-             * Can be 'topleft', 'topright', 'bottomleft', or 'bottomright'.
-             *
-             * Default value: 'topright'.
-             */
-            position?: string; // 'topleft' | 'topright' | 'bottomleft' | 'bottomright'
+    export interface ZoomOptions {
+        /**
+         * The position of the control (one of the map corners).
+         * Can be 'topleft', 'topright', 'bottomleft', or 'bottomright'.
+         *
+         * Default value: 'topright'.
+         */
+        position?: string; // 'topleft' | 'topright' | 'bottomleft' | 'bottomright'
 
-            /**
-             * The text set on the zoom in button.
-             *
-             * Default value: '+'
-             */
-            zoomInText?: string;
+        /**
+         * The text set on the zoom in button.
+         *
+         * Default value: '+'
+         */
+        zoomInText?: string;
 
-            /**
-             * The text set on the zoom out button.
-             *
-             * Default value: '-'
-             */
-            zoomOutText?: string;
+        /**
+         * The text set on the zoom out button.
+         *
+         * Default value: '-'
+         */
+        zoomOutText?: string;
 
-            /**
-             * The title set on the zoom in button.
-             *
-             * Default value: 'Zoom in'
-             */
-            zoomInTitle?: string;
+        /**
+         * The title set on the zoom in button.
+         *
+         * Default value: 'Zoom in'
+         */
+        zoomInTitle?: string;
 
-            /**
-             * The title set on the zoom out button.
-             *
-             * Default value: 'Zoom out'
-             */
-            zoomOutTitle?: string;
-        }
+        /**
+         * The title set on the zoom out button.
+         *
+         * Default value: 'Zoom out'
+         */
+        zoomOutTitle?: string;
+    }
 
-        export interface AttributionStatic extends ClassStatic {
-            /**
-             * Creates an attribution control.
-             */
-            new(options?: AttributionOptions): Attribution;
-        }
+    export interface AttributionStatic extends ClassStatic {
+        /**
+         * Creates an attribution control.
+         */
+        new(options?: AttributionOptions): Attribution;
+    }
 
-        export interface Attribution extends L.Control {
-            /**
-             * Sets the text before the attributions.
-             */
-            setPrefix(prefix: string): Attribution;
+    export interface Attribution extends L.Control {
+        /**
+         * Sets the text before the attributions.
+         */
+        setPrefix(prefix: string): Attribution;
 
-            /**
-             * Adds an attribution text (e.g. 'Vector data &copy; CloudMade').
-             */
-            addAttribution(text: string): Attribution;
+        /**
+         * Adds an attribution text (e.g. 'Vector data &copy; CloudMade').
+         */
+        addAttribution(text: string): Attribution;
 
-            /**
-             * Removes an attribution text.
-             */
-            removeAttribution(text: string): Attribution;
+        /**
+         * Removes an attribution text.
+         */
+        removeAttribution(text: string): Attribution;
 
-        }
+    }
 
-        export interface LayersStatic extends ClassStatic {
-            /**
-             * Creates an attribution control with the given layers. Base layers will be
-             * switched with radio buttons, while overlays will be switched with checkboxes.
-             */
-            new(baseLayers?: any, overlays?: any, options?: LayersOptions): Layers;
-        }
+    export interface LayersStatic extends ClassStatic {
+        /**
+         * Creates an attribution control with the given layers. Base layers will be
+         * switched with radio buttons, while overlays will be switched with checkboxes.
+         */
+        new(baseLayers?: any, overlays?: any, options?: LayersOptions): Layers;
+    }
 
-        export interface Layers extends L.Control, IEventPowered<Layers> {
-            /**
-             * Adds a base layer (radio button entry) with the given name to the control.
-             */
-            addBaseLayer(layer: ILayer, name: string): Layers;
+    export interface Layers extends L.Control, IEventPowered<Layers> {
+        /**
+         * Adds a base layer (radio button entry) with the given name to the control.
+         */
+        addBaseLayer(layer: ILayer, name: string): Layers;
 
-            /**
-             * Adds an overlay (checkbox entry) with the given name to the control.
-             */
-            addOverlay(layer: ILayer, name: string): Layers;
+        /**
+         * Adds an overlay (checkbox entry) with the given name to the control.
+         */
+        addOverlay(layer: ILayer, name: string): Layers;
 
-            /**
-             * Remove the given layer from the control.
-             */
-            removeLayer(layer: ILayer): Layers;
+        /**
+         * Remove the given layer from the control.
+         */
+        removeLayer(layer: ILayer): Layers;
 
-            ////////////////
-            ////////////////
-            addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
-            addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
-            removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Layers;
-            hasEventListeners(type: string): boolean;
-            fireEvent(type: string, data?: any): Layers;
-            on(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
-            once(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
-            off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Layers;
-            fire(type: string, data?: any): Layers;
-            addEventListener(eventMap: any, context?: any): Layers;
-            removeEventListener(eventMap?: any, context?: any): Layers;
-            clearAllEventListeners(): Layers;
-            on(eventMap: any, context?: any): Layers;
-            off(eventMap?: any, context?: any): Layers;
-        }
+        ////////////////
+        ////////////////
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Layers;
+        hasEventListeners(type: string): boolean;
+        fireEvent(type: string, data?: any): Layers;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Layers;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Layers;
+        fire(type: string, data?: any): Layers;
+        addEventListener(eventMap: any, context?: any): Layers;
+        removeEventListener(eventMap?: any, context?: any): Layers;
+        clearAllEventListeners(): Layers;
+        on(eventMap: any, context?: any): Layers;
+        off(eventMap?: any, context?: any): Layers;
+    }
 
-        export interface ScaleStatic extends ClassStatic {
-            /**
-             * Creates an scale control with the given options.
-             */
-            new(options?: ScaleOptions): Scale;
-        }
+    export interface ScaleStatic extends ClassStatic {
+        /**
+         * Creates an scale control with the given options.
+         */
+        new(options?: ScaleOptions): Scale;
+    }
 
-        export interface Scale extends L.Control {
-        }
+    export interface Scale extends L.Control {
     }
 
     export interface control {
@@ -516,32 +493,29 @@ declare module L {
         function (options?: ControlOptions): Control;
     }
 
-    export namespace control {
+    export module control {
 
         /**
          * Creates a zoom control.
          */
-        export function zoom(options?: Control.ZoomOptions): L.Control.Zoom;
+        export function zoom(options?: ZoomOptions): L.Zoom;
 
         /**
          * Creates an attribution control.
          */
-        export function attribution(options?: AttributionOptions): L.Control.Attribution;
+        export function attribution(options?: AttributionOptions): L.Attribution;
 
         /**
          * Creates an attribution control with the given layers. Base layers will be
          * switched with radio buttons, while overlays will be switched with checkboxes.
          */
-        export function layers(baseLayers?: any, overlays?: any, options?: LayersOptions): L.Control.Layers;
+        export function layers(baseLayers?: any, overlays?: any, options?: LayersOptions): L.Layers;
 
         /**
          * Creates an scale control with the given options.
          */
-        export function scale(options?: ScaleOptions): L.Control.Scale;
+        export function scale(options?: ScaleOptions): L.Scale;
     }
-}
-
-declare namespace L {
 
     export interface ControlOptions {
 
@@ -553,11 +527,8 @@ declare namespace L {
         position?: string;
 
     }
-}
 
-declare namespace L {
-
-    namespace CRS {
+    module CRS {
 
         /**
          * The most common CRS for online maps, used by almost all free and commercial
@@ -585,9 +556,6 @@ declare namespace L {
         export var Simple: ICRS;
 
     }
-}
-
-declare namespace L {
 
     /**
      * Creates a div icon instance with the given options.
@@ -604,9 +572,6 @@ declare namespace L {
 
     export interface DivIcon extends Icon {
     }
-}
-
-declare namespace L {
 
     export interface DivIconOptions {
 
@@ -638,9 +603,6 @@ declare namespace L {
         html?: string;
 
     }
-}
-
-declare namespace L {
 
     export interface DomEvent {
 
@@ -699,11 +661,8 @@ declare namespace L {
     }
 
     export var DomEvent: DomEvent;
-}
 
-declare namespace L {
-
-    namespace DomUtil {
+    module DomUtil {
 
         /**
          * Returns an element with the given id if a string was passed, or just returns
@@ -802,9 +761,6 @@ declare namespace L {
         export var TRANSFORM: string;
 
     }
-}
-
-declare namespace L {
 
     /**
      * Creates a Draggable object for moving the given element when you start dragging
@@ -850,11 +806,6 @@ declare namespace L {
         on(eventMap: any, context?: any): Draggable;
         off(eventMap?: any, context?: any): Draggable;
     }
-}
-
-
-
-declare namespace L {
 
     /**
      * Create a layer group, optionally given an initial set of layers.
@@ -930,9 +881,6 @@ declare namespace L {
         on(eventMap: any, context?: any): FeatureGroup<T>;
         off(eventMap?: any, context?: any): FeatureGroup<T>;
     }
-}
-
-declare namespace L {
 
     /**
      * Creates a GeoJSON layer. Optionally accepts an object in GeoJSON format
@@ -993,9 +941,7 @@ declare namespace L {
          */
         resetStyle(layer: Path): GeoJSON;
     }
-}
 
-declare namespace L {
     export interface GeoJSONOptions {
         /**
          * Function that will be used for creating layers for GeoJSON points (if not
@@ -1027,49 +973,34 @@ declare namespace L {
          */
         coordsToLatLng?: (coords: any[]) => LatLng[];
     }
-}
-
-
-
-
-declare namespace L {
 
     /**
      * Creates an icon instance with the given options.
      */
-    function icon(options: IconOptions): Icon;
+    function icon(options: IconOptions): IconI;
 
     export interface IconStatic extends ClassStatic {
         /**
          * Creates an icon instance with the given options.
          */
-        new(options: IconOptions): Icon;
+        new(options: IconOptions): IconI;
 
         Default: {
             /**
              * Creates a default icon instance with the given options.
              */
-            new(options?: IconOptions): Icon.Default;
+            new(options?: IconOptions): DefaultIcon;
 
             imagePath: string;
         };
     }
     export var Icon: IconStatic;
 
-    export interface Icon {
+    export interface IconI {
     }
 
-    namespace Icon {
-        /**
-         * L.Icon.Default extends L.Icon and is the blue icon Leaflet uses
-         * for markers by default.
-         */
-        export interface Default extends Icon {
-        }
+    export interface DefaultIcon extends IconI {
     }
-}
-
-declare namespace L {
 
     export interface IconOptions {
 
@@ -1132,9 +1063,6 @@ declare namespace L {
          */
         className?: string;
     }
-}
-
-declare namespace L {
 
     export interface IControl {
 
@@ -1152,9 +1080,6 @@ declare namespace L {
          */
         onRemove(map: Map): void;
     }
-}
-
-declare namespace L {
 
     export interface ICRS {
 
@@ -1204,9 +1129,6 @@ declare namespace L {
         getSize(zoom: number): Point;
 
     }
-}
-
-declare namespace L {
 
     export interface IEventPowered<T> {
 
@@ -1284,9 +1206,6 @@ declare namespace L {
          */
         fire(type: string, data?: any): T;
     }
-}
-
-declare namespace L {
 
     export interface IHandler {
 
@@ -1309,9 +1228,6 @@ declare namespace L {
     export interface Handler {
         initialize(map: Map): void;
     }
-}
-
-declare namespace L {
 
     export interface ILayer {
 
@@ -1328,18 +1244,14 @@ declare namespace L {
          */
         onRemove(map: Map): void;
     }
-}
 
-declare namespace L {
-    namespace Mixin {
+    module Mixin {
         export interface LeafletMixinEvents extends IEventPowered<LeafletMixinEvents> {
         }
 
         export var Events: LeafletMixinEvents;
     }
-}
 
-declare namespace L {
 
     /**
      * Instantiates an image overlay object given the URL of the image and the geographical
@@ -1397,9 +1309,6 @@ declare namespace L {
          */
         onRemove(map: Map): void;
     }
-}
-
-declare namespace L {
 
     export interface ImageOverlayOptions {
 
@@ -1408,9 +1317,6 @@ declare namespace L {
          */
         opacity?: number;
     }
-}
-
-declare namespace L {
 
     export interface IProjection {
 
@@ -1424,9 +1330,6 @@ declare namespace L {
          */
         unproject(point: Point): LatLng;
     }
-}
-
-declare namespace L {
 
     /**
      * A constant that represents the Leaflet version in use.
@@ -1438,9 +1341,7 @@ declare namespace L {
      * before Leaflet inclusion, and returns the real Leaflet namespace.
      */
     export function noConflict(): typeof L;
-}
 
-declare namespace L {
     /**
      * Creates an object representing a geographical point with the given latitude
      * and longitude.
@@ -1523,9 +1424,7 @@ declare namespace L {
          */
         lng: number;
     }
-}
 
-declare namespace L {
 
     /**
      * Creates a LatLngBounds object by defining south-west and north-east corners
@@ -1649,9 +1548,7 @@ declare namespace L {
         isValid(): boolean;
 
     }
-}
 
-declare namespace L {
 
     /**
      * Create a layer group, optionally given an initial set of layers.
@@ -1734,10 +1631,7 @@ declare namespace L {
          */
         onRemove(map: Map): void;
     }
-}
 
-
-declare namespace L {
 
     export interface LayersOptions {
 
@@ -1765,9 +1659,7 @@ declare namespace L {
         autoZIndex?: boolean;
 
     }
-}
 
-declare namespace L {
 
     export interface LeafletErrorEvent extends LeafletEvent {
 
@@ -1781,9 +1673,7 @@ declare namespace L {
          */
         code: number;
     }
-}
 
-declare namespace L {
 
     export interface LeafletEvent {
 
@@ -1797,9 +1687,7 @@ declare namespace L {
          */
         target: any;
     }
-}
 
-declare namespace L {
 
     export interface LeafletGeoJSONEvent extends LeafletEvent {
 
@@ -1823,9 +1711,7 @@ declare namespace L {
          */
         id: string;
     }
-}
 
-declare namespace L {
 
     export interface LeafletLayerEvent extends LeafletEvent {
 
@@ -1834,9 +1720,7 @@ declare namespace L {
          */
         layer: ILayer;
     }
-}
 
-declare namespace L {
 
     export interface LeafletLayersControlEvent extends LeafletEvent {
 
@@ -1850,9 +1734,7 @@ declare namespace L {
          */
         name: string;
     }
-}
 
-declare module L {
 
     export interface LeafletLocationEvent extends LeafletEvent {
 
@@ -1898,9 +1780,7 @@ declare module L {
         timestamp: number;
 
     }
-}
 
-declare namespace L {
 
     export interface LeafletMouseEvent extends LeafletEvent {
 
@@ -1926,9 +1806,7 @@ declare namespace L {
          */
         originalEvent: MouseEvent;
     }
-}
 
-declare namespace L {
 
     export interface LeafletPopupEvent extends LeafletEvent {
 
@@ -1937,9 +1815,7 @@ declare namespace L {
          */
         popup: Popup;
     }
-}
 
-declare namespace L {
 
     export interface LeafletDragEndEvent extends LeafletEvent {
 
@@ -1948,9 +1824,7 @@ declare namespace L {
          */
         distance: number;
     }
-}
 
-declare namespace L {
 
     export interface LeafletResizeEvent extends LeafletEvent {
 
@@ -1964,9 +1838,7 @@ declare namespace L {
          */
         newSize: Point;
     }
-}
 
-declare namespace L {
 
     export interface LeafletTileEvent extends LeafletEvent {
 
@@ -1980,11 +1852,9 @@ declare namespace L {
          */
         url: string;
     }
-}
 
-declare namespace L {
 
-    namespace LineUtil {
+    module LineUtil {
 
         /**
          * Dramatically reduces the number of points in a polyline while retaining
@@ -2014,9 +1884,7 @@ declare namespace L {
         export function clipSegment(a: Point, b: Point, bounds: Bounds): void;
 
     }
-}
 
-declare namespace L {
 
     export interface LocateOptions {
 
@@ -2067,9 +1935,7 @@ declare namespace L {
          */
         enableHighAccuracy?: boolean;
     }
-}
 
-declare namespace L {
 
     /**
      * Instantiates a map object given a div element and optionally an
@@ -2429,12 +2295,12 @@ declare namespace L {
         /**
          * Zoom control.
          */
-        zoomControl: Control.Zoom;
+        zoomControl: Zoom;
 
         /**
          * Attribution control.
          */
-        attributionControl: Control.Attribution;
+        attributionControl: Attribution;
 
         /**
          * Map state options
@@ -2463,9 +2329,1519 @@ declare namespace L {
         on(eventMap: any, context?: any): Map;
         off(eventMap?: any, context?: any): Map;
     }
+
+
+    export interface MapPanes {
+
+        /**
+         * Pane that contains all other map panes.
+         */
+        mapPane: HTMLElement;
+
+        /**
+         * Pane for tile layers.
+         */
+        tilePane: HTMLElement;
+
+        /**
+         * Pane that contains all the panes except tile pane.
+         */
+        objectsPane: HTMLElement;
+
+        /**
+         * Pane for overlay shadows (e.g. marker shadows).
+         */
+        shadowPane: HTMLElement;
+
+        /**
+         * Pane for overlays like polylines and polygons.
+         */
+        overlayPane: HTMLElement;
+
+        /**
+         * Pane for marker icons.
+         */
+        markerPane: HTMLElement;
+
+        /**
+         * Pane for popups.
+         */
+        popupPane: HTMLElement;
+    }
+
+
+    /**
+     * Instantiates a Marker object given a geographical point and optionally
+     * an options object.
+     */
+    function marker(latlng: LatLngExpression, options?: MarkerOptions): Marker;
+
+    var Marker: {
+        /**
+         * Instantiates a Marker object given a geographical point and optionally
+         * an options object.
+         */
+        new(latlng: LatLngExpression, options?: MarkerOptions): Marker;
+    };
+
+    export interface Marker extends ILayer, IEventPowered<Marker> {
+        /**
+         * Adds the marker to the map.
+         */
+        addTo(map: Map): Marker;
+
+        /**
+         * Returns the current geographical position of the marker.
+         */
+        getLatLng(): LatLng;
+
+        /**
+         * Changes the marker position to the given point.
+         */
+        setLatLng(latlng: LatLngExpression): Marker;
+
+        /**
+         * Changes the marker icon.
+         */
+        setIcon(icon: Icon): Marker;
+
+        /**
+         * Changes the zIndex offset of the marker.
+         */
+        setZIndexOffset(offset: number): Marker;
+
+        /**
+         * Changes the opacity of the marker.
+         */
+        setOpacity(opacity: number): Marker;
+
+        /**
+         * Updates the marker position, useful if coordinates of its latLng object
+         * were changed directly.
+         */
+        update(): Marker;
+
+        /**
+         * Binds a popup with a particular HTML content to a click on this marker. You
+         * can also open the bound popup with the Marker openPopup method.
+         */
+        bindPopup(html: string, options?: PopupOptions): Marker;
+
+        /**
+         * Binds a popup with a particular HTML content to a click on this marker. You
+         * can also open the bound popup with the Marker openPopup method.
+         */
+        bindPopup(el: HTMLElement, options?: PopupOptions): Marker;
+
+        /**
+         * Binds a popup with a particular HTML content to a click on this marker. You
+         * can also open the bound popup with the Marker openPopup method.
+         */
+        bindPopup(popup: Popup, options?: PopupOptions): Marker;
+
+        /**
+         * Unbinds the popup previously bound to the marker with bindPopup.
+         */
+        unbindPopup(): Marker;
+
+        /**
+         * Opens the popup previously bound by the bindPopup method.
+         */
+        openPopup(): Marker;
+
+        /**
+         * Returns the popup previously bound by the bindPopup method.
+         */
+        getPopup(): Popup;
+
+        /**
+         * Closes the bound popup of the marker if it's opened.
+         */
+        closePopup(): Marker;
+
+        /**
+         * Toggles the popup previously bound by the bindPopup method.
+         */
+        togglePopup(): Marker;
+
+        /**
+         * Sets an HTML content of the popup of this marker.
+         */
+        setPopupContent(html: string, options?: PopupOptions): Marker;
+
+        /**
+         * Sets an HTML content of the popup of this marker.
+         */
+        setPopupContent(el: HTMLElement, options?: PopupOptions): Marker;
+
+        /**
+         * Returns a GeoJSON representation of the marker (GeoJSON Point Feature).
+         */
+        toGeoJSON(): any;
+
+        /**
+         * Marker dragging handler (by both mouse and touch).
+         */
+        dragging: IHandler;
+
+        ////////////
+        ////////////
+        /**
+         * Should contain code that creates DOM elements for the overlay, adds them
+         * to map panes where they should belong and puts listeners on relevant map events.
+         * Called on map.addLayer(layer).
+         */
+        onAdd(map: Map): void;
+
+        /**
+         * Should contain all clean up code that removes the overlay's elements from
+         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
+         */
+        onRemove(map: Map): void;
+
+        ////////////////
+        ////////////////
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Marker;
+        hasEventListeners(type: string): boolean;
+        fireEvent(type: string, data?: any): Marker;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Marker;
+        fire(type: string, data?: any): Marker;
+        addEventListener(eventMap: any, context?: any): Marker;
+        removeEventListener(eventMap?: any, context?: any): Marker;
+        clearAllEventListeners(): Marker;
+        on(eventMap: any, context?: any): Marker;
+        off(eventMap?: any, context?: any): Marker;
+    }
+
+
+    export interface MarkerOptions {
+
+        /**
+         * Icon class to use for rendering the marker. See Icon documentation for details
+         * on how to customize the marker icon.
+         *
+         * Default value: new L.Icon.Default().
+         */
+        icon?: Icon;
+
+        /**
+         * If false, the marker will not emit mouse events and will act as a part of the
+         * underlying map.
+         *
+         * Default value: true.
+         */
+        clickable?: boolean;
+
+        /**
+         * Whether the marker is draggable with mouse/touch or not.
+         *
+         * Default value: false.
+         */
+        draggable?: boolean;
+
+        /**
+         * Whether the marker can be tabbed to with a keyboard and clicked by pressing enter.
+         *
+         * Default value: true.
+         */
+        keyboard?: boolean;
+
+        /**
+         * Text for the browser tooltip that appear on marker hover (no tooltip by default).
+         *
+         * Default value: ''.
+         */
+        title?: string;
+
+        /**
+         * Text for the alt attribute of the icon image (useful for accessibility).
+         *
+         * Default value: ''.
+         */
+        alt?: string;
+
+        /**
+         * By default, marker images zIndex is set automatically based on its latitude.
+         * You this option if you want to put the marker on top of all others (or below),
+         * specifying a high value like 1000 (or high negative value, respectively).
+         *
+         * Default value: 0.
+         */
+        zIndexOffset?: number;
+
+        /**
+         * The opacity of the marker.
+         *
+         * Default value: 1.0.
+         */
+        opacity?: number;
+
+        /**
+         * If true, the marker will get on top of others when you hover the mouse over it.
+         *
+         * Default value: false.
+         */
+        riseOnHover?: boolean;
+
+        /**
+         * The z-index offset used for the riseOnHover feature.
+         *
+         * Default value: 250.
+         */
+        riseOffset?: number;
+    }
+
+
+    /**
+     * Instantiates a multi-polyline object given an array of latlngs arrays (one
+     * for each individual polygon) and optionally an options object (the same
+     * as for MultiPolyline).
+     */
+    function multiPolygon(latlngs: LatLng[][], options?: PolylineOptions): MultiPolygon;
+
+    export interface MultiPolylgonStatic extends ClassStatic {
+        /**
+         * Instantiates a multi-polyline object given an array of latlngs arrays (one
+         * for each individual polygon) and optionally an options object (the same
+         * as for MultiPolyline).
+         */
+        new(latlngs: LatLng[][], options?: PolylineOptions): MultiPolygon;
+    }
+    export var MultiPolylgon: MultiPolylgonStatic;
+
+    export interface MultiPolygon extends FeatureGroup<Polygon> {
+        /**
+         * Replace all polygons and their paths with the given array of arrays
+         * of geographical points.
+         */
+        setLatLngs(latlngs: LatLng[][]): MultiPolygon;
+
+        /**
+         * Returns an array of arrays of geographical points in each polygon.
+         */
+        getLatLngs(): LatLng[][];
+
+        /**
+         * Opens the popup previously bound by bindPopup.
+         */
+        openPopup(): MultiPolygon;
+
+        /**
+         * Returns a GeoJSON representation of the multipolygon (GeoJSON MultiPolygon Feature).
+         */
+        toGeoJSON(): any;
+    }
+
+
+    /**
+     * Instantiates a multi-polyline object given an array of arrays of geographical
+     * points (one for each individual polyline) and optionally an options object.
+     */
+    function multiPolyline(latlngs: LatLng[][], options?: PolylineOptions): MultiPolyline;
+
+    export interface MultiPolylineStatic extends ClassStatic {
+        /**
+         * Instantiates a multi-polyline object given an array of arrays of geographical
+         * points (one for each individual polyline) and optionally an options object.
+         */
+        new(latlngs: LatLng[][], options?: PolylineOptions): MultiPolyline;
+    }
+    export var MultiPolyline: MultiPolylineStatic;
+
+    export interface MultiPolyline extends FeatureGroup<Polyline> {
+        /**
+         * Replace all polygons and their paths with the given array of arrays
+         * of geographical points.
+         */
+        setLatLngs(latlngs: LatLng[][]): MultiPolyline;
+
+        /**
+         * Returns an array of arrays of geographical points in each polygon.
+         */
+        getLatLngs(): LatLng[][];
+
+        /**
+         * Opens the popup previously bound by bindPopup.
+         */
+        openPopup(): MultiPolyline;
+
+        /**
+         * Returns a GeoJSON representation of the multipolyline (GeoJSON MultiLineString Feature).
+         */
+        toGeoJSON(): any;
+    }
+
+
+    export interface PanOptions {
+
+        /**
+         * If true, panning will always be animated if possible. If false, it will not
+         * animate panning, either resetting the map view if panning more than a screen
+         * away, or just setting a new offset for the map pane (except for `panBy`
+         * which always does the latter).
+         */
+        animate?: boolean;
+
+        /**
+         * Duration of animated panning.
+         *
+         * Default value: 0.25.
+         */
+        duration?: number;
+
+        /**
+         * The curvature factor of panning animation easing (third parameter of the Cubic
+         * Bezier curve). 1.0 means linear animation, the less the more bowed the curve.
+         *
+         * Default value: 0.25.
+         */
+        easeLinearity?: number;
+
+        /**
+         * If true, panning won't fire movestart event on start (used internally for panning inertia).
+         *
+         * Default value: false.
+         */
+        noMoveStart?: boolean;
+    }
+
+
+    export interface Path extends ILayer, IEventPowered<Path> {
+
+        /**
+         * Adds the layer to the map.
+         */
+        addTo(map: Map): Path;
+
+        /**
+         * Binds a popup with a particular HTML content to a click on this path.
+         */
+        bindPopup(html: string, options?: PopupOptions): Path;
+
+        /**
+         * Binds a popup with a particular HTML content to a click on this path.
+         */
+        bindPopup(el: HTMLElement, options?: PopupOptions): Path;
+
+        /**
+         * Binds a popup with a particular HTML content to a click on this path.
+         */
+        bindPopup(popup: Popup, options?: PopupOptions): Path;
+
+        /**
+         * Unbinds the popup previously bound to the path with bindPopup.
+         */
+        unbindPopup(): Path;
+
+        /**
+         * Opens the popup previously bound by the bindPopup method in the given point,
+         * or in one of the path's points if not specified.
+         */
+        openPopup(latlng?: LatLngExpression): Path;
+
+        /**
+         * Closes the path's bound popup if it is opened.
+         */
+        closePopup(): Path;
+
+        /**
+         * Changes the appearance of a Path based on the options in the Path options object.
+         */
+        setStyle(object: PathOptions): Path;
+
+        /**
+         * Returns the LatLngBounds of the path.
+         */
+        getBounds(): LatLngBounds;
+
+        /**
+         * Brings the layer to the top of all path layers.
+         */
+        bringToFront(): Path;
+
+        /**
+         * Brings the layer to the bottom of all path layers.
+         */
+        bringToBack(): Path;
+
+        /**
+         * Redraws the layer. Sometimes useful after you changed the coordinates that
+         * the path uses.
+         */
+        redraw(): Path;
+        ////////////
+        ////////////
+        /**
+         * Should contain code that creates DOM elements for the overlay, adds them
+         * to map panes where they should belong and puts listeners on relevant map events.
+         * Called on map.addLayer(layer).
+         */
+        onAdd(map: Map): void;
+
+        /**
+         * Should contain all clean up code that removes the overlay's elements from
+         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
+         */
+        onRemove(map: Map): void;
+
+        ////////////////
+        ////////////////
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Path;
+        hasEventListeners(type: string): boolean;
+        fireEvent(type: string, data?: any): Path;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Path;
+        fire(type: string, data?: any): Path;
+        addEventListener(eventMap: any, context?: any): Path;
+        removeEventListener(eventMap?: any, context?: any): Path;
+        clearAllEventListeners(): Path;
+        on(eventMap: any, context?: any): Path;
+        off(eventMap?: any, context?: any): Path;
+    }
+
+    export module Path {
+        /**
+         * True if SVG is used for vector rendering (true for most modern browsers).
+         */
+        export var SVG: boolean;
+
+        /**
+         * True if VML is used for vector rendering (IE 6-8).
+         */
+        export var VML: boolean;
+
+        /**
+         * True if Canvas is used for vector rendering (Android 2). You can also force
+         * this by setting global variable L_PREFER_CANVAS to true before the Leaflet
+         * include on your page — sometimes it can increase performance dramatically
+         * when rendering thousands of circle markers, but currently suffers from
+         * a bug that causes removing such layers to be extremely slow.
+         */
+        export var CANVAS: boolean;
+
+        /**
+         * How much to extend the clip area around the map view (relative to its size,
+         * e.g. 0.5 is half the screen in each direction). Smaller values mean that you
+         * will see clipped ends of paths while you're dragging the map, and bigger values
+         * decrease drawing performance.
+         */
+        export var CLIP_PADDING: number;
+    }
+
+
+    export interface PathOptions {
+
+        /**
+         * Whether to draw stroke along the path. Set it to false to disable borders on
+         * polygons or circles.
+         *
+         * Default value: true.
+         */
+        stroke?: boolean;
+
+        /**
+         * Stroke color.
+         *
+         * Default value: '#03f'.
+         */
+        color?: string;
+
+        /**
+         * Stroke width in pixels.
+         *
+         * Default value: 5.
+         */
+        weight?: number;
+
+        /**
+         * Stroke opacity.
+         *
+         * Default value: 0.5.
+         */
+        opacity?: number;
+
+        /**
+         * Whether to fill the path with color. Set it to false to disable filling on polygons
+         * or circles.
+         */
+        fill?: boolean;
+
+        /**
+         * Fill color.
+         *
+         * Default value: same as color.
+         */
+        fillColor?: string;
+
+        /**
+         * Fill opacity.
+         *
+         * Default value: 0.2.
+         */
+        fillOpacity?: number;
+
+        /**
+         * A string that defines the stroke dash pattern. Doesn't work on canvas-powered
+         * layers (e.g. Android 2).
+         */
+        dashArray?: string;
+
+        /**
+         * A string that defines shape to be used at the end of the stroke.
+         *
+         * Default: null.
+         */
+        lineCap?: string;
+
+        /**
+         * A string that defines shape to be used at the corners of the stroke.
+         *
+         * Default: null.
+         */
+        lineJoin?: string;
+
+        /**
+         * If false, the vector will not emit mouse events and will act as a part of the
+         * underlying map.
+         *
+         * Default value: true.
+         */
+        clickable?: boolean;
+
+        /**
+         * Sets the pointer-events attribute on the path if SVG backend is used.
+         */
+        pointerEvents?: string;
+
+        /**
+         * Custom class name set on an element.
+         *
+         * Default value: ''.
+         */
+        className?: string;
+
+    }
+
+
+    /**
+     * Creates a Point object with the given x and y coordinates. If optional round
+     * is set to true, rounds the x and y values.
+     */
+    function point(x: number, y: number, round?: boolean): Point;
+
+    export interface PointStatic extends ClassStatic {
+        /**
+         * Creates a Point object with the given x and y coordinates. If optional round
+         * is set to true, rounds the x and y values.
+         */
+        new(x: number, y: number, round?: boolean): Point;
+    }
+    export var Point: PointStatic;
+
+    export interface Point {
+        /**
+         * Returns the result of addition of the current and the given points.
+         */
+        add(otherPoint: Point): Point;
+
+        /**
+         * Returns the result of subtraction of the given point from the current.
+         */
+        subtract(otherPoint: Point): Point;
+
+        /**
+         * Returns the result of multiplication of the current point by the given number.
+         */
+        multiplyBy(number: number): Point;
+
+        /**
+         * Returns the result of division of the current point by the given number. If
+         * optional round is set to true, returns a rounded result.
+         */
+        divideBy(number: number, round?: boolean): Point;
+
+        /**
+         * Returns the distance between the current and the given points.
+         */
+        distanceTo(otherPoint: Point): number;
+
+        /**
+         * Returns a copy of the current point.
+         */
+        clone(): Point;
+
+        /**
+         * Returns a copy of the current point with rounded coordinates.
+         */
+        round(): Point;
+
+        /**
+         * Returns true if the given point has the same coordinates.
+         */
+        equals(otherPoint: Point): boolean;
+
+        /**
+         * Returns a string representation of the point for debugging purposes.
+         */
+        toString(): string;
+
+        /**
+         * The x coordinate.
+         */
+        x: number;
+
+        /**
+         * The y coordinate.
+         */
+        y: number;
+    }
+
+
+    /**
+     * Instantiates a polygon object given an array of geographical points and
+     * optionally an options object (the same as for Polyline). You can also create
+     * a polygon with holes by passing an array of arrays of latlngs, with the first
+     * latlngs array representing the exterior ring while the remaining represent
+     * the holes inside.
+     */
+    function polygon(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polygon;
+
+
+    export interface PolygonStatic extends ClassStatic {
+        /**
+         * Instantiates a polygon object given an array of geographical points and
+         * optionally an options object (the same as for Polyline). You can also create
+         * a polygon with holes by passing an array of arrays of latlngs, with the first
+         * latlngs array representing the exterior ring while the remaining represent
+         * the holes inside.
+         */
+        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polygon;
+    }
+    export var Polygon: PolygonStatic;
+
+    export interface Polygon extends Polyline {
+    }
+
+
+    /**
+     * Instantiates a polyline object given an array of geographical points and
+     * optionally an options object.
+     */
+    function polyline(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polyline;
+
+    export interface PolylineStatic extends ClassStatic {
+        /**
+         * Instantiates a polyline object given an array of geographical points and
+         * optionally an options object.
+         */
+        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polyline;
+    }
+    export var Polyline: PolylineStatic;
+
+    export interface Polyline extends Path {
+        /**
+         * Adds a given point to the polyline.
+         */
+        addLatLng(latlng: LatLngExpression): Polyline;
+
+        /**
+         * Replaces all the points in the polyline with the given array of geographical
+         * points.
+         */
+        setLatLngs(latlngs: LatLngBoundsExpression): Polyline;
+
+        /**
+         * Returns an array of the points in the path.
+         */
+        getLatLngs(): LatLng[];
+
+        /**
+         * Allows adding, removing or replacing points in the polyline. Syntax is the
+         * same as in Array#splice. Returns the array of removed points (if any).
+         */
+        spliceLatLngs(index: number, pointsToRemove: number, ...latlngs: LatLng[]): LatLng[];
+
+        /**
+         * Returns the LatLngBounds of the polyline.
+         */
+        getBounds(): LatLngBounds;
+
+        /**
+         * Returns a GeoJSON representation of the polyline (GeoJSON LineString Feature).
+         */
+        toGeoJSON(): any;
+    }
+
+    export interface PolylineOptions extends PathOptions {
+
+        /**
+         * How much to simplify the polyline on each zoom level. More means better performance
+         * and smoother look, and less means more accurate representation.
+         *
+         * Default value: 1.0.
+         */
+        smoothFactor?: number;
+
+        /**
+         * Disabled polyline clipping.
+         *
+         * Default value: false.
+         */
+        noClip?: boolean;
+    }
+
+
+    module PolyUtil {
+
+        /**
+         * Clips the polygon geometry defined by the given points by rectangular bounds.
+         * Used by Leaflet to only show polygon points that are on the screen or near,
+         * increasing performance. Note that polygon points needs different algorithm
+         * for clipping than polyline, so there's a seperate method for it.
+         */
+        export function clipPolygon(points: Point[], bounds: Bounds): Point[];
+    }
+
+
+    /**
+     * Instantiates a Popup object given an optional options object that describes
+     * its appearance and location and an optional object that is used to tag the
+     * popup with a reference to the source object to which it refers.
+     */
+    function popup(options?: PopupOptions, source?: any): Popup;
+
+    export interface PopupStatic extends ClassStatic {
+        /**
+         * Instantiates a Popup object given an optional options object that describes
+         * its appearance and location and an optional object that is used to tag the
+         * popup with a reference to the source object to which it refers.
+         */
+        new(options?: PopupOptions, source?: any): Popup;
+    }
+    export var Popup: PopupStatic;
+
+    export interface Popup extends ILayer {
+        /**
+         * Adds the popup to the map.
+         */
+        addTo(map: Map): Popup;
+
+        /**
+         * Adds the popup to the map and closes the previous one. The same as map.openPopup(popup).
+         */
+        openOn(map: Map): Popup;
+
+        /**
+         * Sets the geographical point where the popup will open.
+         */
+        setLatLng(latlng: LatLngExpression): Popup;
+
+        /**
+         * Returns the geographical point of popup.
+         */
+        getLatLng(): LatLng;
+
+        /**
+         * Sets the HTML content of the popup.
+         */
+        setContent(html: string): Popup;
+
+        /**
+         * Sets the HTML content of the popup.
+         */
+        setContent(el: HTMLElement): Popup;
+
+        /**
+         * Returns the content of the popup.
+         */
+        getContent(): HTMLElement;
+        //getContent(): string;
+
+        ////////////
+        ////////////
+        /**
+         * Should contain code that creates DOM elements for the overlay, adds them
+         * to map panes where they should belong and puts listeners on relevant map events.
+         * Called on map.addLayer(layer).
+         */
+        onAdd(map: Map): void;
+
+        /**
+         * Should contain all clean up code that removes the overlay's elements from
+         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
+         */
+        onRemove(map: Map): void;
+
+        /**
+         * Updates the popup content, layout and position. Useful for updating the popup after
+         * something inside changed, e.g. image loaded.
+         */
+        update(): Popup;
+    }
+
+
+    export interface PopupOptions {
+
+        /**
+         * Max width of the popup.
+         *
+         * Default value: 300.
+         */
+        maxWidth?: number;
+
+        /**
+         * Min width of the popup.
+         *
+         * Default value: 50.
+         */
+        minWidth?: number;
+
+        /**
+         * If set, creates a scrollable container of the given height inside a popup
+         * if its content exceeds it.
+         */
+        maxHeight?: number;
+
+        /**
+         * Set it to false if you don't want the map to do panning animation to fit the opened
+         * popup.
+         *
+         * Default value: true.
+         */
+        autoPan?: boolean;
+
+        /**
+         * Set it to true if you want to prevent users from panning the popup off of the screen while it is open.
+         */
+        keepInView?: boolean;
+
+        /**
+         * Controls the presense of a close button in the popup.
+         *
+         * Default value: true.
+         */
+        closeButton?: boolean;
+
+        /**
+         * The offset of the popup position. Useful to control the anchor of the popup
+         * when opening it on some overlays.
+         *
+         * Default value: new Point(0, 6).
+         */
+        offset?: Point;
+
+        /**
+         * The margin between the popup and the top left corner of the map view after
+         * autopanning was performed.
+         *
+         * Default value: null.
+         */
+        autoPanPaddingTopLeft?: Point;
+
+        /**
+         * The margin between the popup and the bottom right corner of the map view after
+         * autopanning was performed.
+         *
+         * Default value: null.
+         */
+        autoPanPaddingBottomRight?: Point;
+
+        /**
+         * The margin between the popup and the edges of the map view after autopanning
+         * was performed.
+         *
+         * Default value: new Point(5, 5).
+         */
+        autoPanPadding?: Point;
+
+        /**
+         * Whether to animate the popup on zoom. Disable it if you have problems with
+         * Flash content inside popups.
+         *
+         * Default value: true.
+         */
+        zoomAnimation?: boolean;
+
+        /**
+         * Set it to false if you want to override the default behavior of the popup
+         * closing when user clicks the map (set globally by the Map closePopupOnClick
+         * option).
+         */
+        closeOnClick?: boolean;
+
+        /**
+         * A custom class name to assign to the popup.
+         */
+        className?: string;
+    }
+
+
+    export interface PosAnimationStatic extends ClassStatic {
+        /**
+         * Creates a PosAnimation object.
+         */
+        new(): PosAnimation;
+    }
+    export var PosAnimation: PosAnimationStatic;
+
+    export interface PosAnimation extends IEventPowered<PosAnimation> {
+        /**
+         * Run an animation of a given element to a new position, optionally setting
+         * duration in seconds (0.25 by default) and easing linearity factor (3rd argument
+         * of the cubic bezier curve, 0.5 by default)
+         */
+        run(element: HTMLElement, newPos: Point, duration?: number, easeLinearity?: number): PosAnimation;
+
+        ////////////////
+        ////////////////
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimation;
+        hasEventListeners(type: string): boolean;
+        fireEvent(type: string, data?: any): PosAnimation;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimation;
+        fire(type: string, data?: any): PosAnimation;
+        addEventListener(eventMap: any, context?: any): PosAnimation;
+        removeEventListener(eventMap?: any, context?: any): PosAnimation;
+        clearAllEventListeners(): PosAnimation;
+        on(eventMap: any, context?: any): PosAnimation;
+        off(eventMap?: any, context?: any): PosAnimation;
+    }
+
+
+    module Projection {
+
+        /**
+         * Spherical Mercator projection — the most common projection for online maps,
+         * used by almost all free and commercial tile providers. Assumes that Earth
+         * is a sphere. Used by the EPSG:3857 CRS.
+         */
+        export var SphericalMercator: IProjection;
+
+        /**
+         * Elliptical Mercator projection — more complex than Spherical Mercator.
+         * Takes into account that Earth is a geoid, not a perfect sphere. Used by the
+         * EPSG:3395 CRS.
+         */
+        export var Mercator: IProjection;
+
+        /**
+         * Equirectangular, or Plate Carree projection — the most simple projection,
+         * mostly used by GIS enthusiasts. Directly maps x as longitude, and y as latitude.
+         * Also suitable for flat worlds, e.g. game maps. Used by the EPSG:3395 and Simple
+         * CRS.
+         */
+        export var LonLat: IProjection;
+    }
+
+
+    /**
+     * Instantiates a rectangle object with the given geographical bounds and
+     * optionally an options object.
+     */
+    function rectangle(bounds: LatLngBounds, options?: PathOptions): Rectangle;
+
+    export interface RectangleStatic extends ClassStatic {
+        /**
+         * Instantiates a rectangle object with the given geographical bounds and
+         * optionally an options object.
+         */
+        new(bounds: LatLngBounds, options?: PathOptions): Rectangle;
+    }
+    export var Rectangle: RectangleStatic;
+
+    export interface Rectangle extends Polygon {
+        /**
+         * Redraws the rectangle with the passed bounds.
+         */
+        setBounds(bounds: LatLngBounds): Rectangle;
+    }
+
+
+    export interface ScaleOptions {
+
+        /**
+         * The position of the control (one of the map corners). See control positions.
+         * Default value: 'bottomleft'.
+         */
+        position?: string;
+
+        /**
+         * Maximum width of the control in pixels. The width is set dynamically to show
+         * round values (e.g. 100, 200, 500).
+         * Default value: 100.
+         */
+        maxWidth?: number;
+
+        /**
+         * Whether to show the metric scale line (m/km).
+         * Default value: true.
+         */
+        metric?: boolean;
+
+        /**
+         * Whether to show the imperial scale line (mi/ft).
+         * Default value: true.
+         */
+        imperial?: boolean;
+
+        /**
+         * If true, the control is updated on moveend, otherwise it's always up-to-date
+         * (updated on move).
+         * Default value: false.
+         */
+        updateWhenIdle?: boolean;
+    }
+
+
+    export interface TileLayerStatic extends ClassStatic {
+        /**
+         * Instantiates a tile layer object given a URL template and optionally an options
+         * object.
+         */
+        new(urlTemplate: string, options?: TileLayerOptions): TileLayer;
+
+        WMS: {
+            /**
+             * Instantiates a WMS tile layer object given a base URL of the WMS service and
+             * a WMS parameters/options object.
+             */
+            new(baseUrl: string, options: WMSOptions): TileLayer.WMS;
+        };
+
+        Canvas: {
+            /**
+             * Instantiates a Canvas tile layer object given an options object (optionally).
+             */
+            new(options?: TileLayerOptions): TileLayer.Canvas;
+        };
+    }
+    export var TileLayer: TileLayerStatic;
+
+    export interface TileLayer extends ILayer, IEventPowered<TileLayer> {
+        /**
+         * Adds the layer to the map.
+         */
+        addTo(map: Map): TileLayer;
+
+        /**
+         * Brings the tile layer to the top of all tile layers.
+         */
+        bringToFront(): TileLayer;
+
+        /**
+         * Brings the tile layer to the bottom of all tile layers.
+         */
+        bringToBack(): TileLayer;
+
+        /**
+         * Changes the opacity of the tile layer.
+         */
+        setOpacity(opacity: number): TileLayer;
+
+        /**
+         * Sets the zIndex of the tile layer.
+         */
+        setZIndex(zIndex: number): TileLayer;
+
+        /**
+         * Causes the layer to clear all the tiles and request them again.
+         */
+        redraw(): TileLayer;
+
+        /**
+         * Updates the layer's URL template and redraws it.
+         */
+        setUrl(urlTemplate: string): TileLayer;
+
+        /**
+         * Returns the HTML element that contains the tiles for this layer.
+         */
+        getContainer(): HTMLElement;
+
+        ////////////
+        ////////////
+        /**
+         * Should contain code that creates DOM elements for the overlay, adds them
+         * to map panes where they should belong and puts listeners on relevant map events.
+         * Called on map.addLayer(layer).
+         */
+        onAdd(map: Map): void;
+
+        /**
+         * Should contain all clean up code that removes the overlay's elements from
+         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
+         */
+        onRemove(map: Map): void;
+
+        ////////////////
+        ////////////////
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayer;
+        hasEventListeners(type: string): boolean;
+        fireEvent(type: string, data?: any): TileLayer;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayer;
+        fire(type: string, data?: any): TileLayer;
+        addEventListener(eventMap: any, context?: any): TileLayer;
+        removeEventListener(eventMap?: any, context?: any): TileLayer;
+        clearAllEventListeners(): TileLayer;
+        on(eventMap: any, context?: any): TileLayer;
+        off(eventMap?: any, context?: any): TileLayer;
+    }
+
+    module TileLayer {
+        export interface WMS extends TileLayer {
+            /**
+             * Merges an object with the new parameters and re-requests tiles on the current
+             * screen (unless noRedraw was set to true).
+             */
+            setParams(params: WMS, noRedraw?: boolean): WMS;
+        }
+
+        export interface Canvas extends TileLayer {
+            /**
+             * You need to define this method after creating the instance to draw tiles;
+             * canvas is the actual canvas tile on which you can draw, tilePoint represents
+             * the tile numbers, and zoom is the current zoom.
+             */
+            drawTile(canvas: HTMLCanvasElement, tilePoint: Point, zoom: number): Canvas;
+
+            /**
+             * Calling redraw will cause the drawTile method to be called for all tiles.
+             * May be used for updating dynamic content drawn on the Canvas
+             */
+            redraw(): Canvas;
+        }
+    }
+
+    export interface TileLayerFactory {
+
+        /**
+         * Instantiates a tile layer object given a URL template and optionally an options
+         * object.
+         */
+        (urlTemplate: string, options?: TileLayerOptions): TileLayer;
+
+        /**
+         * Instantiates a WMS tile layer object given a base URL of the WMS service and
+         * a WMS parameters/options object.
+         */
+        wms(baseUrl: string, options: WMSOptions): L.TileLayer.WMS;
+
+        /**
+         * Instantiates a Canvas tile layer object given an options object (optionally).
+         */
+        canvas(options?: TileLayerOptions): L.TileLayer.Canvas;
+    }
+
+    export var tileLayer: TileLayerFactory;
+
+
+    export interface TileLayerOptions {
+
+        /**
+         * Minimum zoom number.
+         *
+         * Default value: 0.
+         */
+        minZoom?: number;
+
+        /**
+         * Maximum zoom number.
+         *
+         * Default value: 18.
+         */
+        maxZoom?: number;
+
+        /**
+         * Maximum zoom number the tiles source has available. If it is specified,
+         * the tiles on all zoom levels higher than maxNativeZoom will be loaded from
+         * maxZoom level and auto-scaled.
+         *
+         * Default value: null.
+         */
+        maxNativeZoom?: number;
+
+        /**
+         * Tile size (width and height in pixels, assuming tiles are square).
+         *
+         * Default value: 256.
+         */
+        tileSize?: number;
+
+        /**
+         * Subdomains of the tile service. Can be passed in the form of one string (where
+         * each letter is a subdomain name) or an array of strings.
+         *
+         * Default value: 'abc'.
+         */
+        subdomains?: string[];
+
+        /**
+         * URL to the tile image to show in place of the tile that failed to load.
+         *
+         * Default value: ''.
+         */
+        errorTileUrl?: string;
+
+        /**
+         * e.g. "© CloudMade" — the string used by the attribution control, describes
+         * the layer data.
+         *
+         * Default value: ''.
+         */
+        attribution?: string;
+
+        /**
+         * If true, inverses Y axis numbering for tiles (turn this on for TMS services).
+         *
+         * Default value: false.
+         */
+        tms?: boolean;
+
+        /**
+         * If set to true, the tile coordinates won't be wrapped by world width (-180
+         * to 180 longitude) or clamped to lie within world height (-90 to 90). Use this
+         * if you use Leaflet for maps that don't reflect the real world (e.g. game, indoor
+         * or photo maps).
+         *
+         * Default value: false.
+         */
+        continuousWorld?: boolean;
+
+        /**
+         * If set to true, the tiles just won't load outside the world width (-180 to 180
+         * longitude) instead of repeating.
+         *
+         * Default value: false.
+         */
+        noWrap?: boolean;
+
+        /**
+         * The zoom number used in tile URLs will be offset with this value.
+         *
+         * Default value: 0.
+         */
+        zoomOffset?: number;
+
+        /**
+         * If set to true, the zoom number used in tile URLs will be reversed (maxZoom
+         * - zoom instead of zoom)
+         *
+         * Default value: false.
+         */
+        zoomReverse?: boolean;
+
+        /**
+         * The opacity of the tile layer.
+         *
+         * Default value: 1.0.
+         */
+        opacity?: number;
+
+        /**
+         * The explicit zIndex of the tile layer. Not set by default.
+         */
+        zIndex?: number;
+
+        /**
+         * If true, all the tiles that are not visible after panning are removed (for
+         * better performance). true by default on mobile WebKit, otherwise false.
+         */
+        unloadInvisibleTiles?: boolean;
+
+        /**
+         * If false, new tiles are loaded during panning, otherwise only after it (for
+         * better performance). true by default on mobile WebKit, otherwise false.
+         */
+        updateWhenIdle?: boolean;
+
+        /**
+         * If true and user is on a retina display, it will request four tiles of half the
+         * specified size and a bigger zoom level in place of one to utilize the high resolution.
+         *
+         * Default value: false.
+         */
+        detectRetina?: boolean;
+
+        /**
+         * If true, all the tiles that are not visible after panning are placed in a reuse
+         * queue from which they will be fetched when new tiles become visible (as opposed
+         * to dynamically creating new ones). This will in theory keep memory usage
+         * low and eliminate the need for reserving new memory whenever a new tile is
+         * needed.
+         *
+         * Default value: false.
+         */
+        reuseTiles?: boolean;
+
+        /**
+         * When this option is set, the TileLayer only loads tiles that are in the given geographical bounds.
+         */
+        bounds?: LatLngBounds;
+
+        /**
+         * Custom keys may be specified in TileLayerOptions so they can be used in a provided URL template.
+         */
+        [additionalKeys: string]: any;
+    }
+
+    export interface TransformationStatic extends ClassStatic {
+        /**
+         * Creates a transformation object with the given coefficients.
+         */
+        new(a: number, b: number, c: number, d: number): Transformation;
+    }
+    export var Transformation: TransformationStatic;
+
+    export interface Transformation {
+        /**
+         * Returns a transformed point, optionally multiplied by the given scale.
+         * Only accepts real L.Point instances, not arrays.
+         */
+        transform(point: Point, scale?: number): Point;
+
+        /**
+         * Returns the reverse transformation of the given point, optionally divided
+         * by the given scale. Only accepts real L.Point instances, not arrays.
+         */
+        untransform(point: Point, scale?: number): Point;
+    }
+
+
+    module Util {
+
+        /**
+         * Merges the properties of the src object (or multiple objects) into dest object
+         * and returns the latter. Has an L.extend shortcut.
+         */
+        export function extend(dest: any, ...sources: any[]): any;
+
+        /**
+         * Returns a function which executes function fn with the given scope obj (so
+         * that this keyword refers to obj inside the function code). Has an L.bind shortcut.
+         */
+        export function bind<T extends Function>(fn: T, obj: any): T;
+
+        /**
+         * Applies a unique key to the object and returns that key. Has an L.stamp shortcut.
+         */
+        export function stamp(obj: any): string;
+
+        /**
+         * Returns a wrapper around the function fn that makes sure it's called not more
+         * often than a certain time interval time, but as fast as possible otherwise
+         * (for example, it is used for checking and requesting new tiles while dragging
+         * the map), optionally passing the scope (context) in which the function will
+         * be called.
+         */
+        export function limitExecByInterval<T extends Function>(fn: T, time: number, context?: any): T;
+
+        /**
+         * Returns a function which always returns false.
+         */
+        export function falseFn(): () => boolean;
+
+        /**
+         * Returns the number num rounded to digits decimals.
+         */
+        export function formatNum(num: number, digits: number): number;
+
+        /**
+         * Trims and splits the string on whitespace and returns the array of parts.
+         */
+        export function splitWords(str: string): string[];
+
+        /**
+         * Merges the given properties to the options of the obj object, returning the
+         * resulting options. See Class options. Has an L.setOptions shortcut.
+         */
+        export function setOptions(obj: any, options: any): any;
+
+        /**
+         * Converts an object into a parameter URL string, e.g. {a: "foo", b: "bar"}
+         * translates to '?a=foo&b=bar'.
+         */
+        export function getParamString(obj: any): string;
+
+        /**
+         * Simple templating facility, creates a string by applying the values of the
+         * data object of a form {a: 'foo', b: 'bar', …} to a template string of the form
+         * 'Hello {a}, {b}' — in this example you will get 'Hello foo, bar'.
+         */
+        export function template(str: string, data: any): string;
+
+        /**
+         * Returns true if the given object is an array.
+         */
+        export function isArray(obj: any): boolean;
+
+        /**
+         * Trims the whitespace from both ends of the string and returns the result.
+         */
+        export function trim(str: string): string;
+
+        /**
+         * Data URI string containing a base64-encoded empty GIF image. Used as a hack
+         * to free memory from unused images on WebKit-powered mobile devices (by setting
+         * image src to this string).
+         */
+        export var emptyImageUrl: string;
+    }
+
+
+    export interface WMSOptions {
+
+        /**
+         * (required) Comma-separated list of WMS layers to show.
+         *
+         * Default value: ''.
+         */
+        layers?: string;
+
+        /**
+         * Comma-separated list of WMS styles.
+         *
+         * Default value: 'image/jpeg'.
+         */
+        styles?: string;
+
+        /**
+         * WMS image format (use 'image/png' for layers with transparency).
+         *
+         * Default value: false.
+         */
+        format?: string;
+
+        /**
+         * If true, the WMS service will return images with transparency.
+         *
+         * Default value: '1.1.1'.
+         */
+        transparent?: boolean;
+
+        /**
+         * Version of the WMS service to use.
+         */
+        version?: string;
+
+    }
 }
 
-declare namespace L.Map {
+
+declare module L.Map {
 
     export interface MapOptions {
 
@@ -2778,1565 +4154,7 @@ declare namespace L.Map {
     }
 }
 
-declare namespace L {
 
-    export interface MapPanes {
-
-        /**
-         * Pane that contains all other map panes.
-         */
-        mapPane: HTMLElement;
-
-        /**
-         * Pane for tile layers.
-         */
-        tilePane: HTMLElement;
-
-        /**
-         * Pane that contains all the panes except tile pane.
-         */
-        objectsPane: HTMLElement;
-
-        /**
-         * Pane for overlay shadows (e.g. marker shadows).
-         */
-        shadowPane: HTMLElement;
-
-        /**
-         * Pane for overlays like polylines and polygons.
-         */
-        overlayPane: HTMLElement;
-
-        /**
-         * Pane for marker icons.
-         */
-        markerPane: HTMLElement;
-
-        /**
-         * Pane for popups.
-         */
-        popupPane: HTMLElement;
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Instantiates a Marker object given a geographical point and optionally
-     * an options object.
-     */
-    function marker(latlng: LatLngExpression, options?: MarkerOptions): Marker;
-
-    var Marker: {
-        /**
-         * Instantiates a Marker object given a geographical point and optionally
-         * an options object.
-         */
-        new(latlng: LatLngExpression, options?: MarkerOptions): Marker;
-    };
-
-    export interface Marker extends ILayer, IEventPowered<Marker> {
-        /**
-         * Adds the marker to the map.
-         */
-        addTo(map: Map): Marker;
-
-        /**
-         * Returns the current geographical position of the marker.
-         */
-        getLatLng(): LatLng;
-
-        /**
-         * Changes the marker position to the given point.
-         */
-        setLatLng(latlng: LatLngExpression): Marker;
-
-        /**
-         * Changes the marker icon.
-         */
-        setIcon(icon: Icon): Marker;
-
-        /**
-         * Changes the zIndex offset of the marker.
-         */
-        setZIndexOffset(offset: number): Marker;
-
-        /**
-         * Changes the opacity of the marker.
-         */
-        setOpacity(opacity: number): Marker;
-
-        /**
-         * Updates the marker position, useful if coordinates of its latLng object
-         * were changed directly.
-         */
-        update(): Marker;
-
-        /**
-         * Binds a popup with a particular HTML content to a click on this marker. You
-         * can also open the bound popup with the Marker openPopup method.
-         */
-        bindPopup(html: string, options?: PopupOptions): Marker;
-
-        /**
-         * Binds a popup with a particular HTML content to a click on this marker. You
-         * can also open the bound popup with the Marker openPopup method.
-         */
-        bindPopup(el: HTMLElement, options?: PopupOptions): Marker;
-
-        /**
-         * Binds a popup with a particular HTML content to a click on this marker. You
-         * can also open the bound popup with the Marker openPopup method.
-         */
-        bindPopup(popup: Popup, options?: PopupOptions): Marker;
-
-        /**
-         * Unbinds the popup previously bound to the marker with bindPopup.
-         */
-        unbindPopup(): Marker;
-
-        /**
-         * Opens the popup previously bound by the bindPopup method.
-         */
-        openPopup(): Marker;
-
-        /**
-         * Returns the popup previously bound by the bindPopup method.
-         */
-        getPopup(): Popup;
-
-        /**
-         * Closes the bound popup of the marker if it's opened.
-         */
-        closePopup(): Marker;
-
-        /**
-         * Toggles the popup previously bound by the bindPopup method.
-         */
-        togglePopup(): Marker;
-
-        /**
-         * Sets an HTML content of the popup of this marker.
-         */
-        setPopupContent(html: string, options?: PopupOptions): Marker;
-
-        /**
-         * Sets an HTML content of the popup of this marker.
-         */
-        setPopupContent(el: HTMLElement, options?: PopupOptions): Marker;
-
-        /**
-         * Returns a GeoJSON representation of the marker (GeoJSON Point Feature).
-         */
-        toGeoJSON(): any;
-
-        /**
-         * Marker dragging handler (by both mouse and touch).
-         */
-        dragging: IHandler;
-
-        ////////////
-        ////////////
-        /**
-         * Should contain code that creates DOM elements for the overlay, adds them
-         * to map panes where they should belong and puts listeners on relevant map events.
-         * Called on map.addLayer(layer).
-         */
-        onAdd(map: Map): void;
-
-        /**
-         * Should contain all clean up code that removes the overlay's elements from
-         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
-         */
-        onRemove(map: Map): void;
-
-        ////////////////
-        ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Marker;
-        hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): Marker;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Marker;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Marker;
-        fire(type: string, data?: any): Marker;
-        addEventListener(eventMap: any, context?: any): Marker;
-        removeEventListener(eventMap?: any, context?: any): Marker;
-        clearAllEventListeners(): Marker;
-        on(eventMap: any, context?: any): Marker;
-        off(eventMap?: any, context?: any): Marker;
-    }
-}
-
-declare namespace L {
-
-    export interface MarkerOptions {
-
-        /**
-         * Icon class to use for rendering the marker. See Icon documentation for details
-         * on how to customize the marker icon.
-         *
-         * Default value: new L.Icon.Default().
-         */
-        icon?: Icon;
-
-        /**
-         * If false, the marker will not emit mouse events and will act as a part of the
-         * underlying map.
-         *
-         * Default value: true.
-         */
-        clickable?: boolean;
-
-        /**
-         * Whether the marker is draggable with mouse/touch or not.
-         *
-         * Default value: false.
-         */
-        draggable?: boolean;
-
-        /**
-         * Whether the marker can be tabbed to with a keyboard and clicked by pressing enter.
-         *
-         * Default value: true.
-         */
-        keyboard?: boolean;
-
-        /**
-         * Text for the browser tooltip that appear on marker hover (no tooltip by default).
-         *
-         * Default value: ''.
-         */
-        title?: string;
-
-        /**
-         * Text for the alt attribute of the icon image (useful for accessibility).
-         *
-         * Default value: ''.
-         */
-        alt?: string;
-
-        /**
-         * By default, marker images zIndex is set automatically based on its latitude.
-         * You this option if you want to put the marker on top of all others (or below),
-         * specifying a high value like 1000 (or high negative value, respectively).
-         *
-         * Default value: 0.
-         */
-        zIndexOffset?: number;
-
-        /**
-         * The opacity of the marker.
-         *
-         * Default value: 1.0.
-         */
-        opacity?: number;
-
-        /**
-         * If true, the marker will get on top of others when you hover the mouse over it.
-         *
-         * Default value: false.
-         */
-        riseOnHover?: boolean;
-
-        /**
-         * The z-index offset used for the riseOnHover feature.
-         *
-         * Default value: 250.
-         */
-        riseOffset?: number;
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Instantiates a multi-polyline object given an array of latlngs arrays (one
-     * for each individual polygon) and optionally an options object (the same
-     * as for MultiPolyline).
-     */
-    function multiPolygon(latlngs: LatLng[][], options?: PolylineOptions): MultiPolygon;
-
-    export interface MultiPolylgonStatic extends ClassStatic {
-        /**
-         * Instantiates a multi-polyline object given an array of latlngs arrays (one
-         * for each individual polygon) and optionally an options object (the same
-         * as for MultiPolyline).
-         */
-        new(latlngs: LatLng[][], options?: PolylineOptions): MultiPolygon;
-    }
-    export var MultiPolylgon: MultiPolylgonStatic;
-
-    export interface MultiPolygon extends FeatureGroup<Polygon> {
-        /**
-         * Replace all polygons and their paths with the given array of arrays
-         * of geographical points.
-         */
-        setLatLngs(latlngs: LatLng[][]): MultiPolygon;
-
-        /**
-         * Returns an array of arrays of geographical points in each polygon.
-         */
-        getLatLngs(): LatLng[][];
-
-        /**
-         * Opens the popup previously bound by bindPopup.
-         */
-        openPopup(): MultiPolygon;
-
-        /**
-         * Returns a GeoJSON representation of the multipolygon (GeoJSON MultiPolygon Feature).
-         */
-        toGeoJSON(): any;
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Instantiates a multi-polyline object given an array of arrays of geographical
-     * points (one for each individual polyline) and optionally an options object.
-     */
-    function multiPolyline(latlngs: LatLng[][], options?: PolylineOptions): MultiPolyline;
-
-    export interface MultiPolylineStatic extends ClassStatic {
-        /**
-         * Instantiates a multi-polyline object given an array of arrays of geographical
-         * points (one for each individual polyline) and optionally an options object.
-         */
-        new(latlngs: LatLng[][], options?: PolylineOptions): MultiPolyline;
-    }
-    export var MultiPolyline: MultiPolylineStatic;
-
-    export interface MultiPolyline extends FeatureGroup<Polyline> {
-        /**
-         * Replace all polygons and their paths with the given array of arrays
-         * of geographical points.
-         */
-        setLatLngs(latlngs: LatLng[][]): MultiPolyline;
-
-        /**
-         * Returns an array of arrays of geographical points in each polygon.
-         */
-        getLatLngs(): LatLng[][];
-
-        /**
-         * Opens the popup previously bound by bindPopup.
-         */
-        openPopup(): MultiPolyline;
-
-        /**
-         * Returns a GeoJSON representation of the multipolyline (GeoJSON MultiLineString Feature).
-         */
-        toGeoJSON(): any;
-    }
-}
-
-declare namespace L {
-
-    export interface PanOptions {
-
-        /**
-         * If true, panning will always be animated if possible. If false, it will not
-         * animate panning, either resetting the map view if panning more than a screen
-         * away, or just setting a new offset for the map pane (except for `panBy`
-         * which always does the latter).
-         */
-        animate?: boolean;
-
-        /**
-         * Duration of animated panning.
-         *
-         * Default value: 0.25.
-         */
-        duration?: number;
-
-        /**
-         * The curvature factor of panning animation easing (third parameter of the Cubic
-         * Bezier curve). 1.0 means linear animation, the less the more bowed the curve.
-         *
-         * Default value: 0.25.
-         */
-        easeLinearity?: number;
-
-        /**
-         * If true, panning won't fire movestart event on start (used internally for panning inertia).
-         *
-         * Default value: false.
-         */
-        noMoveStart?: boolean;
-    }
-}
-
-declare namespace L {
-
-    export interface Path extends ILayer, IEventPowered<Path> {
-
-        /**
-         * Adds the layer to the map.
-         */
-        addTo(map: Map): Path;
-
-        /**
-         * Binds a popup with a particular HTML content to a click on this path.
-         */
-        bindPopup(html: string, options?: PopupOptions): Path;
-
-        /**
-         * Binds a popup with a particular HTML content to a click on this path.
-         */
-        bindPopup(el: HTMLElement, options?: PopupOptions): Path;
-
-        /**
-         * Binds a popup with a particular HTML content to a click on this path.
-         */
-        bindPopup(popup: Popup, options?: PopupOptions): Path;
-
-        /**
-         * Unbinds the popup previously bound to the path with bindPopup.
-         */
-        unbindPopup(): Path;
-
-        /**
-         * Opens the popup previously bound by the bindPopup method in the given point,
-         * or in one of the path's points if not specified.
-         */
-        openPopup(latlng?: LatLngExpression): Path;
-
-        /**
-         * Closes the path's bound popup if it is opened.
-         */
-        closePopup(): Path;
-
-        /**
-         * Changes the appearance of a Path based on the options in the Path options object.
-         */
-        setStyle(object: PathOptions): Path;
-
-        /**
-         * Returns the LatLngBounds of the path.
-         */
-        getBounds(): LatLngBounds;
-
-        /**
-         * Brings the layer to the top of all path layers.
-         */
-        bringToFront(): Path;
-
-        /**
-         * Brings the layer to the bottom of all path layers.
-         */
-        bringToBack(): Path;
-
-        /**
-         * Redraws the layer. Sometimes useful after you changed the coordinates that
-         * the path uses.
-         */
-        redraw(): Path;
-        ////////////
-        ////////////
-        /**
-         * Should contain code that creates DOM elements for the overlay, adds them
-         * to map panes where they should belong and puts listeners on relevant map events.
-         * Called on map.addLayer(layer).
-         */
-        onAdd(map: Map): void;
-
-        /**
-         * Should contain all clean up code that removes the overlay's elements from
-         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
-         */
-        onRemove(map: Map): void;
-
-        ////////////////
-        ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Path;
-        hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): Path;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Path;
-        fire(type: string, data?: any): Path;
-        addEventListener(eventMap: any, context?: any): Path;
-        removeEventListener(eventMap?: any, context?: any): Path;
-        clearAllEventListeners(): Path;
-        on(eventMap: any, context?: any): Path;
-        off(eventMap?: any, context?: any): Path;
-    }
-
-    export namespace Path {
-        /**
-         * True if SVG is used for vector rendering (true for most modern browsers).
-         */
-        export var SVG: boolean;
-
-        /**
-         * True if VML is used for vector rendering (IE 6-8).
-         */
-        export var VML: boolean;
-
-        /**
-         * True if Canvas is used for vector rendering (Android 2). You can also force
-         * this by setting global variable L_PREFER_CANVAS to true before the Leaflet
-         * include on your page — sometimes it can increase performance dramatically
-         * when rendering thousands of circle markers, but currently suffers from
-         * a bug that causes removing such layers to be extremely slow.
-         */
-        export var CANVAS: boolean;
-
-        /**
-         * How much to extend the clip area around the map view (relative to its size,
-         * e.g. 0.5 is half the screen in each direction). Smaller values mean that you
-         * will see clipped ends of paths while you're dragging the map, and bigger values
-         * decrease drawing performance.
-         */
-        export var CLIP_PADDING: number;
-    }
-}
-
-declare namespace L {
-
-    export interface PathOptions {
-
-        /**
-         * Whether to draw stroke along the path. Set it to false to disable borders on
-         * polygons or circles.
-         *
-         * Default value: true.
-         */
-        stroke?: boolean;
-
-        /**
-         * Stroke color.
-         *
-         * Default value: '#03f'.
-         */
-        color?: string;
-
-        /**
-         * Stroke width in pixels.
-         *
-         * Default value: 5.
-         */
-        weight?: number;
-
-        /**
-         * Stroke opacity.
-         *
-         * Default value: 0.5.
-         */
-        opacity?: number;
-
-        /**
-         * Whether to fill the path with color. Set it to false to disable filling on polygons
-         * or circles.
-         */
-        fill?: boolean;
-
-        /**
-         * Fill color.
-         *
-         * Default value: same as color.
-         */
-        fillColor?: string;
-
-        /**
-         * Fill opacity.
-         *
-         * Default value: 0.2.
-         */
-        fillOpacity?: number;
-
-        /**
-         * A string that defines the stroke dash pattern. Doesn't work on canvas-powered
-         * layers (e.g. Android 2).
-         */
-        dashArray?: string;
-
-        /**
-         * A string that defines shape to be used at the end of the stroke.
-         *
-         * Default: null.
-         */
-        lineCap?: string;
-
-        /**
-         * A string that defines shape to be used at the corners of the stroke.
-         *
-         * Default: null.
-         */
-        lineJoin?: string;
-
-        /**
-         * If false, the vector will not emit mouse events and will act as a part of the
-         * underlying map.
-         *
-         * Default value: true.
-         */
-        clickable?: boolean;
-
-        /**
-         * Sets the pointer-events attribute on the path if SVG backend is used.
-         */
-        pointerEvents?: string;
-
-        /**
-         * Custom class name set on an element.
-         *
-         * Default value: ''.
-         */
-        className?: string;
-
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Creates a Point object with the given x and y coordinates. If optional round
-     * is set to true, rounds the x and y values.
-     */
-    function point(x: number, y: number, round?: boolean): Point;
-
-    export interface PointStatic extends ClassStatic {
-        /**
-         * Creates a Point object with the given x and y coordinates. If optional round
-         * is set to true, rounds the x and y values.
-         */
-        new(x: number, y: number, round?: boolean): Point;
-    }
-    export var Point: PointStatic;
-
-    export interface Point {
-        /**
-         * Returns the result of addition of the current and the given points.
-         */
-        add(otherPoint: Point): Point;
-
-        /**
-         * Returns the result of subtraction of the given point from the current.
-         */
-        subtract(otherPoint: Point): Point;
-
-        /**
-         * Returns the result of multiplication of the current point by the given number.
-         */
-        multiplyBy(number: number): Point;
-
-        /**
-         * Returns the result of division of the current point by the given number. If
-         * optional round is set to true, returns a rounded result.
-         */
-        divideBy(number: number, round?: boolean): Point;
-
-        /**
-         * Returns the distance between the current and the given points.
-         */
-        distanceTo(otherPoint: Point): number;
-
-        /**
-         * Returns a copy of the current point.
-         */
-        clone(): Point;
-
-        /**
-         * Returns a copy of the current point with rounded coordinates.
-         */
-        round(): Point;
-
-        /**
-         * Returns true if the given point has the same coordinates.
-         */
-        equals(otherPoint: Point): boolean;
-
-        /**
-         * Returns a string representation of the point for debugging purposes.
-         */
-        toString(): string;
-
-        /**
-         * The x coordinate.
-         */
-        x: number;
-
-        /**
-         * The y coordinate.
-         */
-        y: number;
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Instantiates a polygon object given an array of geographical points and
-     * optionally an options object (the same as for Polyline). You can also create
-     * a polygon with holes by passing an array of arrays of latlngs, with the first
-     * latlngs array representing the exterior ring while the remaining represent
-     * the holes inside.
-     */
-    function polygon(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polygon;
-
-
-    export interface PolygonStatic extends ClassStatic {
-        /**
-         * Instantiates a polygon object given an array of geographical points and
-         * optionally an options object (the same as for Polyline). You can also create
-         * a polygon with holes by passing an array of arrays of latlngs, with the first
-         * latlngs array representing the exterior ring while the remaining represent
-         * the holes inside.
-         */
-        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polygon;
-    }
-    export var Polygon: PolygonStatic;
-
-    export interface Polygon extends Polyline {
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Instantiates a polyline object given an array of geographical points and
-     * optionally an options object.
-     */
-    function polyline(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polyline;
-
-    export interface PolylineStatic extends ClassStatic {
-        /**
-         * Instantiates a polyline object given an array of geographical points and
-         * optionally an options object.
-         */
-        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polyline;
-    }
-    export var Polyline: PolylineStatic;
-
-    export interface Polyline extends Path {
-        /**
-         * Adds a given point to the polyline.
-         */
-        addLatLng(latlng: LatLngExpression): Polyline;
-
-        /**
-         * Replaces all the points in the polyline with the given array of geographical
-         * points.
-         */
-        setLatLngs(latlngs: LatLngBoundsExpression): Polyline;
-
-        /**
-         * Returns an array of the points in the path.
-         */
-        getLatLngs(): LatLng[];
-
-        /**
-         * Allows adding, removing or replacing points in the polyline. Syntax is the
-         * same as in Array#splice. Returns the array of removed points (if any).
-         */
-        spliceLatLngs(index: number, pointsToRemove: number, ...latlngs: LatLng[]): LatLng[];
-
-        /**
-         * Returns the LatLngBounds of the polyline.
-         */
-        getBounds(): LatLngBounds;
-
-        /**
-         * Returns a GeoJSON representation of the polyline (GeoJSON LineString Feature).
-         */
-        toGeoJSON(): any;
-    }
-}
-
-declare namespace L {
-
-    export interface PolylineOptions extends PathOptions {
-
-        /**
-         * How much to simplify the polyline on each zoom level. More means better performance
-         * and smoother look, and less means more accurate representation.
-         *
-         * Default value: 1.0.
-         */
-        smoothFactor?: number;
-
-        /**
-         * Disabled polyline clipping.
-         *
-         * Default value: false.
-         */
-        noClip?: boolean;
-    }
-}
-
-declare namespace L {
-
-    namespace PolyUtil {
-
-        /**
-         * Clips the polygon geometry defined by the given points by rectangular bounds.
-         * Used by Leaflet to only show polygon points that are on the screen or near,
-         * increasing performance. Note that polygon points needs different algorithm
-         * for clipping than polyline, so there's a seperate method for it.
-         */
-        export function clipPolygon(points: Point[], bounds: Bounds): Point[];
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Instantiates a Popup object given an optional options object that describes
-     * its appearance and location and an optional object that is used to tag the
-     * popup with a reference to the source object to which it refers.
-     */
-    function popup(options?: PopupOptions, source?: any): Popup;
-
-    export interface PopupStatic extends ClassStatic {
-        /**
-         * Instantiates a Popup object given an optional options object that describes
-         * its appearance and location and an optional object that is used to tag the
-         * popup with a reference to the source object to which it refers.
-         */
-        new(options?: PopupOptions, source?: any): Popup;
-    }
-    export var Popup: PopupStatic;
-
-    export interface Popup extends ILayer {
-        /**
-         * Adds the popup to the map.
-         */
-        addTo(map: Map): Popup;
-
-        /**
-         * Adds the popup to the map and closes the previous one. The same as map.openPopup(popup).
-         */
-        openOn(map: Map): Popup;
-
-        /**
-         * Sets the geographical point where the popup will open.
-         */
-        setLatLng(latlng: LatLngExpression): Popup;
-
-        /**
-         * Returns the geographical point of popup.
-         */
-        getLatLng(): LatLng;
-
-        /**
-         * Sets the HTML content of the popup.
-         */
-        setContent(html: string): Popup;
-
-        /**
-         * Sets the HTML content of the popup.
-         */
-        setContent(el: HTMLElement): Popup;
-
-        /**
-         * Returns the content of the popup.
-         */
-        getContent(): HTMLElement;
-        //getContent(): string;
-
-        ////////////
-        ////////////
-        /**
-         * Should contain code that creates DOM elements for the overlay, adds them
-         * to map panes where they should belong and puts listeners on relevant map events.
-         * Called on map.addLayer(layer).
-         */
-        onAdd(map: Map): void;
-
-        /**
-         * Should contain all clean up code that removes the overlay's elements from
-         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
-         */
-        onRemove(map: Map): void;
-
-        /**
-         * Updates the popup content, layout and position. Useful for updating the popup after
-         * something inside changed, e.g. image loaded.
-         */
-        update(): Popup;
-    }
-}
-
-declare namespace L {
-
-    export interface PopupOptions {
-
-        /**
-         * Max width of the popup.
-         *
-         * Default value: 300.
-         */
-        maxWidth?: number;
-
-        /**
-         * Min width of the popup.
-         *
-         * Default value: 50.
-         */
-        minWidth?: number;
-
-        /**
-         * If set, creates a scrollable container of the given height inside a popup
-         * if its content exceeds it.
-         */
-        maxHeight?: number;
-
-        /**
-         * Set it to false if you don't want the map to do panning animation to fit the opened
-         * popup.
-         *
-         * Default value: true.
-         */
-        autoPan?: boolean;
-
-        /**
-         * Set it to true if you want to prevent users from panning the popup off of the screen while it is open.
-         */
-        keepInView?: boolean;
-
-        /**
-         * Controls the presense of a close button in the popup.
-         *
-         * Default value: true.
-         */
-        closeButton?: boolean;
-
-        /**
-         * The offset of the popup position. Useful to control the anchor of the popup
-         * when opening it on some overlays.
-         *
-         * Default value: new Point(0, 6).
-         */
-        offset?: Point;
-
-        /**
-         * The margin between the popup and the top left corner of the map view after
-         * autopanning was performed.
-         *
-         * Default value: null.
-         */
-        autoPanPaddingTopLeft?: Point;
-
-        /**
-         * The margin between the popup and the bottom right corner of the map view after
-         * autopanning was performed.
-         *
-         * Default value: null.
-         */
-        autoPanPaddingBottomRight?: Point;
-
-        /**
-         * The margin between the popup and the edges of the map view after autopanning
-         * was performed.
-         *
-         * Default value: new Point(5, 5).
-         */
-        autoPanPadding?: Point;
-
-        /**
-         * Whether to animate the popup on zoom. Disable it if you have problems with
-         * Flash content inside popups.
-         *
-         * Default value: true.
-         */
-        zoomAnimation?: boolean;
-
-        /**
-         * Set it to false if you want to override the default behavior of the popup
-         * closing when user clicks the map (set globally by the Map closePopupOnClick
-         * option).
-         */
-        closeOnClick?: boolean;
-
-        /**
-         * A custom class name to assign to the popup.
-         */
-        className?: string;
-    }
-}
-
-declare namespace L {
-
-    export interface PosAnimationStatic extends ClassStatic {
-        /**
-         * Creates a PosAnimation object.
-         */
-        new(): PosAnimation;
-    }
-    export var PosAnimation: PosAnimationStatic;
-
-    export interface PosAnimation extends IEventPowered<PosAnimation> {
-        /**
-         * Run an animation of a given element to a new position, optionally setting
-         * duration in seconds (0.25 by default) and easing linearity factor (3rd argument
-         * of the cubic bezier curve, 0.5 by default)
-         */
-        run(element: HTMLElement, newPos: Point, duration?: number, easeLinearity?: number): PosAnimation;
-
-        ////////////////
-        ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): PosAnimation;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        fire(type: string, data?: any): PosAnimation;
-        addEventListener(eventMap: any, context?: any): PosAnimation;
-        removeEventListener(eventMap?: any, context?: any): PosAnimation;
-        clearAllEventListeners(): PosAnimation;
-        on(eventMap: any, context?: any): PosAnimation;
-        off(eventMap?: any, context?: any): PosAnimation;
-    }
-}
-
-declare namespace L {
-
-    namespace Projection {
-
-        /**
-         * Spherical Mercator projection — the most common projection for online maps,
-         * used by almost all free and commercial tile providers. Assumes that Earth
-         * is a sphere. Used by the EPSG:3857 CRS.
-         */
-        export var SphericalMercator: IProjection;
-
-        /**
-         * Elliptical Mercator projection — more complex than Spherical Mercator.
-         * Takes into account that Earth is a geoid, not a perfect sphere. Used by the
-         * EPSG:3395 CRS.
-         */
-        export var Mercator: IProjection;
-
-        /**
-         * Equirectangular, or Plate Carree projection — the most simple projection,
-         * mostly used by GIS enthusiasts. Directly maps x as longitude, and y as latitude.
-         * Also suitable for flat worlds, e.g. game maps. Used by the EPSG:3395 and Simple
-         * CRS.
-         */
-        export var LonLat: IProjection;
-    }
-}
-
-declare namespace L {
-
-    /**
-     * Instantiates a rectangle object with the given geographical bounds and
-     * optionally an options object.
-     */
-    function rectangle(bounds: LatLngBounds, options?: PathOptions): Rectangle;
-
-    export interface RectangleStatic extends ClassStatic {
-        /**
-         * Instantiates a rectangle object with the given geographical bounds and
-         * optionally an options object.
-         */
-        new(bounds: LatLngBounds, options?: PathOptions): Rectangle;
-    }
-    export var Rectangle: RectangleStatic;
-
-    export interface Rectangle extends Polygon {
-        /**
-         * Redraws the rectangle with the passed bounds.
-         */
-        setBounds(bounds: LatLngBounds): Rectangle;
-    }
-}
-
-
-declare namespace L {
-
-    export interface ScaleOptions {
-
-        /**
-         * The position of the control (one of the map corners). See control positions.
-         * Default value: 'bottomleft'.
-         */
-        position?: string;
-
-        /**
-         * Maximum width of the control in pixels. The width is set dynamically to show
-         * round values (e.g. 100, 200, 500).
-         * Default value: 100.
-         */
-        maxWidth?: number;
-
-        /**
-         * Whether to show the metric scale line (m/km).
-         * Default value: true.
-         */
-        metric?: boolean;
-
-        /**
-         * Whether to show the imperial scale line (mi/ft).
-         * Default value: true.
-         */
-        imperial?: boolean;
-
-        /**
-         * If true, the control is updated on moveend, otherwise it's always up-to-date
-         * (updated on move).
-         * Default value: false.
-         */
-        updateWhenIdle?: boolean;
-    }
-}
-
-declare namespace L {
-
-    export interface TileLayerStatic extends ClassStatic {
-        /**
-         * Instantiates a tile layer object given a URL template and optionally an options
-         * object.
-         */
-        new(urlTemplate: string, options?: TileLayerOptions): TileLayer;
-
-        WMS: {
-            /**
-             * Instantiates a WMS tile layer object given a base URL of the WMS service and
-             * a WMS parameters/options object.
-             */
-            new(baseUrl: string, options: WMSOptions): TileLayer.WMS;
-        };
-
-        Canvas: {
-            /**
-             * Instantiates a Canvas tile layer object given an options object (optionally).
-             */
-            new(options?: TileLayerOptions): TileLayer.Canvas;
-        };
-    }
-    export var TileLayer: TileLayerStatic;
-
-    export interface TileLayer extends ILayer, IEventPowered<TileLayer> {
-        /**
-         * Adds the layer to the map.
-         */
-        addTo(map: Map): TileLayer;
-
-        /**
-         * Brings the tile layer to the top of all tile layers.
-         */
-        bringToFront(): TileLayer;
-
-        /**
-         * Brings the tile layer to the bottom of all tile layers.
-         */
-        bringToBack(): TileLayer;
-
-        /**
-         * Changes the opacity of the tile layer.
-         */
-        setOpacity(opacity: number): TileLayer;
-
-        /**
-         * Sets the zIndex of the tile layer.
-         */
-        setZIndex(zIndex: number): TileLayer;
-
-        /**
-         * Causes the layer to clear all the tiles and request them again.
-         */
-        redraw(): TileLayer;
-
-        /**
-         * Updates the layer's URL template and redraws it.
-         */
-        setUrl(urlTemplate: string): TileLayer;
-
-        /**
-         * Returns the HTML element that contains the tiles for this layer.
-         */
-        getContainer(): HTMLElement;
-
-        ////////////
-        ////////////
-        /**
-         * Should contain code that creates DOM elements for the overlay, adds them
-         * to map panes where they should belong and puts listeners on relevant map events.
-         * Called on map.addLayer(layer).
-         */
-        onAdd(map: Map): void;
-
-        /**
-         * Should contain all clean up code that removes the overlay's elements from
-         * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
-         */
-        onRemove(map: Map): void;
-
-        ////////////////
-        ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayer;
-        hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): TileLayer;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayer;
-        fire(type: string, data?: any): TileLayer;
-        addEventListener(eventMap: any, context?: any): TileLayer;
-        removeEventListener(eventMap?: any, context?: any): TileLayer;
-        clearAllEventListeners(): TileLayer;
-        on(eventMap: any, context?: any): TileLayer;
-        off(eventMap?: any, context?: any): TileLayer;
-    }
-
-    namespace TileLayer {
-        export interface WMS extends TileLayer {
-            /**
-             * Merges an object with the new parameters and re-requests tiles on the current
-             * screen (unless noRedraw was set to true).
-             */
-            setParams(params: WMS, noRedraw?: boolean): WMS;
-        }
-
-        export interface Canvas extends TileLayer {
-            /**
-             * You need to define this method after creating the instance to draw tiles;
-             * canvas is the actual canvas tile on which you can draw, tilePoint represents
-             * the tile numbers, and zoom is the current zoom.
-             */
-            drawTile(canvas: HTMLCanvasElement, tilePoint: Point, zoom: number): Canvas;
-
-            /**
-             * Calling redraw will cause the drawTile method to be called for all tiles.
-             * May be used for updating dynamic content drawn on the Canvas
-             */
-            redraw(): Canvas;
-        }
-    }
-
-    export interface TileLayerFactory {
-
-        /**
-         * Instantiates a tile layer object given a URL template and optionally an options
-         * object.
-         */
-        (urlTemplate: string, options?: TileLayerOptions): TileLayer;
-
-        /**
-         * Instantiates a WMS tile layer object given a base URL of the WMS service and
-         * a WMS parameters/options object.
-         */
-        wms(baseUrl: string, options: WMSOptions): L.TileLayer.WMS;
-
-        /**
-         * Instantiates a Canvas tile layer object given an options object (optionally).
-         */
-        canvas(options?: TileLayerOptions): L.TileLayer.Canvas;
-    }
-
-    export var tileLayer: TileLayerFactory;
-}
-
-declare namespace L {
-
-    export interface TileLayerOptions {
-
-        /**
-         * Minimum zoom number.
-         *
-         * Default value: 0.
-         */
-        minZoom?: number;
-
-        /**
-         * Maximum zoom number.
-         *
-         * Default value: 18.
-         */
-        maxZoom?: number;
-
-        /**
-         * Maximum zoom number the tiles source has available. If it is specified,
-         * the tiles on all zoom levels higher than maxNativeZoom will be loaded from
-         * maxZoom level and auto-scaled.
-         *
-         * Default value: null.
-         */
-        maxNativeZoom?: number;
-
-        /**
-         * Tile size (width and height in pixels, assuming tiles are square).
-         *
-         * Default value: 256.
-         */
-        tileSize?: number;
-
-        /**
-         * Subdomains of the tile service. Can be passed in the form of one string (where
-         * each letter is a subdomain name) or an array of strings.
-         *
-         * Default value: 'abc'.
-         */
-        subdomains?: string[];
-
-        /**
-         * URL to the tile image to show in place of the tile that failed to load.
-         *
-         * Default value: ''.
-         */
-        errorTileUrl?: string;
-
-        /**
-         * e.g. "© CloudMade" — the string used by the attribution control, describes
-         * the layer data.
-         *
-         * Default value: ''.
-         */
-        attribution?: string;
-
-        /**
-         * If true, inverses Y axis numbering for tiles (turn this on for TMS services).
-         *
-         * Default value: false.
-         */
-        tms?: boolean;
-
-        /**
-         * If set to true, the tile coordinates won't be wrapped by world width (-180
-         * to 180 longitude) or clamped to lie within world height (-90 to 90). Use this
-         * if you use Leaflet for maps that don't reflect the real world (e.g. game, indoor
-         * or photo maps).
-         *
-         * Default value: false.
-         */
-        continuousWorld?: boolean;
-
-        /**
-         * If set to true, the tiles just won't load outside the world width (-180 to 180
-         * longitude) instead of repeating.
-         *
-         * Default value: false.
-         */
-        noWrap?: boolean;
-
-        /**
-         * The zoom number used in tile URLs will be offset with this value.
-         *
-         * Default value: 0.
-         */
-        zoomOffset?: number;
-
-        /**
-         * If set to true, the zoom number used in tile URLs will be reversed (maxZoom
-         * - zoom instead of zoom)
-         *
-         * Default value: false.
-         */
-        zoomReverse?: boolean;
-
-        /**
-         * The opacity of the tile layer.
-         *
-         * Default value: 1.0.
-         */
-        opacity?: number;
-
-        /**
-         * The explicit zIndex of the tile layer. Not set by default.
-         */
-        zIndex?: number;
-
-        /**
-         * If true, all the tiles that are not visible after panning are removed (for
-         * better performance). true by default on mobile WebKit, otherwise false.
-         */
-        unloadInvisibleTiles?: boolean;
-
-        /**
-         * If false, new tiles are loaded during panning, otherwise only after it (for
-         * better performance). true by default on mobile WebKit, otherwise false.
-         */
-        updateWhenIdle?: boolean;
-
-        /**
-         * If true and user is on a retina display, it will request four tiles of half the
-         * specified size and a bigger zoom level in place of one to utilize the high resolution.
-         *
-         * Default value: false.
-         */
-        detectRetina?: boolean;
-
-        /**
-         * If true, all the tiles that are not visible after panning are placed in a reuse
-         * queue from which they will be fetched when new tiles become visible (as opposed
-         * to dynamically creating new ones). This will in theory keep memory usage
-         * low and eliminate the need for reserving new memory whenever a new tile is
-         * needed.
-         *
-         * Default value: false.
-         */
-        reuseTiles?: boolean;
-
-        /**
-         * When this option is set, the TileLayer only loads tiles that are in the given geographical bounds.
-         */
-        bounds?: LatLngBounds;
-
-        /**
-         * Custom keys may be specified in TileLayerOptions so they can be used in a provided URL template.
-         */
-        [additionalKeys: string]: any;
-    }
-}
-
-declare namespace L {
-    export interface TransformationStatic extends ClassStatic {
-        /**
-         * Creates a transformation object with the given coefficients.
-         */
-        new(a: number, b: number, c: number, d: number): Transformation;
-    }
-    export var Transformation: TransformationStatic;
-
-    export interface Transformation {
-        /**
-         * Returns a transformed point, optionally multiplied by the given scale.
-         * Only accepts real L.Point instances, not arrays.
-         */
-        transform(point: Point, scale?: number): Point;
-
-        /**
-         * Returns the reverse transformation of the given point, optionally divided
-         * by the given scale. Only accepts real L.Point instances, not arrays.
-         */
-        untransform(point: Point, scale?: number): Point;
-    }
-}
-
-declare namespace L {
-
-    namespace Util {
-
-        /**
-         * Merges the properties of the src object (or multiple objects) into dest object
-         * and returns the latter. Has an L.extend shortcut.
-         */
-        export function extend(dest: any, ...sources: any[]): any;
-
-        /**
-         * Returns a function which executes function fn with the given scope obj (so
-         * that this keyword refers to obj inside the function code). Has an L.bind shortcut.
-         */
-        export function bind<T extends Function>(fn: T, obj: any): T;
-
-        /**
-         * Applies a unique key to the object and returns that key. Has an L.stamp shortcut.
-         */
-        export function stamp(obj: any): string;
-
-        /**
-         * Returns a wrapper around the function fn that makes sure it's called not more
-         * often than a certain time interval time, but as fast as possible otherwise
-         * (for example, it is used for checking and requesting new tiles while dragging
-         * the map), optionally passing the scope (context) in which the function will
-         * be called.
-         */
-        export function limitExecByInterval<T extends Function>(fn: T, time: number, context?: any): T;
-
-        /**
-         * Returns a function which always returns false.
-         */
-        export function falseFn(): () => boolean;
-
-        /**
-         * Returns the number num rounded to digits decimals.
-         */
-        export function formatNum(num: number, digits: number): number;
-
-        /**
-         * Trims and splits the string on whitespace and returns the array of parts.
-         */
-        export function splitWords(str: string): string[];
-
-        /**
-         * Merges the given properties to the options of the obj object, returning the
-         * resulting options. See Class options. Has an L.setOptions shortcut.
-         */
-        export function setOptions(obj: any, options: any): any;
-
-        /**
-         * Converts an object into a parameter URL string, e.g. {a: "foo", b: "bar"}
-         * translates to '?a=foo&b=bar'.
-         */
-        export function getParamString(obj: any): string;
-
-        /**
-         * Simple templating facility, creates a string by applying the values of the
-         * data object of a form {a: 'foo', b: 'bar', …} to a template string of the form
-         * 'Hello {a}, {b}' — in this example you will get 'Hello foo, bar'.
-         */
-        export function template(str: string, data: any): string;
-
-        /**
-         * Returns true if the given object is an array.
-         */
-        export function isArray(obj: any): boolean;
-
-        /**
-         * Trims the whitespace from both ends of the string and returns the result.
-         */
-        export function trim(str: string): string;
-
-        /**
-         * Data URI string containing a base64-encoded empty GIF image. Used as a hack
-         * to free memory from unused images on WebKit-powered mobile devices (by setting
-         * image src to this string).
-         */
-        export var emptyImageUrl: string;
-    }
-}
-
-
-declare namespace L {
-
-    export interface WMSOptions {
-
-        /**
-         * (required) Comma-separated list of WMS layers to show.
-         *
-         * Default value: ''.
-         */
-        layers?: string;
-
-        /**
-         * Comma-separated list of WMS styles.
-         *
-         * Default value: 'image/jpeg'.
-         */
-        styles?: string;
-
-        /**
-         * WMS image format (use 'image/png' for layers with transparency).
-         *
-         * Default value: false.
-         */
-        format?: string;
-
-        /**
-         * If true, the WMS service will return images with transparency.
-         *
-         * Default value: '1.1.1'.
-         */
-        transparent?: boolean;
-
-        /**
-         * Version of the WMS service to use.
-         */
-        version?: string;
-
-    }
-}
 
 /**
  * Forces Leaflet to use the Canvas back-end (if available) for vector layers
