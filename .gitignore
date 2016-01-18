@@ -4,3 +4,5 @@ cache/
 node_modules/
 paper/
 tests/**/*.gen.d.ts
+tests/**/*.jsnap
+lib/jsnap
