@@ -105,7 +105,6 @@ public class TypeAnalysis {
         }
 
         Map<String, Snap.Property> values = new HashMap<>();
-        // FIXME: Getters and setters, something gotta be done.
         if (closure.env.properties != null) {
             for (Snap.Property property : closure.env.properties) {
                 values.put(property.name, property);

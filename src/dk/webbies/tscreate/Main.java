@@ -30,9 +30,9 @@ public class Main {
         try {
             long start = System.currentTimeMillis();
 
-            runAnalysis(BenchMark.sugar);
+//            runAnalysis(BenchMark.test);
 
-//            benchAll();
+            benchAll();
 
             long end = System.currentTimeMillis();
 

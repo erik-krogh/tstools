@@ -18,7 +18,6 @@ import java.util.function.Predicate;
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
-// FIXME: Make it so that classes can be printed as classes, and to get the constructor type, typeof "blab" is then used.
 public class DeclarationPrinter {
     private final Map<String, DeclarationType> declarations;
     private Map<ClassType, String> classNames;
