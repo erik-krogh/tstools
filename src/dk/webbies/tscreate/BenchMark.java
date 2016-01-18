@@ -14,6 +14,7 @@ import static dk.webbies.tscreate.util.Util.evaluate;
 /**
  * Created by Erik Krogh Kristensen on 18-11-2015.
  */
+@SuppressWarnings("unused")
 public class BenchMark {
     public final String name;
     public final String scriptPath;
@@ -51,10 +52,9 @@ public class BenchMark {
         return new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
     });
 
-    // TODO: in the declaration, RenderTexture does not have a render method. It really should have, because of the dynamic instance creation.
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("PIXI", "tests/pixi/pixi.js", null/*"tests/pixi/pixi.js.d.ts"*/, options, ES5); // TODO: ts-spec-reader cannot read the declaration file.
+        return new BenchMark("PIXI", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
     });
 
     public static final BenchMark FabricJS = evaluate(() -> {
@@ -78,15 +78,16 @@ public class BenchMark {
         return new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
     });
 
-    // TODO: Why so many void?
+    // Kind of a useless benchmark, since the hand-written .d.ts file says that it exposes 0 global variables. (But it does, there is the Sugar object).
     public static final BenchMark sugar = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Sugar", "tests/sugar/sugar.js", null, options, ES5);
+        options.createInstances = false; // If i run everything, a lot of the library breaks (void types everywhere).
+        return new BenchMark("Sugar", "tests/sugar/sugar.js", "tests/sugar/sugar.d.ts", options, ES5);
     });
 
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("leaflet.js", "tests/leaflet/leaflet.js", "tests/leaflet/leaflet.d.ts", options, ES5); // TODO: Something goes wrong when parsing the d.ts file, classes like Events are on the global object according to the parser.
+        return new BenchMark("leaflet.js", "tests/leaflet/leaflet.js", null/*"tests/leaflet/leaflet.d.ts"*/, options, ES5); // TODO: Get it to run with the parser.
     });
 
     public static final BenchMark D3 = evaluate(() -> {
@@ -96,7 +97,7 @@ public class BenchMark {
 
     public static final BenchMark react = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("React", "tests/react/react.js", null/*"tests/react/react.d.ts"*/, options, ES5);
+        return new BenchMark("React", "tests/react/react.js", "tests/react/react.d.ts", options, ES5); // TODO: Figure out why the precision becomes ZERO.
     });
 
     public static final BenchMark knockout = evaluate(() -> {
@@ -136,7 +137,6 @@ public class BenchMark {
         return new BenchMark("MooTools", "tests/mootools/mootools.js", null, options, ES5); // I couldn't actually find a declaration file, posting one could be an option. (When i get rid of the duplicates).
     });
 
-    // TODO: Lots of interfaces that are really just functions.
     // TODO: A little naming conflict.
     public static final BenchMark prototype = evaluate(() -> {
         Options options = new Options();
