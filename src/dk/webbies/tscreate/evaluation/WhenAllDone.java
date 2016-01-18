@@ -1,7 +1,9 @@
 package dk.webbies.tscreate.evaluation;
 
-import java.util.Collection;
+import dk.webbies.tscreate.evaluation.DeclarationEvaluator.EvaluationQueueElement;
+
 import java.util.HashSet;
+import java.util.PriorityQueue;
 import java.util.Set;
 
 /**
@@ -10,13 +12,13 @@ import java.util.Set;
  * Is used to create a lot of sub-callbacks, and when all those are done, the main callback is executed.
  */
 public class WhenAllDone {
-    private final Runnable callback;
-    private Collection<Runnable> queue;
+    private final EvaluationQueueElement callback;
+    private PriorityQueue<EvaluationQueueElement> queue;
 
     private int notDoneCounter = 0;
     boolean ran = false;
 
-    public WhenAllDone(Runnable callback, Collection<Runnable> queue) {
+    public WhenAllDone(EvaluationQueueElement callback, PriorityQueue<EvaluationQueueElement> queue) {
         this.callback = callback;
         this.queue = queue;
         nonCompleted.add(this);
@@ -26,21 +28,21 @@ public class WhenAllDone {
 
     private Set<Integer> returnedCallbacks = new HashSet<>();
     private static int counter = 0;
-    public Runnable newSubCallback(int i) {
+    public Runnable newSubCallback() {
         returnedCallbacks.add(counter++);
         notDoneCounter++;
         return () -> {
-            queue.add(() -> {
+            queue.add(new EvaluationQueueElement(callback.depth, () -> {
                 if (ran) {
                     throw new RuntimeException("Has already run");
                 }
                 nonCompleted.remove(this);
                 notDoneCounter--;
                 if (notDoneCounter == 0) {
-                    callback.run();
+                    callback.runnable.run();
                     ran = true;
                 }
-            });
+            }));
         };
     }
 }

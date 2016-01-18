@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
+import static dk.webbies.tscreate.evaluation.DeclarationEvaluator.*;
 
 /**
  * Created by Erik Krogh Kristensen on 14-12-2015.
@@ -16,13 +17,13 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClas
 public class EvaluationVisitor implements TypeVisitorWithArgument<Void, EvaluationVisitor.Arg> {
     private final int depth;
     private final Evaluation evaluation;
-    private List<Runnable> queue;
+    private PriorityQueue<DeclarationEvaluator.EvaluationQueueElement> queue;
     private Set<Type> nativeTypesInReal;
     private final NativeClassesMap realNativeClasses;
     private final NativeClassesMap myNativeClasses;
     private Set<Pair<Type, Type>> seen;
 
-    public EvaluationVisitor(int depth, Evaluation evaluation, List<Runnable> queue, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, Set<Pair<Type, Type>> seen) {
+    public EvaluationVisitor(int depth, Evaluation evaluation, PriorityQueue<DeclarationEvaluator.EvaluationQueueElement> queue, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, Set<Pair<Type, Type>> seen) {
         this.depth = depth;
         this.evaluation = evaluation;
         this.queue = queue;
@@ -51,7 +52,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         int counter = runCounter++;
         seen.add(new Pair<>(realType, myType));
 
-        queue.add(() -> {
+        queue.add(new EvaluationQueueElement(depth, () -> {
             if (realType instanceof UnionType && myType instanceof UnionType) {
                 ArrayList<Pair<Type, Type>> typePairs = new ArrayList<>();
 
@@ -82,7 +83,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             } else {
                 analyzeNextDepth(realType, myType, callback);
             }
-        });
+        }));
     }
 
     private void findBest(Collection<Pair<Type, Type>> typePairs, Consumer<Evaluation> callback) {
@@ -201,7 +202,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         properties.addAll(realProperties.keySet());
         properties.addAll(myProperties.keySet());
 
-        WhenAllDone whenAllDone = new WhenAllDone(arg.callback, queue);
+        WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth, arg.callback), queue);
         for (String property : properties) {
             if (!myProperties.containsKey(property)) {
                 evaluation.addFalseNegative(depth + 1, "property missing: " + property);
@@ -210,23 +211,23 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             } else {
                 Type myType = myProperties.get(property);
                 Type realType = realProperties.get(property);
-                nextDepth(realType, myType, whenAllDone.newSubCallback(1));
+                nextDepth(realType, myType, whenAllDone.newSubCallback());
             }
         }
 
         // Functions
-        evaluateFunctions(real.getDeclaredCallSignatures(), ((InterfaceType) type).getDeclaredCallSignatures(), whenAllDone.newSubCallback(4));
-        evaluateFunctions(real.getDeclaredConstructSignatures(), ((InterfaceType) type).getDeclaredConstructSignatures(), whenAllDone.newSubCallback(5));
+        evaluateFunctions(real.getDeclaredCallSignatures(), ((InterfaceType) type).getDeclaredCallSignatures(), whenAllDone.newSubCallback());
+        evaluateFunctions(real.getDeclaredConstructSignatures(), ((InterfaceType) type).getDeclaredConstructSignatures(), whenAllDone.newSubCallback());
 
 
         // Indexers:
         Type realNumber = real.getDeclaredNumberIndexType();
         Type myNumber = my.getDeclaredNumberIndexType();
-        evaluateIndexers(realNumber, myNumber, whenAllDone.newSubCallback(2));
+        evaluateIndexers(realNumber, myNumber, whenAllDone.newSubCallback());
 
         Type realString = real.getDeclaredNumberIndexType();
         Type myString = my.getDeclaredNumberIndexType();
-        evaluateIndexers(realString, myString, whenAllDone.newSubCallback(3));
+        evaluateIndexers(realString, myString, whenAllDone.newSubCallback());
 
         return null;
     }
@@ -254,10 +255,10 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
         evaluation.addTruePositive(depth, "was a function, that was right");
         if (realSignatures.size() == 1 && mySignatures.size() == 1) {
-            WhenAllDone whenAllDone = new WhenAllDone(callback, queue);
+            WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth, callback), queue);
             Signature realSignature = realSignatures.get(0);
             Signature mySignature = mySignatures.get(0);
-            nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback(6));
+            nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback());
 
             for (int i = 0; i < Math.max(realSignature.getParameters().size(), mySignature.getParameters().size()); i++) {
                 if (i >= realSignature.getParameters().size()) {
@@ -265,7 +266,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 } else if (i >= mySignature.getParameters().size()) {
                     evaluation.addFalseNegative(depth + 1, "to few arguments for function");
                 } else {
-                    nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(7));
+                    nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback());
                 }
             }
 

@@ -42,21 +42,35 @@ public class DeclarationEvaluator {
             assert queue.isEmpty();
             hasRun.set(true);
         };
-        queue.add(() -> {
+        queue.add(new EvaluationQueueElement(0, () -> {
             new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>())
                     .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback));
-        });
+        }));
 
         while (!queue.isEmpty()) {
-            ArrayList<Runnable> copy = new ArrayList<>(queue);
-            queue.clear();
-            copy.forEach(Runnable::run);
+            EvaluationQueueElement element = queue.poll();
+            element.runnable.run();
         }
 
         assert hasRun.get();
     }
 
-    List<Runnable> queue = new ArrayList<>(); // FIXME: Queue as priority-queue.
+    PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
+
+    final static class EvaluationQueueElement implements Comparable<EvaluationQueueElement> {
+        final Runnable runnable;
+        final int depth;
+
+        public EvaluationQueueElement(int depth, Runnable runnable) {
+            this.runnable = runnable;
+            this.depth = depth;
+        }
+
+        @Override
+        public int compareTo(EvaluationQueueElement o) {
+            return Integer.compare(this.depth, o.depth);
+        }
+    }
 
 
     public Evaluation getEvaluation() {
