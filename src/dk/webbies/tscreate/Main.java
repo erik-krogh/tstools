@@ -27,24 +27,27 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
  */
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        long start = System.currentTimeMillis();
+        try {
+            long start = System.currentTimeMillis();
 
-        runAnalysis(BenchMark.three);
+            runAnalysis(BenchMark.sugar);
 
-//        benchAll();
+//            benchAll();
 
-        long end = System.currentTimeMillis();
+            long end = System.currentTimeMillis();
 
-        System.out.println("Ran in " + (end - start) + "ms");
-        System.exit(0);
+            System.out.println("Ran in " + (end - start) + "ms");
+        } catch (Throwable e) {
+            System.err.println("Crashed: ");
+            e.printStackTrace(System.err);
+        } finally {
+            System.exit(0);
+        }
     }
 
     private static void benchAll() throws IOException {
         double combinedScore = 0;
         for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            if (benchmark.declarationPath == null) {
-                continue;
-            }
             double score = runAnalysis(benchmark);
             if (!Double.isNaN(score)) {
                 combinedScore += score;
@@ -77,7 +80,9 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeFactory).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
+
+        Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
         Evaluation evaluation = null;
         if (benchMark.declarationPath != null) {
@@ -88,11 +93,16 @@ public class Main {
 //            evaluation.debugPrint();
         }
 
+        if (benchMark.options.tsCheck) {
+            System.out.println("TSCheck: ");
+            System.out.println(Util.tsCheck(benchMark.scriptPath, resultDeclarationFilePath));
+            System.out.println("----------");
+        }
+
         if (evaluation == null) {
-            Util.writeFile(resultDeclarationFilePath, printedDeclaration);
             return Double.NaN;
         } else {
-            Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n/*\n" + evaluation.toString() + "\n*/");
+//            Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n\n" + evaluation.toString() + "\n");
             return evaluation.score();
         }
 

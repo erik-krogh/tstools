@@ -20,6 +20,9 @@ public class Options {
     // If false, then every time a value from the heap is used, it will be treated independently. And will not be unified.
     public boolean unionHeapIdentifiers = false; // makes next to zero difference, but false seems to be better.
 
+    // Run TSCheck on the output.
+    public boolean tsCheck = false;
+
     public enum Runtime {
         PHANTOM,
         CHROME,

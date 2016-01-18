@@ -36,6 +36,7 @@ public class Util {
         }
 
         if (!errGobbler.getResult().isEmpty()) {
+            System.err.println("Error running node script: " + errGobbler.getResult());
 //            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult()); // FIXME: Compiler warnings also show up here.
         }
 
@@ -339,5 +340,9 @@ public class Util {
             return false;
         }
         return true;
+    }
+
+    public static String tsCheck(String jsFile, String declaration) throws IOException {
+        return Util.runNodeScript("node_modules/tscheck/tscheck.js " + jsFile + " " + declaration);
     }
 }
