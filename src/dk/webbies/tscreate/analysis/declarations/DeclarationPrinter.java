@@ -75,7 +75,7 @@ public class DeclarationPrinter {
         builder.append(str);
     }
 
-    private static Set<String> keyWords = new HashSet<>(Arrays.asList("set get abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function goto if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield".split(" ")));
+    private static Set<String> keyWords = new HashSet<>(Arrays.asList("set get abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function goto if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield var".split(" ")));
     private void writeName(StringBuilder builder, String str) {
         if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str)) {
             write(builder, str);
@@ -258,9 +258,19 @@ public class DeclarationPrinter {
     }
 
     private void printArguments(VisitorArg visitorArg, List<FunctionType.Argument> args) {
+        List<String> names = new ArrayList<>();
+        args.stream().map(FunctionType.Argument::getName).forEach(orgName -> {
+            String name = orgName;
+            int counter = 1;
+            while (names.contains(name)) {
+                name = orgName + counter++;
+            }
+            names.add(name);
+        });
+
         for (int i = 0; i < args.size(); i++) {
             FunctionType.Argument arg = args.get(i);
-            write(visitorArg.builder, arg.getName());
+            write(visitorArg.builder, names.get(i));
             write(visitorArg.builder, ": ");
             arg.getType().accept(new TypeVisitor(), visitorArg);
             if (i != args.size() - 1) {
@@ -344,15 +354,7 @@ public class DeclarationPrinter {
 
                 write(arg.builder, "(");
                 List<FunctionType.Argument> args = functionType.getArguments();
-                for (int i = 0; i < args.size(); i++) {
-                    FunctionType.Argument argument = args.get(i);
-                    write(arg.builder, argument.getName());
-                    write(arg.builder, ": ");
-                    argument.getType().accept(this, arg);
-                    if (i != args.size() - 1) {
-                        write(arg.builder, ", ");
-                    }
-                }
+                printArguments(arg, functionType.getArguments());
                 if (insideInterface) {
                     write(arg.builder, ") : ");
                 } else {
