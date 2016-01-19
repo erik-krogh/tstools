@@ -3,7 +3,7 @@
 // Definitions by: Asana <https://asana.com>, AssureSign <http://www.assuresign.com>, Microsoft <https://microsoft.com>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
-declare module __React {
+declare module React {
     //
     // React Elements
     // ----------------------------------------------------------------------
@@ -2104,13 +2104,7 @@ declare module __React {
     }
 }
 
-declare module "react" {
-    export = __React;
-}
-
 declare module JSX {
-    import React = __React;
-
     interface Element extends React.ReactElement<any> { }
     interface ElementClass extends React.Component<any, any> {
         render(): JSX.Element;
