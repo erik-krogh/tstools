@@ -57,7 +57,8 @@ public class LibraryClass {
         return result;
     }
 
-    // TODO: Somehow make sure that this doesn't conflict.
+    // FIXME: Somehow make sure that this doesn't conflict.
+    // FIXME: Prevent that this returns something like "0".
     public String getName() {
         if (name == null) {
             name = getNameFromPath(pathsSeen.get(0));
