@@ -4,10 +4,12 @@ import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;
+import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -57,9 +59,7 @@ public class LibraryClass {
         return result;
     }
 
-    // FIXME: Somehow make sure that this doesn't conflict.
-    // FIXME: Prevent that this returns something like "0".
-    public String getName() {
+    public String getName(NativeClassesMap natives, Set<String> takenNames) {
         if (name == null) {
             name = getNameFromPath(pathsSeen.get(0));
             // Finding the longest name, that preferably starts with an upper case.
@@ -70,6 +70,9 @@ public class LibraryClass {
                     continue;
                 }
                 if (newName.equals("[proto]")) {
+                    continue;
+                }
+                if (newName.matches("[0-9]+.{0,}")) { // Starts with number.
                     continue;
                 }
 
@@ -83,8 +86,33 @@ public class LibraryClass {
                     name = newName;
                 }
             }
+
+            if (isNameTaken(name, natives, takenNames)) {
+                int counter = 1;
+                while (true) {
+                    if (!isNameTaken(name + counter, natives, takenNames)) {
+                        name = name + counter;
+                        break;
+                    } else {
+                        counter++;
+                    }
+                }
+            }
+
+            takenNames.add(name);
         }
         return name;
+    }
+
+    private boolean isNameTaken(String newName, NativeClassesMap natives, Set<String> takenNames) {
+        if (natives.getNativeTypeNames().contains(newName)) {
+            return true;
+        }
+        //noinspection RedundantIfStatement
+        if (takenNames.contains(newName)) {
+            return true;
+        }
+        return false;
     }
 
     private String getNameFromPath(String path) {
