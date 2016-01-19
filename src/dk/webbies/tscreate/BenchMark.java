@@ -54,12 +54,12 @@ public class BenchMark {
 
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("PIXI", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
+        return new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
     });
 
     public static final BenchMark FabricJS = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("FabricJS", "tests/fabric/fabric.js", "tests/fabric/fabricjs.d.ts", options, ES5);
+        return new BenchMark("Fabric.js", "tests/fabric/fabric.js", "tests/fabric/fabricjs.d.ts", options, ES5);
     });
 
     public static final BenchMark jQuery = evaluate(() -> {
@@ -87,7 +87,7 @@ public class BenchMark {
 
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("leaflet.js", "tests/leaflet/leaflet.js", null/*"tests/leaflet/leaflet.d.ts"*/, options, ES5); // TODO: Get it to run with the parser.
+        return new BenchMark("Leaflet", "tests/leaflet/leaflet.js", null/*"tests/leaflet/leaflet.d.ts"*/, options, ES5); // TODO: Get it to run with the parser.
     });
 
     public static final BenchMark D3 = evaluate(() -> {
@@ -148,22 +148,17 @@ public class BenchMark {
     public static final BenchMark ace = evaluate(() -> {
         Options options = new Options();
         options.createInstances = false; // Causes prombt to appear
-        return new BenchMark("ace.js", "tests/ace/ace.js", "tests/ace/ace.d.ts", options, ES5);
+        return new BenchMark("Ace", "tests/ace/ace.js", "tests/ace/ace.d.ts", options, ES5);
     });
 
     public static final BenchMark require = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("requireJS", "tests/requireJS/require.js", "tests/requireJS/require.d.ts", options, ES5);
+        return new BenchMark("RequireJS", "tests/requireJS/require.js", "tests/requireJS/require.d.ts", options, ES5);
     });
 
     public static final BenchMark handlebars = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("handlebars", "tests/handlebars/handlebars-v4.0.5.js", "tests/handlebars/handlebars.d.ts", options, ES5);
-    });
-
-    public static final BenchMark MPL = evaluate(() -> {
-        Options options = new Options();
-        return new BenchMark("mpl", "tests/mpl/mpl.js", null, options, ES5);
+        return new BenchMark("Handlebars.js", "tests/handlebars/handlebars-v4.0.5.js", "tests/handlebars/handlebars.d.ts", options, ES5);
     });
 
 
@@ -176,6 +171,11 @@ public class BenchMark {
     });
 
     // SSA tests
+    public static final BenchMark MPL = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("mpl", "tests/mpl/mpl.js", null, options, ES5);
+    });
+
     public static final BenchMark if0 = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("mpl", "tests/ssa/if0.js", null, options, ES5);
