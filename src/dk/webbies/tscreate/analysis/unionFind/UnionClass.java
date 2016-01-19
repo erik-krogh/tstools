@@ -44,6 +44,8 @@ public final class UnionClass {
             throw new NullPointerException();
         }
 
+        other.representative.unionClass = null;
+
         merge(other.fields);
 
         this.feature.takeIn(other.feature);
