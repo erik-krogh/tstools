@@ -143,9 +143,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         UnionNode result;
         switch (unOp.getOperator()) {
-            // TODO: I don't know if Plus or Minus should be handled differently.
-            case MINUS:
             case PLUS:
+                result = primitiveFactory.number();
+                break;
+            case MINUS:
             case MINUS_MINUS:
             case PLUS_PLUS:
             case BITWISE_NOT:
