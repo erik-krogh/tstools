@@ -147,7 +147,8 @@ public class BenchMark {
     // Interresting altough useless benchmark, uses RequireJS to get the library. Therefore my analysis cannot find anything on the heap it can output (it is only in an environment).
     public static final BenchMark ace = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("ace.js", "tests/ace/ace.js", "tests/ace/ace.d.ts", options, ES5, Arrays.asList(Dependency.requireJS));
+        options.createInstances = false; // Causes prombt to appear
+        return new BenchMark("ace.js", "tests/ace/ace.js", "tests/ace/ace.d.ts", options, ES5);
     });
 
     public static final BenchMark require = evaluate(() -> {
