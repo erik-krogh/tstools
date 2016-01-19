@@ -376,6 +376,10 @@ public class DeclarationParser {
         public Set<String> getNames() {
             return this.typeNames.values();
         }
+
+        public Set<String> getNativeTypeNames() {
+            return typeNames.values();
+        }
     }
 
     public enum Environment {
