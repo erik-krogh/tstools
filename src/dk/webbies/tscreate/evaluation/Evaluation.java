@@ -1,7 +1,10 @@
 package dk.webbies.tscreate.evaluation;
 
-import java.math.BigDecimal;
+import dk.webbies.tscreate.Score;
+import dk.webbies.tscreate.util.Util;
+
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Created by Erik Krogh Kristensen on 14-12-2015.
@@ -40,14 +43,14 @@ public class Evaluation {
                 continue;
             }
             builder.append("depth: ").append(depth).append(" ");
-            builder.append("precision: ").append(toFixed(precision(depth), 2));
-            builder.append(" recall: ").append(toFixed(recall(depth), 2));
+            builder.append("precision: ").append(Util.toFixed(precision(depth), 2));
+            builder.append(" recall: ").append(Util.toFixed(recall(depth), 2));
             builder.append(" thereIs(").append(thereIs(depth)).append(")");
             builder.append(" iFound(").append(IFound(depth)).append(")");
             builder.append("\n");
         }
 
-        builder.append("Score: ").append(score());
+        builder.append("Score: ").append(score().fMeasure);
         return builder.toString();
     }
 
@@ -102,30 +105,21 @@ public class Evaluation {
         return fMeasure;
     }
 
-    public double score() {
+    public Score score() {
+        double fMeasure = score(this::fMeasure);
+        double precision = score(this::precision);
+        double recall = score(this::recall);
+        return new Score(fMeasure, precision, recall);
+    }
+
+    private double score(Function<Integer, Double> function) {
         double result = 0;
-        double factor = 1;
+        double measure = 1;
         for (int depth = 1; depth <= maxDepth; depth++) {
-            double prevFactor = factor;
-            double measure = fMeasure(depth);
-
-            factor = measure * factor;
-            measure = measure * prevFactor;
-
+            measure = function.apply(depth) * measure;
             result += measure * Math.pow(2, -depth);
         }
         return result;
-    }
-
-    private String toFixed(double number, int decimals) {
-        if (Double.isInfinite(number)) {
-            return number > 0 ? "Infinite" : "-Infinite";
-        } else if (Double.isNaN(number)) {
-            return "NaN";
-        }
-        BigDecimal numberBigDecimal = new BigDecimal(number);
-        numberBigDecimal = numberBigDecimal.setScale(decimals, BigDecimal.ROUND_HALF_UP);
-        return numberBigDecimal.toString();
     }
 
     public void add(Evaluation evaluation) {

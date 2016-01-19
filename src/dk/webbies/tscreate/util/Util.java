@@ -4,6 +4,7 @@ package dk.webbies.tscreate.util;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -208,9 +209,9 @@ public class Util {
         return new String(Files.readAllBytes(Paths.get(path)));
     }
 
-    public static void writeFile(String content, String path) throws IOException {
-        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(content)));
-        IOUtils.write(path, fileOut);
+    public static void writeFile(String filename, String data) throws IOException {
+        BufferedOutputStream fileOut = new BufferedOutputStream(new FileOutputStream(new File(filename)));
+        IOUtils.write(data, fileOut);
         fileOut.close();
     }
 
@@ -344,5 +345,16 @@ public class Util {
 
     public static String tsCheck(String jsFile, String declaration) throws IOException {
         return Util.runNodeScript("node_modules/tscheck/tscheck.js " + jsFile + " " + declaration);
+    }
+
+    public static String toFixed(double number, int decimals) {
+        if (Double.isInfinite(number)) {
+            return number > 0 ? "Infinite" : "-Infinite";
+        } else if (Double.isNaN(number)) {
+            return "NaN";
+        }
+        BigDecimal numberBigDecimal = new BigDecimal(number);
+        numberBigDecimal = numberBigDecimal.setScale(decimals, BigDecimal.ROUND_HALF_UP);
+        return numberBigDecimal.toString();
     }
 }

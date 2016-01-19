@@ -2,7 +2,6 @@ package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
-import dk.webbies.tscreate.analysis.TypeFactory;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
@@ -17,8 +16,8 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
@@ -30,9 +29,9 @@ public class Main {
         try {
             long start = System.currentTimeMillis();
 
-//            runAnalysis(BenchMark.test);
-
-            benchAll();
+//            runAnalysis(BenchMark.react);
+//            benchAll();
+            printTable();
 
             long end = System.currentTimeMillis();
 
@@ -45,10 +44,54 @@ public class Main {
         }
     }
 
+    private static void printTable() throws IOException {
+        Map<BenchMark, Score> scores = new HashMap<>();
+        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+            if (benchmark.declarationPath == null || benchmark == BenchMark.test) {
+                continue;
+            }
+            Score score = runAnalysis(benchmark);
+            if (!Double.isNaN(score.fMeasure)) {
+                scores.put(benchmark, score);
+            }
+        }
+        System.out.print("\n\n\n\n\n");
+        System.out.println("\\begin{table}[]\n" +
+                "\\centering\n" +
+                "\\label{evaluation-table}\n" +
+                "\\begin{tabular}{l|l|ccc}\n" +
+                "                   & \\textit{}              & \\multicolumn{3}{c}{\\textit{score}}                                                                                    \\\\\n" +
+                "\\textit{benchmark} & \\textit{lines of code} & \\multicolumn{1}{l}{\\textit{f-measure}} & \\multicolumn{1}{l}{\\textit{recall}} & \\multicolumn{1}{l}{\\textit{precision}} \\\\ \\hline\n");
+        List<BenchMark> benches = scores.keySet().stream().sorted((o1, o2) -> o1.name.compareTo(o2.name)).collect(Collectors.toList());
+        for (int i = 0; i < benches.size(); i++) {
+            BenchMark benchMark = benches.get(i);
+            String fMeasure = Util.toFixed(scores.get(benchMark).fMeasure, 3);
+            String precision = Util.toFixed(scores.get(benchMark).precision, 3);
+            String recall = Util.toFixed(scores.get(benchMark).recall, 3);
+            System.out.print(benchMark.name + " & " + lines(benchMark.scriptPath) + " & " + fMeasure + " & " + precision + " & " + recall);
+            if (i != benches.size() - 1) {
+                System.out.print(" \\\\");
+            }
+            System.out.print("\n");
+        }
+
+        System.out.println("\\end{tabular}\n" +
+                "\\caption{Evaluation of benchmarks}\n" +
+                "\\end{table}");
+    }
+
+    private static int lines(String file) throws IOException {
+        String contents = Util.readFile(file);
+        return contents.split("\n").length;
+    }
+
     private static void benchAll() throws IOException {
         double combinedScore = 0;
         for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            double score = runAnalysis(benchmark);
+            if (benchmark.declarationPath == null) {
+                continue;
+            }
+            double score = runAnalysis(benchmark).fMeasure;
             if (!Double.isNaN(score)) {
                 combinedScore += score;
             }
@@ -58,7 +101,7 @@ public class Main {
         System.out.println("Combined score: " + combinedScore);
     }
 
-    public static double runAnalysis(BenchMark benchMark) throws IOException {
+    public static Score runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
 
@@ -75,9 +118,8 @@ public class Main {
 
         TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
         typeAnalysis.analyseFunctions();
-        TypeFactory typeFactory = typeAnalysis.getTypeFactory();
 
-        Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeFactory).buildDeclaration();
+        Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
 //        System.out.println(printedDeclaration);
@@ -100,12 +142,11 @@ public class Main {
         }
 
         if (evaluation == null) {
-            return Double.NaN;
+            return new Score(Double.NaN, Double.NaN, Double.NaN);
         } else {
-//            Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n\n" + evaluation.toString() + "\n");
+            Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n\n/*\n" + evaluation.toString() + "\n*/\n");
             return evaluation.score();
         }
-
     }
 
     public enum LanguageLevel {

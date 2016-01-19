@@ -26,7 +26,7 @@ public class DeclarationEvaluator {
     public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
         this.global = global;
         this.libraryClasses = libraryClasses;
-        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark).invoke();
+        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark).invoke(); // TODO: Try to bench the hand-written against the hand-written, and see what happens.
         InterfaceType realDeclaration = parsedDeclaration.getRealDeclaration();
         InterfaceType myDeclaration = parsedDeclaration.getMyDeclaration();
         Set<String> properties = parsedDeclaration.getProperties();
