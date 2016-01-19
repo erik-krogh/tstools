@@ -104,8 +104,15 @@ public class Evaluation {
 
     public double score() {
         double result = 0;
+        double factor = 1;
         for (int depth = 1; depth <= maxDepth; depth++) {
-            result += fMeasure(depth) * Math.pow(2, -depth);
+            double prevFactor = factor;
+            double measure = fMeasure(depth);
+
+            factor = measure * factor;
+            measure = measure * prevFactor;
+
+            result += measure * Math.pow(2, -depth);
         }
         return result;
     }
