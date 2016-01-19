@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class TypeFactory {
     private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
     private final NativeClassesMap nativeClasses;
+    private final HashSet<String> takenClassNames = new HashSet<>();
     private TypeAnalysis typeAnalysis;
     private NativeTypeFactory nativeTypeFactory;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
@@ -202,7 +203,7 @@ public class TypeFactory {
             return null;
         }
         boolean hardCodedClassName = false;
-        if (options.isClassNames.stream().anyMatch(str -> str.equals(libraryClass.getName()))) {
+        if (options.isClassNames.stream().anyMatch(str -> str.equals(libraryClass.getName(nativeClasses, takenClassNames)))) {
             hardCodedClassName = true;
             libraryClass.isUsedAsClass = true;
         }
@@ -210,7 +211,7 @@ public class TypeFactory {
             return null;
         }
         if (!hardCodedClassName) {
-            String firstLetter = libraryClass.getName().substring(0, 1);
+            String firstLetter = libraryClass.getName(nativeClasses, takenClassNames).substring(0, 1);
             if (!firstLetter.equals(firstLetter.toUpperCase())) {
                 return null;
             }
@@ -266,7 +267,7 @@ public class TypeFactory {
 
                 Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass, constructor);
 
-                ClassType classType = new ClassType(libraryClass.getName(), constructorType, prototypeProperties, staticFields);
+                ClassType classType = new ClassType(libraryClass.getName(nativeClasses, takenClassNames), constructorType, prototypeProperties, staticFields);
                 if (libraryClass.superClass != null) {
                     if (libraryClass.superClass.isNativeClass()) {
                         classType.setSuperClass(new NamedObjectType(nativeClasses.nameFromPrototype(libraryClass.superClass.prototype)));
