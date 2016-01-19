@@ -319,7 +319,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     public Void visit(SimpleType real, Arg arg) {
         Type type = arg.type;
         if (!real.equals(type)) {
-            evaluation.addFalseNegative(depth, "wrong simple type, " + real + " / " + arg);
+            evaluation.addFalseNegative(depth, "wrong simple type, " + real + " / " + arg.type);
         } else {
             evaluation.addTruePositive(depth, "right simple type: " + real);
         }
