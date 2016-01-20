@@ -86,7 +86,7 @@ public class BenchMark {
 
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Leaflet", "tests/leaflet/leaflet.js", "tests/leaflet/leaflet.d.ts", options, ES5); // TODO: Get it to run with the parser.
+        return new BenchMark("Leaflet", "tests/leaflet/leaflet.js", "tests/leaflet/leaflet.d.ts", options, ES5);
     });
 
     public static final BenchMark D3 = evaluate(() -> {
@@ -96,7 +96,7 @@ public class BenchMark {
 
     public static final BenchMark react = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("React", "tests/react/react.js", "tests/react/react.d.ts", options, ES5); // TODO: Fix that the precision is ZERO.
+        return new BenchMark("React", "tests/react/react.js", "tests/react/react.d.ts", options, ES5);
     });
 
     public static final BenchMark knockout = evaluate(() -> {

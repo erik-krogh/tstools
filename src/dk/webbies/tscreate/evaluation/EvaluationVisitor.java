@@ -68,7 +68,6 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                     callback.run();
                 });
             } else if (myType instanceof UnionType) {
-                // TODO: Consider doing something, to punish the incorrect union-types.
                 findBest(((UnionType)myType).getElements().stream().map(elem -> new Pair<>(realType, elem)).collect(Collectors.toList()),
                     (evaluation) -> {
                         EvaluationVisitor.this.evaluation.add(evaluation);
