@@ -16,7 +16,9 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
@@ -29,7 +31,7 @@ public class Main {
         try {
             long start = System.currentTimeMillis();
 
-//            runAnalysis(BenchMark.react);
+//            runAnalysis(BenchMark.ember);
 //            benchAll();
             printTable();
 
@@ -42,63 +44,6 @@ public class Main {
         } finally {
             System.exit(0);
         }
-    }
-
-    private static void printTable() throws IOException {
-        Map<BenchMark, Score> scores = new HashMap<>();
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            if (benchmark.declarationPath == null || benchmark == BenchMark.test) {
-                continue;
-            }
-            Score score = runAnalysis(benchmark);
-            if (!Double.isNaN(score.fMeasure)) {
-                scores.put(benchmark, score);
-            }
-        }
-        System.out.print("\n\n\n\n\n");
-        System.out.println("\\begin{table}[]\n" +
-                "\\centering\n" +
-                "\\label{evaluation-table}\n" +
-                "\\begin{tabular}{l|l|ccc}\n" +
-                "                   & \\textit{}              & \\multicolumn{3}{c}{\\textit{score}}                                                                                    \\\\\n" +
-                "\\textit{benchmark} & \\textit{lines of code} & \\multicolumn{1}{l}{\\textit{f-measure}} & \\multicolumn{1}{l}{\\textit{recall}} & \\multicolumn{1}{l}{\\textit{precision}} \\\\ \\hline\n");
-        List<BenchMark> benches = scores.keySet().stream().sorted((o1, o2) -> o1.name.compareTo(o2.name)).collect(Collectors.toList());
-        for (int i = 0; i < benches.size(); i++) {
-            BenchMark benchMark = benches.get(i);
-            String fMeasure = Util.toFixed(scores.get(benchMark).fMeasure, 3);
-            String precision = Util.toFixed(scores.get(benchMark).precision, 3);
-            String recall = Util.toFixed(scores.get(benchMark).recall, 3);
-            System.out.print(benchMark.name + " & " + lines(benchMark.scriptPath) + " & " + fMeasure + " & " + precision + " & " + recall);
-            if (i != benches.size() - 1) {
-                System.out.print(" \\\\");
-            }
-            System.out.print("\n");
-        }
-
-        System.out.println("\\end{tabular}\n" +
-                "\\caption{Evaluation of benchmarks}\n" +
-                "\\end{table}");
-    }
-
-    private static int lines(String file) throws IOException {
-        String contents = Util.readFile(file);
-        return contents.split("\n").length;
-    }
-
-    private static void benchAll() throws IOException {
-        double combinedScore = 0;
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            if (benchmark.declarationPath == null) {
-                continue;
-            }
-            double score = runAnalysis(benchmark).fMeasure;
-            if (!Double.isNaN(score)) {
-                combinedScore += score;
-            }
-        }
-
-        System.out.println();
-        System.out.println("Combined score: " + combinedScore);
     }
 
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
@@ -147,6 +92,65 @@ public class Main {
             Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n\n/*\n" + evaluation.toString() + "\n*/\n");
             return evaluation.score();
         }
+    }
+
+    private static void benchAll() throws IOException {
+        double combinedScore = 0;
+        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+            if (benchmark.declarationPath == null) {
+                continue;
+            }
+            double score = runAnalysis(benchmark).fMeasure;
+            if (!Double.isNaN(score)) {
+                combinedScore += score;
+            }
+        }
+
+        System.out.println();
+        System.out.println("Combined score: " + combinedScore);
+    }
+
+    private static void printTable() throws IOException {
+        Map<BenchMark, Score> scores = new HashMap<>();
+        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+            if (benchmark.declarationPath == null || benchmark == BenchMark.test) {
+                continue;
+            }
+            Score score = runAnalysis(benchmark);
+            if (!Double.isNaN(score.fMeasure)) {
+                scores.put(benchmark, score);
+            }
+        }
+        System.out.print("\n\n\n\n\n");
+        System.out.println("\\begin{table}[]\n" +
+                "\\centering\n" +
+                "\\begin{tabular}{l|l|ccc}\n" +
+                "                   & \\textit{}              & \\multicolumn{3}{c}{\\textit{score}}                                                                                    \\\\\n" +
+                "\\textit{benchmark} & \\textit{lines of code} & \\multicolumn{1}{l}{\\textit{f-measure}} & \\multicolumn{1}{l}{\\textit{recall}} & \\multicolumn{1}{l}{\\textit{precision}} \\\\ \\hline\n");
+        List<BenchMark> benches = scores.keySet().stream().sorted((o1, o2) -> o1.name.compareTo(o2.name)).collect(Collectors.toList());
+        for (int i = 0; i < benches.size(); i++) {
+            BenchMark benchMark = benches.get(i);
+            String fMeasure = Util.toFixed(scores.get(benchMark).fMeasure, 3);
+            String precision = Util.toFixed(scores.get(benchMark).precision, 3);
+            String recall = Util.toFixed(scores.get(benchMark).recall, 3);
+            System.out.print(benchMark.name + " & " + Util.lines(benchMark.scriptPath) + " & " + fMeasure + " & " + precision + " & " + recall);
+            if (i != benches.size() - 1) {
+                System.out.print(" \\\\");
+            }
+            System.out.print("\n");
+        }
+
+        System.out.println("\\end{tabular}\n" +
+                "\\caption{Evaluation of benchmarks} \\label{evaluationTable}\n" +
+                "\\end{table}");
+
+        System.out.println("\n\n");
+        double sumScore = 0;
+        for (Score score : scores.values()) {
+            sumScore += score.fMeasure;
+        }
+        System.out.println("Combined score: " + sumScore);
+
     }
 
     public enum LanguageLevel {

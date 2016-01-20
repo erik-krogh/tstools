@@ -357,4 +357,9 @@ public class Util {
         numberBigDecimal = numberBigDecimal.setScale(decimals, BigDecimal.ROUND_HALF_UP);
         return numberBigDecimal.toString();
     }
+
+    public static int lines(String file) throws IOException {
+        String contents = Util.readFile(file);
+        return contents.split("\n").length;
+    }
 }
