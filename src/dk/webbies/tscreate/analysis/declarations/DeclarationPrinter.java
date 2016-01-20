@@ -1,5 +1,8 @@
 package dk.webbies.tscreate.analysis.declarations;
 
+import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tscreate.analysis.declarations.types.ClassType;
+import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
 import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
@@ -556,7 +559,10 @@ public class DeclarationPrinter {
                 fieldsInSuper.addAll(((ClassType)superClass).getPrototypeFields().keySet());
                 superClass = ((ClassType)superClass).getSuperClass();
             } else if (superClass instanceof NamedObjectType) {
-                Snap.Obj proto = nativeClasses.prototypeFromName(((NamedObjectType) superClass).getName()); // FIXME: GO after the type instead of the object.
+                Set<String> typeKeys = keysFrom(nativeClasses.typeFromName(((NamedObjectType) superClass).getName()));
+                fieldsInSuper.addAll(typeKeys);
+
+                Snap.Obj proto = nativeClasses.prototypeFromName(((NamedObjectType) superClass).getName());
                 while (proto != null && proto != proto.prototype) {
                     fieldsInSuper.addAll(proto.getPropertyMap().keySet());
                     proto = proto.prototype;
@@ -567,6 +573,19 @@ public class DeclarationPrinter {
             }
         }
         return (entry) -> !fieldsInSuper.contains(entry.getKey());
+    }
+
+    private Set<String> keysFrom(Type type) {
+        if (type instanceof dk.au.cs.casa.typescript.types.InterfaceType) {
+            dk.au.cs.casa.typescript.types.InterfaceType interfaceType = (dk.au.cs.casa.typescript.types.InterfaceType) type;
+            HashSet<String> result = new HashSet<>();
+            result.addAll(interfaceType.getDeclaredProperties().keySet());
+            interfaceType.getBaseTypes().forEach(base -> result.addAll(keysFrom(base)));
+            return result;
+        } else if (type instanceof GenericType) {
+            return keysFrom(((GenericType) type).toInterface());
+        }
+        throw new RuntimeException("Not yet! " + type.getClass().getSimpleName());
     }
 
     private Predicate<Map.Entry<String, DeclarationType>> notStaticInSuperClassTest(DeclarationType superClass) {
