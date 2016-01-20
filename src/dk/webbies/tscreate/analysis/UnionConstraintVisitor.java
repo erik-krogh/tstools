@@ -65,34 +65,28 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         solver.union(lhs, primitiveFactory.nonVoid());
         solver.union(rhs, primitiveFactory.nonVoid());
 
-        UnionNode result;
         switch (op.getOperator()) {
             case PLUS: {
                 solver.union(lhs, primitiveFactory.stringOrNumber());
                 solver.union(rhs, primitiveFactory.stringOrNumber());
-                result = new IncludeNode(solver, lhs, rhs, primitiveFactory.stringOrNumber());
-                break;
+                return new IncludeNode(solver, lhs, rhs, primitiveFactory.stringOrNumber());
             }
 
             case EQUAL: // = // assignment
                 solver.union(lhs, rhs);
-                result = lhs;
-                break;
+                return lhs;
             case PLUS_EQUAL: // +=
                 solver.union(lhs, rhs, primitiveFactory.stringOrNumber());
-                result = lhs;
-                break;
+                return lhs;
             case NOT_EQUAL: // !=
             case EQUAL_EQUAL: // ==
             case NOT_EQUAL_EQUAL: // !==
             case EQUAL_EQUAL_EQUAL: // ===
                 solver.union(lhs, rhs);
-                result = primitiveFactory.bool();
-                break;
+                return primitiveFactory.bool();
             case AND: // &&
             case OR: // ||
-                result = new IncludeNode(solver, lhs, rhs);
-                break;
+                return new IncludeNode(solver, lhs, rhs);
             case MINUS: // -
             case MULT: // *
             case DIV: // /
@@ -119,21 +113,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case BITWISE_XOR_EQUAL: // ^=
                 solver.union(primitiveFactory.number(), lhs);
                 solver.union(primitiveFactory.number(), rhs);
-                result = primitiveFactory.number();
-                break;
+                return primitiveFactory.number();
             case INSTANCEOF: // instanceof
-                result = primitiveFactory.bool();
-                break;
+                return primitiveFactory.bool();
             case IN: // in
                 solver.union(lhs, primitiveFactory.string());
                 solver.union(rhs, new ObjectNode(solver));
-                result = primitiveFactory.bool();
-                break;
+                return primitiveFactory.bool();
             default:
                 throw new UnsupportedOperationException("Don't yet handle the operator: " + op.getOperator());
         }
-
-        return result;
     }
 
     @Override
