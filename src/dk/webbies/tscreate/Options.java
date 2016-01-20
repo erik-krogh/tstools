@@ -37,8 +37,8 @@ public class Options {
         // If the above is true, these ones are only used as fallback (that is, they are then only used if there are no instances of the class found in the heap).
 
         // For every prototype method, use the information gained by the "this" calls.
-        public boolean unionThisFromPrototypeMethods = true;
-        public boolean unionThisFromConstructor = false; // Except in some very weird situations. This will be more accurately covered when we create an instance of the class.
+        public boolean unionThisFromPrototypeMethods = false;
+        public boolean unionThisFromConstructor = false;
         public boolean unionThisFromConstructedObjects = false; // As in objects that are constructed using "new Foo()" inside the function we are analyzing.
     }
 
