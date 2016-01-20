@@ -3,7 +3,6 @@ package dk.webbies.tscreate.analysis.unionFind;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-// TODO: After UnionFeature, UnionNode is not needed anymore, it is nothing but a step to the UnionFeature (bad name).
 public abstract class UnionNode {
     UnionNode parent;
     int rank = 0;

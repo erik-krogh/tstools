@@ -14,7 +14,6 @@ public class InterfaceType extends DeclarationType {
     public static int interfaceCounter = 0;
 
     public InterfaceType(String name) {
-        // TODO: Ensure no conflicts
         if (name != null) {
             this.name = name;
         } else {
