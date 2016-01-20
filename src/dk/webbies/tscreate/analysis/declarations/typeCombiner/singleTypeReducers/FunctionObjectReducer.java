@@ -3,9 +3,11 @@ package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducer
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
+import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.jsnap.Snap;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,9 +36,8 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
         if (objectMatchFunctionPrototype(object, globalObject)) {
             return function;
         } else {
-            return null;
-            // The below removes the properties that are defined on all functions. But that makes the score smaller on the benchmarks, so it doesn't run.
-            /*List<String> matchingProperties = getMatchingProperties(object, globalObject);
+            // According to my test, this is less precise. I want it anyway.
+            List<String> matchingProperties = getMatchingProperties(object, globalObject);
             if (matchingProperties.isEmpty()) {
                 return null;
             } else {
@@ -46,7 +47,7 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
                     declarations.remove(matchingProperty);
                 }
                 return new UnionDeclarationType(function, newObject);
-            }*/
+            }
         }
     }
 
