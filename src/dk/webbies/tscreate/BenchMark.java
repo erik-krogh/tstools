@@ -86,7 +86,7 @@ public class BenchMark {
 
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Leaflet", "tests/leaflet/leaflet.js", null/*"tests/leaflet/leaflet.d.ts"*/, options, ES5); // TODO: Get it to run with the parser.
+        return new BenchMark("Leaflet", "tests/leaflet/leaflet.js", "tests/leaflet/leaflet.d.ts", options, ES5); // TODO: Get it to run with the parser.
     });
 
     public static final BenchMark D3 = evaluate(() -> {

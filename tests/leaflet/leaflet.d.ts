@@ -4,8 +4,8 @@
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
 declare module L {
-    type LatLngExpression = LatLng | number[] | ({ lat: number; lng: number })
-    type LatLngBoundsExpression = LatLngBounds | LatLngExpression[];
+    type LatLngExpression = LatLngInstance | number[] | ({ lat: number; lng: number })
+    type LatLngBoundsExpression = LatLngBoundsInstance | LatLngExpression[];
 
     export interface AttributionOptions {
 
@@ -27,12 +27,12 @@ declare module L {
      * Creates a Bounds object from two coordinates (usually top-left and bottom-right
      * corners).
      */
-    export function bounds(topLeft: Point, bottomRight: Point): Bounds;
+    export function bounds(topLeft: PointInstance, bottomRight: PointInstance): BoundsInstance;
 
     /**
      * Creates a Bounds object defined by the points it contains.
      */
-    export function bounds(points: Point[]): Bounds;
+    export function bounds(points: PointInstance[]): BoundsInstance;
 
 
     export interface BoundsStatic extends ClassStatic {
@@ -40,40 +40,40 @@ declare module L {
          * Creates a Bounds object from two coordinates (usually top-left and bottom-right
          * corners).
          */
-        new(topLeft: Point, bottomRight: Point): Bounds;
+        new(topLeft: PointInstance, bottomRight: PointInstance): BoundsInstance;
 
         /**
          * Creates a Bounds object defined by the points it contains.
          */
-        new(points: Point[]): Bounds;
+        new(points: PointInstance[]): BoundsInstance;
     }
     export var Bounds: BoundsStatic;
 
-    export interface Bounds {
+    export interface BoundsInstance {
         /**
          * Extends the bounds to contain the given point.
          */
-        extend(point: Point): void;
+        extend(point: PointInstance): void;
 
         /**
          * Returns the center point of the bounds.
          */
-        getCenter(): Point;
+        getCenter(): PointInstance;
 
         /**
          * Returns true if the rectangle contains the given one.
          */
-        contains(otherBounds: Bounds): boolean;
+        contains(otherBounds: BoundsInstance): boolean;
 
         /**
          * Returns true if the rectangle contains the given point.
          */
-        contains(point: Point): boolean;
+        contains(point: PointInstance): boolean;
 
         /**
          * Returns true if the rectangle intersects the given bounds.
          */
-        intersects(otherBounds: Bounds): boolean;
+        intersects(otherBounds: BoundsInstance): boolean;
 
         /**
          * Returns true if the bounds are properly initialized.
@@ -83,17 +83,17 @@ declare module L {
         /**
          * Returns the size of the given bounds.
          */
-        getSize(): Point;
+        getSize(): PointInstance;
 
         /**
          * The top left corner of the rectangle.
          */
-        min: Point;
+        min: PointInstance;
 
         /**
          * The bottom right corner of the rectangle.
          */
-        max: Point;
+        max: PointInstance;
     }
 
     module Browser {
@@ -171,22 +171,22 @@ declare module L {
      * Instantiates a circle object given a geographical point, a radius in meters
      * and optionally an options object.
      */
-    function circle(latlng: LatLngExpression, radius: number, options?: PathOptions): Circle;
+    function circle(latlng: LatLngExpression, radius: number, options?: PathOptions): CircleInstance;
 
     export interface CircleStatic extends ClassStatic {
         /**
          * Instantiates a circle object given a geographical point, a radius in meters
          * and optionally an options object.
          */
-        new(latlng: LatLngExpression, radius: number, options?: PathOptions): Circle;
+        new(latlng: LatLngExpression, radius: number, options?: PathOptions): CircleInstance;
     }
     export var Circle: CircleStatic;
 
-    export interface Circle extends Path {
+    export interface CircleInstance extends Path {
         /**
          * Returns the current geographical position of the circle.
          */
-        getLatLng(): LatLng;
+        getLatLng(): LatLngInstance;
 
         /**
          * Returns the current radius of a circle. Units are in meters.
@@ -196,15 +196,15 @@ declare module L {
         /**
          * Sets the position of a circle to a new location.
          */
-        setLatLng(latlng: LatLngExpression): Circle;
+        setLatLng(latlng: LatLngExpression): CircleInstance;
 
         /**
          * Sets the radius of a circle. Units are in meters.
          */
-        setRadius(radius: number): Circle;
+        setRadius(radius: number): CircleInstance;
 
         /**
-         * Returns a GeoJSON representation of the circle (GeoJSON Point Feature).
+         * Returns a GeoJSONInstance representation of the circle (GeoJSONInstance PointInstance Feature).
          */
         toGeoJSON(): any;
 
@@ -215,7 +215,7 @@ declare module L {
      * an options object. The default radius is 10 and can be altered by passing a
      * "radius" member in the path options object.
      */
-    function circleMarker(latlng: LatLngExpression, options?: PathOptions): CircleMarker;
+    function circleMarker(latlng: LatLngExpression, options?: PathOptions): CircleMarkerInstance;
 
 
     export interface CircleMarkerStatic extends ClassStatic {
@@ -224,23 +224,23 @@ declare module L {
          * an options object. The default radius is 10 and can be altered by passing a
          * "radius" member in the path options object.
          */
-        new(latlng: LatLngExpression, options?: PathOptions): CircleMarker;
+        new(latlng: LatLngExpression, options?: PathOptions): CircleMarkerInstance;
     }
     export var CircleMarker: CircleMarkerStatic;
 
-    export interface CircleMarker extends Circle {
+    export interface CircleMarkerInstance extends CircleInstance {
         /**
          * Sets the position of a circle marker to a new location.
          */
-        setLatLng(latlng: LatLngExpression): CircleMarker;
+        setLatLng(latlng: LatLngExpression): CircleMarkerInstance;
 
         /**
          * Sets the radius of a circle marker. Units are in pixels.
          */
-        setRadius(radius: number): CircleMarker;
+        setRadius(radius: number): CircleMarkerInstance;
 
         /**
-         * Returns a GeoJSON representation of the circle marker (GeoJSON Point Feature).
+         * Returns a GeoJSONInstance representation of the circle marker (GeoJSONInstance PointInstance Feature).
          */
         toGeoJSON(): any;
     }
@@ -309,7 +309,7 @@ declare module L {
         /**
          * Creates a control with the given options.
          */
-        new(options?: ControlOptions): Control;
+        new(options?: ControlOptions): ControlInstance;
 
         Zoom: ZoomStatic;
         Attribution: AttributionStatic;
@@ -318,11 +318,11 @@ declare module L {
     }
     export var Control: ControlStatic;
 
-    export interface Control extends IControl {
+    export interface ControlInstance extends IControl {
         /**
          * Sets the position of the control. See control positions.
          */
-        setPosition(position: string): Control;
+        setPosition(position: string): ControlInstance;
 
         /**
          * Returns the current position of the control.
@@ -332,12 +332,12 @@ declare module L {
         /**
          * Adds the control to the map.
          */
-        addTo(map: Map): Control;
+        addTo(map: MapInstance): ControlInstance;
 
         /**
          * Removes the control from the map.
          */
-        removeFrom(map: Map): Control;
+        removeFrom(map: MapInstance): ControlInstance;
 
         /**
          * Returns the HTML container of the control.
@@ -351,14 +351,14 @@ declare module L {
          * control, adds listeners on relevant map events, and returns the element
          * containing the control. Called on map.addControl(control) or control.addTo(map).
          */
-        onAdd(map: Map): HTMLElement;
+        onAdd(map: MapInstance): HTMLElement;
 
         /**
          * Optional, should contain all clean up code (e.g. removes control's event
          * listeners). Called on map.removeControl(control) or control.removeFrom(map).
          * The control's DOM container is removed automatically.
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
     }
 
     export interface ZoomStatic extends ClassStatic {
@@ -368,7 +368,7 @@ declare module L {
         new (options?: ZoomOptions): Zoom;
     }
 
-    export interface Zoom extends L.Control {
+    export interface Zoom extends L.ControlInstance {
     }
 
     export interface ZoomOptions {
@@ -416,7 +416,7 @@ declare module L {
         new(options?: AttributionOptions): Attribution;
     }
 
-    export interface Attribution extends L.Control {
+    export interface Attribution extends L.ControlInstance {
         /**
          * Sets the text before the attributions.
          */
@@ -442,7 +442,7 @@ declare module L {
         new(baseLayers?: any, overlays?: any, options?: LayersOptions): Layers;
     }
 
-    export interface Layers extends L.Control, IEventPowered<Layers> {
+    export interface Layers extends L.ControlInstance, IEventPowered<Layers> {
         /**
          * Adds a base layer (radio button entry) with the given name to the control.
          */
@@ -483,14 +483,14 @@ declare module L {
         new(options?: ScaleOptions): Scale;
     }
 
-    export interface Scale extends L.Control {
+    export interface Scale extends L.ControlInstance {
     }
 
     export interface control {
         /**
          * Creates a control with the given options.
          */
-        function (options?: ControlOptions): Control;
+        function (options?: ControlOptions): ControlInstance;
     }
 
     export module control {
@@ -533,7 +533,7 @@ declare module L {
         /**
          * The most common CRS for online maps, used by almost all free and commercial
          * tile providers. Uses Spherical Mercator projection. Set in by default in
-         * Map's crs option.
+         * MapInstance's crs option.
          */
         export var EPSG3857: ICRS;
 
@@ -560,17 +560,17 @@ declare module L {
     /**
      * Creates a div icon instance with the given options.
      */
-    function divIcon(options: DivIconOptions): DivIcon;
+    function divIcon(options: DivIconOptions): DivIconInstance;
 
     export interface DivIconStatic extends ClassStatic {
         /**
          * Creates a div icon instance with the given options.
          */
-        new(options: DivIconOptions): DivIcon;
+        new(options: DivIconOptions): DivIconInstance;
     }
     export var DivIcon: DivIconStatic;
 
-    export interface DivIcon extends Icon {
+    export interface DivIconInstance extends Icon {
     }
 
     export interface DivIconOptions {
@@ -578,7 +578,7 @@ declare module L {
         /**
          * Size of the icon in pixels. Can be also set through CSS.
          */
-        iconSize?: Point;
+        iconSize?: PointInstance;
 
         /**
          * The coordinates of the "tip" of the icon (relative to its top left corner).
@@ -586,7 +586,7 @@ declare module L {
          * location. Centered by default if size is specified, also can be set in CSS
          * with negative margins.
          */
-        iconAnchor?: Point;
+        iconAnchor?: PointInstance;
 
         /**
          * A custom class name to assign to the icon.
@@ -604,54 +604,54 @@ declare module L {
 
     }
 
-    export interface DomEvent {
+    export interface DomEventInstance {
 
         /**
          * Adds a listener fn to the element's DOM event of the specified type. this keyword
          * inside the listener will point to context, or to the element if not specified.
          */
-        addListener(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEvent;
-        on(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEvent;
+        addListener(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEventInstance;
+        on(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEventInstance;
 
         /**
          * Removes an event listener from the element.
          */
-        removeListener(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEvent;
-        off(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEvent;
+        removeListener(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEventInstance;
+        off(el: HTMLElement, type: string, fn: (e: Event) => void, context?: any): DomEventInstance;
 
         /**
          * Stop the given event from propagation to parent elements. Used inside the
          * listener functions:
-         * L.DomEvent.addListener(div, 'click', function
+         * L.DomEventInstance.addListener(div, 'click', function
          * (e) {
-          * L.DomEvent.stopPropagation(e);
+          * L.DomEventInstance.stopPropagation(e);
           * });
          */
-        stopPropagation(e: Event): DomEvent;
+        stopPropagation(e: Event): DomEventInstance;
 
         /**
          * Prevents the default action of the event from happening (such as following
          * a link in the href of the a element, or doing a POST request with page reload
          * when form is submitted). Use it inside listener functions.
          */
-        preventDefault(e: Event): DomEvent;
+        preventDefault(e: Event): DomEventInstance;
 
         /**
          * Does stopPropagation and preventDefault at the same time.
          */
-        stop(e: Event): DomEvent;
+        stop(e: Event): DomEventInstance;
 
         /**
          * Adds stopPropagation to the element's 'click', 'doubleclick', 'mousedown'
          * and 'touchstart' events.
          */
-        disableClickPropagation(el: HTMLElement): DomEvent;
+        disableClickPropagation(el: HTMLElement): DomEventInstance;
 
         /**
          * Gets normalized mouse position from a DOM event relative to the container
          * or to the whole page if not specified.
          */
-        getMousePosition(e: Event, container?: HTMLElement): Point;
+        getMousePosition(e: Event, container?: HTMLElement): PointInstance;
 
         /**
          * Gets normalized wheel delta from a mousewheel DOM event.
@@ -660,7 +660,7 @@ declare module L {
 
     }
 
-    export var DomEvent: DomEvent;
+    export var DomEvent: DomEventInstance;
 
     module DomUtil {
 
@@ -679,7 +679,7 @@ declare module L {
         /**
          * Returns the offset to the viewport for the requested element.
          */
-        export function getViewportOffset(el: HTMLElement): Point;
+        export function getViewportOffset(el: HTMLElement): PointInstance;
 
         /**
          * Creates an element with tagName, sets the className, and optionally appends
@@ -730,12 +730,12 @@ declare module L {
          * the given point. Uses 3D translate on WebKit for hardware-accelerated transforms
          * and 2D on other browsers.
          */
-        export function getTranslateString(point: Point): string;
+        export function getTranslateString(point: PointInstance): string;
 
         /**
          * Returns a CSS transform string to scale an element (with the given scale origin).
          */
-        export function getScaleString(scale: number, origin: Point): string;
+        export function getScaleString(scale: number, origin: PointInstance): string;
 
         /**
          * Sets the position of an element to coordinates specified by point, using
@@ -743,12 +743,12 @@ declare module L {
          * Leaflet internally to position its layers). Forces top/left positioning
          * if disable3D is true.
          */
-        export function setPosition(el: HTMLElement, point: Point, disable3D?: boolean): void;
+        export function setPosition(el: HTMLElement, point: PointInstance, disable3D?: boolean): void;
 
         /**
          * Returns the coordinates of an element previously positioned with setPosition.
          */
-        export function getPosition(el: HTMLElement): Point;
+        export function getPosition(el: HTMLElement): PointInstance;
 
         /**
          * Vendor-prefixed transition style name (e.g. 'webkitTransition' for WebKit).
@@ -763,22 +763,22 @@ declare module L {
     }
 
     /**
-     * Creates a Draggable object for moving the given element when you start dragging
+     * Creates a DraggableInstance object for moving the given element when you start dragging
      * the dragHandle element (equals the element itself by default).
      */
-    function draggable(element: HTMLElement, dragHandle?: HTMLElement): Draggable;
+    function draggable(element: HTMLElement, dragHandle?: HTMLElement): DraggableInstance;
 
     export interface DraggableStatic extends ClassStatic {
         /**
-         * Creates a Draggable object for moving the given element when you start dragging
+         * Creates a DraggableInstance object for moving the given element when you start dragging
          * the dragHandle element (equals the element itself by default).
          */
-        new(element: HTMLElement, dragHandle?: HTMLElement): Draggable;
+        new(element: HTMLElement, dragHandle?: HTMLElement): DraggableInstance;
     }
     export var Draggable: DraggableStatic;
 
 
-    export interface Draggable extends IEventPowered<Draggable> {
+    export interface DraggableInstance extends IEventPowered<DraggableInstance> {
         /**
          * Enables the dragging ability.
          */
@@ -791,63 +791,63 @@ declare module L {
 
         ////////////////
         ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Draggable;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Draggable;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Draggable;
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): DraggableInstance;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): DraggableInstance;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): DraggableInstance;
         hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): Draggable;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Draggable;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Draggable;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Draggable;
-        fire(type: string, data?: any): Draggable;
-        addEventListener(eventMap: any, context?: any): Draggable;
-        removeEventListener(eventMap?: any, context?: any): Draggable;
-        clearAllEventListeners(): Draggable;
-        on(eventMap: any, context?: any): Draggable;
-        off(eventMap?: any, context?: any): Draggable;
+        fireEvent(type: string, data?: any): DraggableInstance;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): DraggableInstance;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): DraggableInstance;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): DraggableInstance;
+        fire(type: string, data?: any): DraggableInstance;
+        addEventListener(eventMap: any, context?: any): DraggableInstance;
+        removeEventListener(eventMap?: any, context?: any): DraggableInstance;
+        clearAllEventListeners(): DraggableInstance;
+        on(eventMap: any, context?: any): DraggableInstance;
+        off(eventMap?: any, context?: any): DraggableInstance;
     }
 
     /**
      * Create a layer group, optionally given an initial set of layers.
      */
-    function featureGroup<T extends ILayer>(layers?: T[]): FeatureGroup<T>;
+    function featureGroup<T extends ILayer>(layers?: T[]): FeatureGroupInstance<T>;
 
 
     export interface FeatureGroupStatic extends ClassStatic {
         /**
          * Create a layer group, optionally given an initial set of layers.
          */
-        new<T extends ILayer>(layers?: T[]): FeatureGroup<T>;
+        new<T extends ILayer>(layers?: T[]): FeatureGroupInstance<T>;
     }
     export var FeatureGroup: FeatureGroupStatic;
 
-    export interface FeatureGroup<T extends ILayer> extends LayerGroup<T>, ILayer, IEventPowered<FeatureGroup<T>> {
+    export interface FeatureGroupInstance<T extends ILayer> extends LayerGroupInstance<T>, ILayer, IEventPowered<FeatureGroupInstance<T>> {
         /**
          * Binds a popup with a particular HTML content to a click on any layer from the
          * group that has a bindPopup method.
          */
-        bindPopup(htmlContent: string, options?: PopupOptions): FeatureGroup<T>;
+        bindPopup(htmlContent: string, options?: PopupOptions): FeatureGroupInstance<T>;
 
         /**
          * Returns the LatLngBounds of the Feature Group (created from bounds and coordinates
          * of its children).
          */
-        getBounds(): LatLngBounds;
+        getBounds(): LatLngBoundsInstance;
 
         /**
          * Sets the given path options to each layer of the group that has a setStyle method.
          */
-        setStyle(style: PathOptions): FeatureGroup<T>;
+        setStyle(style: PathOptions): FeatureGroupInstance<T>;
 
         /**
          * Brings the layer group to the top of all other layers.
          */
-        bringToFront(): FeatureGroup<T>;
+        bringToFront(): FeatureGroupInstance<T>;
 
         /**
          * Brings the layer group to the bottom of all other layers.
          */
-        bringToBack(): FeatureGroup<T>;
+        bringToBack(): FeatureGroupInstance<T>;
 
         ////////////
         ////////////
@@ -856,61 +856,61 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
 
         ////////////////
         ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroup<T>;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroup<T>;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): FeatureGroup<T>;
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroupInstance<T>;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroupInstance<T>;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): FeatureGroupInstance<T>;
         hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): FeatureGroup<T>;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroup<T>;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroup<T>;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): FeatureGroup<T>;
-        fire(type: string, data?: any): FeatureGroup<T>;
-        addEventListener(eventMap: any, context?: any): FeatureGroup<T>;
-        removeEventListener(eventMap?: any, context?: any): FeatureGroup<T>;
-        clearAllEventListeners(): FeatureGroup<T>;
-        on(eventMap: any, context?: any): FeatureGroup<T>;
-        off(eventMap?: any, context?: any): FeatureGroup<T>;
+        fireEvent(type: string, data?: any): FeatureGroupInstance<T>;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroupInstance<T>;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): FeatureGroupInstance<T>;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): FeatureGroupInstance<T>;
+        fire(type: string, data?: any): FeatureGroupInstance<T>;
+        addEventListener(eventMap: any, context?: any): FeatureGroupInstance<T>;
+        removeEventListener(eventMap?: any, context?: any): FeatureGroupInstance<T>;
+        clearAllEventListeners(): FeatureGroupInstance<T>;
+        on(eventMap: any, context?: any): FeatureGroupInstance<T>;
+        off(eventMap?: any, context?: any): FeatureGroupInstance<T>;
     }
 
     /**
-     * Creates a GeoJSON layer. Optionally accepts an object in GeoJSON format
+     * Creates a GeoJSONInstance layer. Optionally accepts an object in GeoJSONInstance format
      * to display on the map (you can alternatively add it later with addData method)
      * and an options object.
      */
-    function geoJson(geojson?: any, options?: GeoJSONOptions): GeoJSON;
+    function geoJson(geojson?: any, options?: GeoJSONOptions): GeoJSONInstance;
 
     export interface GeoJSONStatic extends ClassStatic {
         /**
-         * Creates a GeoJSON layer. Optionally accepts an object in GeoJSON format
+         * Creates a GeoJSONInstance layer. Optionally accepts an object in GeoJSONInstance format
          * to display on the map (you can alternatively add it later with addData method)
          * and an options object.
          */
-        new(geojson?: any, options?: GeoJSONOptions): GeoJSON;
+        new(geojson?: any, options?: GeoJSONOptions): GeoJSONInstance;
 
         /**
-         * Creates a layer from a given GeoJSON feature.
+         * Creates a layer from a given GeoJSONInstance feature.
          */
-        geometryToLayer(featureData: GeoJSON, pointToLayer?: (featureData: any, latlng: LatLng) => ILayer): ILayer;
+        geometryToLayer(featureData: GeoJSONInstance, pointToLayer?: (featureData: any, latlng: LatLngInstance) => ILayer): ILayer;
 
         /**
          * Creates a LatLng object from an array of 2 numbers (latitude, longitude)
-         * used in GeoJSON for points. If reverse is set to true, the numbers will be interpreted
+         * used in GeoJSONInstance for points. If reverse is set to true, the numbers will be interpreted
          * as (longitude, latitude).
          */
-        coordsToLatLng(coords: number[], reverse?: boolean): LatLng;
+        coordsToLatLng(coords: number[], reverse?: boolean): LatLngInstance;
 
         /**
-         * Creates a multidimensional array of LatLng objects from a GeoJSON coordinates
+         * Creates a multidimensional array of LatLng objects from a GeoJSONInstance coordinates
          * array. levelsDeep specifies the nesting level (0 is for an array of points,
          * 1 for an array of arrays of points, etc., 0 by default). If reverse is set to
          * true, the numbers will be interpreted as (longitude, latitude).
@@ -919,27 +919,27 @@ declare module L {
     }
     export var GeoJSON: GeoJSONStatic;
 
-    export interface GeoJSON extends FeatureGroup<ILayer> {
+    export interface GeoJSONInstance extends FeatureGroupInstance<ILayer> {
         /**
-         * Adds a GeoJSON object to the layer.
+         * Adds a GeoJSONInstance object to the layer.
          */
         addData(data: any): boolean;
 
         /**
-         * Changes styles of GeoJSON vector layers with the given style function.
+         * Changes styles of GeoJSONInstance vector layers with the given style function.
          */
-        setStyle(style: (featureData: any) => any): GeoJSON;
+        setStyle(style: (featureData: any) => any): GeoJSONInstance;
 
         /**
-         * Changes styles of GeoJSON vector layers with the given style options.
+         * Changes styles of GeoJSONInstance vector layers with the given style options.
          */
-        setStyle(style: PathOptions): GeoJSON;
+        setStyle(style: PathOptions): GeoJSONInstance;
 
         /**
-         * Resets the the given vector layer's style to the original GeoJSON style,
+         * Resets the the given vector layer's style to the original GeoJSONInstance style,
          * useful for resetting style after hover events.
          */
-        resetStyle(layer: Path): GeoJSON;
+        resetStyle(layer: Path): GeoJSONInstance;
     }
 
     export interface GeoJSONOptions {
@@ -947,7 +947,7 @@ declare module L {
          * Function that will be used for creating layers for GeoJSON points (if not
          * specified, simple markers will be created).
          */
-        pointToLayer?: (featureData: any, latlng: LatLng) => ILayer;
+        pointToLayer?: (featureData: any, latlng: LatLngInstance) => ILayer;
 
         /**
          * Function that will be used to get style options for vector layers created
@@ -971,7 +971,7 @@ declare module L {
          * (if not specified, coords will be assumed to be WGS84 � standard[longitude, latitude]
          * values in degrees).
          */
-        coordsToLatLng?: (coords: any[]) => LatLng[];
+        coordsToLatLng?: (coords: any[]) => LatLngInstance[];
     }
 
     /**
@@ -1019,7 +1019,7 @@ declare module L {
         /**
          * Size of the icon image in pixels.
          */
-        iconSize?: Point|[number, number];
+        iconSize?: PointInstance|[number, number];
 
         /**
          * The coordinates of the "tip" of the icon (relative to its top left corner).
@@ -1027,7 +1027,7 @@ declare module L {
          * location. Centered by default if size is specified, also can be set in CSS
          * with negative margins.
          */
-        iconAnchor?: Point|[number, number];
+        iconAnchor?: PointInstance|[number, number];
 
         /**
          * The URL to the icon shadow image. If not specified, no shadow image will be
@@ -1044,19 +1044,19 @@ declare module L {
         /**
          * Size of the shadow image in pixels.
          */
-        shadowSize?: Point|[number, number];
+        shadowSize?: PointInstance|[number, number];
 
         /**
          * The coordinates of the "tip" of the shadow (relative to its top left corner)
          * (the same as iconAnchor if not specified).
          */
-        shadowAnchor?: Point|[number, number];
+        shadowAnchor?: PointInstance|[number, number];
 
         /**
          * The coordinates of the point from which popups will "open", relative to the
          * icon anchor.
          */
-        popupAnchor?: Point|[number, number];
+        popupAnchor?: PointInstance|[number, number];
 
         /**
          * A custom class name to assign to both icon and shadow images. Empty by default.
@@ -1071,14 +1071,14 @@ declare module L {
          * control, adds listeners on relevant map events, and returns the element
          * containing the control. Called on map.addControl(control) or control.addTo(map).
          */
-        onAdd(map: Map): HTMLElement;
+        onAdd(map: MapInstance): HTMLElement;
 
         /**
          * Optional, should contain all clean up code (e.g. removes control's event
          * listeners). Called on map.removeControl(control) or control.removeFrom(map).
          * The control's DOM container is removed automatically.
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
     }
 
     export interface ICRS {
@@ -1092,7 +1092,7 @@ declare module L {
          * Transformation that this CRS uses to turn projected coordinates into screen
          * coordinates for a particular tile service.
          */
-        transformation: Transformation;
+        transformation: TransformationInstance;
 
         /**
          * Standard code name of the CRS passed into WMS services (e.g. 'EPSG:3857').
@@ -1102,19 +1102,19 @@ declare module L {
         /**
          * Projects geographical coordinates on a given zoom into pixel coordinates.
          */
-        latLngToPoint(latlng: LatLng, zoom: number): Point;
+        latLngToPoint(latlng: LatLngInstance, zoom: number): PointInstance;
 
         /**
          * The inverse of latLngToPoint. Projects pixel coordinates on a given zoom
          * into geographical coordinates.
          */
-        pointToLatLng(point: Point, zoom: number): LatLng;
+        pointToLatLng(point: PointInstance, zoom: number): LatLngInstance;
 
         /**
          * Projects geographical coordinates into coordinates in units accepted
          * for this CRS (e.g. meters for EPSG:3857, for passing it to WMS services).
          */
-        project(latlng: LatLng): Point;
+        project(latlng: LatLngInstance): PointInstance;
 
         /**
          * Returns the scale used when transforming projected coordinates into pixel
@@ -1126,7 +1126,7 @@ declare module L {
         /**
          * Returns the size of the world in pixels for a particular zoom.
          */
-        getSize(zoom: number): Point;
+        getSize(zoom: number): PointInstance;
 
     }
 
@@ -1226,7 +1226,7 @@ declare module L {
     }
 
     export interface Handler {
-        initialize(map: Map): void;
+        initialize(map: MapInstance): void;
     }
 
     export interface ILayer {
@@ -1236,13 +1236,13 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
     }
 
     module Mixin {
@@ -1257,42 +1257,42 @@ declare module L {
      * Instantiates an image overlay object given the URL of the image and the geographical
      * bounds it is tied to.
      */
-    function imageOverlay(imageUrl: string, bounds: LatLngBounds, options?: ImageOverlayOptions): ImageOverlay;
+    function imageOverlay(imageUrl: string, bounds: LatLngBoundsInstance, options?: ImageOverlayOptions): ImageOverlayInstance;
 
     export interface ImageOverlayStatic extends ClassStatic {
         /**
          * Instantiates an image overlay object given the URL of the image and the geographical
          * bounds it is tied to.
          */
-        new(imageUrl: string, bounds: LatLngBounds, options?: ImageOverlayOptions): ImageOverlay;
+        new(imageUrl: string, bounds: LatLngBoundsInstance, options?: ImageOverlayOptions): ImageOverlayInstance;
     }
     export var ImageOverlay: ImageOverlayStatic;
 
-    export interface ImageOverlay extends ILayer {
+    export interface ImageOverlayInstance extends ILayer {
         /**
          * Adds the overlay to the map.
          */
-        addTo(map: Map): ImageOverlay;
+        addTo(map: MapInstance): ImageOverlayInstance;
 
         /**
          * Sets the opacity of the overlay.
          */
-        setOpacity(opacity: number): ImageOverlay;
+        setOpacity(opacity: number): ImageOverlayInstance;
 
         /**
          * Changes the URL of the image.
          */
-        setUrl(imageUrl: string): ImageOverlay;
+        setUrl(imageUrl: string): ImageOverlayInstance;
 
         /**
          * Brings the layer to the top of all overlays.
          */
-        bringToFront(): ImageOverlay;
+        bringToFront(): ImageOverlayInstance;
 
         /**
          * Brings the layer to the bottom of all overlays.
          */
-        bringToBack(): ImageOverlay;
+        bringToBack(): ImageOverlayInstance;
 
         ////////////
         ////////////
@@ -1301,13 +1301,13 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
     }
 
     export interface ImageOverlayOptions {
@@ -1323,12 +1323,12 @@ declare module L {
         /**
          * Projects geographical coordinates into a 2D point.
          */
-        project(latlng: LatLng): Point;
+        project(latlng: LatLngInstance): PointInstance;
 
         /**
          * The inverse of project. Projects a 2D point into geographical location.
          */
-        unproject(point: Point): LatLng;
+        unproject(point: PointInstance): LatLngInstance;
     }
 
     /**
@@ -1346,26 +1346,26 @@ declare module L {
      * Creates an object representing a geographical point with the given latitude
      * and longitude.
      */
-    function latLng(latitude: number, longitude: number): LatLng;
+    function latLng(latitude: number, longitude: number): LatLngInstance;
 
     /**
      * Creates an object representing a geographical point with the given latitude
      * and longitude.
      */
-    function latLng(coords: LatLngExpression): LatLng;
+    function latLng(coords: LatLngExpression): LatLngInstance;
 
     export interface LatLngStatic extends ClassStatic {
         /**
          * Creates an object representing a geographical point with the given latitude
          * and longitude.
          */
-        new(latitude: number, longitude: number): LatLng;
+        new(latitude: number, longitude: number): LatLngInstance;
 
         /**
          * Creates an object representing a geographical point with the given latitude
          * and longitude.
          */
-        new(coords: LatLngExpression): LatLng;
+        new(coords: LatLngExpression): LatLngInstance;
 
         /**
          * A multiplier for converting degrees into radians.
@@ -1390,7 +1390,7 @@ declare module L {
     }
     export var LatLng: LatLngStatic;
 
-    export interface LatLng {
+    export interface LatLngInstance {
         /**
          * Returns the distance (in meters) to the given LatLng calculated using the
          * Haversine formula. See description on wikipedia
@@ -1412,7 +1412,7 @@ declare module L {
          * Returns a new LatLng object with the longitude wrapped around left and right
          * boundaries (-180 to 180 by default).
          */
-        wrap(left: number, right: number): LatLng;
+        wrap(left: number, right: number): LatLngInstance;
 
         /**
          * Latitude in degrees.
@@ -1430,59 +1430,59 @@ declare module L {
      * Creates a LatLngBounds object by defining south-west and north-east corners
      * of the rectangle.
      */
-    function latLngBounds(southWest: LatLngExpression, northEast: LatLngExpression): LatLngBounds;
+    function latLngBounds(southWest: LatLngExpression, northEast: LatLngExpression): LatLngBoundsInstance;
 
     /**
      * Creates a LatLngBounds object defined by the geographical points it contains.
      * Very useful for zooming the map to fit a particular set of locations with fitBounds.
      */
-    function latLngBounds(latlngs: LatLngBoundsExpression): LatLngBounds;
+    function latLngBounds(latlngs: LatLngBoundsExpression): LatLngBoundsInstance;
 
     export interface LatLngBoundsStatic extends ClassStatic {
         /**
          * Creates a LatLngBounds object by defining south-west and north-east corners
          * of the rectangle.
          */
-        new(southWest: LatLngExpression, northEast: LatLngExpression): LatLngBounds;
+        new(southWest: LatLngExpression, northEast: LatLngExpression): LatLngBoundsInstance;
 
         /**
          * Creates a LatLngBounds object defined by the geographical points it contains.
          * Very useful for zooming the map to fit a particular set of locations with fitBounds.
          */
-        new(latlngs: LatLngBoundsExpression): LatLngBounds;
+        new(latlngs: LatLngBoundsExpression): LatLngBoundsInstance;
     }
     export var LatLngBounds: LatLngBoundsStatic;
 
-    export interface LatLngBounds {
+    export interface LatLngBoundsInstance {
         /**
          * Extends the bounds to contain the given point.
          */
-        extend(latlng: LatLngExpression): LatLngBounds;
+        extend(latlng: LatLngExpression): LatLngBoundsInstance;
 
         /**
          * Extends the bounds to contain the given bounds.
          */
-        extend(latlng: LatLngBoundsExpression): LatLngBounds;
+        extend(latlng: LatLngBoundsExpression): LatLngBoundsInstance;
 
         /**
          * Returns the south-west point of the bounds.
          */
-        getSouthWest(): LatLng;
+        getSouthWest(): LatLngInstance;
 
         /**
          * Returns the north-east point of the bounds.
          */
-        getNorthEast(): LatLng;
+        getNorthEast(): LatLngInstance;
 
         /**
          * Returns the north-west point of the bounds.
          */
-        getNorthWest(): LatLng;
+        getNorthWest(): LatLngInstance;
 
         /**
          * Returns the south-east point of the bounds.
          */
-        getSouthEast(): LatLng;
+        getSouthEast(): LatLngInstance;
 
         /**
          * Returns the west longitude in degrees of the bounds.
@@ -1507,7 +1507,7 @@ declare module L {
         /**
          * Returns the center point of the bounds.
          */
-        getCenter(): LatLng;
+        getCenter(): LatLngInstance;
 
         /**
          * Returns true if the rectangle contains the given one.
@@ -1540,7 +1540,7 @@ declare module L {
          * Returns bigger bounds created by extending the current bounds by a given
          * percentage in each direction.
          */
-        pad(bufferRatio: number): LatLngBounds;
+        pad(bufferRatio: number): LatLngBoundsInstance;
 
         /**
          * Returns true if the bounds are properly initialized.
@@ -1553,37 +1553,37 @@ declare module L {
     /**
      * Create a layer group, optionally given an initial set of layers.
      */
-    function layerGroup<T extends ILayer>(layers?: T[]): LayerGroup<T>;
+    function layerGroup<T extends ILayer>(layers?: T[]): LayerGroupInstance<T>;
 
 
     export interface LayerGroupStatic extends ClassStatic {
         /**
          * Create a layer group, optionally given an initial set of layers.
          */
-        new<T extends ILayer>(layers?: T[]): LayerGroup<T>;
+        new<T extends ILayer>(layers?: T[]): LayerGroupInstance<T>;
     }
     export var LayerGroup: LayerGroupStatic;
 
-    export interface LayerGroup<T extends ILayer> extends ILayer {
+    export interface LayerGroupInstance<T extends ILayer> extends ILayer {
         /**
          * Adds the group of layers to the map.
          */
-        addTo(map: Map): LayerGroup<T>;
+        addTo(map: MapInstance): LayerGroupInstance<T>;
 
         /**
          * Adds a given layer to the group.
          */
-        addLayer(layer: T): LayerGroup<T>;
+        addLayer(layer: T): LayerGroupInstance<T>;
 
         /**
          * Removes a given layer from the group.
          */
-        removeLayer(layer: T): LayerGroup<T>;
+        removeLayer(layer: T): LayerGroupInstance<T>;
 
         /**
          * Removes a given layer of the given id from the group.
          */
-        removeLayer(id: string): LayerGroup<T>;
+        removeLayer(id: string): LayerGroupInstance<T>;
 
         /**
          * Returns true if the given layer is currently added to the group.
@@ -1603,16 +1603,16 @@ declare module L {
         /**
          * Removes all the layers from the group.
          */
-        clearLayers(): LayerGroup<T>;
+        clearLayers(): LayerGroupInstance<T>;
 
         /**
          * Iterates over the layers of the group, optionally specifying context of
          * the iterator function.
          */
-        eachLayer(fn: (layer: T) => void, context?: any): LayerGroup<T>;
+        eachLayer(fn: (layer: T) => void, context?: any): LayerGroupInstance<T>;
 
         /**
-         * Returns a GeoJSON representation of the layer group (GeoJSON FeatureCollection).
+         * Returns a GeoJSONInstance representation of the layer group (GeoJSONInstance FeatureCollection).
          */
         toGeoJSON(): any;
 
@@ -1623,13 +1623,13 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
     }
 
 
@@ -1741,13 +1741,13 @@ declare module L {
         /**
          * Detected geographical location of the user.
          */
-        latlng: LatLng;
+        latlng: LatLngInstance;
 
         /**
          * Geographical bounds of the area user is located in (with respect to the accuracy
          * of location).
          */
-        bounds: LatLngBounds;
+        bounds: LatLngBoundsInstance;
 
         /**
          * Accuracy of location in meters.
@@ -1787,19 +1787,19 @@ declare module L {
         /**
          * The geographical point where the mouse event occured.
          */
-        latlng: LatLng;
+        latlng: LatLngInstance;
 
         /**
          * Pixel coordinates of the point where the mouse event occured relative to
          * the map layer.
          */
-        layerPoint: Point;
+        layerPoint: PointInstance;
 
         /**
          * Pixel coordinates of the point where the mouse event occured relative to
          * the map сontainer.
          */
-        containerPoint: Point;
+        containerPoint: PointInstance;
 
         /**
          * The original DOM mouse event fired by the browser.
@@ -1813,7 +1813,7 @@ declare module L {
         /**
          * The popup that was opened or closed.
          */
-        popup: Popup;
+        popup: PopupInstance;
     }
 
 
@@ -1831,12 +1831,12 @@ declare module L {
         /**
          * The old size before resize event.
          */
-        oldSize: Point;
+        oldSize: PointInstance;
 
         /**
          * The new size after the resize event.
          */
-        newSize: Point;
+        newSize: PointInstance;
     }
 
 
@@ -1864,24 +1864,24 @@ declare module L {
          * (lesser value means higher quality but slower and with more points). Also
          * released as a separated micro-library Simplify.js.
          */
-        export function simplify(points: Point[], tolerance: number): Point[];
+        export function simplify(points: PointInstance[], tolerance: number): PointInstance[];
 
         /**
          * Returns the distance between point p and segment p1 to p2.
          */
-        export function pointToSegmentDistance(p: Point, p1: Point, p2: Point): number;
+        export function pointToSegmentDistance(p: PointInstance, p1: PointInstance, p2: PointInstance): number;
 
         /**
          * Returns the closest point from a point p on a segment p1 to p2.
          */
-        export function closestPointOnSegment(p: Point, p1: Point, p2: Point): Point;
+        export function closestPointOnSegment(p: PointInstance, p1: PointInstance, p2: PointInstance): PointInstance;
 
         /**
          * Clips the segment a to b by rectangular bounds (modifying the segment points
          * directly!). Used by Leaflet to only show polyline points that are on the screen
          * or near, increasing performance.
          */
-        export function clipSegment(a: Point, b: Point, bounds: Bounds): void;
+        export function clipSegment(a: PointInstance, b: PointInstance, bounds: BoundsInstance): void;
 
     }
 
@@ -1941,13 +1941,13 @@ declare module L {
      * Instantiates a map object given a div element and optionally an
      * object literal with map options described below.
      */
-    function map(id: HTMLElement, options?: Map.MapOptions): Map;
+    function map(id: HTMLElement, options?: Map.MapOptions): MapInstance;
 
     /**
      * Instantiates a map object given a div element id and optionally an
      * object literal with map options described below.
      */
-    function map(id: string, options?: Map.MapOptions): Map;
+    function map(id: string, options?: Map.MapOptions): MapInstance;
 
 
     export interface MapStatic extends ClassStatic {
@@ -1957,7 +1957,7 @@ declare module L {
          *
          * @constructor
          */
-        new(id: HTMLElement, options?: Map.MapOptions): Map;
+        new(id: HTMLElement, options?: Map.MapOptions): MapInstance;
 
         /**
          * Instantiates a map object given a div element id and optionally an
@@ -1965,87 +1965,87 @@ declare module L {
          *
          * @constructor
          */
-        new(id: string, options?: Map.MapOptions): Map;
+        new(id: string, options?: Map.MapOptions): MapInstance;
     }
     export var Map: MapStatic;
 
-    export interface Map extends IEventPowered<Map> {
-        // Methods for Modifying Map State
+    export interface MapInstance extends IEventPowered<MapInstance> {
+        // Methods for Modifying MapInstance State
 
         /**
          * Sets the view of the map (geographical center and zoom) with the given
          * animation options.
          */
-        setView(center: LatLngExpression, zoom?: number, options?: Map.ZoomPanOptions): Map;
+        setView(center: LatLngExpression, zoom?: number, options?: Map.ZoomPanOptions): MapInstance;
 
         /**
          * Sets the zoom of the map.
          */
-        setZoom(zoom: number, options?: Map.ZoomPanOptions): Map;
+        setZoom(zoom: number, options?: Map.ZoomPanOptions): MapInstance;
 
         /**
          * Increases the zoom of the map by delta (1 by default).
          */
-        zoomIn(delta?: number, options?: Map.ZoomPanOptions): Map;
+        zoomIn(delta?: number, options?: Map.ZoomPanOptions): MapInstance;
 
         /**
          * Decreases the zoom of the map by delta (1 by default).
          */
-        zoomOut(delta?: number, options?: Map.ZoomPanOptions): Map;
+        zoomOut(delta?: number, options?: Map.ZoomPanOptions): MapInstance;
 
         /**
          * Zooms the map while keeping a specified point on the map stationary
          * (e.g. used internally for scroll zoom and double-click zoom).
          */
-        setZoomAround(latlng: LatLngExpression, zoom: number, options?: Map.ZoomPanOptions): Map;
+        setZoomAround(latlng: LatLngExpression, zoom: number, options?: Map.ZoomPanOptions): MapInstance;
 
         /**
          * Sets a map view that contains the given geographical bounds with the maximum
          * zoom level possible.
          */
-        fitBounds(bounds: LatLngBounds, options?: Map.FitBoundsOptions): Map;
+        fitBounds(bounds: LatLngBoundsInstance, options?: Map.FitBoundsOptions): MapInstance;
 
         /**
          * Sets a map view that mostly contains the whole world with the maximum zoom
          * level possible.
          */
-        fitWorld(options?: Map.FitBoundsOptions): Map;
+        fitWorld(options?: Map.FitBoundsOptions): MapInstance;
 
         /**
          * Pans the map to a given center. Makes an animated pan if new center is not more
          * than one screen away from the current one.
          */
-        panTo(latlng: LatLngExpression, options?: PanOptions): Map;
+        panTo(latlng: LatLngExpression, options?: PanOptions): MapInstance;
 
         /**
          * Pans the map to the closest view that would lie inside the given bounds (if
          * it's not already).
          */
-        panInsideBounds(bounds: LatLngBounds): Map;
+        panInsideBounds(bounds: LatLngBoundsInstance): MapInstance;
 
         /**
          * Pans the map by a given number of pixels (animated).
          */
-        panBy(point: Point, options?: PanOptions): Map;
+        panBy(point: PointInstance, options?: PanOptions): MapInstance;
 
         /**
          * Checks if the map container size changed and updates the map if so — call it
          * after you've changed the map size dynamically, also animating pan by default.
          * If options.pan is false, panning will not occur.
          */
-        invalidateSize(options: Map.ZoomPanOptions): Map;
+        invalidateSize(options: Map.ZoomPanOptions): MapInstance;
 
         /**
          * Checks if the map container size changed and updates the map if so — call it
          * after you've changed the map size dynamically, also animating pan by default.
          */
-        invalidateSize(animate: boolean): Map;
+        invalidateSize(animate: boolean): MapInstance;
 
         /**
          * Restricts the map view to the given bounds (see map maxBounds option),
          * passing the given animation options through to `setView`, if required.
          */
-        setMaxBounds(bounds: LatLngBounds, options?: Map.ZoomPanOptions): Map;
+        setMaxBounds(bounds: LatLngBoundsInstance, options?: Map.ZoomPanOptions): MapInstance;
 
         /**
          * Tries to locate the user using Geolocation API, firing locationfound event
@@ -2054,25 +2054,25 @@ declare module L {
          * (or to the world view if geolocation failed). See Locate options for more
          * details.
          */
-        locate(options?: LocateOptions): Map;
+        locate(options?: LocateOptions): MapInstance;
 
         /**
          * Stops watching location previously initiated by map.locate({watch: true})
          * and aborts resetting the map view if map.locate was called with {setView: true}.
          */
-        stopLocate(): Map;
+        stopLocate(): MapInstance;
 
         /**
          * Destroys the map and clears all related event listeners.
          */
-        remove(): Map;
+        remove(): MapInstance;
 
-        // Methods for Getting Map State
+        // Methods for Getting MapInstance State
 
         /**
          * Returns the geographical center of the map view.
          */
-        getCenter(): LatLng;
+        getCenter(): LatLngInstance;
 
         /**
          * Returns the current zoom of the map view.
@@ -2092,7 +2092,7 @@ declare module L {
         /**
          * Returns the LatLngBounds of the current map view.
          */
-        getBounds(): LatLngBounds;
+        getBounds(): LatLngBoundsInstance;
 
         /**
          * Returns the maximum zoom level on which the given bounds fit to the map view
@@ -2100,24 +2100,24 @@ declare module L {
          * the minimum zoom level on which the map view fits into the given bounds in its
          * entirety.
          */
-        getBoundsZoom(bounds: LatLngBounds, inside?: boolean): number;
+        getBoundsZoom(bounds: LatLngBoundsInstance, inside?: boolean): number;
 
         /**
          * Returns the current size of the map container.
          */
-        getSize(): Point;
+        getSize(): PointInstance;
 
         /**
          * Returns the bounds of the current map view in projected pixel coordinates
          * (sometimes useful in layer and overlay implementations).
          */
-        getPixelBounds(): Bounds;
+        getPixelBounds(): BoundsInstance;
 
         /**
          * Returns the projected pixel coordinates of the top left point of the map layer
          * (useful in custom layer and overlay implementations).
          */
-        getPixelOrigin(): Point;
+        getPixelOrigin(): PointInstance;
 
         // Methods for Layers and Controls
 
@@ -2125,12 +2125,12 @@ declare module L {
          * Adds the given layer to the map. If optional insertAtTheBottom is set to true,
          * the layer is inserted under all others (useful when switching base tile layers).
          */
-        addLayer(layer: ILayer, insertAtTheBottom?: boolean): Map;
+        addLayer(layer: ILayer, insertAtTheBottom?: boolean): MapInstance;
 
         /**
          * Removes the given layer from the map.
          */
-        removeLayer(layer: ILayer): Map;
+        removeLayer(layer: ILayer): MapInstance;
 
         /**
          * Returns true if the given layer is currently added to the map.
@@ -2141,34 +2141,34 @@ declare module L {
          * Opens the specified popup while closing the previously opened (to make sure
          * only one is opened at one time for usability).
          */
-        openPopup(popup: Popup): Map;
+        openPopup(popup: PopupInstance): MapInstance;
 
         /**
          * Creates a popup with the specified options and opens it in the given point
          * on a map.
          */
-        openPopup(html: string, latlng: LatLngExpression, options?: PopupOptions): Map;
+        openPopup(html: string, latlng: LatLngExpression, options?: PopupOptions): MapInstance;
 
         /**
          * Creates a popup with the specified options and opens it in the given point
          * on a map.
          */
-        openPopup(el: HTMLElement, latlng: LatLngExpression, options?: PopupOptions): Map;
+        openPopup(el: HTMLElement, latlng: LatLngExpression, options?: PopupOptions): MapInstance;
 
         /**
          * Closes the popup previously opened with openPopup (or the given one).
          */
-        closePopup(popup?: Popup): Map;
+        closePopup(popup?: PopupInstance): MapInstance;
 
         /**
          * Adds the given control to the map.
          */
-        addControl(control: IControl): Map;
+        addControl(control: IControl): MapInstance;
 
         /**
          * Removes the given control from the map.
          */
-        removeControl(control: IControl): Map;
+        removeControl(control: IControl): MapInstance;
 
         // Conversion Methods
 
@@ -2176,65 +2176,65 @@ declare module L {
          * Returns the map layer point that corresponds to the given geographical coordinates
          * (useful for placing overlays on the map).
          */
-        latLngToLayerPoint(latlng: LatLngExpression): Point;
+        latLngToLayerPoint(latlng: LatLngExpression): PointInstance;
 
         /**
          * Returns the geographical coordinates of a given map layer point.
          */
-        layerPointToLatLng(point: Point): LatLng;
+        layerPointToLatLng(point: PointInstance): LatLngInstance;
 
         /**
          * Converts the point relative to the map container to a point relative to the
          * map layer.
          */
-        containerPointToLayerPoint(point: Point): Point;
+        containerPointToLayerPoint(point: PointInstance): PointInstance;
 
         /**
          * Converts the point relative to the map layer to a point relative to the map
          * container.
          */
-        layerPointToContainerPoint(point: Point): Point;
+        layerPointToContainerPoint(point: PointInstance): PointInstance;
 
         /**
          * Returns the map container point that corresponds to the given geographical
          * coordinates.
          */
-        latLngToContainerPoint(latlng: LatLngExpression): Point;
+        latLngToContainerPoint(latlng: LatLngExpression): PointInstance;
 
         /**
          * Returns the geographical coordinates of a given map container point.
          */
-        containerPointToLatLng(point: Point): LatLng;
+        containerPointToLatLng(point: PointInstance): LatLngInstance;
 
         /**
          * Projects the given geographical coordinates to absolute pixel coordinates
          * for the given zoom level (current zoom level by default).
          */
-        project(latlng: LatLngExpression, zoom?: number): Point;
+        project(latlng: LatLngExpression, zoom?: number): PointInstance;
 
         /**
          * Projects the given absolute pixel coordinates to geographical coordinates
          * for the given zoom level (current zoom level by default).
          */
-        unproject(point: Point, zoom?: number): LatLng;
+        unproject(point: PointInstance, zoom?: number): LatLngInstance;
 
         /**
          * Returns the pixel coordinates of a mouse click (relative to the top left corner
          * of the map) given its event object.
          */
-        mouseEventToContainerPoint(event: LeafletMouseEvent): Point;
+        mouseEventToContainerPoint(event: LeafletMouseEvent): PointInstance;
 
         /**
          * Returns the pixel coordinates of a mouse click relative to the map layer given
          * its event object.
          */
-        mouseEventToLayerPoint(event: LeafletMouseEvent): Point;
+        mouseEventToLayerPoint(event: LeafletMouseEvent): PointInstance;
 
         /**
          * Returns the geographical coordinates of the point the mouse clicked on given
          * the click's event object.
          */
-        mouseEventToLatLng(event: LeafletMouseEvent): LatLng;
+        mouseEventToLatLng(event: LeafletMouseEvent): LatLngInstance;
 
         // Other Methods
 
@@ -2253,7 +2253,7 @@ declare module L {
          * Runs the given callback when the map gets initialized with a place and zoom,
          * or immediately if it happened already, optionally passing a function context.
          */
-        whenReady(fn: (map: Map) => void, context?: any): Map;
+        whenReady(fn: (map: MapInstance) => void, context?: any): MapInstance;
 
         // Properties
 
@@ -2311,23 +2311,23 @@ declare module L {
          * Iterates over the layers of the map, optionally specifying context
          * of the iterator function.
          */
-        eachLayer(fn: (layer: ILayer) => void, context?: any): Map;
+        eachLayer(fn: (layer: ILayer) => void, context?: any): MapInstance;
 
         ////////////////
         ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Map;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Map;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Map;
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): MapInstance;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): MapInstance;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): MapInstance;
         hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): Map;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Map;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Map;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Map;
-        fire(type: string, data?: any): Map;addEventListener(eventMap: any, context?: any): Map;
-        removeEventListener(eventMap?: any, context?: any): Map;
-        clearAllEventListeners(): Map;
-        on(eventMap: any, context?: any): Map;
-        off(eventMap?: any, context?: any): Map;
+        fireEvent(type: string, data?: any): MapInstance;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): MapInstance;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): MapInstance;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): MapInstance;
+        fire(type: string, data?: any): MapInstance;addEventListener(eventMap: any, context?: any): MapInstance;
+        removeEventListener(eventMap?: any, context?: any): MapInstance;
+        clearAllEventListeners(): MapInstance;
+        on(eventMap: any, context?: any): MapInstance;
+        off(eventMap?: any, context?: any): MapInstance;
     }
 
 
@@ -2388,12 +2388,12 @@ declare module L {
         /**
          * Adds the marker to the map.
          */
-        addTo(map: Map): Marker;
+        addTo(map: MapInstance): Marker;
 
         /**
          * Returns the current geographical position of the marker.
          */
-        getLatLng(): LatLng;
+        getLatLng(): LatLngInstance;
 
         /**
          * Changes the marker position to the given point.
@@ -2437,7 +2437,7 @@ declare module L {
          * Binds a popup with a particular HTML content to a click on this marker. You
          * can also open the bound popup with the Marker openPopup method.
          */
-        bindPopup(popup: Popup, options?: PopupOptions): Marker;
+        bindPopup(popup: PopupInstance, options?: PopupOptions): Marker;
 
         /**
          * Unbinds the popup previously bound to the marker with bindPopup.
@@ -2452,7 +2452,7 @@ declare module L {
         /**
          * Returns the popup previously bound by the bindPopup method.
          */
-        getPopup(): Popup;
+        getPopup(): PopupInstance;
 
         /**
          * Closes the bound popup of the marker if it's opened.
@@ -2475,7 +2475,7 @@ declare module L {
         setPopupContent(el: HTMLElement, options?: PopupOptions): Marker;
 
         /**
-         * Returns a GeoJSON representation of the marker (GeoJSON Point Feature).
+         * Returns a GeoJSONInstance representation of the marker (GeoJSONInstance PointInstance Feature).
          */
         toGeoJSON(): any;
 
@@ -2491,13 +2491,13 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
 
         ////////////////
         ////////////////
@@ -2601,7 +2601,7 @@ declare module L {
      * for each individual polygon) and optionally an options object (the same
      * as for MultiPolyline).
      */
-    function multiPolygon(latlngs: LatLng[][], options?: PolylineOptions): MultiPolygon;
+    function multiPolygon(latlngs: LatLngInstance[][], options?: PolylineOptions): MultiPolygonInstance;
 
     export interface MultiPolylgonStatic extends ClassStatic {
         /**
@@ -2609,29 +2609,29 @@ declare module L {
          * for each individual polygon) and optionally an options object (the same
          * as for MultiPolyline).
          */
-        new(latlngs: LatLng[][], options?: PolylineOptions): MultiPolygon;
+        new(latlngs: LatLngInstance[][], options?: PolylineOptions): MultiPolygonInstance;
     }
     export var MultiPolylgon: MultiPolylgonStatic;
 
-    export interface MultiPolygon extends FeatureGroup<Polygon> {
+    export interface MultiPolygonInstance extends FeatureGroupInstance<PolygonInstance> {
         /**
          * Replace all polygons and their paths with the given array of arrays
          * of geographical points.
          */
-        setLatLngs(latlngs: LatLng[][]): MultiPolygon;
+        setLatLngs(latlngs: LatLngInstance[][]): MultiPolygonInstance;
 
         /**
          * Returns an array of arrays of geographical points in each polygon.
          */
-        getLatLngs(): LatLng[][];
+        getLatLngs(): LatLngInstance[][];
 
         /**
          * Opens the popup previously bound by bindPopup.
          */
-        openPopup(): MultiPolygon;
+        openPopup(): MultiPolygonInstance;
 
         /**
-         * Returns a GeoJSON representation of the multipolygon (GeoJSON MultiPolygon Feature).
+         * Returns a GeoJSONInstance representation of the multipolygon (GeoJSONInstance MultiPolygon Feature).
          */
         toGeoJSON(): any;
     }
@@ -2641,36 +2641,36 @@ declare module L {
      * Instantiates a multi-polyline object given an array of arrays of geographical
      * points (one for each individual polyline) and optionally an options object.
      */
-    function multiPolyline(latlngs: LatLng[][], options?: PolylineOptions): MultiPolyline;
+    function multiPolyline(latlngs: LatLngInstance[][], options?: PolylineOptions): MultiPolylineInstance;
 
     export interface MultiPolylineStatic extends ClassStatic {
         /**
          * Instantiates a multi-polyline object given an array of arrays of geographical
          * points (one for each individual polyline) and optionally an options object.
          */
-        new(latlngs: LatLng[][], options?: PolylineOptions): MultiPolyline;
+        new(latlngs: LatLngInstance[][], options?: PolylineOptions): MultiPolylineInstance;
     }
     export var MultiPolyline: MultiPolylineStatic;
 
-    export interface MultiPolyline extends FeatureGroup<Polyline> {
+    export interface MultiPolylineInstance extends FeatureGroupInstance<PolylineInstance> {
         /**
          * Replace all polygons and their paths with the given array of arrays
          * of geographical points.
          */
-        setLatLngs(latlngs: LatLng[][]): MultiPolyline;
+        setLatLngs(latlngs: LatLngInstance[][]): MultiPolylineInstance;
 
         /**
          * Returns an array of arrays of geographical points in each polygon.
          */
-        getLatLngs(): LatLng[][];
+        getLatLngs(): LatLngInstance[][];
 
         /**
          * Opens the popup previously bound by bindPopup.
          */
-        openPopup(): MultiPolyline;
+        openPopup(): MultiPolylineInstance;
 
         /**
-         * Returns a GeoJSON representation of the multipolyline (GeoJSON MultiLineString Feature).
+         * Returns a GeoJSONInstance representation of the multipolyline (GeoJSONInstance MultiLineString Feature).
          */
         toGeoJSON(): any;
     }
@@ -2715,7 +2715,7 @@ declare module L {
         /**
          * Adds the layer to the map.
          */
-        addTo(map: Map): Path;
+        addTo(map: MapInstance): Path;
 
         /**
          * Binds a popup with a particular HTML content to a click on this path.
@@ -2730,7 +2730,7 @@ declare module L {
         /**
          * Binds a popup with a particular HTML content to a click on this path.
          */
-        bindPopup(popup: Popup, options?: PopupOptions): Path;
+        bindPopup(popup: PopupInstance, options?: PopupOptions): Path;
 
         /**
          * Unbinds the popup previously bound to the path with bindPopup.
@@ -2756,7 +2756,7 @@ declare module L {
         /**
          * Returns the LatLngBounds of the path.
          */
-        getBounds(): LatLngBounds;
+        getBounds(): LatLngBoundsInstance;
 
         /**
          * Brings the layer to the top of all path layers.
@@ -2780,13 +2780,13 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
 
         ////////////////
         ////////////////
@@ -2931,61 +2931,61 @@ declare module L {
 
 
     /**
-     * Creates a Point object with the given x and y coordinates. If optional round
+     * Creates a PointInstance object with the given x and y coordinates. If optional round
      * is set to true, rounds the x and y values.
      */
-    function point(x: number, y: number, round?: boolean): Point;
+    function point(x: number, y: number, round?: boolean): PointInstance;
 
     export interface PointStatic extends ClassStatic {
         /**
-         * Creates a Point object with the given x and y coordinates. If optional round
+         * Creates a PointInstance object with the given x and y coordinates. If optional round
          * is set to true, rounds the x and y values.
          */
-        new(x: number, y: number, round?: boolean): Point;
+        new(x: number, y: number, round?: boolean): PointInstance;
     }
     export var Point: PointStatic;
 
-    export interface Point {
+    export interface PointInstance {
         /**
          * Returns the result of addition of the current and the given points.
          */
-        add(otherPoint: Point): Point;
+        add(otherPoint: PointInstance): PointInstance;
 
         /**
          * Returns the result of subtraction of the given point from the current.
          */
-        subtract(otherPoint: Point): Point;
+        subtract(otherPoint: PointInstance): PointInstance;
 
         /**
          * Returns the result of multiplication of the current point by the given number.
          */
-        multiplyBy(number: number): Point;
+        multiplyBy(number: number): PointInstance;
 
         /**
          * Returns the result of division of the current point by the given number. If
          * optional round is set to true, returns a rounded result.
          */
-        divideBy(number: number, round?: boolean): Point;
+        divideBy(number: number, round?: boolean): PointInstance;
 
         /**
          * Returns the distance between the current and the given points.
          */
-        distanceTo(otherPoint: Point): number;
+        distanceTo(otherPoint: PointInstance): number;
 
         /**
          * Returns a copy of the current point.
          */
-        clone(): Point;
+        clone(): PointInstance;
 
         /**
          * Returns a copy of the current point with rounded coordinates.
          */
-        round(): Point;
+        round(): PointInstance;
 
         /**
          * Returns true if the given point has the same coordinates.
          */
-        equals(otherPoint: Point): boolean;
+        equals(otherPoint: PointInstance): boolean;
 
         /**
          * Returns a string representation of the point for debugging purposes.
@@ -3011,7 +3011,7 @@ declare module L {
      * latlngs array representing the exterior ring while the remaining represent
      * the holes inside.
      */
-    function polygon(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polygon;
+    function polygon(latlngs: LatLngBoundsExpression, options?: PolylineOptions): PolygonInstance;
 
 
     export interface PolygonStatic extends ClassStatic {
@@ -3022,11 +3022,11 @@ declare module L {
          * latlngs array representing the exterior ring while the remaining represent
          * the holes inside.
          */
-        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polygon;
+        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): PolygonInstance;
     }
     export var Polygon: PolygonStatic;
 
-    export interface Polygon extends Polyline {
+    export interface PolygonInstance extends PolylineInstance {
     }
 
 
@@ -3034,47 +3034,47 @@ declare module L {
      * Instantiates a polyline object given an array of geographical points and
      * optionally an options object.
      */
-    function polyline(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polyline;
+    function polyline(latlngs: LatLngBoundsExpression, options?: PolylineOptions): PolylineInstance;
 
     export interface PolylineStatic extends ClassStatic {
         /**
          * Instantiates a polyline object given an array of geographical points and
          * optionally an options object.
          */
-        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): Polyline;
+        new(latlngs: LatLngBoundsExpression, options?: PolylineOptions): PolylineInstance;
     }
     export var Polyline: PolylineStatic;
 
-    export interface Polyline extends Path {
+    export interface PolylineInstance extends Path {
         /**
          * Adds a given point to the polyline.
          */
-        addLatLng(latlng: LatLngExpression): Polyline;
+        addLatLng(latlng: LatLngExpression): PolylineInstance;
 
         /**
          * Replaces all the points in the polyline with the given array of geographical
          * points.
          */
-        setLatLngs(latlngs: LatLngBoundsExpression): Polyline;
+        setLatLngs(latlngs: LatLngBoundsExpression): PolylineInstance;
 
         /**
          * Returns an array of the points in the path.
          */
-        getLatLngs(): LatLng[];
+        getLatLngs(): LatLngInstance[];
 
         /**
          * Allows adding, removing or replacing points in the polyline. Syntax is the
          * same as in Array#splice. Returns the array of removed points (if any).
          */
-        spliceLatLngs(index: number, pointsToRemove: number, ...latlngs: LatLng[]): LatLng[];
+        spliceLatLngs(index: number, pointsToRemove: number, ...latlngs: LatLngInstance[]): LatLngInstance[];
 
         /**
          * Returns the LatLngBounds of the polyline.
          */
-        getBounds(): LatLngBounds;
+        getBounds(): LatLngBoundsInstance;
 
         /**
-         * Returns a GeoJSON representation of the polyline (GeoJSON LineString Feature).
+         * Returns a GeoJSONInstance representation of the polyline (GeoJSONInstance LineString Feature).
          */
         toGeoJSON(): any;
     }
@@ -3106,7 +3106,7 @@ declare module L {
          * increasing performance. Note that polygon points needs different algorithm
          * for clipping than polyline, so there's a seperate method for it.
          */
-        export function clipPolygon(points: Point[], bounds: Bounds): Point[];
+        export function clipPolygon(points: PointInstance[], bounds: BoundsInstance): PointInstance[];
     }
 
 
@@ -3115,7 +3115,7 @@ declare module L {
      * its appearance and location and an optional object that is used to tag the
      * popup with a reference to the source object to which it refers.
      */
-    function popup(options?: PopupOptions, source?: any): Popup;
+    function popup(options?: PopupOptions, source?: any): PopupInstance;
 
     export interface PopupStatic extends ClassStatic {
         /**
@@ -3123,40 +3123,40 @@ declare module L {
          * its appearance and location and an optional object that is used to tag the
          * popup with a reference to the source object to which it refers.
          */
-        new(options?: PopupOptions, source?: any): Popup;
+        new(options?: PopupOptions, source?: any): PopupInstance;
     }
     export var Popup: PopupStatic;
 
-    export interface Popup extends ILayer {
+    export interface PopupInstance extends ILayer {
         /**
          * Adds the popup to the map.
          */
-        addTo(map: Map): Popup;
+        addTo(map: MapInstance): PopupInstance;
 
         /**
          * Adds the popup to the map and closes the previous one. The same as map.openPopup(popup).
          */
-        openOn(map: Map): Popup;
+        openOn(map: MapInstance): PopupInstance;
 
         /**
          * Sets the geographical point where the popup will open.
          */
-        setLatLng(latlng: LatLngExpression): Popup;
+        setLatLng(latlng: LatLngExpression): PopupInstance;
 
         /**
          * Returns the geographical point of popup.
          */
-        getLatLng(): LatLng;
+        getLatLng(): LatLngInstance;
 
         /**
          * Sets the HTML content of the popup.
          */
-        setContent(html: string): Popup;
+        setContent(html: string): PopupInstance;
 
         /**
          * Sets the HTML content of the popup.
          */
-        setContent(el: HTMLElement): Popup;
+        setContent(el: HTMLElement): PopupInstance;
 
         /**
          * Returns the content of the popup.
@@ -3171,19 +3171,19 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
 
         /**
          * Updates the popup content, layout and position. Useful for updating the popup after
          * something inside changed, e.g. image loaded.
          */
-        update(): Popup;
+        update(): PopupInstance;
     }
 
 
@@ -3235,7 +3235,7 @@ declare module L {
          *
          * Default value: new Point(0, 6).
          */
-        offset?: Point;
+        offset?: PointInstance;
 
         /**
          * The margin between the popup and the top left corner of the map view after
@@ -3243,7 +3243,7 @@ declare module L {
          *
          * Default value: null.
          */
-        autoPanPaddingTopLeft?: Point;
+        autoPanPaddingTopLeft?: PointInstance;
 
         /**
          * The margin between the popup and the bottom right corner of the map view after
@@ -3251,7 +3251,7 @@ declare module L {
          *
          * Default value: null.
          */
-        autoPanPaddingBottomRight?: Point;
+        autoPanPaddingBottomRight?: PointInstance;
 
         /**
          * The margin between the popup and the edges of the map view after autopanning
@@ -3259,7 +3259,7 @@ declare module L {
          *
          * Default value: new Point(5, 5).
          */
-        autoPanPadding?: Point;
+        autoPanPadding?: PointInstance;
 
         /**
          * Whether to animate the popup on zoom. Disable it if you have problems with
@@ -3287,34 +3287,34 @@ declare module L {
         /**
          * Creates a PosAnimation object.
          */
-        new(): PosAnimation;
+        new(): PosAnimationInstance;
     }
     export var PosAnimation: PosAnimationStatic;
 
-    export interface PosAnimation extends IEventPowered<PosAnimation> {
+    export interface PosAnimationInstance extends IEventPowered<PosAnimationInstance> {
         /**
          * Run an animation of a given element to a new position, optionally setting
          * duration in seconds (0.25 by default) and easing linearity factor (3rd argument
          * of the cubic bezier curve, 0.5 by default)
          */
-        run(element: HTMLElement, newPos: Point, duration?: number, easeLinearity?: number): PosAnimation;
+        run(element: HTMLElement, newPos: PointInstance, duration?: number, easeLinearity?: number): PosAnimationInstance;
 
         ////////////////
         ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimation;
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimationInstance;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimationInstance;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimationInstance;
         hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): PosAnimation;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimation;
-        fire(type: string, data?: any): PosAnimation;
-        addEventListener(eventMap: any, context?: any): PosAnimation;
-        removeEventListener(eventMap?: any, context?: any): PosAnimation;
-        clearAllEventListeners(): PosAnimation;
-        on(eventMap: any, context?: any): PosAnimation;
-        off(eventMap?: any, context?: any): PosAnimation;
+        fireEvent(type: string, data?: any): PosAnimationInstance;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimationInstance;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): PosAnimationInstance;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): PosAnimationInstance;
+        fire(type: string, data?: any): PosAnimationInstance;
+        addEventListener(eventMap: any, context?: any): PosAnimationInstance;
+        removeEventListener(eventMap?: any, context?: any): PosAnimationInstance;
+        clearAllEventListeners(): PosAnimationInstance;
+        on(eventMap: any, context?: any): PosAnimationInstance;
+        off(eventMap?: any, context?: any): PosAnimationInstance;
     }
 
 
@@ -3348,22 +3348,22 @@ declare module L {
      * Instantiates a rectangle object with the given geographical bounds and
      * optionally an options object.
      */
-    function rectangle(bounds: LatLngBounds, options?: PathOptions): Rectangle;
+    function rectangle(bounds: LatLngBoundsInstance, options?: PathOptions): RectangleInstance;
 
     export interface RectangleStatic extends ClassStatic {
         /**
          * Instantiates a rectangle object with the given geographical bounds and
          * optionally an options object.
          */
-        new(bounds: LatLngBounds, options?: PathOptions): Rectangle;
+        new(bounds: LatLngBoundsInstance, options?: PathOptions): RectangleInstance;
     }
     export var Rectangle: RectangleStatic;
 
-    export interface Rectangle extends Polygon {
+    export interface RectangleInstance extends PolygonInstance {
         /**
          * Redraws the rectangle with the passed bounds.
          */
-        setBounds(bounds: LatLngBounds): Rectangle;
+        setBounds(bounds: LatLngBoundsInstance): RectangleInstance;
     }
 
 
@@ -3408,7 +3408,7 @@ declare module L {
          * Instantiates a tile layer object given a URL template and optionally an options
          * object.
          */
-        new(urlTemplate: string, options?: TileLayerOptions): TileLayer;
+        new(urlTemplate: string, options?: TileLayerOptions): TileLayerInstance;
 
         WMS: {
             /**
@@ -3427,41 +3427,41 @@ declare module L {
     }
     export var TileLayer: TileLayerStatic;
 
-    export interface TileLayer extends ILayer, IEventPowered<TileLayer> {
+    export interface TileLayerInstance extends ILayer, IEventPowered<TileLayerInstance> {
         /**
          * Adds the layer to the map.
          */
-        addTo(map: Map): TileLayer;
+        addTo(map: MapInstance): TileLayerInstance;
 
         /**
          * Brings the tile layer to the top of all tile layers.
          */
-        bringToFront(): TileLayer;
+        bringToFront(): TileLayerInstance;
 
         /**
          * Brings the tile layer to the bottom of all tile layers.
          */
-        bringToBack(): TileLayer;
+        bringToBack(): TileLayerInstance;
 
         /**
          * Changes the opacity of the tile layer.
          */
-        setOpacity(opacity: number): TileLayer;
+        setOpacity(opacity: number): TileLayerInstance;
 
         /**
          * Sets the zIndex of the tile layer.
          */
-        setZIndex(zIndex: number): TileLayer;
+        setZIndex(zIndex: number): TileLayerInstance;
 
         /**
          * Causes the layer to clear all the tiles and request them again.
          */
-        redraw(): TileLayer;
+        redraw(): TileLayerInstance;
 
         /**
          * Updates the layer's URL template and redraws it.
          */
-        setUrl(urlTemplate: string): TileLayer;
+        setUrl(urlTemplate: string): TileLayerInstance;
 
         /**
          * Returns the HTML element that contains the tiles for this layer.
@@ -3475,34 +3475,34 @@ declare module L {
          * to map panes where they should belong and puts listeners on relevant map events.
          * Called on map.addLayer(layer).
          */
-        onAdd(map: Map): void;
+        onAdd(map: MapInstance): void;
 
         /**
          * Should contain all clean up code that removes the overlay's elements from
          * the DOM and removes listeners previously added in onAdd. Called on map.removeLayer(layer).
          */
-        onRemove(map: Map): void;
+        onRemove(map: MapInstance): void;
 
         ////////////////
         ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayer;
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayerInstance;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayerInstance;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayerInstance;
         hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): TileLayer;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayer;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayer;
-        fire(type: string, data?: any): TileLayer;
-        addEventListener(eventMap: any, context?: any): TileLayer;
-        removeEventListener(eventMap?: any, context?: any): TileLayer;
-        clearAllEventListeners(): TileLayer;
-        on(eventMap: any, context?: any): TileLayer;
-        off(eventMap?: any, context?: any): TileLayer;
+        fireEvent(type: string, data?: any): TileLayerInstance;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayerInstance;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): TileLayerInstance;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): TileLayerInstance;
+        fire(type: string, data?: any): TileLayerInstance;
+        addEventListener(eventMap: any, context?: any): TileLayerInstance;
+        removeEventListener(eventMap?: any, context?: any): TileLayerInstance;
+        clearAllEventListeners(): TileLayerInstance;
+        on(eventMap: any, context?: any): TileLayerInstance;
+        off(eventMap?: any, context?: any): TileLayerInstance;
     }
 
     module TileLayer {
-        export interface WMS extends TileLayer {
+        export interface WMS extends TileLayerInstance {
             /**
              * Merges an object with the new parameters and re-requests tiles on the current
              * screen (unless noRedraw was set to true).
@@ -3510,13 +3510,13 @@ declare module L {
             setParams(params: WMS, noRedraw?: boolean): WMS;
         }
 
-        export interface Canvas extends TileLayer {
+        export interface Canvas extends TileLayerInstance {
             /**
              * You need to define this method after creating the instance to draw tiles;
              * canvas is the actual canvas tile on which you can draw, tilePoint represents
              * the tile numbers, and zoom is the current zoom.
              */
-            drawTile(canvas: HTMLCanvasElement, tilePoint: Point, zoom: number): Canvas;
+            drawTile(canvas: HTMLCanvasElement, tilePoint: PointInstance, zoom: number): Canvas;
 
             /**
              * Calling redraw will cause the drawTile method to be called for all tiles.
@@ -3532,7 +3532,7 @@ declare module L {
          * Instantiates a tile layer object given a URL template and optionally an options
          * object.
          */
-        (urlTemplate: string, options?: TileLayerOptions): TileLayer;
+        (urlTemplate: string, options?: TileLayerOptions): TileLayerInstance;
 
         /**
          * Instantiates a WMS tile layer object given a base URL of the WMS service and
@@ -3690,7 +3690,7 @@ declare module L {
         /**
          * When this option is set, the TileLayer only loads tiles that are in the given geographical bounds.
          */
-        bounds?: LatLngBounds;
+        bounds?: LatLngBoundsInstance;
 
         /**
          * Custom keys may be specified in TileLayerOptions so they can be used in a provided URL template.
@@ -3702,22 +3702,22 @@ declare module L {
         /**
          * Creates a transformation object with the given coefficients.
          */
-        new(a: number, b: number, c: number, d: number): Transformation;
+        new(a: number, b: number, c: number, d: number): TransformationInstance;
     }
     export var Transformation: TransformationStatic;
 
-    export interface Transformation {
+    export interface TransformationInstance {
         /**
          * Returns a transformed point, optionally multiplied by the given scale.
-         * Only accepts real L.Point instances, not arrays.
+         * Only accepts real L.PointInstance instances, not arrays.
          */
-        transform(point: Point, scale?: number): Point;
+        transform(point: PointInstance, scale?: number): PointInstance;
 
         /**
          * Returns the reverse transformation of the given point, optionally divided
-         * by the given scale. Only accepts real L.Point instances, not arrays.
+         * by the given scale. Only accepts real L.PointInstance instances, not arrays.
          */
-        untransform(point: Point, scale?: number): Point;
+        untransform(point: PointInstance, scale?: number): PointInstance;
     }
 
 
@@ -3845,12 +3845,12 @@ declare module L.Map {
 
     export interface MapOptions {
 
-        // Map State Options
+        // MapInstance State Options
 
         /**
          * Initial geographical center of the map.
          */
-        center?: LatLng;
+        center?: LatLngInstance;
 
         /**
          * Initial map zoom.
@@ -3878,7 +3878,7 @@ declare module L.Map {
          * not allowing to zoom out to a view that's larger than the given bounds (depending
          * on the map size). To set the restriction dynamically, use setMaxBounds method
          */
-        maxBounds?: LatLngBounds;
+        maxBounds?: LatLngBoundsInstance;
 
         /**
          * Coordinate Reference System to use. Don't change this if you're not sure
@@ -4129,21 +4129,21 @@ declare module L.Map {
          *
          * Default value: [0, 0].
          */
-        paddingTopLeft?: Point;
+        paddingTopLeft?: PointInstance;
 
         /**
          * The same for bottom right corner of the map.
          *
          * Default value: [0, 0].
          */
-        paddingBottomRight?: Point;
+        paddingBottomRight?: PointInstance;
 
         /**
          * Equivalent of setting both top left and bottom right padding to the same value.
          *
          * Default value: [0, 0].
          */
-        padding?: Point;
+        padding?: PointInstance;
 
         /**
          * The maximum possible zoom to use.
