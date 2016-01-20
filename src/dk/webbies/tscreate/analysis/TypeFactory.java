@@ -330,7 +330,7 @@ public class TypeFactory {
                 if (name.equals("constructor") || fieldTypes.containsKey(name)) {
                     continue;
                 }
-                fieldTypes.put(name, getClassFieldType(properties));
+                fieldTypes.put(name, getClassFieldType(name, properties, libraryClass.thisNodes));
             }
         } else {
             for (Map.Entry<String, Collection<UnionNode>> entry : thisNodePropertyMap.asMap().entrySet()) {
@@ -345,13 +345,27 @@ public class TypeFactory {
         return fieldTypes;
     }
 
-    private DeclarationType getClassFieldType(Collection<Snap.Property> properties) {
+    private DeclarationType getClassFieldType(String name, Collection<Snap.Property> properties, List<UnionNode> thisNodes) {
         assert !properties.isEmpty();
         CombinationType result = new CombinationType(typeReducer);
+        boolean onlyVoid = true;
         for (Snap.Property property : properties) {
-            result.addType(getHeapPropType(property));
+            DeclarationType type = getHeapPropType(property);
+            if (!(property.value instanceof Snap.UndefinedConstant)) {
+                onlyVoid = false;
+            }
+            result.addType(type);
         }
-        result.addType(PrimitiveDeclarationType.NonVoid()); // TODO: Maybe use the "thisNodes" as a backup, they might provide something more useful than "any".
+        result.addType(PrimitiveDeclarationType.NonVoid());
+
+        if (onlyVoid) {
+            for (UnionNode thisNode : thisNodes) {
+                Map<String, UnionNode> objectFields = thisNode.getFeature().getObjectFields();
+                if (objectFields.containsKey(name)) {
+                    result.addType(getType(objectFields.get(name)));
+                }
+            }
+        }
 
         return result;
     }
