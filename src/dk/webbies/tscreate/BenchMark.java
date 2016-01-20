@@ -81,7 +81,6 @@ public class BenchMark {
     // Kind of a useless benchmark, since the hand-written .d.ts file says that it exposes 0 global variables. (But it does, there is the Sugar object).
     public static final BenchMark sugar = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false; // If i run everything, a lot of the library breaks (void types everywhere).
         return new BenchMark("Sugar", "tests/sugar/sugar.js", "tests/sugar/sugar.d.ts", options, ES5);
     });
 
@@ -97,7 +96,7 @@ public class BenchMark {
 
     public static final BenchMark react = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("React", "tests/react/react.js", "tests/react/react.d.ts", options, ES5); // TODO: Figure out why the precision becomes ZERO.
+        return new BenchMark("React", "tests/react/react.js", "tests/react/react.d.ts", options, ES5); // TODO: Fix that the precision is ZERO.
     });
 
     public static final BenchMark knockout = evaluate(() -> {
@@ -108,20 +107,18 @@ public class BenchMark {
     // The stress test to rule all stress-tests. 10MB of JavaScript, 220000 lines of code.
     public static final BenchMark ExtJS = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false;
+        options.createInstances = false; // It's to big.
         return new BenchMark("Ext JS", "tests/extjs/ext.js", "tests/extjs/ext.d.ts", options, ES5);
     });
 
     public static final BenchMark ember = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false;
         return new BenchMark("Ember.js", "tests/ember/ember.js", "tests/ember/ember.d.ts", options, ES5, Arrays.asList(Dependency.jQuery));
     });
 
     public static final BenchMark backbone = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false;
-        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", "tests/backbone/backbone.d.ts", options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery)); // TODO: Some TypeScript crash. But it works in ts-type-reader.
+        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", "tests/backbone/backbone.d.ts", options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery));
     });
 
     public static final BenchMark materialize = evaluate(() -> {
@@ -129,15 +126,12 @@ public class BenchMark {
         return new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", null, options, ES5, Arrays.asList(Dependency.jQuery));
     });
 
-    // TODO: Lots of classes with duplicate names.
     public static final BenchMark mooTools = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = true;
-        options.createInstancesClassFilter = true;
+        options.createInstancesClassFilter = true; // Infinite loop otherwise.
         return new BenchMark("MooTools", "tests/mootools/mootools.js", null, options, ES5); // I couldn't actually find a declaration file, posting one could be an option. (When i get rid of the duplicates).
     });
 
-    // TODO: A little naming conflict.
     public static final BenchMark prototype = evaluate(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true; // Needed, otherwise instances of functions end up in the wrong places, causing everything to become a method.
@@ -147,7 +141,7 @@ public class BenchMark {
     // Interresting altough useless benchmark, uses RequireJS to get the library. Therefore my analysis cannot find anything on the heap it can output (it is only in an environment).
     public static final BenchMark ace = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false; // Causes prombt to appear
+        options.createInstancesClassFilter = true; // Otherwise prombt appears
         return new BenchMark("Ace", "tests/ace/ace.js", "tests/ace/ace.d.ts", options, ES5);
     });
 
