@@ -8,9 +8,11 @@ import java.util.Map;
  */
 public abstract class UnionNodeWithFields extends UnionNode {
     protected Map<String, UnionNode> fields = new HashMap<>();
+    private UnionFindSolver solver;
 
     public UnionNodeWithFields(UnionFindSolver solver) {
         super(solver);
+        this.solver = solver;
     }
 
     public Map<String, UnionNode> getUnionNodeFields() {
@@ -21,6 +23,10 @@ public abstract class UnionNodeWithFields extends UnionNode {
         if (unionClass != null) {
             unionClass.addField(name, node);
         }
-        this.fields.put(name, node);
+        if (this.fields.containsKey(name)) {
+            this.solver.union(this.fields.get(name), node);
+        } else {
+            this.fields.put(name, node);
+        }
     }
 }

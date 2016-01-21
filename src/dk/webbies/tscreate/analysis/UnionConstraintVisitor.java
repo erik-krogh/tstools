@@ -321,9 +321,15 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             String key = property.name;
             Expression value = property.expression;
             if (value instanceof GetterExpression) {
-                // TODO: Do something...
+                GetterExpression getter = (GetterExpression) value;
+                FunctionNode function = FunctionNode.create(0, solver);
+                solver.union(getter.asFunction().accept(this), function);
+                result.addField(key, function.returnNode);
             } else if (value instanceof SetterExpression) {
-                // TODO: Do something...
+                SetterExpression setter = (SetterExpression) value;
+                FunctionNode function = FunctionNode.create(1, solver);
+                solver.union(setter.asFunction().accept(this), function);
+                result.addField(key, function.arguments.get(0));
             } else {
                 UnionNode valueNode = value.accept(this);
                 solver.union(valueNode, primitiveFactory.nonVoid());
