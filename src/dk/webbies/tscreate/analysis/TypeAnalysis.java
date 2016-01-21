@@ -113,8 +113,10 @@ public class TypeAnalysis {
 
         if (prototypeFunctions.containsKey(closure)) {
             LibraryClass libraryClass = prototypeFunctions.get(closure);
-            solver.union(functionNode.thisNode, new HasPrototypeNode(solver, libraryClass.prototype));
-            solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
+            if (options.classOptions.useInstancesForThis) {
+                solver.union(functionNode.thisNode, new HasPrototypeNode(solver, libraryClass.prototype));
+                solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
+            }
             if (options.classOptions.unionThisFromPrototypeMethods) {
                 solver.union(functionNode.thisNode, libraryClass.getNewThisNode(solver));
             }
@@ -124,8 +126,10 @@ public class TypeAnalysis {
             Snap.Obj prototype = (Snap.Obj) closure.getProperty("prototype").value;
             if (libraryClasses.containsKey(prototype)) {
                 LibraryClass libraryClass = libraryClasses.get(prototype);
-                solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
-                solver.union(functionNode.thisNode, new HasPrototypeNode(solver, libraryClass.prototype));
+                if (options.classOptions.useInstancesForThis) {
+                    solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
+                    solver.union(functionNode.thisNode, new HasPrototypeNode(solver, libraryClass.prototype));
+                }
 
                 if (options.classOptions.unionThisFromConstructor) {
                     solver.union(libraryClass.getNewThisNode(solver), functionNode.thisNode);

@@ -107,7 +107,10 @@ public class BenchMark {
     // The stress test to rule all stress-tests. 10MB of JavaScript, 220000 lines of code.
     public static final BenchMark ExtJS = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false; // It's to big.
+        // All of these are disabled, because the program is so big, and it is needed, otherwise stuff runs out of memory/time.
+        options.createInstances = false;
+        options.classOptions.useClassInstancesFromHeap = false;
+        options.classOptions.useInstancesForThis = false;
         return new BenchMark("Ext JS", "tests/extjs/ext.js", "tests/extjs/ext.d.ts", options, ES5);
     });
 

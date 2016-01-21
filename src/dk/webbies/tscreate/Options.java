@@ -40,6 +40,7 @@ public class Options {
         public boolean unionThisFromPrototypeMethods = false;
         public boolean unionThisFromConstructor = false;
         public boolean unionThisFromConstructedObjects = false; // As in objects that are constructed using "new Foo()" inside the function we are analyzing.
+        public boolean useInstancesForThis = true; // If true, then the instances on the heap, will be used to in the static analysis to get information about "this".
     }
 
     public final ClassOptions classOptions = new ClassOptions();
