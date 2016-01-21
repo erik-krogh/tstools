@@ -38,12 +38,13 @@ public class Evaluation {
 
     public String print() {
         StringBuilder builder = new StringBuilder();
-        for (int depth = 0; depth <= maxDepth; depth++) {
+        for (int depth = 1; depth <= maxDepth; depth++) {
             if (Double.isNaN(precision(depth)) || Double.isNaN(recall(depth))) {
                 continue;
             }
             builder.append("depth: ").append(depth).append(" ");
-            builder.append("precision: ").append(Util.toFixed(precision(depth), 2));
+            builder.append("f-measure: ").append(Util.toFixed(fMeasure(depth), 2));
+            builder.append(" precision: ").append(Util.toFixed(precision(depth), 2));
             builder.append(" recall: ").append(Util.toFixed(recall(depth), 2));
             builder.append(" thereIs(").append(thereIs(depth)).append(")");
             builder.append(" iFound(").append(IFound(depth)).append(")");
