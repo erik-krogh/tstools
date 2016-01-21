@@ -31,13 +31,14 @@ public class Main {
         try {
             long start = System.currentTimeMillis();
 
-//            runAnalysis(BenchMark.ember);
+//            tsCheck();
+//            runAnalysis(BenchMark.ExtJS);
 //            benchAll();
             printTable();
 
             long end = System.currentTimeMillis();
 
-            System.out.println("Ran in " + (end - start) + "ms");
+            System.out.println("Ran in " + ((end - start) / 1000.0) + "s");
         } catch (Throwable e) {
             System.err.println("Crashed: ");
             e.printStackTrace(System.err);
@@ -94,12 +95,16 @@ public class Main {
         }
     }
 
+    public static void tsCheck() throws IOException {
+        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+            benchmark.options.tsCheck = true;
+            runAnalysis(benchmark);
+        }
+    }
+
     private static void benchAll() throws IOException {
         double combinedScore = 0;
         for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            if (benchmark.declarationPath == null) {
-                continue;
-            }
             double score = runAnalysis(benchmark).fMeasure;
             if (!Double.isNaN(score)) {
                 combinedScore += score;
@@ -125,7 +130,7 @@ public class Main {
         System.out.println("\\begin{table}[]\n" +
                 "\\centering\n" +
                 "\\begin{tabular}{l|l|ccc}\n" +
-                "                   & \\textit{}              & \\multicolumn{3}{c}{\\textit{score}}                                                                                    \\\\\n" +
+                "& & \\multicolumn{3}{c}{\\textit{score}}  \\\\\n" +
                 "\\textit{benchmark} & \\textit{lines of code} & \\multicolumn{1}{l}{\\textit{f-measure}} & \\multicolumn{1}{l}{\\textit{recall}} & \\multicolumn{1}{l}{\\textit{precision}} \\\\ \\hline\n");
         List<BenchMark> benches = scores.keySet().stream().sorted((o1, o2) -> o1.name.compareTo(o2.name)).collect(Collectors.toList());
         for (int i = 0; i < benches.size(); i++) {
