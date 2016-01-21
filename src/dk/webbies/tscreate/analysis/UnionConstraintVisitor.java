@@ -631,19 +631,21 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, Collections.EMPTY_LIST, this.functionNode.returnNode, null));
                             break;
                         } else if (closure.function.id.equals("Function.prototype.bind")) {
-                            // TODO: This slows to a crawl.
-                            /*UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
+                            UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
                             int boundArgs = this.functionNode.arguments.size() - 1;
                             AtomicInteger maxArgsSeen = new AtomicInteger(-1);
+
+                            FunctionNode returnFunction = FunctionNode.create(0, solver);
+                            solver.union(this.functionNode.returnNode, returnFunction);
+                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, returnFunction.arguments, returnFunction.returnNode, null));
+
                             solver.runWhenChanged(this.functionNode.thisNode, () -> {
                                 int maxArgs = getFunctionNodes(this.functionNode.thisNode).stream().map(func -> func.arguments.size()).reduce(0, Math::max);
                                 if (maxArgs > maxArgsSeen.get()) {
                                     maxArgsSeen.set(maxArgs);
-                                    FunctionNode returnFunction = FunctionNode.create(maxArgs - boundArgs, solver);
-                                    solver.union(this.functionNode.returnNode, returnFunction);
-                                    solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, returnFunction.arguments, returnFunction.returnNode, null));
+                                    solver.union(returnFunction, FunctionNode.create(maxArgs - boundArgs, solver));
                                 }
-                            });*/
+                            });
                         } else {
                             List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
                             solver.union(functionNode, new IncludeNode(solver, signatures));
