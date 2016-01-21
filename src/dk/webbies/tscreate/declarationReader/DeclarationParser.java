@@ -29,6 +29,8 @@ public class DeclarationParser {
     public static NativeClassesMap parseNatives(Obj global, HashMap<Obj, LibraryClass> libraryClasses, SpecReader spec) {
         Map<Type, String> typeNames = new HashMap<>();
 
+        fixBind(global);
+
         markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
 
         Map<Obj, Type> prototypes = new HashMap<>();
@@ -58,6 +60,28 @@ public class DeclarationParser {
         }
 
         return new NativeClassesMap(typeNames, prototypes, namedObjects, global, libraryClasses);
+    }
+
+    private static void fixBind(Obj global) {
+        String id = "Function.prototype.bind";
+        Obj closure = (Obj) lookupRecursive(global, id);
+        closure.function.id = id;
+        closure.function.type = "native";
+    }
+
+    // This assumes that the property actually exists.
+    private static Value lookupRecursive(Value value, String name) {
+        if (!(value instanceof Snap.Obj)) {
+            throw new RuntimeException();
+        }
+        Snap.Obj obj = (Obj) value;
+        if (name.contains(".")) {
+            String[] split = name.split("\\.", 2);
+            assert split.length == 2;
+            return lookupRecursive(obj.getProperty(split[0]).value, split[1]);
+        } else {
+            return obj.getProperty(name).value;
+        }
     }
 
     public static SpecReader getTypeSpecification(Environment env, Collection<String> dependencies, String declarationFilePath) {
@@ -168,6 +192,9 @@ public class DeclarationParser {
 
             if (obj.function != null) {
                 obj.function.type = "native";
+                if (obj.function.id == null) {
+                    obj.function.id = "";
+                }
                 obj.function.callSignatures.addAll(type.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(type.getDeclaredConstructSignatures());
                 if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {

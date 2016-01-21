@@ -10,6 +10,7 @@ import dk.webbies.tscreate.paser.StatementTransverse;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -535,7 +536,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            getFunctionNodes(function, seenHeap).stream().forEach(closure -> {
+            getFunctionClosures(function, seenHeap).stream().forEach(closure -> {
                 switch (closure.function.type) {
                     case "native":
                         Snap.Property prototypeProp = closure.getProperty("prototype");
@@ -580,7 +581,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private HashSet<Snap.Obj> seenHeap = new HashSet<>();
         private final FunctionNode functionNode;
 
-        public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, EmptyNode returnNode, Expression callExpression) {
+        public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, UnionNode returnNode, Expression callExpression) {
             solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, getFunctionFields(args.size())));
 
             this.args = args;
@@ -607,7 +608,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functions = getFunctionNodes(functionNode, seenHeap);
+            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap);
 
             for (Snap.Obj closure : functions) {
                 switch (closure.function.type) {
@@ -618,9 +619,36 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         break;
                     }
                     case "native": {
-                        List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
-                        solver.union(functionNode, new IncludeNode(solver, signatures));
-                        break;
+                        boolean emptyArgs = this.functionNode.arguments.isEmpty();
+                        if (closure.function.id.equals("Function.prototype.call")) {
+                            UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
+                            List<UnionNode> arguments = emptyArgs ? Collections.EMPTY_LIST : this.functionNode.arguments.subList(1, this.functionNode.arguments.size());
+                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, arguments, this.functionNode.returnNode, null));
+                            break;
+                        } else if (closure.function.id.equals("Function.prototype.apply")) {
+                            UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
+                            // I have no array-abstraction, so I don't see what i can do about the arguments object.
+                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, Collections.EMPTY_LIST, this.functionNode.returnNode, null));
+                            break;
+                        } else if (closure.function.id.equals("Function.prototype.bind")) {
+                            // TODO: This slows to a crawl.
+                            /*UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
+                            int boundArgs = this.functionNode.arguments.size() - 1;
+                            AtomicInteger maxArgsSeen = new AtomicInteger(-1);
+                            solver.runWhenChanged(this.functionNode.thisNode, () -> {
+                                int maxArgs = getFunctionNodes(this.functionNode.thisNode).stream().map(func -> func.arguments.size()).reduce(0, Math::max);
+                                if (maxArgs > maxArgsSeen.get()) {
+                                    maxArgsSeen.set(maxArgs);
+                                    FunctionNode returnFunction = FunctionNode.create(maxArgs - boundArgs, solver);
+                                    solver.union(this.functionNode.returnNode, returnFunction);
+                                    solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, returnFunction.arguments, returnFunction.returnNode, null));
+                                }
+                            });*/
+                        } else {
+                            List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
+                            solver.union(functionNode, new IncludeNode(solver, signatures));
+                            break;
+                        }
                     }
                     case "unknown":
                         break;
@@ -645,7 +673,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return result;
     }
 
-    private Collection<Snap.Obj> getFunctionNodes(UnionNode function, HashSet<Snap.Obj> seenHeap) {
+    private Collection<Snap.Obj> getFunctionClosures(UnionNode function, HashSet<Snap.Obj> seenHeap) {
         Set<Snap.Obj> result = new HashSet<>();
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             if (feature.getFunctionFeature() != null) {
@@ -661,6 +689,18 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     result.add(closure);
                 }
 
+            }
+        }
+
+        return result;
+    }
+
+    private Collection<FunctionNode> getFunctionNodes(UnionNode function) {
+        Set<FunctionNode> result = new HashSet<>();
+        for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
+            UnionFeature.FunctionFeature functionFeature = feature.getFunctionFeature();
+            if (functionFeature != null) {
+                result.add(FunctionNode.create(functionFeature.getArguments().size(), solver));
             }
         }
 
