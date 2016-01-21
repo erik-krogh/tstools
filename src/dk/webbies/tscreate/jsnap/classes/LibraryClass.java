@@ -27,7 +27,7 @@ public class LibraryClass {
 
     public final Snap.Obj prototype;
 
-    public List<Snap.Obj> instances = new ArrayList<>();
+    private List<Snap.Obj> instances = new ArrayList<>();
     private Snap.Obj constructor;
     public boolean prototypeMethod = false;
 
@@ -132,12 +132,20 @@ public class LibraryClass {
         }
     }
 
+    public void addInstance(Snap.Obj instance) {
+        this.instances.add(instance);
+        if (this.superClass != null && this.superClass != this) {
+            this.superClass.addInstance(instance);
+        }
+    }
+
     public Snap.Obj getConstructor() {
         if (constructor == null) {
             Snap.Property constructorProp = this.prototype.getProperty("constructor");
             if (constructorProp != null && constructorProp.value instanceof Snap.Obj) {
                 Snap.Obj constructor = (Snap.Obj) constructorProp.value;
                 if (constructor.function != null) {
+                    setConstructor(constructor);
                     return constructor;
                 }
             }
@@ -163,6 +171,10 @@ public class LibraryClass {
 
     public List<UnionNode> getThisNodeFromInstances(HeapValueFactory heapFactory) {
         return this.instances.stream().map(heapFactory::fromValue).collect(Collectors.toList());
+    }
+
+    public List<Snap.Obj> getInstances() {
+        return this.instances;
     }
 }
 

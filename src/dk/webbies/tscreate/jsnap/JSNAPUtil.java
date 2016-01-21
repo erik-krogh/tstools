@@ -190,6 +190,9 @@ public class JSNAPUtil {
         if (obj.env != null) {
             obj.env = getHeapObject(stateDump, obj.env.key);
         }
+        if (obj.prototype != null) {
+            obj.prototype = getHeapObject(stateDump, obj.prototype.key);
+        }
         for (Snap.Property prop : obj.properties) {
             if (prop.value instanceof Snap.Obj) {
                 prop.value = getHeapObject(stateDump, ((Snap.Obj) prop.value).key);
@@ -305,7 +308,7 @@ public class JSNAPUtil {
 
         if (obj.properties != null) {
             for (Snap.Property property : obj.properties) {
-                getAllObjectsFromPropertyProperty(property, seen);
+                getAllObjectsFromProperty(property, seen);
             }
         }
 
@@ -313,9 +316,13 @@ public class JSNAPUtil {
             getAllObjects(obj.function.target, seen);
         }
 
+        if (obj.prototype != null) {
+            getAllObjects(obj.prototype, seen);
+        }
+
         if (obj.prototype != null && obj.prototype.properties != null) {
             for (Snap.Property property : obj.prototype.properties) {
-                getAllObjectsFromPropertyProperty(property, seen);
+                getAllObjectsFromProperty(property, seen);
             }
         }
 
@@ -328,7 +335,7 @@ public class JSNAPUtil {
         }
     }
 
-    private static void getAllObjectsFromPropertyProperty(Snap.Property property, Set<Snap.Obj> seen) {
+    private static void getAllObjectsFromProperty(Snap.Property property, Set<Snap.Obj> seen) {
         if (property.value != null && property.value instanceof Snap.Obj) {
             getAllObjects((Snap.Obj) property.value, seen);
         }

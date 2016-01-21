@@ -123,9 +123,9 @@ public class ClassHierarchyExtractor {
                 }
 
                 // Checking if it is an instance of a class, and saving it.
-                if (obj.prototype != null && libraryClasses.get(obj.prototype) != null) {
+                if (obj.prototype != null && libraryClasses.containsKey(obj.prototype)) {
                     LibraryClass clazz = libraryClasses.get(obj.prototype);
-                    clazz.instances.add(obj);
+                    clazz.addInstance(obj);
                 }
             }
 

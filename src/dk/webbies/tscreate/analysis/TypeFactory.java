@@ -265,7 +265,7 @@ public class TypeFactory {
                     }
                 }
 
-                Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass, constructor);
+                Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass);
 
                 ClassType classType = new ClassType(libraryClass.getName(nativeClasses, takenClassNames), constructorType, prototypeProperties, staticFields);
                 if (libraryClass.superClass != null) {
@@ -295,7 +295,7 @@ public class TypeFactory {
         return constructorType;
     }
 
-    private Map<String, DeclarationType> createClassFields(LibraryClass libraryClass, Snap.Obj constructor) {
+    private Map<String, DeclarationType> createClassFields(LibraryClass libraryClass) {
         Map<String, DeclarationType> fieldTypes = new HashMap<>();
         libraryClass.prototype.getPropertyMap().forEach((name, prop) -> {
             if (!name.equals("constructor")) {
@@ -310,20 +310,33 @@ public class TypeFactory {
             }
         }
 
-        if (options.classOptions.useClassInstancesFromHeap && (!libraryClass.instances.isEmpty() || constructor.function.instance != null)) {
+        List<Snap.Obj> instancesToFindFieldNames = new ArrayList<>(libraryClass.getInstances());
+        if (libraryClass.getConstructor().function.instance != null) {
+            instancesToFindFieldNames.add(libraryClass.getConstructor().function.instance);
+        }
+        instancesToFindFieldNames.removeAll(libraryClasses.keySet()); // Sometimes the prototype of one Class, is an instance of another Class. Those are not "valid" instances, so we filter them out.
+        instancesToFindFieldNames = instancesToFindFieldNames.stream().filter(instance -> instance.prototype != null && instance.prototype == libraryClass.prototype).collect(Collectors.toList()); // Sub-classes are also instances, but these contain to many fields.
+
+        if (options.classOptions.useClassInstancesFromHeap && !instancesToFindFieldNames.isEmpty()) {
             Multimap<String, Snap.Property> propertiesMultimap = ArrayListMultimap.create();
 
-            List<Snap.Obj> instances = new ArrayList<>(libraryClass.instances);
-            if (constructor.function.instance != null) {
-                instances.add(constructor.function.instance);
-            }
-            instances.removeAll(libraryClasses.keySet()); // Sometimes the prototype of one Class, is an instance of another Class. Those are not "valid" instances, so we filter them out.
+            Set<String> fieldNames = new HashSet<>();
 
-            for (Snap.Obj instance : instances) {
+            for (Snap.Obj instance : instancesToFindFieldNames) {
                 for (Snap.Property property : instance.properties) {
-                    propertiesMultimap.put(property.name, property);
+                    fieldNames.add(property.name);
                 }
             }
+            // Now we have which names are right. From here we take all instances, to maximize the sources we have to get the correct type.
+            for (Snap.Obj obj : libraryClass.getInstances()) {
+                for (String fieldName : fieldNames) {
+                    Snap.Property prop = obj.getProperty(fieldName);
+                    if (prop != null) {
+                        propertiesMultimap.put(fieldName, prop);
+                    }
+                }
+            }
+
             for (Map.Entry<String, Collection<Snap.Property>> entry : propertiesMultimap.asMap().entrySet()) {
                 String name = entry.getKey();
                 Collection<Snap.Property> properties = entry.getValue();
