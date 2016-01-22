@@ -188,7 +188,7 @@ public class DeclarationParser {
                 this.namedObjects.put(obj, name);
             }
 
-            SyntheticInterface type = new SyntheticInterface(getWithBaseTypes(t, new HashSet<>()));
+            SyntheticInterface type = new SyntheticInterface(getWithBaseTypes(t));
 
             if (obj.function != null) {
                 obj.function.type = "native";
@@ -246,30 +246,6 @@ public class DeclarationParser {
 
                 return result;
             }
-        }
-
-        private Set<InterfaceType> getWithBaseTypes(Type t, Set<InterfaceType> acc) {
-            List<Type> baseTypes;
-            if (t instanceof ReferenceType) {
-                t = ((ReferenceType) t).getTarget();
-            }
-
-            if (t instanceof InterfaceType) {
-                acc.add((InterfaceType) t);
-                baseTypes = ((InterfaceType) t).getBaseTypes();
-            } else if (t instanceof GenericType) {
-                acc.add(((GenericType) t).toInterface());
-                baseTypes = ((GenericType) t).getBaseTypes();
-            } else {
-                throw new RuntimeException("Nope, don't know how to handle this!");
-            }
-            for (Type type : baseTypes) {
-                if (!acc.contains(type)) {
-                    getWithBaseTypes(type, acc);
-                }
-            }
-
-            return acc;
         }
 
         @Override
@@ -423,6 +399,35 @@ public class DeclarationParser {
             this.ESversion = ESversion;
         }
 
+    }
 
+    public static Set<InterfaceType> getWithBaseTypes(Type t) {
+        return getWithBaseTypes(t, new HashSet<>());
+    }
+
+    private static Set<InterfaceType> getWithBaseTypes(Type t, Set<InterfaceType> acc) {
+        List<Type> baseTypes;
+        if (t instanceof ReferenceType) {
+            t = ((ReferenceType) t).getTarget();
+        }
+
+        if (t instanceof InterfaceType) {
+            acc.add((InterfaceType) t);
+            baseTypes = ((InterfaceType) t).getBaseTypes();
+        } else if (t instanceof GenericType) {
+            acc.add(((GenericType) t).toInterface());
+            baseTypes = ((GenericType) t).getBaseTypes();
+        } else {
+            return acc;
+        }
+        if (baseTypes == null) {
+            return acc;
+        }
+        for (Type type : baseTypes) {
+            if (!acc.contains(type)) {
+                getWithBaseTypes(type, acc);
+            }
+        }
+        return acc;
     }
 }
