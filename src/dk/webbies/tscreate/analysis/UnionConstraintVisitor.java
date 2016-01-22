@@ -396,7 +396,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, ObjectNode.FIELD_PREFIX + member.getProperty()));
 
             if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
-                solver.union(UnionConstraintVisitor.this.functionNode.thisNode, objectExp);
+                solver.union(UnionConstraintVisitor.this.functionNode.thisNode, object);
             }
             return this;
         }
@@ -459,7 +459,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     continue;
                 }
                 for (String key : this.fields) {
-                    assert myFields.containsKey(key);
                     if (!otherFields.containsKey(key) || !myFields.containsKey(key)) {
                         continue;
                     }
