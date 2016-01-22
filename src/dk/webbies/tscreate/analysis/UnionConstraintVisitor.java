@@ -201,7 +201,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     @Override
     public UnionNode visit(Return aReturn) {
         UnionNode exp = aReturn.getExpression().accept(this);
-        solver.union(exp, functionNode.returnNode, primitiveFactory.nonVoid());
+        solver.union(new IncludeNode(solver, exp), functionNode.returnNode, primitiveFactory.nonVoid());
         return null;
     }
 
@@ -266,7 +266,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     solver.union(arguments.get(i + boundArguments), functionNode.arguments.get(i));
                 }
                 for (int i = 0; i < boundArguments; i++) {
-                    solver.union(arguments.get(i), heapFactory.fromValue(this.closure.function.arguments.get(i + 1))); // Plus 1, because the first argment is the "this" node.
+                    solver.union(arguments.get(i), heapFactory.fromValue(this.closure.function.arguments.get(i + 1))); // Plus 1, because the first argument is the "this" node.
                 }
             }
             return null;
@@ -279,7 +279,8 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             }
             new UnionConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, analyzedFunction, this.nativeTypeFactory).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
-                solver.union(function.getArguments().get(i).accept(this), result.arguments.get(i), primitiveFactory.nonVoid());
+                UnionNode parameter = function.getArguments().get(i).accept(this);
+                solver.union(new IncludeNode(solver, parameter), result.arguments.get(i), primitiveFactory.nonVoid());
             }
             solver.union(result, primitiveFactory.function());
             return result;
