@@ -72,7 +72,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
             solver.union(idNode, heapFactory.fromProperty(this.values.get(name)));
         } else if (identifier.isGlobal) {
             if (name.equals("arguments")) {
-                solver.union(idNode, new DynamicAccessNode(primitivesBuilder.any(), primitivesBuilder.number(), solver));
+                solver.union(idNode, new DynamicAccessNode(solver, primitivesBuilder.any(), primitivesBuilder.number()));
                 ObjectNode obj = new ObjectNode(solver);
                 obj.addField("length", primitivesBuilder.number());
                 solver.union(idNode, obj);

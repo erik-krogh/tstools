@@ -91,5 +91,9 @@ public class PrimitiveNode extends UnionNode {
         public UnionNode function() {
             return solver.union(getPrototype("Function"), FunctionNode.create(Collections.EMPTY_LIST, solver));
         }
+
+        public UnionNode array() {
+            return solver.union(getPrototype("Array"), new DynamicAccessNode(solver, new EmptyNode(solver), number()));
+        }
     }
 }

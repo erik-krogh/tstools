@@ -32,7 +32,7 @@ public class Main {
             long start = System.currentTimeMillis();
 
 //            tsCheck();
-//            runAnalysis(BenchMark.ExtJS);
+//            runAnalysis(BenchMark.test);
 //            benchAll();
             printTable();
 
@@ -68,7 +68,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 

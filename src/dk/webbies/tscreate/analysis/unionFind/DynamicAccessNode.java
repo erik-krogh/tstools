@@ -12,7 +12,7 @@ public class DynamicAccessNode extends UnionNodeWithFields {
     public static final String RETURN_TYPE_KEY = "isIndexer-returnType";
     public static final String LOOKUP_EXP_KEY = "isIndexer-lookupExp";
 
-    public DynamicAccessNode(UnionNode returnType, UnionNode lookupExp, UnionFindSolver solver) {
+    public DynamicAccessNode(UnionFindSolver solver, UnionNode returnType, UnionNode lookupExp) {
         super(solver);
         this.returnType = returnType;
         addField(RETURN_TYPE_KEY, returnType);

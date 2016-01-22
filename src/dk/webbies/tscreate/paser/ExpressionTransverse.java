@@ -138,4 +138,10 @@ public interface ExpressionTransverse<T> extends ExpressionVisitor<T> {
         setter.asFunction().accept(this);
         return null;
     }
+
+    @Override
+    public default T visit(ArrayLiteral arrayLiteral) {
+        arrayLiteral.getExpressions().forEach(arr -> arr.accept(this));
+        return null;
+    }
 }

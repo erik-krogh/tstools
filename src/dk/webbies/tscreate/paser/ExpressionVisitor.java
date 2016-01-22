@@ -45,4 +45,6 @@ public interface ExpressionVisitor<T> {
     T visit(GetterExpression getter);
 
     T visit(SetterExpression setter);
+
+    T visit(ArrayLiteral arrayLiteral);
 }

@@ -159,10 +159,10 @@ public class NativeTypeFactory {
             }
 
             if (t.getDeclaredStringIndexType() != null) {
-                result.add(new DynamicAccessNode(solver.union(recurse(t.getDeclaredStringIndexType())), primitiveFactory.string(), solver));
+                result.add(new DynamicAccessNode(solver, solver.union(recurse(t.getDeclaredStringIndexType())), primitiveFactory.string()));
             }
             if (t.getDeclaredNumberIndexType() != null) {
-                result.add(new DynamicAccessNode(solver.union(recurse(t.getDeclaredNumberIndexType())), primitiveFactory.number(), solver));
+                result.add(new DynamicAccessNode(solver, solver.union(recurse(t.getDeclaredNumberIndexType())), primitiveFactory.number()));
             }
 
             t.getBaseTypes().forEach(type -> {

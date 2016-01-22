@@ -370,6 +370,11 @@ public class CFGBuilder {
             printAstNode(setter);
             return aux;
         }
+
+        @Override
+        public CFGEnv visit(ArrayLiteral arrayLiteral, CFGEnv aux) {
+            throw new RuntimeException("I added array literals, not sure what to do here");
+        }
     }
 
     class CFGStmtVisitor implements CFGStatementVisitor<CFGEnv> {

@@ -250,6 +250,20 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @Override
+    public UnionNode visit(ArrayLiteral arrayLiteral) {
+        UnionNode result = primitiveFactory.array();
+        EmptyNode arrayType = new EmptyNode(solver);
+        solver.union(result, new DynamicAccessNode(solver, arrayType, primitiveFactory.number()));
+
+        for (Expression expression : arrayLiteral.getExpressions()) {
+            UnionNode expressionNode = expression.accept(this);
+            solver.union(arrayType, expressionNode);
+        }
+
+        return result;
+    }
+
+    @Override
     public UnionNode visit(FunctionExpression function) {
         if (closureMatch(function, this.closure)) {
             // It is the function we are currently analyzing, special treatment.
@@ -348,7 +362,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         UnionNode returnType = new EmptyNode(solver);
 
         solver.union(lookupKey, primitiveFactory.stringOrNumber());
-        DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(returnType, lookupKey, solver);
+        DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(solver, returnType, lookupKey);
         solver.union(operand, dynamicAccessNode);
         solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
         return returnType;
@@ -633,8 +647,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             break;
                         } else if (closure.function.id.equals("Function.prototype.apply")) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
-                            // I have no array-abstraction, so I don't see what i can do about the arguments object.
-                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, Collections.EMPTY_LIST, this.functionNode.returnNode, null));
+                            UnionNode argsNode = this.functionNode.arguments.size() < 2 ? new EmptyNode(solver) : this.functionNode.arguments.get(1);
+                            EmptyNode argumentType = new EmptyNode(solver);
+                            solver.union(argsNode, new DynamicAccessNode(solver, argumentType, primitiveFactory.number()));
+                            List<UnionNode> arguments = Arrays.asList(argumentType, argumentType, argumentType, argumentType, argumentType);
+                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, arguments, this.functionNode.returnNode, null));
                             break;
                         } else if (closure.function.id.equals("Function.prototype.bind")) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);

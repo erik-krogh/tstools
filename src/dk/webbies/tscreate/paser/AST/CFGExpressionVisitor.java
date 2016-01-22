@@ -45,4 +45,6 @@ public interface CFGExpressionVisitor<T> {
     T visit(GetterExpression getterExpression, T aux);
 
     T visit(SetterExpression setterExpression, T aux);
+
+    T visit(ArrayLiteral arrayLiteral, T aux);
 }
