@@ -1,15 +1,21 @@
 package dk.webbies.tscreate.evaluation;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
-import static dk.webbies.tscreate.evaluation.DeclarationEvaluator.*;
+import static dk.webbies.tscreate.evaluation.DeclarationEvaluator.EvaluationQueueElement;
 
 /**
  * Created by Erik Krogh Kristensen on 14-12-2015.
@@ -83,6 +89,42 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 analyzeNextDepth(realType, myType, callback);
             }
         }));
+    }
+
+
+
+    private InterfaceType getCombinedInterface(UnionType realType) {
+        Set<InterfaceType> withBases = realType.getElements().stream().map(DeclarationParser::getWithBaseTypes).reduce(new HashSet<>(), Util::reduceSet);
+        if (withBases.isEmpty()) {
+            return null;
+        }
+        InterfaceType result = SpecReader.makeEmptySyntheticInterfaceType();
+
+        result.setDeclaredCallSignatures(getSignatures(withBases, InterfaceType::getDeclaredCallSignatures));
+        result.setDeclaredConstructSignatures(getSignatures(withBases, InterfaceType::getDeclaredConstructSignatures));
+        Multimap<String, Type> properties = getProperties(withBases);
+        for (Map.Entry<String, Collection<Type>> entry : properties.asMap().entrySet()) {
+            if (entry.getKey().length() == 1) {
+                result.getDeclaredProperties().put(entry.getKey(), entry.getValue().iterator().next());
+            } else {
+                UnionType unionType = new UnionType();
+                unionType.setElements(entry.getValue().stream().collect(Collectors.toList()));
+                result.getDeclaredProperties().put(entry.getKey(), unionType);
+            }
+        }
+
+        // Base-types are not relevant.
+
+        for (InterfaceType type : withBases) {
+            if (type.getTypeParameters() != null) {
+                result.getTypeParameters().addAll(type.getTypeParameters());
+            }
+        }
+
+        result.setDeclaredNumberIndexType(getPossible(withBases, InterfaceType::getDeclaredNumberIndexType));
+        result.setDeclaredStringIndexType(getPossible(withBases, InterfaceType::getDeclaredStringIndexType));
+
+        return result;
     }
 
     private void findBest(Collection<Pair<Type, Type>> typePairs, Consumer<Evaluation> callback) {
@@ -160,14 +202,12 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return real.toInterface().accept(this, arg);
     }
 
-    // FIXME: This thing ignores InterfaceType::getBaseTypes() for now.
     @Override
     public Void visit(InterfaceType real, Arg arg) {
         if (real.getDeclaredCallSignatures().isEmpty() && real.getDeclaredConstructSignatures().isEmpty() && real.getDeclaredProperties().isEmpty() && real.getDeclaredNumberIndexType() == null && real.getDeclaredStringIndexType() == null) {
             // Empty interface, this happens when we have a type constraint like Array<T> (where this empty interface is the T).
             // TODO: Do something special here?
         }
-
 
 
         Type type = arg.type;
@@ -193,9 +233,12 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         evaluation.addTruePositive(depth, "this was an interface, that is right.");
         InterfaceType my = (InterfaceType) type;
 
+        Set<InterfaceType> realWithBase = DeclarationParser.getWithBaseTypes(real);
+        Set<InterfaceType> myWithBase = DeclarationParser.getWithBaseTypes(my);
+
         // Properties
-        Map<String, Type> realProperties = real.getDeclaredProperties();
-        Map<String, Type> myProperties = my.getDeclaredProperties();
+        Multimap<String, Type> realProperties = getProperties(realWithBase);
+        Multimap<String, Type> myProperties = getProperties(myWithBase);
 
         Set<String> properties = new HashSet<>();
         properties.addAll(realProperties.keySet());
@@ -208,27 +251,73 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             } else if (!realProperties.containsKey(property)) {
                 evaluation.addFalsePositive(depth + 1, "excess property: " + property);
             } else {
-                Type myType = myProperties.get(property);
-                Type realType = realProperties.get(property);
-                nextDepth(realType, myType, whenAllDone.newSubCallback());
+                Collection<Type> myTypes = myProperties.get(property);
+                Collection<Type> realTypes = realProperties.get(property);
+                nextDepth(toPossibleUnion(realTypes), toPossibleUnion(myTypes), whenAllDone.newSubCallback());
             }
         }
 
         // Functions
-        evaluateFunctions(real.getDeclaredCallSignatures(), ((InterfaceType) type).getDeclaredCallSignatures(), whenAllDone.newSubCallback());
-        evaluateFunctions(real.getDeclaredConstructSignatures(), ((InterfaceType) type).getDeclaredConstructSignatures(), whenAllDone.newSubCallback());
+        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredCallSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredCallSignatures), whenAllDone.newSubCallback());
+        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredConstructSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredConstructSignatures), whenAllDone.newSubCallback());
 
 
         // Indexers:
-        Type realNumber = real.getDeclaredNumberIndexType();
-        Type myNumber = my.getDeclaredNumberIndexType();
+        Type realNumber = getPossible(realWithBase, InterfaceType::getDeclaredNumberIndexType);
+        Type myNumber = getPossible(myWithBase, InterfaceType::getDeclaredNumberIndexType);
         evaluateIndexers(realNumber, myNumber, whenAllDone.newSubCallback());
 
-        Type realString = real.getDeclaredNumberIndexType();
-        Type myString = my.getDeclaredNumberIndexType();
+        Type realString = getPossible(realWithBase, InterfaceType::getDeclaredStringIndexType);
+        Type myString = getPossible(myWithBase, InterfaceType::getDeclaredStringIndexType);
         evaluateIndexers(realString, myString, whenAllDone.newSubCallback());
 
         return null;
+    }
+
+    private Type toPossibleUnion(Collection<Type> myTypes) {
+        assert myTypes.size() != 0;
+        if (myTypes.size() == 1) {
+            return myTypes.iterator().next();
+        } else {
+            UnionType result = new UnionType();
+            result.setElements(myTypes.stream().collect(Collectors.toList()));
+            InterfaceType combined = getCombinedInterface(result);
+            if (combined != null) {
+                result.getElements().add(combined);
+            }
+            return result;
+        }
+    }
+
+    private Type getPossible(Set<InterfaceType> types, Function<InterfaceType, Type> getter) {
+        for (InterfaceType type : types) {
+            if (getter.apply(type) != null) {
+                return getter.apply(type);
+            }
+        }
+        return null;
+    }
+
+    private List<Signature> getSignatures(Set<InterfaceType> types, Function<InterfaceType, List<Signature>> getter) {
+        ArrayList<Signature> result = new ArrayList<>();
+        for (InterfaceType type : types) {
+            List<Signature> signatures = getter.apply(type);
+            if (signatures != null) {
+                result.addAll(signatures);
+            }
+        }
+        return result;
+    }
+
+    private Multimap<String, Type> getProperties(Set<InterfaceType> types) {
+        Multimap<String, Type> result = ArrayListMultimap.create();
+        for (InterfaceType type : types) {
+            for (Map.Entry<String, Type> entry : type.getDeclaredProperties().entrySet()) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return result;
     }
 
     private void evaluateFunctions(List<Signature> realSignatures, List<Signature> mySignatures, Runnable callback) {
