@@ -595,7 +595,12 @@ public class DeclarationPrinter {
                 fieldsInSuper.addAll(((ClassType)superClass).getStaticFields().keySet());
                 superClass = ((ClassType)superClass).getSuperClass();
             } else if (superClass instanceof NamedObjectType) {
-                throw new RuntimeException();
+                String name = ((NamedObjectType) superClass).getName();
+                Set<String> typeKeys = keysFrom(nativeClasses.typeFromName(name));
+                fieldsInSuper.addAll(typeKeys);
+
+                fieldsInSuper.addAll(nativeClasses.objectFromName(name).getPropertyMap().keySet());
+                break;
             } else {
                 throw new RuntimeException();
             }
