@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import dk.webbies.tscreate.util.Util;
+
 import java.util.Map;
 
 /**
@@ -37,7 +39,13 @@ public class ClassType extends DeclarationType{
     }
 
     public DeclarationType getSuperClass() {
-        return DeclarationType.resolve(superClass);
+        DeclarationType resolved = DeclarationType.resolve(superClass);
+        if (resolved instanceof NamedObjectType && ((NamedObjectType) resolved).getName().endsWith("Constructor")) {
+            String name = ((NamedObjectType) resolved).getName();
+            resolved = new NamedObjectType(Util.removeSuffix(name, "Constructor"));
+        }
+        this.superClass = resolved;
+        return resolved;
     }
 
     public String getName() {
