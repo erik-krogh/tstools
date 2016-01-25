@@ -206,7 +206,9 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     public Void visit(InterfaceType real, Arg arg) {
         if (real.getDeclaredCallSignatures().isEmpty() && real.getDeclaredConstructSignatures().isEmpty() && real.getDeclaredProperties().isEmpty() && real.getDeclaredNumberIndexType() == null && real.getDeclaredStringIndexType() == null) {
             // Empty interface, this happens when we have a type constraint like Array<T> (where this empty interface is the T).
-            // TODO: Do something special here?
+            // We don't count this, not positively, not negatively, it is just ignored.
+            arg.callback.run();
+            return null;
         }
 
 
