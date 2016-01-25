@@ -7,8 +7,10 @@ import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.paser.AST.Expression;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ public class LibraryClass {
     private List<Snap.Obj> instances = new ArrayList<>();
     private Snap.Obj constructor;
     public boolean prototypeMethod = false;
+    private Set<Expression> uniqueConstructionSites = new HashSet<>();
 
     public LibraryClass(String pathSeen, Snap.Obj prototype) {
         this.pathsSeen.add(pathSeen);
@@ -76,6 +79,9 @@ public class LibraryClass {
                 if (newName.matches("[0-9]+.{0,}")) { // Starts with number.
                     continue;
                 }
+                if (newName.contains("-")) {
+                    continue;
+                }
 
                 boolean newIsUpper = newName.charAt(0) == Character.toUpperCase(newName.charAt(0));
                 boolean oldIsUpper = name.charAt(0) == Character.toUpperCase(name.charAt(0)) && !(name.charAt(0) == "[".charAt(0));
@@ -90,6 +96,9 @@ public class LibraryClass {
 
             if (name.matches("[0-9]+.{0,}")) {
                 name = "interface_" + InterfaceType.interfaceCounter++;
+            }
+            if (name.contains("-")) {
+                name = name.replace("-", "");
             }
 
             if (isNameTaken(name, natives, takenNames)) {
@@ -180,6 +189,18 @@ public class LibraryClass {
 
     public List<Snap.Obj> getInstances() {
         return this.instances;
+    }
+
+    public void addUniqueConstructionSite(Expression expression) {
+        this.uniqueConstructionSites.add(expression);
+    }
+
+    public void removeUniqueConstructionSite(Expression expression) {
+        this.uniqueConstructionSites.remove(expression);
+    }
+
+    public Set<Expression> getUniqueConstructionSite() {
+        return uniqueConstructionSites;
     }
 }
 

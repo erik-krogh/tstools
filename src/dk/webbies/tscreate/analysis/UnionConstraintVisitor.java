@@ -543,6 +543,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final UnionNode function;
         private final List<UnionNode> args;
         private final UnionNode thisNode;
+        private Expression callExpression;
         private final CallGraphResolver callResolver;
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
 
@@ -550,13 +551,15 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.function = function;
             this.args = args;
             this.thisNode = thisNode;
+            this.callExpression = callExpression;
             this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyNode(solver), callExpression);
             this.callResolver.constructorCalls = true;
         }
 
         @Override
         public void run() {
-            getFunctionClosures(function, seenHeap).stream().forEach(closure -> {
+            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap);
+            for (Snap.Obj closure : functionClosures) {
                 switch (closure.function.type) {
                     case "native":
                         Snap.Property prototypeProp = closure.getProperty("prototype");
@@ -580,6 +583,12 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             if (typeAnalysis.options.classOptions.useConstructorUsages) {
                                 solver.union(clazz.getNewConstructorNode(solver), this.function);
                             }
+
+                            if (functionClosures.size() == 1) { // If it resolves to a unique closure, mark the class with this construction-site.
+                                clazz.addUniqueConstructionSite(this.callExpression);
+                            } else {
+                                clazz.removeUniqueConstructionSite(this.callExpression);
+                            }
                         }
                         break;
                     case "unknown":
@@ -587,8 +596,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     default:
                         throw new UnsupportedOperationException("Do now know functions of type " + closure.function.type + " here.");
                 }
-
-            });
+            }
 
             this.callResolver.run();
         }
@@ -636,6 +644,16 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     case "bind": {
                         assert UnionConstraintVisitor.this.functionNodes.containsKey(closure);
                         solver.union(this.functionNode, new IncludeNode(solver, UnionConstraintVisitor.this.functionNodes.get(closure)));
+
+                        /* // This is the traditional "points-to" way. By having the arguments flow to the parameters.
+                        FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
+                        solver.union(newFunction, UnionConstraintVisitor.this.functionNodes.get(closure));
+                        solver.union(functionNode.returnNode, new IncludeNode(solver, newFunction.returnNode));
+                        solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
+                        for (int i = 0; i < functionNode.arguments.size(); i++) {
+                            solver.union(new IncludeNode(solver, functionNode.arguments.get(i)), newFunction.arguments.get(i));
+                        }*/
+
                         break;
                     }
                     case "native": {
