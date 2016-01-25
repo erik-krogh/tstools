@@ -200,6 +200,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(Return aReturn) {
+        if (aReturn.getExpression() instanceof UnaryExpression && ((UnaryExpression) aReturn.getExpression()).getOperator() == Operator.VOID) {
+            // This is a return;
+            return new EmptyNode(solver);
+        }
         UnionNode exp = aReturn.getExpression().accept(this);
         solver.union(new IncludeNode(solver, exp), functionNode.returnNode, primitiveFactory.nonVoid());
         return null;
