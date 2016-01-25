@@ -202,17 +202,18 @@ public class TypeFactory {
         if (libraryClass == null) {
             return null;
         }
+        // FIXME: The heuristic needs to be revised after the ts-spec-reader bug has been fixed. Consider what the upper-case name policy should be.
         boolean hardCodedClassName = false;
         if (options.isClassNames.stream().anyMatch(str -> str.equals(libraryClass.getName(nativeClasses, takenClassNames)))) {
             hardCodedClassName = true;
             libraryClass.isUsedAsClass = true;
         }
-        if (!libraryClass.isUsedAsClass) {
+        if (!libraryClass.isUsedAsClass && libraryClass.getUniqueConstructionSite().isEmpty()) {
             return null;
         }
         if (!hardCodedClassName) {
             String firstLetter = libraryClass.getName(nativeClasses, takenClassNames).substring(0, 1);
-            if (!firstLetter.equals(firstLetter.toUpperCase())) {
+            if (!firstLetter.equals(firstLetter.toUpperCase()) && libraryClass.getUniqueConstructionSite().isEmpty()) {
                 return null;
             }
         }
