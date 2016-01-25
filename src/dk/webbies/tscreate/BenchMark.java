@@ -158,6 +158,11 @@ public class BenchMark {
         return new BenchMark("Handlebars.js", "tests/handlebars/handlebars-v4.0.5.js", "tests/handlebars/handlebars.d.ts", options, ES5);
     });
 
+    public static final BenchMark box2d = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("Box2dWeb", "tests/box2dweb/box2dweb.js", "tests/box2dweb/box2dweb.d.ts", options, ES5);
+    });
+
 
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
