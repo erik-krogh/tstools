@@ -188,7 +188,7 @@ public class Evaluation {
     }
 
     public void debugPrint() {
-        assert !this.debug;
+        assert this.debug;
         HashMap<Integer, Object> falses = new HashMap<>();
         addAll(this.falseNegatives, falses);
         addAll(this.falsePositives, falses);
