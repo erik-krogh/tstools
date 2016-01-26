@@ -18,6 +18,7 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 /**
  * Created by Erik Krogh Kristensen on 05-10-2015.
  */
+// TODO: Create a complete map of type -> path. Both for real and myTypes.
 public class DeclarationEvaluator {
     private final Evaluation evaluation = new Evaluation();
     private Snap.Obj global;
@@ -26,7 +27,7 @@ public class DeclarationEvaluator {
     public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
         this.global = global;
         this.libraryClasses = libraryClasses;
-        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark).invoke(); // TODO: Try to bench the hand-written against the hand-written, and see what happens.
+        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark).invoke();
         InterfaceType realDeclaration = parsedDeclaration.getRealDeclaration();
         InterfaceType myDeclaration = parsedDeclaration.getMyDeclaration();
         Set<String> properties = parsedDeclaration.getProperties();

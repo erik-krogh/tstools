@@ -21,6 +21,7 @@ import java.util.function.Predicate;
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
+// FIXME: Change GotCyclic exception, such that I mark the lowest possible type in the type-tree as cyclic.
 public class DeclarationPrinter {
     private final Map<String, DeclarationType> declarations;
     private Map<ClassType, String> classNames;

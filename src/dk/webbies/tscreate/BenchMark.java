@@ -52,6 +52,7 @@ public class BenchMark {
         return new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
     });
 
+    // FIXME: Try to make an issue on pixi-typescript about the declarations that aren't on the object, make them into interfaces instead.
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
