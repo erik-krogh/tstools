@@ -115,7 +115,9 @@ public class TypeAnalysis {
             LibraryClass libraryClass = prototypeFunctions.get(closure);
             if (options.classOptions.useInstancesForThis) {
                 solver.union(functionNode.thisNode, new HasPrototypeNode(solver, libraryClass.prototype));
-                solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
+                if (!"FunctionConstructor".equals(nativeClasses.nameFromPrototype(libraryClass.prototype))) {
+                    solver.union(functionNode.thisNode, new IncludeNode(solver, libraryClass.getThisNodeFromInstances(heapFactory)));
+                }
             }
             if (options.classOptions.unionThisFromPrototypeMethods) {
                 solver.union(functionNode.thisNode, libraryClass.getNewThisNode(solver));
