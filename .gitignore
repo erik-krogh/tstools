@@ -6,3 +6,4 @@ paper/
 tests/**/*.gen.d.ts
 tests/**/*.jsnap
 lib/jsnap
+lib/ts-type-reader
