@@ -21,7 +21,6 @@ import java.util.function.Predicate;
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
-// FIXME: Change GotCyclic exception, such that I mark the lowest possible type in the type-tree as cyclic.
 public class DeclarationPrinter {
     private final Map<String, DeclarationType> declarations;
     private Map<ClassType, String> classNames;
@@ -41,7 +40,20 @@ public class DeclarationPrinter {
         this.nativeClasses = nativeClasses;
     }
 
-    private void addPrintAsInterface(DeclarationType type) {
+    private void addPrintAsInterface(fj.data.List<DeclarationType> functionalTypesList) {
+        List<DeclarationType> types = new ArrayList<>();
+        functionalTypesList.forEach(types::add);
+
+
+        DeclarationType type = null;
+        for (DeclarationType candidate : types) {
+            if (candidate instanceof FunctionType || candidate instanceof UnnamedObjectType || candidate instanceof DynamicAccessType) {
+                type = candidate;
+                break;
+            }
+        }
+        assert type != null;
+
         type = type.resolve();
         if (type instanceof FunctionType) {
             FunctionType func = (FunctionType) type;
@@ -123,11 +135,11 @@ public class DeclarationPrinter {
             while (true) {
                 try {
                     finishing = true;
-                    type.accept(new TypeVisitor(), new VisitorArg(builder = new StringBuilder(), emptySet(), null));
+                    type.accept(new TypeVisitor(), new VisitorArg(builder = new StringBuilder(), fj.data.List.nil(), null));
                     break;
                 } catch (GotCyclic e) {
                     ident = 0;
-                    addPrintAsInterface(e.type);
+                    addPrintAsInterface(e.types);
                 }
             }
             outerBuilder.append(builder);
@@ -146,11 +158,11 @@ public class DeclarationPrinter {
                 for (Map.Entry<String, DeclarationType> entry : this.declarations.entrySet()) {
                     String name = entry.getKey();
                     DeclarationType type = entry.getValue();
-                    printDeclaration(new VisitorArg(builder, emptySet(), name), name, type);
+                    printDeclaration(new VisitorArg(builder, fj.data.List.nil(), name), name, type);
                 }
             } catch (GotCyclic e) {
                 ident = 0;
-                addPrintAsInterface(e.type);
+                addPrintAsInterface(e.types);
                 printedClasses.clear();
                 continue;
             }
@@ -173,7 +185,7 @@ public class DeclarationPrinter {
             type = printsAsInterface.get(type);
         } else {
             if (arg.contains(type)) {
-                throw new GotCyclic(type);
+                throw new GotCyclic(arg.getSeen());
             }
         }
         if (type instanceof FunctionType) {
@@ -285,10 +297,10 @@ public class DeclarationPrinter {
 
     private static final class VisitorArg {
         final StringBuilder builder;
-        final fj.data.Set<DeclarationType> seen;
         final String path;
+        private fj.data.List<DeclarationType> seen;
 
-        VisitorArg(StringBuilder builder, fj.data.Set<DeclarationType> seen, String path) {
+        VisitorArg(StringBuilder builder, fj.data.List<DeclarationType> seen, String path) {
             this.builder = builder;
             this.seen = seen;
             this.path = path;
@@ -299,7 +311,7 @@ public class DeclarationPrinter {
             if (nullPath) {
                 path = null;
             }
-            return new VisitorArg(builder, seen.insert(type), path);
+            return new VisitorArg(builder, seen.cons(type), path);
         }
 
         VisitorArg addPath(String propName) {
@@ -310,15 +322,19 @@ public class DeclarationPrinter {
         }
 
         boolean contains(DeclarationType type) {
-            return seen.member(type);
+            return seen.exists(otherType -> Objects.equals(otherType, type));
+        }
+
+        public fj.data.List<DeclarationType> getSeen() {
+            return seen;
         }
     }
 
     private static final class GotCyclic extends RuntimeException {
-        final DeclarationType type;
+        final fj.data.List<DeclarationType> types;
 
-        private GotCyclic(DeclarationType type) {
-            this.type = type;
+        private GotCyclic(fj.data.List<DeclarationType> types) {
+            this.types = types;
         }
     }
 
@@ -352,7 +368,7 @@ public class DeclarationPrinter {
                 printsAsInterface.get(functionType).accept(this, arg);
             } else {
                 if (arg.contains(functionType)) {
-                    throw new GotCyclic(functionType);
+                    throw new GotCyclic(arg.getSeen());
                 }
                 arg = arg.cons(functionType, true);
 
@@ -380,7 +396,7 @@ public class DeclarationPrinter {
                 return printsAsInterface.get(objectType).accept(this, arg);
             } else {
                 if (arg.contains(objectType)) {
-                    throw new GotCyclic(objectType);
+                    throw new GotCyclic(arg.getSeen());
                 }
                 arg = arg.cons(objectType, false);
 
@@ -401,7 +417,7 @@ public class DeclarationPrinter {
                 write(builder, "}");
                 String declarationsString = builder.toString();
                 if (declarationsString.contains("\n") || declarationsString.length() > 50) {
-                    throw new GotCyclic(objectType);
+                    throw new GotCyclic(arg.getSeen());
                 } else {
                     arg.builder.append(declarationsString);
                 }
