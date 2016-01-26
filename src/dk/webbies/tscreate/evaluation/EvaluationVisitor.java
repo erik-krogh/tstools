@@ -249,9 +249,9 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth, arg.callback), queue);
         for (String property : properties) {
             if (!myProperties.containsKey(property)) {
-                evaluation.addFalseNegative(depth + 1, "property missing: " + property);
+                evaluation.addFalseNegative(depth + 1, "property missing: " + property + " from " + realNativeClasses.nameFromType(real));
             } else if (!realProperties.containsKey(property)) {
-                evaluation.addFalsePositive(depth + 1, "excess property: " + property);
+                evaluation.addFalsePositive(depth + 1, "excess property: " + property + " on " + myNativeClasses.nameFromType(my));
             } else {
                 Collection<Type> myTypes = myProperties.get(property);
                 Collection<Type> realTypes = realProperties.get(property);
@@ -260,8 +260,8 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
 
         // Functions
-        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredCallSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredCallSignatures), whenAllDone.newSubCallback());
-        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredConstructSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredConstructSignatures), whenAllDone.newSubCallback());
+        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredCallSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredCallSignatures), whenAllDone.newSubCallback(), arg.type);
+        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredConstructSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredConstructSignatures), whenAllDone.newSubCallback(), arg.type);
 
 
         // Indexers:
@@ -322,7 +322,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return result;
     }
 
-    private void evaluateFunctions(List<Signature> realSignatures, List<Signature> mySignatures, Runnable callback) {
+    private void evaluateFunctions(List<Signature> realSignatures, List<Signature> mySignatures, Runnable callback, Type myType) {
         if (realSignatures == null) {
             realSignatures = Collections.EMPTY_LIST;
         }
@@ -334,27 +334,27 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             return;
         }
         if (realSignatures.isEmpty() && !mySignatures.isEmpty()) {
-            evaluation.addFalsePositive(depth, "shouldn't be a function");
+            evaluation.addFalsePositive(depth + 1, "shouldn't be a function on " + myNativeClasses.nameFromType(myType));
             callback.run();
             return;
         }
         if (!realSignatures.isEmpty() && mySignatures.isEmpty()) {
-            evaluation.addFalseNegative(depth, "should be a function");
+            evaluation.addFalseNegative(depth + 1, "should be a function on " + myNativeClasses.nameFromType(myType));
             callback.run();
             return;
         }
-        evaluation.addTruePositive(depth, "was a function, that was right");
+        evaluation.addTruePositive(depth + 1, "was a function, that was right");
         if (realSignatures.size() == 1 && mySignatures.size() == 1) {
-            WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth, callback), queue);
+            WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth + 1, callback), queue);
             Signature realSignature = realSignatures.get(0);
             Signature mySignature = mySignatures.get(0);
             nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback());
 
             for (int i = 0; i < Math.max(realSignature.getParameters().size(), mySignature.getParameters().size()); i++) {
                 if (i >= realSignature.getParameters().size()) {
-                    evaluation.addFalsePositive(depth + 1, "to many arguments for function");
+                    evaluation.addFalsePositive(depth + 2, "to many arguments for function on " + myNativeClasses.nameFromType(myType));
                 } else if (i >= mySignature.getParameters().size()) {
-                    evaluation.addFalseNegative(depth + 1, "to few arguments for function");
+                    evaluation.addFalseNegative(depth + 2, "to few arguments for function on " + myNativeClasses.nameFromType(myType));
                 } else {
                     nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback());
                 }
