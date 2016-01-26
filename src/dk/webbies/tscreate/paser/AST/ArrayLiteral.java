@@ -8,6 +8,7 @@ import java.util.List;
 /**
  * Created by erik1 on 22-01-2016.
  */
+// FIXME: Create some way to actually keep track of and output an generic array.
 public class ArrayLiteral extends Expression {
     private final List<Expression> expressions;
 
