@@ -23,6 +23,10 @@ public class Options {
     // Run TSCheck on the output.
     public boolean tsCheck = false;
 
+    public boolean debugPrint = false;
+
+    public Integer maxEvaluationDepth = null; // If set to a number, the evaluation will ignore recursive types and all that stuff, and simply follow EVERYTHING until a certain depth is reached. Note, some things that are at depth n will affect down to depth n+2 (such as for signatures with parameters).
+
     public enum Runtime {
         PHANTOM,
         CHROME,

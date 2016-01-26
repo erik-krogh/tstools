@@ -32,7 +32,7 @@ public class Main {
             long start = System.currentTimeMillis();
 
 //            tsCheck();
-//            runAnalysis(BenchMark.test);
+//            runAnalysis(BenchMark.PIXI);
 //            benchAll();
             printTable();
 
@@ -68,17 +68,19 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
         Evaluation evaluation = null;
         if (benchMark.declarationPath != null) {
-            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses).getEvaluation();
+            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.options).getEvaluation();
 
             System.out.println(evaluation);
 
-//            evaluation.debugPrint();
+            if (benchMark.options.debugPrint) {
+                evaluation.debugPrint();
+            }
         }
 
         if (benchMark.options.tsCheck) {
@@ -131,7 +133,7 @@ public class Main {
                 "\\centering\n" +
                 "\\begin{tabular}{l|l|ccc}\n" +
                 "& & \\multicolumn{3}{c}{\\textit{score}}  \\\\\n" +
-                "\\textit{benchmark} & \\textit{lines of code} & \\multicolumn{1}{l}{\\textit{f-measure}} & \\multicolumn{1}{l}{\\textit{recall}} & \\multicolumn{1}{l}{\\textit{precision}} \\\\ \\hline\n");
+                "\\textit{benchmark} & \\textit{lines of code} & \\multicolumn{1}{l}{\\textit{f-measure}} & \\multicolumn{1}{l}{\\textit{recall}} & \\multicolumn{1}{l}{\\textit{precision}} \\\\ \\hline");
         List<BenchMark> benches = scores.keySet().stream().sorted((o1, o2) -> o1.name.compareTo(o2.name)).collect(Collectors.toList());
         for (int i = 0; i < benches.size(); i++) {
             BenchMark benchMark = benches.get(i);

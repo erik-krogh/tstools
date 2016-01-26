@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.evaluation;
 
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.util.Util;
 
@@ -11,29 +12,57 @@ import java.util.function.Function;
  */
 public class Evaluation {
     int maxDepth = -1;
-    Map<Integer, List<String>> falseNegatives = new HashMap<>();
-    Map<Integer, List<String>> falsePositives = new HashMap<>();
-    Map<Integer, List<String>> truePositive = new HashMap<>();
+    Map<Integer, Object> falseNegatives = new HashMap<>();
+    Map<Integer, Object> falsePositives = new HashMap<>();
+    Map<Integer, Object> truePositive = new HashMap<>();
 
-    private void add(int depth, Map<Integer, List<String>> map, String description) {
+    private final boolean debug;
+    private FindTypeNameVisitor names;
+
+    public Evaluation(boolean saveDebug, FindTypeNameVisitor names) {
+        this.debug = saveDebug;
+        this.names = names;
+    }
+
+    private void add(int depth, Map<Integer, Object> map, String description, Type realType, Type myType) {
+        if (debug) {
+            description += " RealType: " + this.names.getTypeName(realType) + "  myType: " + this.names.getTypeName(myType);
+        } else {
+            description = null;
+        }
+        add(depth, map, description);
+    }
+
+    private void add(int depth, Map<Integer, Object> map, String description) {
+        if ("property missing: pretty RealType: window.Klass  myType: window.Klass.chain.[callSig0].[return].[union:1]".equals(description)) {
+            System.out.println();
+        }
         maxDepth = Math.max(depth, maxDepth);
         if (map.containsKey(depth)) {
-            map.get(depth).add(description);
+            if (debug) {
+                ((List<String>)map.get(depth)).add(description);
+            } else {
+                map.put(depth, ((Integer) map.get(depth) + 1));
+            }
         } else {
-            map.put(depth, new ArrayList<>(Arrays.asList(description)));
+            if (debug) {
+                map.put(depth, new ArrayList<>(Arrays.asList(description)));
+            } else {
+                map.put(depth, 1);
+            }
         }
     }
 
-    public void addFalseNegative(int depth, String description) {
-        add(depth, falseNegatives, description);
+    public void addFalseNegative(int depth, String description, Type realType, Type myType) {
+        add(depth, falseNegatives, description, realType, myType);
     }
 
-    public void addFalsePositive(int depth, String description) {
-        add(depth, falsePositives, description);
+    public void addFalsePositive(int depth, String description, Type realType, Type myType) {
+        add(depth, falsePositives, description, realType, myType);
     }
 
-    public void addTruePositive(int depth, String description) {
-        add(depth, truePositive, description);
+    public void addTruePositive(int depth, String description, Type realType, Type myType) {
+        add(depth, truePositive, description, realType, myType);
     }
 
     public String print() {
@@ -68,9 +97,13 @@ public class Evaluation {
         return get(depth, this.truePositive) + get(depth, this.falseNegatives);
     }
 
-    private int get(int depth, Map<Integer, List<String>> map) {
+    private int get(int depth, Map<Integer, Object> map) {
         if (map.containsKey(depth)) {
-            return map.get(depth).size();
+            if (debug) {
+                return ((List<String>)map.get(depth)).size();
+            } else {
+                return (Integer) map.get(depth);
+            }
         } else {
             return 0;
         }
@@ -129,11 +162,24 @@ public class Evaluation {
         addAll(evaluation.truePositive, this.truePositive);
     }
 
-    private void addAll(Map<Integer, List<String>> from, Map<Integer, List<String>> to) {
+    private void addAll(Map<Integer, Object> from, Map<Integer, Object> to) {
         from.forEach((depth, list) -> {
-            list.forEach(description -> {
-                add(depth, to, description);
-            });
+            if (debug) {
+                ((List<String>)list).forEach(description -> {
+                    add(depth, to, description);
+                });
+            } else {
+                for (Map.Entry<Integer, Object> entry : from.entrySet()) {
+                    Integer entryDepth = entry.getKey();
+                    Integer count = (Integer) entry.getValue();
+                    if (to.containsKey(entryDepth)) {
+                        to.put(entryDepth, ((Integer)to.get(entryDepth)) + count);
+                    } else {
+                        to.put(entryDepth, count);
+                    }
+                }
+
+            }
         });
     }
 
@@ -142,7 +188,8 @@ public class Evaluation {
     }
 
     public void debugPrint() {
-        HashMap<Integer, List<String>> falses = new HashMap<>();
+        assert !this.debug;
+        HashMap<Integer, Object> falses = new HashMap<>();
         addAll(this.falseNegatives, falses);
         addAll(this.falsePositives, falses);
         ArrayList<Integer> keys = new ArrayList<>(falses.keySet());
@@ -153,7 +200,7 @@ public class Evaluation {
             System.out.println();
             System.out.println();
             System.out.println("Depth: " + key);
-            List<String> list = falses.get(key);
+            List<String> list = (List<String>) falses.get(key);
             list.forEach(System.out::println);
         }
     }

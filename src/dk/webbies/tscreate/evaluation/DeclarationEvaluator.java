@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.BenchMark;
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
@@ -18,13 +19,12 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 /**
  * Created by Erik Krogh Kristensen on 05-10-2015.
  */
-// TODO: Create a complete map of type -> path. Both for real and myTypes.
 public class DeclarationEvaluator {
-    private final Evaluation evaluation = new Evaluation();
+    private final Evaluation evaluation;
     private Snap.Obj global;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
 
-    public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
+    public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options) {
         this.global = global;
         this.libraryClasses = libraryClasses;
         ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark).invoke();
@@ -37,14 +37,22 @@ public class DeclarationEvaluator {
         realDeclaration.getDeclaredProperties().keySet().retainAll(properties);
         myDeclaration.getDeclaredProperties().keySet().retainAll(properties);
 
+        FindTypeNameVisitor findNames = new FindTypeNameVisitor();
+        if (options.debugPrint) {
+            findNames.visit(realDeclaration, "window");
+            findNames.visit(myDeclaration, "window");
+        }
+
 
         AtomicBoolean hasRun = new AtomicBoolean(false);
         Runnable doneCallback = () -> {
             assert queue.isEmpty();
             hasRun.set(true);
         };
+        evaluation = new Evaluation(options.debugPrint, findNames);
+        final FindTypeNameVisitor finalFindNames = findNames;
         queue.add(new EvaluationQueueElement(0, () -> {
-            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>())
+            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>(), options, finalFindNames)
                     .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback));
         }));
 

@@ -142,7 +142,6 @@ public class BenchMark {
         return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5); // TODO: Does a declaration file exist? Can it?
     });
 
-    // Interresting altough useless benchmark, uses RequireJS to get the library. Therefore my analysis cannot find anything on the heap it can output (it is only in an environment).
     public static final BenchMark ace = evaluate(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true; // Otherwise prombt appears
@@ -167,10 +166,9 @@ public class BenchMark {
 
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
+        options.debugPrint = true;
 
-        Dependency testDependency = new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts");
-
-        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5, Arrays.asList(testDependency, Dependency.jQuery));
+        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5, Arrays.asList());
     });
 
     // SSA tests
