@@ -18,7 +18,7 @@ import static dk.webbies.tscreate.util.Util.evaluate;
 public class BenchMark {
     public final String name;
     public final String scriptPath;
-    public final String declarationPath;
+    public String declarationPath;
     public final Options options;
     public final LanguageLevel languageLevel;
     public final List<Dependency> dependencies;
@@ -162,6 +162,13 @@ public class BenchMark {
         Options options = new Options();
         return new BenchMark("Box2dWeb", "tests/box2dweb/box2dweb.js", "tests/box2dweb/box2dweb.d.ts", options, ES5);
     });
+
+    // TODO: Evaluation is basically 0.
+    public static final BenchMark Q = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("Q", "tests/q/q.js", "tests/q/q.d.ts", options, ES5);
+    });
+
 
 
     public static final BenchMark test = evaluate(() -> {
