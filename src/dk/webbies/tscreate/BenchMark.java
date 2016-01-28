@@ -169,6 +169,11 @@ public class BenchMark {
         return new BenchMark("Q", "tests/q/q.js", "tests/q/q.d.ts", options, ES5);
     });
 
+    public static final BenchMark moment = evaluate(() -> {
+        Options options = new Options();
+        return new BenchMark("Moment.js", "tests/moment/moment.js", "tests/moment/moment.d.ts", options, ES5);
+    });
+
 
 
     public static final BenchMark test = evaluate(() -> {
