@@ -193,6 +193,9 @@ public class JSNAPUtil {
         if (obj.prototype != null) {
             obj.prototype = getHeapObject(stateDump, obj.prototype.key);
         }
+        if (obj.recordedCalls != null) {
+            obj.recordedCalls = getHeapObject(stateDump, obj.recordedCalls.key);
+        }
         for (Snap.Property prop : obj.properties) {
             if (prop.value instanceof Snap.Obj) {
                 prop.value = getHeapObject(stateDump, ((Snap.Obj) prop.value).key);
@@ -324,6 +327,10 @@ public class JSNAPUtil {
             for (Snap.Property property : obj.prototype.properties) {
                 getAllObjectsFromProperty(property, seen);
             }
+        }
+
+        if (obj.recordedCalls != null) {
+            getAllObjects(obj.recordedCalls, seen);
         }
 
         if (obj.env != null) {
