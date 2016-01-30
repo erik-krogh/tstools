@@ -124,7 +124,7 @@ public class TypeAnalysis {
             }
         }
 
-        if (closure.getProperty("prototype") != null) {
+        if (closure.getProperty("prototype") != null && !(closure.getProperty("prototype").value instanceof Snap.UndefinedConstant)) {
             Snap.Obj prototype = (Snap.Obj) closure.getProperty("prototype").value;
             if (libraryClasses.containsKey(prototype)) {
                 LibraryClass libraryClass = libraryClasses.get(prototype);
