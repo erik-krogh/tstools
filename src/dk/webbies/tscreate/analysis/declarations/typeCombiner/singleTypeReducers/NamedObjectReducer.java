@@ -76,7 +76,7 @@ public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> {
         if (twoProto == null || oneProto == null) {
             return null;
         }
-        while (oneProto != null) {
+        while (oneProto != null && oneProto.prototype != oneProto) {
             if (isSuperClass(oneProto, twoProto)) {
                 return oneProto;
             }
