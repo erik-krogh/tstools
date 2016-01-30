@@ -598,6 +598,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         break;
                     case "unknown":
+                    case "bind": // FIXME:
                         break; // Nothing we can do.
                     default:
                         throw new UnsupportedOperationException("Do now know functions of type " + closure.function.type + " here.");
@@ -677,7 +678,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             List<UnionNode> arguments = Arrays.asList(argumentType, argumentType, argumentType, argumentType, argumentType);
                             solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, arguments, this.functionNode.returnNode, null));
                             break;
-                        } else if (closure.function.id.equals("Function.prototype.bind")) {
+                        } else if (closure.function.id.equals("Function.prototype.bind") && typeAnalysis.options.FunctionDotBind) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
                             int boundArgs = this.functionNode.arguments.size() - 1;
                             AtomicInteger maxArgsSeen = new AtomicInteger(-1);
