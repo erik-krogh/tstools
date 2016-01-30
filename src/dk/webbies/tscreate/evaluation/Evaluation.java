@@ -34,9 +34,6 @@ public class Evaluation {
     }
 
     private void add(int depth, Map<Integer, Object> map, String description) {
-        if ("property missing: pretty RealType: window.Klass  myType: window.Klass.chain.[callSig0].[return].[union:1]".equals(description)) {
-            System.out.println();
-        }
         maxDepth = Math.max(depth, maxDepth);
         if (map.containsKey(depth)) {
             if (debug) {
@@ -187,21 +184,19 @@ public class Evaluation {
         return get(depth, this.truePositive);
     }
 
-    public void debugPrint() {
+    public String debugPrint() {
         assert this.debug;
+        StringBuilder builder = new StringBuilder();
         HashMap<Integer, Object> falses = new HashMap<>();
         addAll(this.falseNegatives, falses);
         addAll(this.falsePositives, falses);
         ArrayList<Integer> keys = new ArrayList<>(falses.keySet());
         Collections.sort(keys);
         for (Integer key : keys) {
-            System.out.println();
-            System.out.println();
-            System.out.println();
-            System.out.println();
-            System.out.println("Depth: " + key);
+            builder.append("Depth: ").append(key).append("\n\n\n\n");
             List<String> list = (List<String>) falses.get(key);
-            list.forEach(System.out::println);
+            list.forEach((string) -> builder.append(string).append("\n"));
         }
+        return builder.toString();
     }
 }
