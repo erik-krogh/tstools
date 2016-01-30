@@ -12,6 +12,7 @@ import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.AST.NodeTransverse;
 import dk.webbies.tscreate.util.Util;
+import org.apache.http.HttpException;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,27 +20,43 @@ import java.util.*;
 
 public class JSNAPUtil {
 
-    public static String getJsnapRaw(String path, Options options, List<String> dependencies) throws IOException {
-        return getJsnapRaw(path, options, path + ".jsnap", path, dependencies);
+    public static String getJsnapRaw(String path, Options options, List<String> dependencies, List<String> testFiles, boolean asyncTests) throws IOException {
+        return getJsnapRaw(path, options, path + ".jsnap", path, dependencies, testFiles, asyncTests);
     }
 
     public static String getEmptyJSNAPString(Options options, List<String> dependencies) throws IOException {
         if (options.runtime == Options.Runtime.CHROME) {
-            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/selenium", dependencies);
+            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/selenium", dependencies, Collections.EMPTY_LIST, false);
         } else {
-            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/jsnap/node_modules/phantomjs/lib/phantom", dependencies);
+            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/jsnap/node_modules/phantomjs/lib/phantom", dependencies, Collections.EMPTY_LIST, false);
         }
     }
 
-    private static String getJsnapRaw(String scriptPath, Options options, String cachePath, String checkAgainst, List<String> dependencies) throws IOException {
-        String jsnapPath = "lib/jsnap/jsnap.js";
+    private static String getJsnapRaw(String scriptPath, Options options, String cachePath, String checkAgainst, List<String> dependencies, List<String> testFiles, boolean asyncTests) throws IOException {
+        StringBuilder testFileString = new StringBuilder();
+        for (String testFile : testFiles) {
+            testFileString.append(testFile).append(" ");
+        }
+        if (!testFiles.isEmpty()) {
+            cachePath += "." + testFileString.toString().hashCode();
+        }
+        scriptPath = scriptPath + " " + testFileString.toString();
+
+        String jsnapPath = "lib/jsnap/jsnap.js --callback sendBackToTSCreateServer "; // The callback is defined in driver.html
         if (options.createInstances) {
             jsnapPath += " --createInstances";
             cachePath += ".createdInstances";
         }
+        if (asyncTests) {
+            jsnapPath += " --startDump startDumpTSCreate";
+        }
         if (options.createInstancesClassFilter) {
             jsnapPath += " --createInstancesClassFilter";
             cachePath += ".createInstancesClassFilter";
+        }
+        if (options.recordCalls) {
+            jsnapPath += " --recordCalls";
+            cachePath += ".recordCalls";
         }
         for (String dependency : dependencies) {
             jsnapPath += " --dependency " + dependency;
@@ -57,7 +74,11 @@ public class JSNAPUtil {
             String instrumented = Util.getCachedOrRunNode(cachePath + ".instrumented", filesToCheckAgainst, jsnapPath + " --onlyInstrument " + scriptPath);
 
             return Util.getCachedOrRun(cachePath + ".selinium", filesToCheckAgainst, () -> {
-                return SeleniumDriver.executeScript(instrumented);
+                try {
+                    return SeleniumDriver.executeScript(instrumented);
+                } catch (HttpException | IOException e) {
+                    throw new RuntimeException(e);
+                }
             });
         } else if (options.runtime == Options.Runtime.NODE || options.runtime == Options.Runtime.PHANTOM) {
             String nodeArgs;
@@ -75,29 +96,6 @@ public class JSNAPUtil {
 
     public static Snap.Obj getEmptyJSnap(Options options, List<String> dependencies, FunctionExpression emptyProgram) throws IOException {
         return JSNAPUtil.getStateDump(JSNAPUtil.getEmptyJSNAPString(options, dependencies), emptyProgram);
-    }
-
-    private static Set<Integer> getKeysSharedWithDom(Snap.Obj librarySnap, Snap.Obj domSnap, HashSet<Integer> result) {
-        if (librarySnap.properties == null) {
-            return Collections.EMPTY_SET;
-        }
-        for (Snap.Property property : librarySnap.properties) {
-            if (property == null || property.value == null) {
-                continue;
-            }
-            if (domSnap.getProperty(property.name) != null && property.value instanceof Snap.Obj) {
-                Snap.Value domValue = domSnap.getProperty(property.name).value;
-                if (domValue instanceof Snap.Obj) {
-                    int key = ((Snap.Obj) property.value).key;
-                    if (!result.contains(key)) {
-                        result.add(key);
-                        getKeysSharedWithDom((Snap.Obj) property.value, (Snap.Obj) domValue, result);
-                    }
-                }
-            }
-        }
-
-        return result;
     }
 
     public static Snap.Obj getStateDump(String jsnapRaw, FunctionExpression program) {

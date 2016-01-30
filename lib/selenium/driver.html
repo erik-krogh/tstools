@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qunit/1.18.0/qunit.css"/>
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
@@ -10,6 +11,36 @@
 
     <script>
         (function () {
+            Object.defineProperty(window, 'sendBackToTSCreateServer', {
+                enumerable: false,
+                configurable: false,
+                writable: false,
+                value: function (json) {
+                    var port = Number(getParameter("port"));
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.open("POST", "http://localhost:" + port, true);
+                    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                    xhttp.send(JSON.stringify(json));
+                }
+            });
+
+            Object.defineProperty(window, 'startDumpTSCreate', {
+                enumerable: false,
+                configurable: false,
+                writable: false,
+                value: function (callback) {
+                    var button = document.createElement("button");
+                    button.appendChild(document.createTextNode("CLick me when the script is done"));
+                    button.style.padding = "20px";
+                    button.style.fontSize = "20px"
+                    button.addEventListener("click", function ()  {
+                        callback();
+                    });
+                    document.body.insertBefore(button,document.body.childNodes[0]);
+                }
+            });
+
+
             var src = getParameter("script");
             if (!src || src == "Not found") {
                 throw new Error("No script found in URL");
@@ -40,5 +71,7 @@
             }
         })();
     </script>
+
+    <div id="qunit"></div>
 </body>
 </html>

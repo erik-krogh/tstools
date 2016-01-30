@@ -1,8 +1,6 @@
 package dk.webbies.tscreate;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,11 +19,8 @@ public class BenchMark {
     public String declarationPath;
     public final Options options;
     public final LanguageLevel languageLevel;
-    public final List<Dependency> dependencies;
-
-    private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) {
-        this(name, scriptPath, declarationPath, options, languageLevel, Collections.EMPTY_LIST);
-    }
+    public final List<Dependency> dependencies = new ArrayList<>();
+    public final List<String> testFiles = new ArrayList<>();
 
     public List<String> dependencyScripts() {
         return this.dependencies.stream().map(dependency -> dependency.scriptPath).collect(Collectors.toList());
@@ -37,22 +32,33 @@ public class BenchMark {
 
     public static final List<BenchMark> allBenchmarks = new ArrayList<>();
 
-    private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel, List<Dependency> dependencies) {
-        allBenchmarks.add(this);
+    // FIXME: Delete this constructor, and add dependencies through the field.
+    private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) {
+        BenchMark.allBenchmarks.add(this);
         this.name = name;
         this.scriptPath = scriptPath;
         this.declarationPath = declarationPath;
         this.options = options;
         this.languageLevel = languageLevel;
-        this.dependencies = Collections.unmodifiableList(dependencies);
     }
 
     public static final BenchMark underscore = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
+        options.createInstances = false;
+        options.asyncTests = true;
+        options.recordCalls = true;
+        BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
+        bench.testFiles.add("tests/underscore/tests/arrays.js");
+        bench.testFiles.add("tests/underscore/tests/chaining.js");
+        bench.testFiles.add("tests/underscore/tests/collections.js");
+//        bench.testFiles.add("tests/underscore/tests/cross-document.js");
+        bench.testFiles.add("tests/underscore/tests/functions.js");
+        bench.testFiles.add("tests/underscore/tests/objects.js");
+        bench.testFiles.add("tests/underscore/tests/utility.js");
+        bench.dependencies.add(Dependency.QUnit);
+        return bench;
     });
 
-    // FIXME: Try to make an issue on pixi-typescript about the declarations that aren't on the object, make them into interfaces instead.
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
@@ -71,17 +77,22 @@ public class BenchMark {
     public static final BenchMark angular = evaluate(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true;
+        options.recordCalls = false; // TODO: Try to enable if JSnap is changed.
         return new BenchMark("AngularJS", "tests/angular/angular.js", "tests/angular/angular.d.ts", options, ES5);
     });
 
     public static final BenchMark three = evaluate(() -> {
         Options options = new Options();
+        options.debugPrint = true;
+        options.maxEvaluationDepth = 5;
+        options.recordCalls = true;
         return new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
     });
 
     // Kind of a useless benchmark, since the hand-written .d.ts file says that it exposes 0 global variables. (But it does, there is the Sugar object).
     public static final BenchMark sugar = evaluate(() -> {
         Options options = new Options();
+        options.recordCalls = false;
         return new BenchMark("Sugar", "tests/sugar/sugar.js", "tests/sugar/sugar.d.ts", options, ES5);
     });
 
@@ -102,6 +113,7 @@ public class BenchMark {
 
     public static final BenchMark knockout = evaluate(() -> {
         Options options = new Options();
+        options.createInstancesClassFilter = true;
         return new BenchMark("Knockout", "tests/knockout/knockout.js", "tests/knockout/knockout.d.ts", options, ES5);
     });
 
@@ -112,22 +124,31 @@ public class BenchMark {
         options.createInstances = false;
         options.classOptions.useClassInstancesFromHeap = false;
         options.classOptions.useInstancesForThis = false;
+        options.recordCalls = false;
         return new BenchMark("Ext JS", "tests/extjs/ext.js", "tests/extjs/ext.d.ts", options, ES5);
     });
 
     public static final BenchMark ember = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Ember.js", "tests/ember/ember.js", "tests/ember/ember.d.ts", options, ES5, Arrays.asList(Dependency.jQuery));
+        options.createInstances = false;
+        BenchMark bench = new BenchMark("Ember.js", "tests/ember/ember.js", "tests/ember/ember.d.ts", options, ES5);
+        bench.dependencies.add(Dependency.jQuery);
+        return bench;
     });
 
     public static final BenchMark backbone = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("Backbone.js", "tests/backbone/backbone.js", "tests/backbone/backbone.d.ts", options, ES5, Arrays.asList(Dependency.underscore, Dependency.jQuery));
+        BenchMark bench = new BenchMark("Backbone.js", "tests/backbone/backbone.js", "tests/backbone/backbone.d.ts", options, ES5);
+        bench.dependencies.add(Dependency.underscore);
+        bench.dependencies.add(Dependency.jQuery);
+        return bench;
     });
 
     public static final BenchMark materialize = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", null, options, ES5, Arrays.asList(Dependency.jQuery));
+        BenchMark bench = new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", null, options, ES5);
+        bench.dependencies.add(Dependency.jQuery);
+        return bench;
     });
 
     public static final BenchMark mooTools = evaluate(() -> {
@@ -138,7 +159,7 @@ public class BenchMark {
 
     public static final BenchMark prototype = evaluate(() -> {
         Options options = new Options();
-        options.createInstancesClassFilter = true; // Needed, otherwise instances of functions end up in the wrong places, causing everything to become a method.
+        options.createInstances = false; // Otherwise, things goes to shit.
         return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5); // TODO: Does a declaration file exist? Can it?
     });
 
@@ -150,6 +171,8 @@ public class BenchMark {
 
     public static final BenchMark require = evaluate(() -> {
         Options options = new Options();
+        options.createInstances = false;
+        options.recordCalls = false;
         return new BenchMark("RequireJS", "tests/requireJS/require.js", "tests/requireJS/require.d.ts", options, ES5);
     });
 
@@ -180,7 +203,7 @@ public class BenchMark {
         Options options = new Options();
         options.debugPrint = true;
 
-        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5, Arrays.asList());
+        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
     });
 
     // SSA tests
@@ -224,7 +247,6 @@ public class BenchMark {
     public static final class Dependency {
         public final String scriptPath;
         public final String declarationPath;
-
         public Dependency(String scriptPath, String declarationPath) {
             assert scriptPath != null;
             assert declarationPath != null;
@@ -232,6 +254,7 @@ public class BenchMark {
             this.declarationPath = declarationPath;
         }
 
+        private static final Dependency QUnit = new Dependency("tests/qunit/qunit.js", "tests/qunit/qunit.d.ts");
         private static final Dependency jQuery = new Dependency("tests/jquery/jquery.js", "tests/jquery/jquery.d.ts");
         private static final Dependency underscore = new Dependency("tests/underscore/underscore.js", "tests/underscore/underscore.d.ts");
         private static final Dependency requireJS = new Dependency("tests/requireJS/require.js", "tests/requireJS/require.d.ts");

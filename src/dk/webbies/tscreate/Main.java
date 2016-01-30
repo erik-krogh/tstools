@@ -53,11 +53,11 @@ public class Main {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
 
-        String script = Util.readFile(benchMark.scriptPath);
+        String script = getScript(benchMark);
 
         FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST();
 
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts()), AST);
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts(), benchMark.testFiles, benchMark.options.asyncTests), AST);
         Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.options, benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
 
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject).extract();
@@ -70,7 +70,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
@@ -102,6 +102,15 @@ public class Main {
             Util.writeFile(resultDeclarationFilePath, printedDeclaration + evaluationString);
             return evaluation.score();
         }
+    }
+
+    private static String getScript(BenchMark benchMark) throws IOException {
+        StringBuilder result = new StringBuilder();
+        result.append(Util.readFile(benchMark.scriptPath)).append("\n");
+        for (String testFile : benchMark.testFiles) {
+            result.append(Util.readFile(testFile)).append("\n");
+        }
+        return result.toString();
     }
 
     public static void tsCheck() throws IOException {

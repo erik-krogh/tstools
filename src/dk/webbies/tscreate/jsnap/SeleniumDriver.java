@@ -3,6 +3,13 @@ package dk.webbies.tscreate.jsnap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.impl.DefaultHttpServerConnection;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.util.EntityUtils;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.logging.LogEntries;
@@ -16,6 +23,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -25,11 +33,7 @@ import java.util.logging.Level;
  * Created by Erik Krogh Kristensen on 10-11-2015.
  */
 public class SeleniumDriver {
-    public static void main(String[] args) {
-        System.out.println(executeScript("console.log(\"{\\\"global\\\":1, this is test stuff\")"));
-    }
-
-    private static String getEmptyPageUrl(String scriptPath) {
+    private static String getEmptyPageUrl(String scriptPath, int port) {
         try {
             scriptPath = URLEncoder.encode(scriptPath, "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -38,13 +42,13 @@ public class SeleniumDriver {
         boolean isWindows = System.getProperty("os.name").toLowerCase().contains("windows");
         String workingDir = System.getProperty("user.dir");
         if (isWindows) {
-            return "file:///" + workingDir + "\\lib\\selenium\\driver.html?script=" + scriptPath;
+            return "file:///" + workingDir + "\\lib\\selenium\\driver.html?script=" + scriptPath + "&port=" + port;
         } else {
-            return "file:///" + workingDir + "/lib/selenium/driver.html?script=" + scriptPath;
+            return "file:///" + workingDir + "/lib/selenium/driver.html?script=" + scriptPath + "&port=" + port;
         }
     }
 
-    public static String executeScript(String script) {
+    public static String executeScript(String script) throws IOException, HttpException {
         setDriverPath();
 
         ChromeDriver driver = new ChromeDriver(buldCapabilities());
@@ -58,23 +62,30 @@ public class SeleniumDriver {
             out.close();
         } catch (IOException e) {throw new RuntimeException();}
 
-        driver.get(getEmptyPageUrl(scriptFile.getAbsolutePath()));
+        ServerSocket socket = new ServerSocket(0);
+        int port = socket.getLocalPort();
 
-        LogEntries logEntries = driver.manage().logs().get(LogType.BROWSER);
+        System.out.println("Listening for JSNAP at port: " + port);
+
+        driver.get(getEmptyPageUrl(scriptFile.getAbsolutePath(), port));
+
+        String message = getResponse(socket);
 
         driver.close();
         driver.quit();
 
-        LogEntry jsnapEntry = findJsnapEntry(logEntries);
+        System.out.println("Message recieved, length: " + message.length());
 
-        String message = jsnapEntry.getMessage();
-        if (!message.contains(tmpFileSuffix)) {
-            throw new RuntimeException("I don't even know");
-        }
+        return message;
+    }
 
-        message = message.substring(message.indexOf(tmpFileSuffix) + tmpFileSuffix.length() + 1, message.length());
-
-        return message.substring(message.indexOf(" ") + 1, message.length());
+    private static String getResponse(ServerSocket serverSocket) throws IOException, HttpException {
+        DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
+        conn.bind(serverSocket.accept(), new BasicHttpParams());
+        HttpRequest request = conn.receiveRequestHeader();
+        conn.receiveRequestEntity((HttpEntityEnclosingRequest)request);
+        HttpEntity entity = ((HttpEntityEnclosingRequest)request).getEntity();
+        return EntityUtils.toString(entity);
     }
 
     private static LogEntry findJsnapEntry(LogEntries entries) {

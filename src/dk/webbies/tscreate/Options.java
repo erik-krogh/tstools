@@ -25,7 +25,12 @@ public class Options {
 
     public boolean debugPrint = false;
 
-    public Integer maxEvaluationDepth = null; // If set to a number, the evaluation will ignore recursive types and all that stuff, and simply follow EVERYTHING until a certain depth is reached. Note, some things that are at depth n will affect down to depth n+2 (such as for signatures with parameters).
+    public boolean FunctionDotBind = false; // Emulating Function.bind can lead to some pretty nasty things, so i leave it out for now.
+
+    public Integer maxEvaluationDepth = 1; // If set to a number, the evaluation will ignore recursive types and all that stuff, and simply follow EVERYTHING until a certain depth is reached. Note, some things that are at depth n will affect down to depth n+2 (such as for signatures with parameters).
+    public boolean asyncTests = false;
+
+    public boolean recordCalls = true;
 
     public enum Runtime {
         PHANTOM,
@@ -42,7 +47,7 @@ public class Options {
 
         // For every prototype method, use the information gained by the "this" calls.
         public boolean unionThisFromPrototypeMethods = false;
-        public boolean unionThisFromConstructor = false;
+        public boolean unionThisFromConstructor = true;
         public boolean unionThisFromConstructedObjects = false; // As in objects that are constructed using "new Foo()" inside the function we are analyzing.
         public boolean useInstancesForThis = true; // If true, then the instances on the heap, will be used to in the static analysis to get information about "this".
     }

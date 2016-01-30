@@ -7,6 +7,7 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.Identifier;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.function.Function;
@@ -139,6 +140,18 @@ public class TypeAnalysis {
             }
         }
 
+        if (closure.recordedCalls != null) {
+            for (RecordedCall call : getCalls(closure.recordedCalls)) {
+                FunctionNode newFunc = FunctionNode.create(call.arguments.size(), solver);
+                solver.union(newFunc.returnNode, heapFactory.fromValue(call.callReturn));
+
+                for (int i = 0; i < call.arguments.size(); i++) {
+                    solver.union(newFunc.arguments.get(i), heapFactory.fromValue(call.arguments.get(i)));
+                }
+                solver.union(functionNode, newFunc);
+            }
+        }
+
         Map<Identifier, UnionNode> identifierMap = new HashMap<>();
 
         new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, identifierMap, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses, options).visit(closure.function.astNode);
@@ -146,7 +159,47 @@ public class TypeAnalysis {
         new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, analyzedFunctions, this.nativeTypeFactory).visit(closure.function.astNode);
     }
 
+    private List<RecordedCall> getCalls(Snap.Obj calls) {
+        ArrayList<RecordedCall> result = new ArrayList<>();
+        for (Snap.Obj call : Util.cast(Snap.Obj.class, toArray(calls))) {
+            Snap.Value callReturn = new Snap.UndefinedConstant();
+            if (call.getProperty("return") != null) {
+                callReturn = call.getProperty("return").value;
+            }
+
+            List<Snap.Value> arguments = toArray((Snap.Obj) call.getProperty("args").value);
+            Snap.Property callThis = call.getProperty("this");
+            result.add(new RecordedCall(arguments, callReturn, callThis));
+        }
+
+        return result;
+    }
+
+    private List<Snap.Value> toArray(Snap.Obj obj) {
+        double length = ((Snap.NumberConstant) obj.getProperty("length").value).value;
+        ArrayList<Snap.Value> result = new ArrayList<>();
+        for (int i = 0; i < length; i++) {
+            Snap.Property prop = obj.getProperty(Integer.toString(i));
+            if (prop != null) {
+                result.add(prop.value);
+            }
+        }
+        return result;
+    }
+
     private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj root) {
         return JSNAPUtil.getAllObjects(root).stream().filter(obj -> obj.function != null && (obj.function.type.equals("bind") || obj.function.type.equals("user"))).collect(Collectors.toList());
+    }
+
+    private static final class RecordedCall {
+        private final List<Snap.Value> arguments;
+        private final Snap.Value callReturn;
+        private final Snap.Property callThis;
+        public RecordedCall(List<Snap.Value> arguments, Snap.Value callReturn, Snap.Property callThis) {
+
+            this.arguments = arguments;
+            this.callReturn = callReturn;
+            this.callThis = callThis;
+        }
     }
 }

@@ -78,7 +78,7 @@ public class Snap {
     }
 
     public static class NumberConstant extends Value {
-        double value;
+        public final double value;
 
         public NumberConstant(double value) {
             this.value = value;
