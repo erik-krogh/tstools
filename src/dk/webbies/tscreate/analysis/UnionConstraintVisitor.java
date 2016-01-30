@@ -576,7 +576,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         break;
                     case "user":
-                        @SuppressWarnings("RedundantCast")
+                        if (closure.getProperty("prototype").value instanceof Snap.UndefinedConstant) {
+                            break;
+                        }
                         LibraryClass clazz = typeAnalysis.libraryClasses.get((Snap.Obj) closure.getProperty("prototype").value);
                         if (clazz != null) {
                             if (typeAnalysis.options.classOptions.unionThisFromConstructedObjects) {
