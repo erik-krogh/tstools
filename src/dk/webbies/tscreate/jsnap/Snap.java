@@ -4,7 +4,6 @@ import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Container class that holds the classes that describes a runtime-snapshot of a piece of JavaScript code.
@@ -23,6 +22,7 @@ public class Snap {
         public Function function;
         public Obj env;
         public Obj prototype;
+        public Obj recordedCalls;
         public List<Property> properties;
         public Map<String, Property> propertyMap = null;
         public Property getProperty(String name) {
