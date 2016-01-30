@@ -4942,7 +4942,7 @@ declare module THREE {
         renderInstances( geometry: any ): void;
     }
     interface WebGLIndexedBufferRendererStatic{
-        (_gl: any, extensions: any, _infoRender: any): WebGLIndexedBufferRendererInstance;
+        (gl: any, properties: any, info: any): WebGLIndexedBufferRendererInstance;
     }
     export var WebGLIndexedBufferRenderer: WebGLIndexedBufferRendererStatic;
 
@@ -5718,7 +5718,7 @@ declare module THREE {
         constructor(shape?: Shape, options?: any);
         constructor(shapes?: Shape[], options?: any);
 
-        WorldUVGenerator: {
+        static WorldUVGenerator: {
             generateTopUV(geometry: Geometry, indexA: number, indexB: number, indexC: number): Vector2[];
             generateSideWallUV(geometry: Geometry, indexA: number, indexB: number, indexC: number, indexD: number): Vector2[];
         };
