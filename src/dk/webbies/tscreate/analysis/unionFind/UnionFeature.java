@@ -153,7 +153,7 @@ public class UnionFeature {
                 Argument otherArg = other.arguments.get(i);
                 if (thisArg.name.startsWith("arg")) {
                     thisArg.name = otherArg.name;
-                } else if (otherArg.name.length() > thisArg.name.length()) {
+                } else if (!otherArg.name.startsWith("arg") && otherArg.name.length() > thisArg.name.length()) {
                     thisArg.name = otherArg.name;
                 }
             }
