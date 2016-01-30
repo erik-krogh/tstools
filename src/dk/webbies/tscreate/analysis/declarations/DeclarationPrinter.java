@@ -246,16 +246,16 @@ public class DeclarationPrinter {
             printArguments(arg, clazz.getConstructorType().getArguments());
             write(arg.builder, ");\n");
 
-            Predicate<Map.Entry<String, DeclarationType>> notInSuperClassStatic = notStaticInSuperClassTest(clazz.getSuperClass());
+            Predicate<String> notInSuperClassStatic = notStaticInSuperClassTest(clazz.getSuperClass());
             for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet()) {
-                if (notInSuperClassStatic.test(entry)) {
+                if (notInSuperClassStatic.test(entry.getKey())) {
                     printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
                 }
             }
 
-            Predicate<Map.Entry<String, DeclarationType>> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
+            Predicate<String> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
             for (Map.Entry<String, DeclarationType> entry : clazz.getPrototypeFields().entrySet()) {
-                if (notInSuperClass.test(entry)) {
+                if (notInSuperClass.test(entry.getKey())) {
                     this.printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor());
                 }
             }
@@ -537,7 +537,8 @@ public class DeclarationPrinter {
 
 
                 ident++;
-                classType.getPrototypeFields().entrySet().stream().filter(notInSuperClassTest(classType.getSuperClass())).forEach((entry) -> {
+                Predicate<String> notInSuperClassTest = notInSuperClassTest(classType.getSuperClass());
+                classType.getPrototypeFields().entrySet().stream().filter((entry) -> notInSuperClassTest.test(entry.getKey())).forEach((entry) -> {
                     printObjectField(arg, entry.getKey(), entry.getValue(), this);
                 });
 
@@ -569,7 +570,7 @@ public class DeclarationPrinter {
         }
     }
 
-    private Predicate<Map.Entry<String, DeclarationType>> notInSuperClassTest(DeclarationType superClass) {
+    private Predicate<String> notInSuperClassTest(DeclarationType superClass) {
         Set<String> fieldsInSuper = new HashSet<>();
         while (superClass != null) {
             if (superClass instanceof ClassType) {
@@ -589,7 +590,7 @@ public class DeclarationPrinter {
                 throw new RuntimeException();
             }
         }
-        return (entry) -> !fieldsInSuper.contains(entry.getKey());
+        return (name) -> !fieldsInSuper.contains(name);
     }
 
     private Set<String> keysFrom(Type type) {
@@ -605,7 +606,7 @@ public class DeclarationPrinter {
         throw new RuntimeException("Not yet! " + type.getClass().getSimpleName());
     }
 
-    private Predicate<Map.Entry<String, DeclarationType>> notStaticInSuperClassTest(DeclarationType superClass) {
+    private Predicate<String> notStaticInSuperClassTest(DeclarationType superClass) {
         Set<String> fieldsInSuper = new HashSet<>();
         while (superClass != null) {
             if (superClass instanceof ClassType) {
@@ -622,7 +623,7 @@ public class DeclarationPrinter {
                 throw new RuntimeException();
             }
         }
-        return (entry) -> !fieldsInSuper.contains(entry.getKey());
+        return (name) -> !fieldsInSuper.contains(name);
     }
 
     // Functional set things
