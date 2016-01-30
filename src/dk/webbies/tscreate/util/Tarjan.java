@@ -88,7 +88,7 @@ public class Tarjan<T extends Tarjan.Node<T>> {
 
     private int markLevel(T node, int iteration) {
         if (node.visited == iteration) {
-            return node.low;
+            throw new RuntimeException(); // FIXME: This apparently happens when unifying calls instead of subsets.
         } else {
             int max = 0;
             for (T edge : node.getEdges()) {
