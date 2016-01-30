@@ -104,7 +104,7 @@ public class DeclarationParser {
 
         try {
             String specification = Util.getCachedOrRunNode(cachePath, toCheckAgainst, runString);
-            return new SpecReader(specification.split("\\n")[1]);
+            return new SpecReader(specification.split("\\n")[specification.split("\\n").length - 1]);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
