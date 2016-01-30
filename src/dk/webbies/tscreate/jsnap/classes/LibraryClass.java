@@ -147,6 +147,7 @@ public class LibraryClass {
     }
 
     public void addInstance(Snap.Obj instance) {
+        // FIXME: Make sure that the prototype on the instance match.
         this.instances.add(instance);
         if (this.superClass != null && this.superClass != this) {
             this.superClass.addInstance(instance);
