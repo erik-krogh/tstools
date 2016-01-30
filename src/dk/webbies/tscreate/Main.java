@@ -32,13 +32,15 @@ public class Main {
             long start = System.currentTimeMillis();
 
 //            tsCheck();
-//            runAnalysis(BenchMark.PIXI);
+//            generateAllDeclarations();
+            runAnalysis(BenchMark.test);
 //            benchAll();
-            printTable();
+//            printTable();
+
 
             long end = System.currentTimeMillis();
 
-            System.out.println("Ran in " + ((end - start) / 1000.0) + "s");
+            System.out.println("Ran in " + Util.toFixed((end - start) / 1000.0, 1) + "s");
         } catch (Throwable e) {
             System.err.println("Crashed: ");
             e.printStackTrace(System.err);
@@ -73,13 +75,14 @@ public class Main {
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
         Evaluation evaluation = null;
+        String debugString = null;
         if (benchMark.declarationPath != null) {
             evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.options).getEvaluation();
 
             System.out.println(evaluation);
 
             if (benchMark.options.debugPrint) {
-                evaluation.debugPrint();
+                debugString = evaluation.debugPrint();
             }
         }
 
@@ -92,7 +95,11 @@ public class Main {
         if (evaluation == null) {
             return new Score(Double.NaN, Double.NaN, Double.NaN);
         } else {
-            Util.writeFile(resultDeclarationFilePath, printedDeclaration + "\n\n/*\n" + evaluation.toString() + "\n*/\n");
+            String evaluationString = "\n\n/*\n" + evaluation.toString() + "\n*/\n";
+            if (debugString != null) {
+                evaluationString = "\n\n/*\n" + debugString + "\n\n*/\n" + evaluationString;
+            }
+            Util.writeFile(resultDeclarationFilePath, printedDeclaration + evaluationString);
             return evaluation.score();
         }
     }
@@ -115,6 +122,16 @@ public class Main {
 
         System.out.println();
         System.out.println("Combined score: " + combinedScore);
+    }
+
+    private static void generateAllDeclarations() throws IOException {
+        double combinedScore = 0;
+        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+            benchmark.declarationPath = null;
+            runAnalysis(benchmark);
+        }
+
+        System.out.println("Generated all declarations");
     }
 
     private static void printTable() throws IOException {
