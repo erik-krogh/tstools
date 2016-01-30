@@ -124,7 +124,7 @@ public class HeapValueFactory {
         if (value instanceof Snap.Obj) {
             return null;
         }
-        throw new RuntimeException();
+        return primitivesBuilder.undefined(); // TODO: Maybe fix whatever is causing this.
     }
 
     private FunctionNode getGetterSetterNode(Snap.Obj closure) {
