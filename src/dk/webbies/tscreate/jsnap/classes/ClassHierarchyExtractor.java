@@ -1,9 +1,9 @@
 package dk.webbies.tscreate.jsnap.classes;
 
+import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * Created by webbies on 31-08-2015.
@@ -111,27 +111,20 @@ public class ClassHierarchyExtractor {
             }
         }
 
-        VisitEntireHeap.visit(this.globalObject, (value) -> {
-            if (value instanceof Snap.Obj) {
-                // Marking every class, that has an instance in the heap.
-                Snap.Obj obj = (Snap.Obj) value;
-                if (obj.prototype != null) {
-                    LibraryClass libraryClass = libraryClasses.get(obj.prototype);
-                    if (libraryClass != null) {
-                        libraryClass.isUsedAsClass = true;
-                    }
-                }
-
-                // Checking if it is an instance of a class, and saving it.
-                if (obj.prototype != null && libraryClasses.containsKey(obj.prototype)) {
-                    LibraryClass clazz = libraryClasses.get(obj.prototype);
-                    clazz.addInstance(obj);
+        for (Snap.Obj obj : JSNAPUtil.getAllObjects(this.globalObject)) {
+            if (obj.prototype != null) {
+                LibraryClass libraryClass = libraryClasses.get(obj.prototype);
+                if (libraryClass != null) {
+                    libraryClass.isUsedAsClass = true;
                 }
             }
 
-
-            return null;
-        });
+            // Checking if it is an instance of a class, and saving it.
+            if (obj.prototype != null && libraryClasses.containsKey(obj.prototype)) {
+                LibraryClass clazz = libraryClasses.get(obj.prototype);
+                clazz.addInstance(obj);
+            }
+        }
 
         markPrototypeFunctions(libraryClasses);
 
@@ -183,71 +176,6 @@ public class ClassHierarchyExtractor {
                         libraryClass.isUsedAsClass = true;
                     }
                 }
-            }
-        }
-    }
-
-    private static final class VisitEntireHeap {
-        private final HashSet<Snap.Obj> seen = new HashSet<>();
-        private List<Function<Snap.Value, Void>> callbacks;
-
-        private VisitEntireHeap(List<Function<Snap.Value, Void>> callbacks) {
-            this.callbacks = callbacks;
-        }
-
-        public static void visit(Snap.Obj globalObject, Function<Snap.Value, Void>... functions) {
-            new VisitEntireHeap(Arrays.asList(functions)).visit(globalObject);
-        }
-
-
-        private void visit(Snap.Value value) {
-            //noinspection RedundantCast
-            if (value instanceof Snap.Obj && seen.contains((Snap.Obj)value)) {
-                return;
-            }
-
-            for (Function<Snap.Value, Void> function : callbacks) {
-                function.apply(value);
-            }
-
-            if (!(value instanceof Snap.Obj)) {
-                return;
-            }
-            Snap.Obj obj = (Snap.Obj) value;
-            seen.add(obj);
-
-            for (Snap.Property prop : obj.getPropertyMap().values()) {
-                visitProp(prop);
-            }
-
-            if (obj.env != null && obj.env.properties != null) {
-                for (Snap.Property prop : obj.env.getPropertyMap().values()) {
-                    visitProp(prop);
-                }
-            }
-
-            if (obj.recordedCalls != null) {
-                for (Snap.Property prop : obj.recordedCalls.getPropertyMap().values()) {
-                    visitProp(prop);
-                }
-            }
-
-            if (obj.prototype != null && obj.prototype.properties != null) {
-                for (Snap.Property prop : obj.prototype.getPropertyMap().values()) {
-                    visitProp(prop);
-                }
-            }
-        }
-
-        private void visitProp(Snap.Property prop) {
-            if (prop.value instanceof Snap.Obj) {
-                visit(prop.value);
-            }
-            if (prop.get != null && !(prop.get instanceof Snap.UndefinedConstant)) {
-                visit(prop.get);
-            }
-            if (prop.set != null && !(prop.set instanceof Snap.UndefinedConstant)) {
-                visit(prop.set);
             }
         }
     }
