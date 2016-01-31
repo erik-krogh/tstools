@@ -55,8 +55,8 @@ public class TypeReducer {
         register(new ClassInstanceUnnamedObjectReducer());
         register(new ClassInstanceReducer(originals));
         register(new DynamicAccessReducer(this, originals));
-        register(new NamedObjectReducer(globalObject, nativeClasses, originals));
-        register(new DynamicAccessNamedObjectReducer(nativeClasses));
+        register(new NamedObjectReducer(globalObject, nativeClasses, originals, this));
+        register(new DynamicAccessNamedObjectReducer(nativeClasses, this));
         register(new FunctionNamedObjectReducer(nativeClasses));
 
         // The ones that I cant do anything about.

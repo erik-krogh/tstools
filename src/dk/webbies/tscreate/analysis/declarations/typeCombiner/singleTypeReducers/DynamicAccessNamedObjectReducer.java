@@ -4,6 +4,8 @@ import dk.au.cs.casa.typescript.types.GenericType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.DynamicAccessType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
@@ -14,9 +16,11 @@ import dk.webbies.tscreate.declarationReader.DeclarationParser;
  */
 public class DynamicAccessNamedObjectReducer implements SingleTypeReducer<DynamicAccessType, NamedObjectType> {
     private final DeclarationParser.NativeClassesMap nativeClasses;
+    private final TypeReducer combiner;
 
-    public DynamicAccessNamedObjectReducer(DeclarationParser.NativeClassesMap nativeClasses) {
+    public DynamicAccessNamedObjectReducer(DeclarationParser.NativeClassesMap nativeClasses, TypeReducer combiner) {
         this.nativeClasses = nativeClasses;
+        this.combiner = combiner;
     }
 
     @Override
@@ -31,6 +35,13 @@ public class DynamicAccessNamedObjectReducer implements SingleTypeReducer<Dynami
 
     @Override
     public DeclarationType reduce(DynamicAccessType dynamic, NamedObjectType named) {
+        if (named.getName().equals("Array")) {
+            CombinationType arrayType = new CombinationType(combiner, dynamic.getReturnType());
+            if (named.indexType != null) {
+                arrayType.addType(named.indexType);
+            }
+            return new NamedObjectType("Array", arrayType);
+        }
         Type type = nativeClasses.typeFromName(named.getName());
         if (type == null) {
             return null;

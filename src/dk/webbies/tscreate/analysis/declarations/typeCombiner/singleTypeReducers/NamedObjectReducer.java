@@ -1,6 +1,8 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
@@ -15,11 +17,13 @@ import java.util.Map;
 public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> {
     private final Snap.Obj global;
     private final NativeClassesMap nativeClasses;
+    private final TypeReducer combiner;
 
-    public NamedObjectReducer(Snap.Obj global, NativeClassesMap nativeClasses, Map<DeclarationType, List<DeclarationType>> originals) {
+    public NamedObjectReducer(Snap.Obj global, NativeClassesMap nativeClasses, Map<DeclarationType, List<DeclarationType>> originals, TypeReducer combiner) {
         super(originals);
         this.global = global;
         this.nativeClasses = nativeClasses;
+        this.combiner = combiner;
     }
 
     @Override
@@ -62,7 +66,11 @@ public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> {
     }
 
     private NamedObjectType returnSuper(NamedObjectType superType, NamedObjectType subType) {
-        NamedObjectType result = new NamedObjectType(superType.getName());
+        CombinationType arrayType = null;
+        if (superType.indexType != null || subType.indexType != null) {
+            arrayType = new CombinationType(combiner, superType.indexType, subType.indexType);
+        }
+        NamedObjectType result = new NamedObjectType(superType.getName(), arrayType);
         result.addKnownSubTypes(superType.getKnownSubTypes());
         result.addKnownSubTypes(subType.getKnownSubTypes());
         result.addKnownSubType(subType.getName());

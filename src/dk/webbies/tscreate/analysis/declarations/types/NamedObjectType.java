@@ -9,8 +9,15 @@ public class NamedObjectType extends ObjectType {
     private String name;
     private Set<String> knownSubTypes = new HashSet<>();
 
+    public final DeclarationType indexType; // For generic arrays.
+
     public NamedObjectType(String name) {
+        this(name, null);
+    }
+
+    public NamedObjectType(String name, DeclarationType indexType) {
         this.name = name;
+        this.indexType = indexType;
     }
 
     public String getName() {
@@ -39,3 +46,5 @@ public class NamedObjectType extends ObjectType {
         this.knownSubTypes.add(knownSubTypes);
     }
 }
+
+
