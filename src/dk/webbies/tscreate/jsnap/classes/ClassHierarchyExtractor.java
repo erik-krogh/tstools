@@ -226,6 +226,12 @@ public class ClassHierarchyExtractor {
                 }
             }
 
+            if (obj.recordedCalls != null) {
+                for (Snap.Property prop : obj.recordedCalls.getPropertyMap().values()) {
+                    visitProp(prop);
+                }
+            }
+
             if (obj.prototype != null && obj.prototype.properties != null) {
                 for (Snap.Property prop : obj.prototype.getPropertyMap().values()) {
                     visitProp(prop);
