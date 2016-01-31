@@ -32,7 +32,6 @@ public class BenchMark {
 
     public static final List<BenchMark> allBenchmarks = new ArrayList<>();
 
-    // FIXME: Delete this constructor, and add dependencies through the field.
     private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) {
         BenchMark.allBenchmarks.add(this);
         this.name = name;
@@ -44,10 +43,14 @@ public class BenchMark {
 
     public static final BenchMark underscore = evaluate(() -> {
         Options options = new Options();
-        options.createInstances = false;
+        options.createInstances = true;
+        options.createInstancesClassFilter = true;
         options.asyncTests = true;
         options.recordCalls = true;
         BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
+
+        bench.dependencies.add(Dependency.QUnit);
+
         bench.testFiles.add("tests/underscore/tests/arrays.js");
         bench.testFiles.add("tests/underscore/tests/chaining.js");
         bench.testFiles.add("tests/underscore/tests/collections.js");
@@ -55,12 +58,12 @@ public class BenchMark {
         bench.testFiles.add("tests/underscore/tests/functions.js");
         bench.testFiles.add("tests/underscore/tests/objects.js");
         bench.testFiles.add("tests/underscore/tests/utility.js");
-        bench.dependencies.add(Dependency.QUnit);
         return bench;
     });
 
     public static final BenchMark PIXI = evaluate(() -> {
         Options options = new Options();
+        options.recordCalls = false;
         return new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
     });
 
@@ -77,7 +80,7 @@ public class BenchMark {
     public static final BenchMark angular = evaluate(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true;
-        options.recordCalls = false; // TODO: Try to enable if JSnap is changed.
+        options.recordCalls = false;
         return new BenchMark("AngularJS", "tests/angular/angular.js", "tests/angular/angular.d.ts", options, ES5);
     });
 

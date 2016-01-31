@@ -40,19 +40,24 @@ public class DeclarationPrinter {
         this.nativeClasses = nativeClasses;
     }
 
-    private void addPrintAsInterface(fj.data.List<DeclarationType> functionalTypesList) {
-        List<DeclarationType> types = new ArrayList<>();
-        functionalTypesList.forEach(types::add);
-
-
+    private void addPrintAsInterface(fj.data.List<DeclarationType> functionalTypesList, DeclarationType singleType) {
         DeclarationType type = null;
-        for (DeclarationType candidate : types) {
-            if (candidate instanceof FunctionType || candidate instanceof UnnamedObjectType || candidate instanceof DynamicAccessType) {
-                type = candidate;
-                break;
+
+        if (functionalTypesList != null) {
+            List<DeclarationType> types = new ArrayList<>();
+            functionalTypesList.forEach(types::add);
+
+
+            for (DeclarationType candidate : types) {
+                if (candidate instanceof FunctionType || candidate instanceof UnnamedObjectType || candidate instanceof DynamicAccessType) {
+                    type = candidate;
+                    break;
+                }
             }
+            assert type != null;
+        } else {
+            type = singleType;
         }
-        assert type != null;
 
         type = type.resolve();
         if (type instanceof FunctionType) {
@@ -139,7 +144,7 @@ public class DeclarationPrinter {
                     break;
                 } catch (GotCyclic e) {
                     ident = 0;
-                    addPrintAsInterface(e.types);
+                    addPrintAsInterface(e.types, e.singleType);
                 }
             }
             outerBuilder.append(builder);
@@ -162,7 +167,7 @@ public class DeclarationPrinter {
                 }
             } catch (GotCyclic e) {
                 ident = 0;
-                addPrintAsInterface(e.types);
+                addPrintAsInterface(e.types, e.singleType);
                 printedClasses.clear();
                 continue;
             }
@@ -332,9 +337,16 @@ public class DeclarationPrinter {
 
     private static final class GotCyclic extends RuntimeException {
         final fj.data.List<DeclarationType> types;
+        final DeclarationType singleType;
 
         private GotCyclic(fj.data.List<DeclarationType> types) {
             this.types = types;
+            this.singleType = null;
+        }
+
+        private GotCyclic(DeclarationType type) {
+            this.singleType = type;
+            this.types = null;
         }
     }
 
@@ -489,7 +501,7 @@ public class DeclarationPrinter {
         public Void visit(NamedObjectType namedObjectType, VisitorArg arg) {
             switch (namedObjectType.getName()) {
                 case "Array":
-                    write(arg.builder, "Array<any>");
+                    printArray(arg, namedObjectType.indexType);
                     break;
                 case "NodeListOf":
                     write(arg.builder, "NodeListOf<any>");
@@ -499,6 +511,47 @@ public class DeclarationPrinter {
                     break;
             }
             return null;
+        }
+
+        private void printArray(VisitorArg arg, DeclarationType indexType) {
+            if (indexType == null) {
+                arg.builder.append("Array<any>");
+                return;
+            }
+            indexType = indexType.resolve();
+            if (indexType instanceof PrimitiveDeclarationType) {
+                PrimitiveDeclarationType prim = (PrimitiveDeclarationType) indexType;
+                if (prim.getType() == PrimitiveDeclarationType.Type.STRING_OR_NUMBER || prim.getType() == PrimitiveDeclarationType.Type.VOID) {
+                    arg.builder.append("Array<any>");
+                } else {
+                    arg.builder.append(prim.getPrettyString());
+                    arg.builder.append("[]");
+                }
+            } else if (indexType instanceof UnionDeclarationType){
+                arg.builder.append("Array<any>");
+            } else if (indexType instanceof NamedObjectType) {
+                if (arg.contains(indexType)) {
+                    arg.builder.append("any");
+                } else {
+                    arg.builder.append("Array<");
+                    indexType.accept(this, arg.cons(indexType, true));
+                    arg.builder.append(">");
+                }
+            } else if (indexType instanceof UnnamedObjectType || indexType instanceof FunctionType || indexType instanceof DynamicAccessType) {
+                if (printsAsInterface.containsKey(indexType)) {
+                    arg.builder.append("Array<");
+                    indexType.accept(this, arg);
+                    arg.builder.append(">");
+                } else {
+                    throw new GotCyclic(indexType);
+                }
+            } else if (indexType instanceof InterfaceType || indexType instanceof ClassInstanceType) {
+                arg.builder.append("Array<");
+                indexType.accept(this, arg);
+                arg.builder.append(">");
+            } else {
+                throw new RuntimeException("Havn't considered arrays of " + indexType.getClass().getSimpleName() + " yet!");
+            }
         }
 
         @Override
