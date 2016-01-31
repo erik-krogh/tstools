@@ -15,9 +15,14 @@ public class CombinationType extends DeclarationType {
     private boolean hasBeenUnfolded = false;
 
     public CombinationType(TypeReducer combiner, List<DeclarationType> types) {
+        if (combiner == null) {
+            throw new NullPointerException();
+        }
         this.combiner = combiner;
         for (DeclarationType type : types) {
-            addType(type);
+            if (type != null) {
+                addType(type);
+            }
         }
     }
 
