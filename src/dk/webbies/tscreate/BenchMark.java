@@ -1,7 +1,13 @@
 package dk.webbies.tscreate;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.Main.LanguageLevel;
@@ -20,14 +26,27 @@ public class BenchMark {
     public final Options options;
     public final LanguageLevel languageLevel;
     public final List<Dependency> dependencies = new ArrayList<>();
-    public final List<String> testFiles = new ArrayList<>();
+    public List<String> testFiles = new ArrayList<>();
 
     public List<String> dependencyScripts() {
         return this.dependencies.stream().map(dependency -> dependency.scriptPath).collect(Collectors.toList());
     }
 
     public List<String> dependencyDeclarations() {
-        return this.dependencies.stream().map(dependency -> dependency.declarationPath).collect(Collectors.toList());
+        return this.dependencies.stream().map(dependency -> dependency.declarationPath).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    private static void addTestFiles(BenchMark bench, String folderPath) {
+        try {
+            Files.walk(Paths.get(folderPath))
+                    .filter(Files::isRegularFile)
+                    .map(Path::toFile).map(File::getPath)
+                    .forEach(bench.testFiles::add);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 
     public static final List<BenchMark> allBenchmarks = new ArrayList<>();
@@ -45,7 +64,7 @@ public class BenchMark {
         Options options = new Options();
         options.createInstances = true;
         options.createInstancesClassFilter = true;
-        options.asyncTests = true;
+        options.asyncTest = true;
         options.recordCalls = true;
         BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
 
@@ -74,7 +93,40 @@ public class BenchMark {
 
     public static final BenchMark jQuery = evaluate(() -> {
         Options options = new Options();
-        return new BenchMark("jQuery", "tests/jquery/jquery.js", "tests/jquery/jquery.d.ts", options, ES5);
+        options.recordCalls = true;
+        options.asyncTest = true;
+        options.maxObjects = 50;
+        BenchMark bench = new BenchMark("jQuery", "tests/jquery/jquery.js", "tests/jquery/jquery.d.ts", options, ES5);
+
+        bench.dependencies.add(Dependency.QUnit);
+
+
+//        bench.testFiles.add("tests/jquery/tests/ajax.js");
+//        bench.testFiles.add("tests/jquery/tests/animation.js");
+        bench.testFiles.add("tests/jquery/tests/attributes.js");
+//        bench.testFiles.add("tests/jquery/tests/basic.js");
+        bench.testFiles.add("tests/jquery/tests/callbacks.js");
+//        bench.testFiles.add("tests/jquery/tests/core.js");
+//        bench.testFiles.add("tests/jquery/tests/css.js");
+//        bench.testFiles.add("tests/jquery/tests/data.js");
+//        bench.testFiles.add("tests/jquery/tests/deferred.js");
+//        bench.testFiles.add("tests/jquery/tests/deprecated.js");
+//        bench.testFiles.add("tests/jquery/tests/dimensions.js");
+//        bench.testFiles.add("tests/jquery/tests/effects.js");
+//        bench.testFiles.add("tests/jquery/tests/event.js");
+//        bench.testFiles.add("tests/jquery/tests/exports.js");
+//        bench.testFiles.add("tests/jquery/tests/manipulation.js");
+//        bench.testFiles.add("tests/jquery/tests/offset.js");
+//        bench.testFiles.add("tests/jquery/tests/queue.js");
+//        bench.testFiles.add("tests/jquery/tests/ready.js");
+//        bench.testFiles.add("tests/jquery/tests/selector.js");
+//        bench.testFiles.add("tests/jquery/tests/serialize.js");
+//        bench.testFiles.add("tests/jquery/tests/support.js");
+//        bench.testFiles.add("tests/jquery/tests/traversing.js");
+//        bench.testFiles.add("tests/jquery/tests/tween.js");
+//        bench.testFiles.add("tests/jquery/tests/wrap.js");
+
+        return bench;
     });
 
     public static final BenchMark angular = evaluate(() -> {
@@ -86,10 +138,69 @@ public class BenchMark {
 
     public static final BenchMark three = evaluate(() -> {
         Options options = new Options();
-        options.debugPrint = true;
+//        options.debugPrint = true;
         options.maxEvaluationDepth = 5;
         options.recordCalls = true;
-        return new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
+        options.asyncTest = true;
+        options.maxObjects = 50;
+        BenchMark bench = new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
+        bench.dependencies.add(Dependency.underscore);
+        bench.dependencies.add(Dependency.QUnit);
+        bench.dependencies.add(Dependency.QUnit_Utils);
+
+        // addTestFiles(bench, "tests/three/tests/"); // TODO: When everything works.
+        bench.testFiles.add("tests/three/tests/cameras/Camera.js");
+        bench.testFiles.add("tests/three/tests/cameras/OrthographicCamera.js");
+        bench.testFiles.add("tests/three/tests/cameras/PerspectiveCamera.js");
+        bench.testFiles.add("tests/three/tests/core/BufferAttribute.js");
+        bench.testFiles.add("tests/three/tests/core/BufferGeometry.js");
+        bench.testFiles.add("tests/three/tests/core/Clock.js");
+        bench.testFiles.add("tests/three/tests/core/EventDispatcher.js");
+        bench.testFiles.add("tests/three/tests/core/Object3D.js");
+        bench.testFiles.add("tests/three/tests/extras/geometries/BoxGeometry.tests.js");
+        bench.testFiles.add("tests/three/tests/extras/geometries/CircleBufferGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/CircleGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/CylinderGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/DodecahedronGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/ExtrudeGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/IcosahedronGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/LatheGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/OctahedronGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/ParametricGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/PlaneBufferGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/PlaneGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/RingGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/SphereBufferGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/SphereGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/TetrahedronGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/TorusGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/TorusKnotGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/ImageUtils.test.js");
+        bench.testFiles.add("tests/three/tests/geometry/EdgesGeometry.js");
+        bench.testFiles.add("tests/three/tests/lights/AmbientLight.tests.js");
+        bench.testFiles.add("tests/three/tests/lights/DirectionalLight.tests.js");
+        bench.testFiles.add("tests/three/tests/lights/HemisphereLight.tests.js");
+        bench.testFiles.add("tests/three/tests/lights/PointLight.tests.js");
+        bench.testFiles.add("tests/three/tests/lights/SpotLight.tests.js");
+        bench.testFiles.add("tests/three/tests/math/Box2.js");
+        bench.testFiles.add("tests/three/tests/math/Box3.js");
+        bench.testFiles.add("tests/three/tests/math/Color.js");
+//        bench.testFiles.add("tests/three/tests/math/Constants.js");
+        bench.testFiles.add("tests/three/tests/math/Euler.js");
+        bench.testFiles.add("tests/three/tests/math/Frustum.js");
+        bench.testFiles.add("tests/three/tests/math/Line3.js");
+        bench.testFiles.add("tests/three/tests/math/Math.js");
+        bench.testFiles.add("tests/three/tests/math/Matrix3.js");
+        bench.testFiles.add("tests/three/tests/math/Matrix4.js");
+        bench.testFiles.add("tests/three/tests/math/Plane.js");
+        bench.testFiles.add("tests/three/tests/math/Quaternion.js");
+        bench.testFiles.add("tests/three/tests/math/Ray.js");
+        bench.testFiles.add("tests/three/tests/math/Sphere.js");
+        bench.testFiles.add("tests/three/tests/math/Triangle.js");
+        bench.testFiles.add("tests/three/tests/math/Vector2.js");
+        bench.testFiles.add("tests/three/tests/math/Vector3.js");
+        bench.testFiles.add("tests/three/tests/math/Vector4.js");
+        return bench;
     });
 
     // Kind of a useless benchmark, since the hand-written .d.ts file says that it exposes 0 global variables. (But it does, there is the Sugar object).
@@ -252,12 +363,12 @@ public class BenchMark {
         public final String declarationPath;
         public Dependency(String scriptPath, String declarationPath) {
             assert scriptPath != null;
-            assert declarationPath != null;
             this.scriptPath = scriptPath;
             this.declarationPath = declarationPath;
         }
 
         private static final Dependency QUnit = new Dependency("tests/qunit/qunit.js", "tests/qunit/qunit.d.ts");
+        private static final Dependency QUnit_Utils = new Dependency("tests/qunit/qunit-utils.js", null); // Also requires underscore
         private static final Dependency jQuery = new Dependency("tests/jquery/jquery.js", "tests/jquery/jquery.d.ts");
         private static final Dependency underscore = new Dependency("tests/underscore/underscore.js", "tests/underscore/underscore.d.ts");
         private static final Dependency requireJS = new Dependency("tests/requireJS/require.js", "tests/requireJS/require.d.ts");
