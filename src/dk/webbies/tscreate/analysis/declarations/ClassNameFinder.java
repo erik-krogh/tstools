@@ -4,6 +4,7 @@ import dk.webbies.tscreate.analysis.declarations.types.*;
 import fj.data.Set;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -91,7 +92,20 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
     }
 
     public Map<ClassType, String> getClassNames() {
-        return classNames;
+        // Making sure that also the super-classes have names.
+        HashMap<ClassType, String> result = new HashMap<>(classNames);
+        boolean change = true;
+        while (change) {
+            change = false;
+            for (ClassType clazz : new ArrayList<>(result.keySet())) {
+                //noinspection SuspiciousMethodCalls
+                if (clazz.getSuperClass() != null && !result.containsKey(clazz.getSuperClass())) {
+                    result.remove(clazz);
+                    change = true;
+                }
+            }
+        }
+        return result;
     }
 
     static final class Arg {
