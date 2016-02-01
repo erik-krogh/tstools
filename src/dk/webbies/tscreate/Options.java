@@ -28,9 +28,10 @@ public class Options {
     public boolean FunctionDotBind = false; // Emulating Function.bind can lead to some pretty nasty things, so i leave it out for now.
 
     public Integer maxEvaluationDepth = 1; // If set to a number, the evaluation will ignore recursive types and all that stuff, and simply follow EVERYTHING until a certain depth is reached. Note, some things that are at depth n will affect down to depth n+2 (such as for signatures with parameters).
-    public boolean asyncTests = false;
+    public boolean asyncTest = false;
 
     public boolean recordCalls = true;
+    public int maxObjects = 1000;
 
     public enum Runtime {
         PHANTOM,

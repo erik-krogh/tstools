@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.jsnap.classes;
 
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
 import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
@@ -34,8 +35,10 @@ public class LibraryClass {
     private Snap.Obj constructor;
     public boolean prototypeMethod = false;
     private Set<Expression> uniqueConstructionSites = new HashSet<>();
+    private Options options;
 
-    public LibraryClass(String pathSeen, Snap.Obj prototype) {
+    public LibraryClass(String pathSeen, Snap.Obj prototype, Options options) {
+        this.options = options;
         this.pathsSeen.add(pathSeen);
         this.prototype = prototype;
     }
@@ -185,7 +188,11 @@ public class LibraryClass {
     }
 
     public List<UnionNode> getThisNodeFromInstances(HeapValueFactory heapFactory) {
-        return this.instances.stream().map(heapFactory::fromValue).collect(Collectors.toList());
+        List<Snap.Obj> instances = this.instances;
+        if (this.instances.size() > options.maxObjects) {
+            instances = this.instances.subList(0, options.maxObjects);
+        }
+        return instances.stream().map(heapFactory::fromValue).collect(Collectors.toList());
     }
 
     public List<Snap.Obj> getInstances() {

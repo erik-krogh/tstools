@@ -67,7 +67,7 @@ public class TypeAnalysis {
 
         int counter = 0;
         for (Snap.Obj closure : functionNodes.keySet()) {
-//            System.out.println(++counter + "/" + functionNodes.size());
+            System.out.println(++counter + "/" + functionNodes.size());
 
             FunctionNode functionNode = functionNodes.get(closure);
 
@@ -76,7 +76,9 @@ public class TypeAnalysis {
             solver.finish();
         }
 
+        counter = 0;
         for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
+            System.out.println("(2) " + ++counter + "/" + functionNodes.size());
             Snap.Obj closure = entry.getKey();
             FunctionNode functionNode = entry.getValue();
 
@@ -141,7 +143,11 @@ public class TypeAnalysis {
         }
 
         if (closure.recordedCalls != null) {
-            for (RecordedCall call : getCalls(closure.recordedCalls)) {
+            List<RecordedCall> calls = getCalls(closure.recordedCalls);
+            if (calls.size() > options.maxObjects) {
+                calls = calls.subList(0, options.maxObjects);
+            }
+            for (RecordedCall call : calls) {
                 FunctionNode newFunc = FunctionNode.create(call.arguments.size(), solver);
                 solver.union(newFunc.returnNode, heapFactory.fromValue(call.callReturn));
 
