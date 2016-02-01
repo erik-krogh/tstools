@@ -33,6 +33,8 @@ public class Options {
     public boolean recordCalls = true;
     public int maxObjects = 1000;
 
+    public boolean skipStaticAnalysisWhenPossible = true; // Doesn't actually do much difference.
+
     public enum Runtime {
         PHANTOM,
         CHROME,

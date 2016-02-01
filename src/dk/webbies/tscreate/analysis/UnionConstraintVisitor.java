@@ -28,7 +28,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     private TypeAnalysis typeAnalysis;
     private final PrimitiveNode.Factory primitiveFactory;
     private HeapValueFactory heapFactory;
-    private Set<Snap.Obj> analyzedFunction;
     private NativeTypeFactory nativeTypeFactory;
 
     public UnionConstraintVisitor(
@@ -39,7 +38,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
             TypeAnalysis typeAnalysis,
-            Set<Snap.Obj> analyzedFunction,
             NativeTypeFactory nativeTypeFactory) {
         this.closure = closure;
         this.solver = solver;
@@ -48,7 +46,6 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.functionNode = functionNode;
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
-        this.analyzedFunction = analyzedFunction;
         this.nativeTypeFactory = nativeTypeFactory;
         this.primitiveFactory = new PrimitiveNode.Factory(solver, typeAnalysis.globalObject);
     }
@@ -295,7 +292,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new UnionConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, analyzedFunction, this.nativeTypeFactory).visit(function.getBody());
+            new UnionConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(new IncludeNode(solver, parameter), result.arguments.get(i), primitiveFactory.nonVoid());

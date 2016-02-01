@@ -6,10 +6,11 @@ import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
-import dk.webbies.tscreate.paser.AST.Identifier;
+import dk.webbies.tscreate.paser.AST.*;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -68,10 +69,19 @@ public class TypeAnalysis {
         int counter = 0;
         for (Snap.Obj closure : functionNodes.keySet()) {
             System.out.println(++counter + "/" + functionNodes.size());
-
             FunctionNode functionNode = functionNodes.get(closure);
 
-            analyse(closure, functionNodes, solver, functionNode, heapFactory, new HashSet<>());
+            if (options.skipStaticAnalysisWhenPossible) {
+                if (canGetEverythingFromRecordedCalls(closure)) {
+                    addCallsToFunction(closure, solver, functionNode, heapFactory);
+                } else {
+                    analyse(closure, functionNodes, solver, functionNode, heapFactory);
+                }
+            } else {
+                analyse(closure, functionNodes, solver, functionNode, heapFactory);
+            }
+
+
 
             solver.finish();
         }
@@ -94,7 +104,69 @@ public class TypeAnalysis {
 
     }
 
-    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Set<Snap.Obj> analyzedFunctions) {
+    private boolean canGetEverythingFromRecordedCalls(Snap.Obj closure) {
+        if (closure.recordedCalls == null) {
+            return false;
+        }
+        int argsSize = closure.function.astNode.getArguments().size();
+        List<Integer> notSeenArgs = new ArrayList<>();
+        for (int i = 0; i < argsSize; i++) {
+            notSeenArgs.add(i);
+        }
+        List<RecordedCall> calls = getCalls(closure);
+        for (RecordedCall call : calls) {
+            Iterator<Integer> iter = notSeenArgs.iterator();
+            while (iter.hasNext()) {
+                Integer notSeen = iter.next();
+                Snap.Value argValue = call.arguments.get(notSeen);
+                if (!(argValue instanceof Snap.UndefinedConstant) && !(argValue instanceof Snap.NullConstant)) {
+                    iter.remove();
+                }
+            }
+
+            if (notSeenArgs.isEmpty()) {
+                break;
+            }
+        }
+        if (!notSeenArgs.isEmpty()) {
+            return false;
+        }
+
+        if (returnsSomething(closure.function.astNode)) {
+            for (RecordedCall call : calls) {
+                if (!(call.callReturn instanceof Snap.UndefinedConstant) && !(call.callReturn instanceof Snap.NullConstant)) {
+                    return true;
+                }
+            }
+        } else {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean returnsSomething(FunctionExpression function) {
+        AtomicBoolean result = new AtomicBoolean(false);
+        new NodeTransverse<Void>(){
+            @Override
+            public Void visit(FunctionExpression function) {
+                return null; // Not visiting recursively.
+            }
+
+            @Override
+            public Void visit(Return aReturn) {
+                if (!(aReturn.getExpression() instanceof UnaryExpression) || ((UnaryExpression) aReturn.getExpression()).getOperator() != Operator.VOID) {
+                    // Here it is not just a "return;" statement.
+                    result.set(true);
+                }
+                return NodeTransverse.super.visit(aReturn);
+            }
+        }.visit(function);
+
+        return result.get();
+    }
+
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {
         if (closure.function.type.equals("unknown")) {
             return;
         }
@@ -143,26 +215,30 @@ public class TypeAnalysis {
         }
 
         if (closure.recordedCalls != null) {
-            List<RecordedCall> calls = getCalls(closure.recordedCalls);
-            if (calls.size() > options.maxObjects) {
-                calls = calls.subList(0, options.maxObjects);
-            }
-            for (RecordedCall call : calls) {
-                FunctionNode newFunc = FunctionNode.create(call.arguments.size(), solver);
-                solver.union(newFunc.returnNode, heapFactory.fromValue(call.callReturn));
-
-                for (int i = 0; i < call.arguments.size(); i++) {
-                    solver.union(newFunc.arguments.get(i), heapFactory.fromValue(call.arguments.get(i)));
-                }
-                solver.union(functionNode, newFunc);
-            }
+            addCallsToFunction(closure, solver, functionNode, heapFactory);
         }
 
         Map<Identifier, UnionNode> identifierMap = new HashMap<>();
 
         new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, identifierMap, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses, options).visit(closure.function.astNode);
 
-        new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, analyzedFunctions, this.nativeTypeFactory).visit(closure.function.astNode);
+        new UnionConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory).visit(closure.function.astNode);
+    }
+
+    private void addCallsToFunction(Snap.Obj closure, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {
+        List<RecordedCall> calls = getCalls(closure.recordedCalls);
+        if (calls.size() > options.maxObjects) {
+            calls = calls.subList(0, options.maxObjects);
+        }
+        for (RecordedCall call : calls) {
+            FunctionNode newFunc = FunctionNode.create(call.arguments.size(), solver);
+            solver.union(newFunc.returnNode, heapFactory.fromValue(call.callReturn));
+
+            for (int i = 0; i < call.arguments.size(); i++) {
+                solver.union(newFunc.arguments.get(i), heapFactory.fromValue(call.arguments.get(i)));
+            }
+            solver.union(functionNode, newFunc);
+        }
     }
 
     private List<RecordedCall> getCalls(Snap.Obj calls) {
