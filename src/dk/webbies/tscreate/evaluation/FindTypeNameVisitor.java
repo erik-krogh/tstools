@@ -4,13 +4,14 @@ import dk.au.cs.casa.typescript.types.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Created by erik1 on 26-01-2016.
  */
-public class FindTypeNameVisitor implements TypeVisitorWithArgument<Void, String> {
+public class FindTypeNameVisitor implements TypeVisitorWithArgument<Void, FindTypeNameVisitor.QueueElement> {
     private Map<Type, String> names = new HashMap<>();
     private Map<Signature, String> signatureNames = new HashMap<>();
 
@@ -22,10 +23,7 @@ public class FindTypeNameVisitor implements TypeVisitorWithArgument<Void, String
 
     private <T> boolean hasBetter(T element, String name, Map<T, String> map) {
         if (map.containsKey(element)) {
-            String oldName = map.get(element);
-            if (dots(name) > dots(oldName)) {
-                return true;
-            }
+            return true;
         }
         return false;
     }
@@ -58,27 +56,28 @@ public class FindTypeNameVisitor implements TypeVisitorWithArgument<Void, String
     }
 
     @Override
-    public Void visit(AnonymousType t, String prefix) {
+    public Void visit(AnonymousType t, QueueElement elm) {
         throw new RuntimeException("AnonymousType");
     }
 
     @Override
-    public Void visit(ClassType t, String prefix) {
+    public Void visit(ClassType t, QueueElement elm) {
         throw new RuntimeException("ClassType");
     }
 
     @Override
-    public Void visit(GenericType t, String prefix) {
-        if (hasBetter(t, prefix)) {
+    public Void visit(GenericType t, QueueElement elm) {
+        if (hasBetter(t, elm.prefix)) {
             return null;
         }
-        addName(t, prefix);
-        t.toInterface().accept(this, prefix);
+        addName(t, elm.prefix);
+        t.toInterface().accept(this, elm);
         return null;
     }
 
     @Override
-    public Void visit(InterfaceType t, String prefix) {
+    public Void visit(InterfaceType t, QueueElement elm) {
+        String prefix = elm.prefix;
         if (hasBetter(t, prefix)) {
             return null;
         }
@@ -87,117 +86,126 @@ public class FindTypeNameVisitor implements TypeVisitorWithArgument<Void, String
 
         for (int i = 0; i < t.getTypeParameters().size(); i++) {
             Type type = t.getTypeParameters().get(i);
-            type.accept(this, prefix + ".[typeParam" + i + "]");
+            enqueue(prefix + ".[typeParam" + i + "]", elm.depth + 1, type);
         }
 
         for (int i = 0; i < t.getBaseTypes().size(); i++) {
             Type type = t.getBaseTypes().get(i);
-            type.accept(this, prefix + ".[extends" + i + "]");
+            enqueue(prefix + ".[extends" + i + "]", elm.depth + 1, type);
         }
 
         for (Map.Entry<String, Type> entry : t.getDeclaredProperties().entrySet()) {
-            entry.getValue().accept(this, prefix + "." + entry.getKey());
+            Type type = entry.getValue();
+            enqueue(prefix + "." + entry.getKey(), elm.depth + 1, type);
         }
 
         if (t.getDeclaredNumberIndexType() != null) {
-            t.getDeclaredNumberIndexType().accept(this, prefix + ".[numberIndexer]");
+            enqueue(prefix + ".[numberIndexer]", elm.depth + 1, t.getDeclaredNumberIndexType());
         }
 
         if (t.getDeclaredStringIndexType() != null) {
-            t.getDeclaredStringIndexType().accept(this, prefix + ".[stringIndexer]");
+            enqueue(prefix + ".[stringIndexer]", elm.depth + 1, t.getDeclaredStringIndexType());
         }
 
         for (int i = 0; i < t.getDeclaredCallSignatures().size(); i++) {
             Signature signature = t.getDeclaredCallSignatures().get(i);
-            visitSignature(signature, prefix + ".[callSig" + i + "]");
+            visitSignature(signature, prefix + ".[callSig" + i + "]", elm.depth);
         }
 
         for (int i = 0; i < t.getDeclaredConstructSignatures().size(); i++) {
             Signature signature = t.getDeclaredConstructSignatures().get(i);
-            visitSignature(signature, prefix + ".[newSig" + i + "]");
+            visitSignature(signature, prefix + ".[newSig" + i + "]", elm.depth);
         }
 
         return null;
     }
 
-    private void visitSignature(Signature signature, String prefix) {
+    private void enqueue(String prefix, int depth, Type type) {
+        queue.add(new QueueElement(depth, prefix, type));
+    }
+
+    private void visitSignature(Signature signature, String prefix, int depth) {
         addName(signature, prefix);
 
         for (int i = 0; i < signature.getParameters().size(); i++) {
             Signature.Parameter parameter = signature.getParameters().get(i);
-            parameter.getType().accept(this, prefix + ".[arg:" + parameter.getName() + "]");
+            enqueue(prefix + ".[arg:" + parameter.getName() + "]", depth + 1, parameter.getType());
         }
-        signature.getResolvedReturnType().accept(this, prefix + ".[return]");
+        enqueue(prefix + ".[return]", depth + 1, signature.getResolvedReturnType());
     }
 
     @Override
-    public Void visit(ReferenceType t, String prefix) {
+    public Void visit(ReferenceType t, QueueElement elm) {
+        String prefix = elm.prefix;
         if (hasBetter(t, prefix)) {
             return null;
         }
 
         addName(t, prefix);
-        t.getTarget().accept(this, prefix);
+        t.getTarget().accept(this, elm);
         for (int i = 0; i < t.getTypeArguments().size(); i++) {
             Type type = t.getTypeArguments().get(i);
-            type.accept(this, prefix + ".[typeParam" + i + "]");
+            enqueue(prefix + ".[typeParam" + i + "]", elm.depth + 1, type);
         }
         return null;
     }
 
     @Override
-    public Void visit(SimpleType t, String prefix) {
-        addName(t, prefix);
+    public Void visit(SimpleType t, QueueElement elm) {
+        addName(t, elm.prefix);
         return null;
     }
 
     @Override
-    public Void visit(TupleType t, String prefix) {
+    public Void visit(TupleType t, QueueElement elm) {
+        String prefix = elm.prefix;
         addName(t, prefix);
 
         if (t.getBaseArrayType() != null) {
-            t.getBaseArrayType().accept(this, prefix + ".[baseArrayType]");
+            enqueue(prefix + ".[baseArrayType]", elm.depth + 1, t.getBaseArrayType());
         }
         for (int i = 0; i < t.getElementTypes().size(); i++) {
             Type type = t.getElementTypes().get(i);
-            type.accept(this, prefix + ".[tuple" + i + "]");
+            enqueue(prefix + ".[tuple" + i + "]", elm.depth + 1, type);
         }
         return null;
     }
 
     @Override
-    public Void visit(UnionType t, String prefix) {
+    public Void visit(UnionType t, QueueElement elm) {
+        String prefix = elm.prefix;
         addName(t, prefix);
 
         for (int i = 0; i < t.getElements().size(); i++) {
             Type type = t.getElements().get(i);
-            type.accept(this, prefix + ".[union:" + i + "]");
+            enqueue(prefix + ".[union:" + i + "]", elm.depth + 1, type);
         }
 
         return null;
     }
 
     @Override
-    public Void visit(UnresolvedType t, String prefix) {
+    public Void visit(UnresolvedType t, QueueElement elm) {
         throw new RuntimeException("unhandled type: " + t.getClass().getSimpleName());
     }
 
     @Override
-    public Void visit(TypeParameterType t, String prefix) {
+    public Void visit(TypeParameterType t, QueueElement elm) {
+        String prefix = elm.prefix;
         addName(t, prefix);
 
         if (t.getConstraint() != null) {
-            t.getConstraint().accept(this, prefix + ".[typeParameterConstraint]");
+            enqueue(prefix + ".[typeParameterConstraint]", elm.depth + 1, t.getConstraint());
         }
         if (t.getTarget() != null) {
-            t.getTarget().accept(this, prefix + ".[typeParameterTarget]");
+            enqueue(prefix + ".[typeParameterTarget]", elm.depth + 1, t.getTarget());
         }
         return null;
     }
 
     @Override
-    public Void visit(SymbolType t, String prefix) {
-        addName(t, prefix);
+    public Void visit(SymbolType t, QueueElement elm) {
+        addName(t, elm.prefix);
         return null;
     }
 
@@ -211,5 +219,33 @@ public class FindTypeNameVisitor implements TypeVisitorWithArgument<Void, String
 
     public void addTypeName(Type type, String name) {
         addName(type, name);
+    }
+
+    private PriorityQueue<QueueElement> queue = new PriorityQueue<>();
+
+    public void findNames(InterfaceType declaration) {
+        queue.add(new QueueElement(0, "window", declaration));
+
+        while (!queue.isEmpty()) {
+            QueueElement element = queue.poll();
+            element.type.accept(this, element);
+        }
+    }
+
+    protected static final class QueueElement implements Comparable<QueueElement> {
+        final int depth;
+        final String prefix;
+        final Type type;
+
+        private QueueElement(int depth, String prefix, Type type) {
+            this.depth = depth;
+            this.prefix = prefix;
+            this.type = type;
+        }
+
+        @Override
+        public int compareTo(QueueElement o) {
+            return Integer.compare(this.depth, o.depth);
+        }
     }
 }

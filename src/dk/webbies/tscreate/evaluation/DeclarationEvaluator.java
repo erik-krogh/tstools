@@ -38,8 +38,8 @@ public class DeclarationEvaluator {
 
         FindTypeNameVisitor findNames = new FindTypeNameVisitor();
         if (options.debugPrint) {
-            findNames.visit(realDeclaration, "window");
-            findNames.visit(myDeclaration, "window");
+            findNames.findNames(realDeclaration);
+            findNames.findNames(myDeclaration);
         }
 
 
