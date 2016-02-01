@@ -229,20 +229,7 @@ public class DeclarationPrinter {
             ident(arg.builder);
             write(arg.builder, prefix + " class " + name);
             if (clazz.getSuperClass() != null) {
-                write(arg.builder, " extends ");
-                if (clazz.getSuperClass() instanceof ClassType) {
-                    ClassType superClass = (ClassType) clazz.getSuperClass();
-                    if (classNames.containsKey(superClass)) {
-                        write(arg.builder, classNames.get(superClass));
-                    } else {
-                        write(arg.builder, superClass.getName());
-                        classesToPrint.add(superClass);
-                    }
-                } else if (clazz.getSuperClass() instanceof NamedObjectType) {
-                    write(arg.builder, ((NamedObjectType) clazz.getSuperClass()).getName());
-                } else {
-                    throw new RuntimeException();
-                }
+                printExtends(clazz, arg);
             }
             write(arg.builder, " {\n");
             ident++;
@@ -251,11 +238,8 @@ public class DeclarationPrinter {
             printArguments(arg, clazz.getConstructorType().getArguments());
             write(arg.builder, ");\n");
 
-            Predicate<String> notInSuperClassStatic = notStaticInSuperClassTest(clazz.getSuperClass());
             for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet()) {
-                if (notInSuperClassStatic.test(entry.getKey())) {
-                    printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
-                }
+                printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
             }
 
             Predicate<String> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
@@ -575,16 +559,7 @@ public class DeclarationPrinter {
                 ident(arg.builder);
                 write(arg.builder, "interface " + classType.getName());
                 if (classType.getSuperClass() != null) {
-                    write(arg.builder, " extends ");
-                    if (classType.getSuperClass() instanceof ClassType) {
-                        ClassType superClass = (ClassType) classType.getSuperClass();
-                        write(arg.builder, superClass.getName());
-                        classesToPrint.add(superClass);
-                    } else if (classType.getSuperClass() instanceof NamedObjectType) {
-                        write(arg.builder, ((NamedObjectType) classType.getSuperClass()).getName());
-                    } else {
-                        throw new RuntimeException();
-                    }
+                    printExtends(classType, arg);
                 }
                 write(arg.builder, " {\n");
 
@@ -623,6 +598,23 @@ public class DeclarationPrinter {
         }
     }
 
+    private void printExtends(ClassType classType, VisitorArg arg) {
+        write(arg.builder, " extends ");
+        if (classType.getSuperClass() instanceof ClassType) {
+            ClassType superClass = (ClassType) classType.getSuperClass();
+            if (classNames.containsKey(superClass)) {
+                write(arg.builder, classNames.get(superClass));
+            } else {
+                write(arg.builder, superClass.getName());
+                classesToPrint.add(superClass);
+            }
+        } else if (classType.getSuperClass() instanceof NamedObjectType) {
+            write(arg.builder, ((NamedObjectType) classType.getSuperClass()).getName());
+        } else {
+            throw new RuntimeException();
+        }
+    }
+
     private Predicate<String> notInSuperClassTest(DeclarationType superClass) {
         Set<String> fieldsInSuper = new HashSet<>();
         while (superClass != null) {
@@ -657,26 +649,6 @@ public class DeclarationPrinter {
             return keysFrom(((GenericType) type).toInterface());
         }
         throw new RuntimeException("Not yet! " + type.getClass().getSimpleName());
-    }
-
-    private Predicate<String> notStaticInSuperClassTest(DeclarationType superClass) {
-        Set<String> fieldsInSuper = new HashSet<>();
-        while (superClass != null) {
-            if (superClass instanceof ClassType) {
-                fieldsInSuper.addAll(((ClassType)superClass).getStaticFields().keySet());
-                superClass = ((ClassType)superClass).getSuperClass();
-            } else if (superClass instanceof NamedObjectType) {
-                String name = ((NamedObjectType) superClass).getName();
-                Set<String> typeKeys = keysFrom(nativeClasses.typeFromName(name));
-                fieldsInSuper.addAll(typeKeys);
-
-                fieldsInSuper.addAll(nativeClasses.objectFromName(name).getPropertyMap().keySet());
-                break;
-            } else {
-                throw new RuntimeException();
-            }
-        }
-        return (name) -> !fieldsInSuper.contains(name);
     }
 
     // Functional set things
