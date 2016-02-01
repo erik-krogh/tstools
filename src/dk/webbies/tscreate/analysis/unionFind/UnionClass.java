@@ -62,8 +62,12 @@ public final class UnionClass {
 
                 UnionClass otherUnionClass = includesOther.getUnionClass();
                 otherUnionClass.makeIncludesPointToParent();
-                otherUnionClass.includes.remove(other.representative.findParent());
-                otherUnionClass.includes.add(this.representative);
+                if (otherUnionClass.includes != null) {
+                    otherUnionClass.includes.remove(other.representative.findParent());
+                    otherUnionClass.includes.add(this.representative);
+                } else {
+                    otherUnionClass.includes = new HashSet<>(Arrays.asList(this.representative));
+                }
                 this.includesUs.add(includesOther);
             }
         }
