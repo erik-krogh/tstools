@@ -12,7 +12,6 @@ import dk.webbies.tscreate.util.Util;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 
@@ -127,7 +126,7 @@ public class DeclarationEvaluator {
 
         public ParsedDeclaration invoke() {
             Environment env = benchMark.languageLevel.environment;
-            List<String> dependencies = benchMark.dependencies.stream().map(dep -> dep.declarationPath).collect(Collectors.toList());
+            List<String> dependencies = benchMark.dependencyDeclarations();
             realDeclaration = new AtomicReference<>();
             myDeclaration = new AtomicReference<>();
             AtomicReference<SpecReader> emptyDeclaration = new AtomicReference<>();
