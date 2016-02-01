@@ -92,7 +92,7 @@ public class LibraryClass {
                 if (newIsUpper && !oldIsUpper) {
                     name = newName;
                 }
-                if (newName.length() > name.length() && !(!newIsUpper && oldIsUpper)) {
+                if (newName.length() > name.length() && !(!newIsUpper && oldIsUpper) && !newName.toLowerCase().contains("class")) {
                     name = newName;
                 }
             }
