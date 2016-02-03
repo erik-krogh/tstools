@@ -139,7 +139,7 @@ public class BenchMark {
     public static final BenchMark three = evaluate(() -> {
         Options options = new Options();
 //        options.debugPrint = true;
-        options.maxEvaluationDepth = 5;
+        options.maxEvaluationDepth = null;
         options.recordCalls = true;
         options.asyncTest = true;
         options.maxObjects = 50;
@@ -148,7 +148,7 @@ public class BenchMark {
         bench.dependencies.add(Dependency.QUnit);
         bench.dependencies.add(Dependency.QUnit_Utils);
 
-        // addTestFiles(bench, "tests/three/tests/"); // TODO: When everything works.
+        // addTestFiles(bench, "tests/three/tests/");
         bench.testFiles.add("tests/three/tests/cameras/Camera.js");
         bench.testFiles.add("tests/three/tests/cameras/OrthographicCamera.js");
         bench.testFiles.add("tests/three/tests/cameras/PerspectiveCamera.js");
@@ -262,6 +262,8 @@ public class BenchMark {
         Options options = new Options();
         BenchMark bench = new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", null, options, ES5);
         bench.dependencies.add(Dependency.jQuery);
+        bench.dependencies.add(Dependency.hammer);
+        bench.dependencies.add(Dependency.pickdate);
         return bench;
     });
 
@@ -311,6 +313,20 @@ public class BenchMark {
         return new BenchMark("Moment.js", "tests/moment/moment.js", "tests/moment/moment.d.ts", options, ES5);
     });
 
+    public static final BenchMark hammer = evaluate(() -> {
+        Options options = new Options();
+        options.debugPrint = true;
+        BenchMark bench = new BenchMark("Hammer.js", "tests/hammer/hammer.js", "tests/hammer/hammer.d.ts", options, ES5);
+        bench.testFiles.add("tests/hammer/myTest.js"); // Kind of cheating.
+        return bench;
+    });
+
+    public static final BenchMark pickdate = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("pickdate.js", "tests/pickdate/picker.js", "tests/pickdate/picker.d.ts", options, ES5);
+        benchMark.dependencies.add(Dependency.jQuery);
+        return benchMark;
+    });
 
 
     public static final BenchMark test = evaluate(() -> {
@@ -367,10 +383,16 @@ public class BenchMark {
             this.declarationPath = declarationPath;
         }
 
+        private static Dependency fromBench(BenchMark benchMark) {
+            return new Dependency(benchMark.scriptPath, benchMark.declarationPath);
+        }
+
         private static final Dependency QUnit = new Dependency("tests/qunit/qunit.js", "tests/qunit/qunit.d.ts");
         private static final Dependency QUnit_Utils = new Dependency("tests/qunit/qunit-utils.js", null); // Also requires underscore
         private static final Dependency jQuery = new Dependency("tests/jquery/jquery.js", "tests/jquery/jquery.d.ts");
         private static final Dependency underscore = new Dependency("tests/underscore/underscore.js", "tests/underscore/underscore.d.ts");
         private static final Dependency requireJS = new Dependency("tests/requireJS/require.js", "tests/requireJS/require.d.ts");
+        private static final Dependency hammer = new Dependency("tests/hammer/hammer.js", "tests/hammer/hammer.d.ts");
+        private static final Dependency pickdate = new Dependency("tests/pickdate/picker.js", "tests/pickdate/picker.d.ts");
     }
 }
