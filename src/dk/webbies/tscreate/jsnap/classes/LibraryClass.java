@@ -7,6 +7,7 @@ import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
+import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.paser.AST.Expression;
 
@@ -143,10 +144,14 @@ public class LibraryClass {
     }
 
     public void setConstructor(Snap.Obj constructor) {
+        if (this.constructor != null && this.constructor != constructor) {
+            throw new RuntimeException("Cannot have two constructors to the same class");
+        }
         this.constructor = constructor;
         if (constructor.function != null && constructor.function.instance != null) {
-            this.instances.add(constructor.function.instance);
+            this.addInstance(constructor.function.instance);
         }
+        JSNAPUtil.getCalls(constructor.recordedCalls).stream().filter(call -> call.isNew).map(call -> call.callThis).forEach(this::addInstance);
     }
 
     public void addInstance(Snap.Obj instance) {
@@ -172,6 +177,7 @@ public class LibraryClass {
     }
 
     public boolean hasInstanceLookingLikeAClass() {
+        getConstructor(); // Ugly, but makes sure things about the constructor is figured out.
         if (this.instances.isEmpty()) {
             return false;
         }

@@ -351,4 +351,49 @@ public class JSNAPUtil {
             getAllObjects((Snap.Obj) property.get, seen);
         }
     }
+
+    public static final class RecordedCall {
+        public final List<Snap.Value> arguments;
+        public final Snap.Value callReturn;
+        public final Snap.Obj callThis;
+        public final boolean isNew;
+        public RecordedCall(List<Snap.Value> arguments, Snap.Value callReturn, Snap.Obj callThis, boolean isNew) {
+            this.arguments = arguments;
+            this.callReturn = callReturn;
+            this.callThis = callThis;
+            this.isNew = isNew;
+        }
+    }
+
+    public static List<RecordedCall> getCalls(Snap.Obj calls) {
+        if (calls == null) {
+            return Collections.EMPTY_LIST;
+        }
+        ArrayList<RecordedCall> result = new ArrayList<>();
+        for (Snap.Obj call : Util.cast(Snap.Obj.class, toArray(calls))) {
+            Snap.Value callReturn = new Snap.UndefinedConstant();
+            if (call.getProperty("return") != null) {
+                callReturn = call.getProperty("return").value;
+            }
+
+            List<Snap.Value> arguments = toArray((Snap.Obj) call.getProperty("args").value);
+            Snap.Obj callThis = (Snap.Obj) call.getProperty("this").value;
+            boolean isNew = ((Snap.BooleanConstant) call.getProperty("isNew").value).value;
+            result.add(new RecordedCall(arguments, callReturn, callThis, isNew));
+        }
+
+        return result;
+    }
+
+    private static List<Snap.Value> toArray(Snap.Obj obj) {
+        double length = ((Snap.NumberConstant) obj.getProperty("length").value).value;
+        ArrayList<Snap.Value> result = new ArrayList<>();
+        for (int i = 0; i < length; i++) {
+            Snap.Property prop = obj.getProperty(Integer.toString(i));
+            if (prop != null) {
+                result.add(prop.value);
+            }
+        }
+        return result;
+    }
 }
