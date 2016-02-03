@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.evaluation;
 
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.util.Util;
 
@@ -191,7 +190,7 @@ public class Evaluation {
         ArrayList<Integer> keys = new ArrayList<>(falses.keySet());
         Collections.sort(keys);
         for (Integer key : keys) {
-            builder.append("\n\n\n\n").append("Depth: ").append(key);
+            builder.append("\n\n\n").append("Depth: ").append(key).append("\n");
             List<String> list = (List<String>) falses.get(key);
             list.forEach((string) -> builder.append(string).append("\n"));
         }
