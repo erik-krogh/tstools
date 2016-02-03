@@ -36,23 +36,15 @@ public class DeclarationEvaluator {
         realDeclaration.getDeclaredProperties().keySet().retainAll(properties);
         myDeclaration.getDeclaredProperties().keySet().retainAll(properties);
 
-        FindTypeNameVisitor findNames = new FindTypeNameVisitor();
-        if (options.debugPrint) {
-            findNames.findNames(realDeclaration);
-            findNames.findNames(myDeclaration);
-        }
-
-
         AtomicBoolean hasRun = new AtomicBoolean(false);
         Runnable doneCallback = () -> {
             assert queue.isEmpty();
             hasRun.set(true);
         };
-        evaluation = new Evaluation(options.debugPrint, findNames);
-        final FindTypeNameVisitor finalFindNames = findNames;
+        evaluation = new Evaluation(options.debugPrint);
         queue.add(new EvaluationQueueElement(0, () -> {
-            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>(), options, finalFindNames)
-                    .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback));
+            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>(), options)
+                    .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
         }));
 
         while (!queue.isEmpty()) {

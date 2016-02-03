@@ -17,16 +17,14 @@ public class Evaluation {
     Map<Integer, Object> truePositive = new HashMap<>();
 
     private final boolean debug;
-    private FindTypeNameVisitor names;
 
-    public Evaluation(boolean saveDebug, FindTypeNameVisitor names) {
+    public Evaluation(boolean saveDebug) {
         this.debug = saveDebug;
-        this.names = names;
     }
 
-    private void add(int depth, Map<Integer, Object> map, String description, Type realType, Type myType) {
+    private void add(int depth, Map<Integer, Object> map, String description, String typePath) {
         if (debug) {
-            description += " RealType: " + this.names.getTypeName(realType) + "  myType: " + this.names.getTypeName(myType);
+            description += " Path: " + typePath;
         } else {
             description = null;
         }
@@ -50,16 +48,16 @@ public class Evaluation {
         }
     }
 
-    public void addFalseNegative(int depth, String description, Type realType, Type myType) {
-        add(depth, falseNegatives, description, realType, myType);
+    public void addFalseNegative(int depth, String description, String typePath) {
+        add(depth, falseNegatives, description, typePath);
     }
 
-    public void addFalsePositive(int depth, String description, Type realType, Type myType) {
-        add(depth, falsePositives, description, realType, myType);
+    public void addFalsePositive(int depth, String description, String typePath) {
+        add(depth, falsePositives, description, typePath);
     }
 
-    public void addTruePositive(int depth, String description, Type realType, Type myType) {
-        add(depth, truePositive, description, realType, myType);
+    public void addTruePositive(int depth, String description, String typePath) {
+        add(depth, truePositive, description, typePath);
     }
 
     public String print() {
@@ -193,7 +191,7 @@ public class Evaluation {
         ArrayList<Integer> keys = new ArrayList<>(falses.keySet());
         Collections.sort(keys);
         for (Integer key : keys) {
-            builder.append("Depth: ").append(key).append("\n\n\n\n");
+            builder.append("\n\n\n\n").append("Depth: ").append(key);
             List<String> list = (List<String>) falses.get(key);
             list.forEach((string) -> builder.append(string).append("\n"));
         }
