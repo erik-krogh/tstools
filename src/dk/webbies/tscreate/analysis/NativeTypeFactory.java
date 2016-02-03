@@ -194,7 +194,9 @@ public class NativeTypeFactory {
 
         @Override
         public List<UnionNode> visit(TupleType t) {
-            throw new UnsupportedOperationException();
+            List<UnionNode> returnTypes = t.getElementTypes().stream().map(this::recurse).collect(Collectors.toList());
+            UnionNode result = solver.union(primitiveFactory.array(), new DynamicAccessNode(solver, new IncludeNode(solver, returnTypes), primitiveFactory.number()));
+            return Arrays.asList(result);
         }
 
         @Override
