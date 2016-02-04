@@ -2,13 +2,14 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.FunctionReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
-import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.analysis.unionFind.UnionClass;
+import dk.webbies.tscreate.analysis.unionFind.UnionFeature;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature.FunctionFeature;
+import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -79,7 +80,7 @@ public class TypeFactory {
         if (unionClass == null) {
             throw new NullPointerException();
         }
-        unionClass.collapseCycles();
+//        unionClass.getStronglyConnectedComponents(); // FIXME: Look at this.
         DeclarationType result = cache.get(unionClass);
         if (result != null) {
             return result;
@@ -201,9 +202,6 @@ public class TypeFactory {
     private DeclarationType getClassType(LibraryClass libraryClass) {
         if (libraryClass == null) {
             return null;
-        }
-        if (libraryClass.getName(nativeClasses, takenClassNames).equals("Input")) {
-            System.out.println();
         }
         // FIXME: The heuristic needs to be revised after the ts-spec-reader bug has been fixed. Consider what the upper-case name policy should be.
         boolean hardCodedClassName = false;
@@ -388,9 +386,8 @@ public class TypeFactory {
     }
 
     public DeclarationType getHeapPropType(Snap.Property prop) {
-        UnionNode unionNode = typeAnalysis.heapFactory.fromProperty(prop);
-        typeAnalysis.solver.finish();
-        return getType(unionNode);
+        assert typeAnalysis.heapFactory.propertyCache.containsKey(prop); // FIXME: PropertyCache private.
+        return getType(typeAnalysis.heapFactory.fromProperty(prop));
     }
 
     public Snap.Obj currentClosure; // Set by TypeAnalysis, to set which closure we have just finished analyzing, and therefore should create the type of.
@@ -425,18 +422,9 @@ public class TypeFactory {
             return getPureFunction(closure);
         }
         if (closure.function.callSignatures.isEmpty()) {
-            return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
+            return new FunctionType(PrimitiveDeclarationType.Void(), new ArrayList<>());
         }
-        UnionNode node = new EmptyNode(typeAnalysis.solver);
-        for (Signature signature : closure.function.callSignatures) {
-            FunctionNode functionNode = nativeTypeFactory.fromSignature(signature);
-            typeAnalysis.solver.union(node, new IncludeNode(typeAnalysis.solver, functionNode));
-        }
-        typeAnalysis.solver.finish();
-
-        List<FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
-        registerFunction(closure, functionFeatures);
-        return getPureFunction(closure);
+        throw new RuntimeException("Should have gotten the types of all functions by now. Callsigs: " + closure.function.callSignatures.size());
     }
 
     // This is only used, when we KNOW that we want a functionType. So only from createFunctionType and when we need a type for the constructor.

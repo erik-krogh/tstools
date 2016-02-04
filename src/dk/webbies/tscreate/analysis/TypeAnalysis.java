@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis;
 
+import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
@@ -8,7 +9,6 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil.RecordedCall;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.*;
-import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,9 +31,11 @@ public class TypeAnalysis {
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
     private final NativeTypeFactory nativeTypeFactory;
     final Map<Snap.Obj, FunctionNode> functionNodes;
+    private final List<Snap.Obj> nativeFunctions;
+    public boolean analysisFinished = false;
 
     public TypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
-        this.solver = new UnionFindSolver();
+        this.solver = new UnionFindSolver(this);
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.globalObject = globalObject;
@@ -41,10 +43,16 @@ public class TypeAnalysis {
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
         this.nativeTypeFactory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
         List<Snap.Obj> functions = getAllFunctionInstances(globalObject);
-        this.functionNodes = functions.stream().collect(Collectors.toMap(Function.identity(), obj -> FunctionNode.create(obj, solver)));
+        this.functionNodes = functions.stream().filter(closure -> closure.function.type.equals("user") || closure.function.type.equals("bind")).collect(Collectors.toMap(Function.identity(), obj -> FunctionNode.create(obj, solver)));
+        this.nativeFunctions = functions.stream().filter(closure -> !(closure.function.type.equals("user") || closure.function.type.equals("bind"))).filter(closure -> !closure.function.callSignatures.isEmpty()).collect(Collectors.toList());
         this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this, nativeTypeFactory);
-        this.heapFactory = new HeapValueFactory(globalObject, solver, libraryClasses, this);
+        this.heapFactory = new HeapValueFactory(globalObject, solver, this);
     }
+
+    public List<Snap.Obj> getFiltered(String contains) {
+        return this.nativeFunctions.stream().filter(func -> func.function.id.startsWith(contains)).collect(Collectors.toList());
+    }
+
 
     public TypeFactory getTypeFactory() {
         return typeFactory;
@@ -84,6 +92,26 @@ public class TypeAnalysis {
             solver.finish();
         }
 
+        System.out.println("Resolving native functions");
+
+        for (Snap.Obj closure : this.nativeFunctions) {
+            UnionNode node = new EmptyNode(solver);
+            for (Signature signature : closure.function.callSignatures) {
+                FunctionNode functionNode = nativeTypeFactory.fromSignature(signature);
+                solver.union(node, new IncludeNode(solver, functionNode));
+            }
+            solver.finish();
+
+            List<UnionFeature.FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
+            typeFactory.registerFunction(closure, functionFeatures);
+        }
+
+        System.out.println("Collapsing cycles");
+
+        solver.collapseCycles();
+
+        this.analysisFinished = true;
+
         counter = 0;
         for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
             System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
@@ -98,7 +126,11 @@ public class TypeAnalysis {
             typeFactory.currentClosure = null;
         }
 
+        System.out.println("Resolving class types");
+
         typeFactory.resolveClassTypes();
+
+        System.out.println("Printing declarations");
 
     }
 
@@ -240,6 +272,6 @@ public class TypeAnalysis {
     }
 
     private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj root) {
-        return JSNAPUtil.getAllObjects(root).stream().filter(obj -> obj.function != null && (obj.function.type.equals("bind") || obj.function.type.equals("user"))).collect(Collectors.toList());
+        return JSNAPUtil.getAllObjects(root).stream().filter(obj -> obj.function != null).collect(Collectors.toList());
     }
 }

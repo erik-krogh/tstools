@@ -25,7 +25,7 @@ public class Tarjan<T extends Tarjan.Node<T>> {
      * function to get all strongly connected components
      **/
     public List<List<T>> getSCComponents(T graph) {
-        return getSCComponents(graph, iterationCounter++);
+        return getSCComponents(Arrays.asList(graph), iterationCounter++);
     }
 
     /**
@@ -33,13 +33,6 @@ public class Tarjan<T extends Tarjan.Node<T>> {
      **/
     public List<List<T>> getSCComponents(List<T> graph) {
         return getSCComponents(graph, iterationCounter++);
-    }
-
-    /**
-     * function to get all strongly connected components
-     **/
-    private List<List<T>> getSCComponents(T graph, int iteration) {
-        return getSCComponents(Arrays.asList(graph), iteration);
     }
 
     /**
@@ -88,8 +81,10 @@ public class Tarjan<T extends Tarjan.Node<T>> {
 
     private int markLevel(T node, int iteration) {
         if (node.visited == iteration) {
-            throw new RuntimeException(); // FIXME: This apparently happens when unifying calls instead of subsets.
+            node.low = 0;
+            return node.low;
         } else {
+            node.visited = iteration;
             int max = 0;
             for (T edge : node.getEdges()) {
                 max = Math.max(max, markLevel(edge, iteration));

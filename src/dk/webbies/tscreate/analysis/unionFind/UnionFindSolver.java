@@ -19,9 +19,10 @@ package dk.webbies.tscreate.analysis.unionFind;
  * an undirected graph.
  */
 
-import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
+import dk.webbies.tscreate.analysis.TypeAnalysis;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -32,9 +33,12 @@ import java.util.*;
  * Modified by Erik Krogh Kristensen, for use in TSCreate (working title).
  */
 public class UnionFindSolver {
+    private Set<UnionClass> unionClasses = new HashSet<>();
+
     private Set<UnionClass> doneCallbacks = new HashSet<>();
 
     int iteration = 1;
+    public final TypeAnalysis typeAnalysis;
 
     public void finish() {
         while (doneCallbacks.size() > 0) {
@@ -50,9 +54,10 @@ public class UnionFindSolver {
 
     /**
      * Creates a new UnionFindSolver structure that is initially empty.
+     * @param typeAnalysis
      */
-    public UnionFindSolver() {
-        // Handled implicitly
+    public UnionFindSolver(TypeAnalysis typeAnalysis) {
+        this.typeAnalysis = typeAnalysis;
     }
 
     /**
@@ -78,6 +83,7 @@ public class UnionFindSolver {
         node.parent = node;
 
         node.unionClass = new UnionClass(this, node);
+        this.unionClasses.add(node.unionClass);
 
         return true;
     }
@@ -213,14 +219,22 @@ public class UnionFindSolver {
             // One is the representative.
             one.unionClass.representative = one;
             one.unionClass.takeIn(two.unionClass);
+            this.unionClasses.remove(two.unionClass);
             two.unionClass = null;
         } else {
             // Two is the representative.
             two.unionClass.representative = two;
             two.unionClass.takeIn(one.unionClass);
+            this.unionClasses.remove(one.unionClass);
             one.unionClass = null;
         }
 
         return one;
+    }
+
+    public void collapseCycles() {
+        UnionClass.getStronglyConnectedComponents(this.unionClasses).stream().filter(component -> component.size() > 1).forEach(component -> {
+            this.union(component.stream().map(clazz -> clazz.representative).collect(Collectors.toList()));
+        });
     }
 }

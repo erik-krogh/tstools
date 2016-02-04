@@ -37,6 +37,10 @@ public final class UnionClass {
     }
 
     public void takeIn(UnionClass other) {
+        if (this.solver.typeAnalysis.analysisFinished) {
+            throw new RuntimeException("The analysis finished, i merged something anyway. ");
+        }
+
         if (other == this) {
             return;
         }
@@ -130,14 +134,11 @@ public final class UnionClass {
     }
 
 
-    public void collapseCycles() {
+    public static List<List<UnionClass>> getStronglyConnectedComponents(Collection<UnionClass> unionClasses) {
         Tarjan<TarjanNode> tarjan = new Tarjan<>();
-        List<List<TarjanNode>> components = tarjan.getSCComponents(this.tarjanNode);
-        for (List<TarjanNode> component : components) {
-            if (component.size() > 1) {
-                solver.union(component.stream().map(node -> node.getUnionClass().representative).collect(Collectors.toList()));
-            }
-        }
+        List<TarjanNode> nodes = unionClasses.stream().map(unionClass -> unionClass.tarjanNode).collect(Collectors.toList());
+        List<List<TarjanNode>> components = tarjan.getSCComponents(nodes);
+        return components.stream().map(list -> list.stream().map(TarjanNode::getUnionClass).collect(Collectors.toList())).collect(Collectors.toList());
     }
 
     void takeIn(UnionNodeWithFields node) {
