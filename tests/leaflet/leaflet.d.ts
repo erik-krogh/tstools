@@ -35,7 +35,7 @@ declare module L {
     export function bounds(points: PointInstance[]): BoundsInstance;
 
 
-    export interface BoundsStatic extends ClassStatic {
+    export interface BoundsStatic {
         /**
          * Creates a Bounds object from two coordinates (usually top-left and bottom-right
          * corners).
@@ -182,7 +182,7 @@ declare module L {
     }
     export var Circle: CircleStatic;
 
-    export interface CircleInstance extends Path {
+    export interface CircleInstance extends PathInstance {
         /**
          * Returns the current geographical position of the circle.
          */
@@ -490,7 +490,7 @@ declare module L {
         /**
          * Creates a control with the given options.
          */
-        function (options?: ControlOptions): ControlInstance;
+        (options?: ControlOptions): ControlInstance;
     }
 
     export module control {
@@ -762,12 +762,6 @@ declare module L {
 
     }
 
-    /**
-     * Creates a DraggableInstance object for moving the given element when you start dragging
-     * the dragHandle element (equals the element itself by default).
-     */
-    function draggable(element: HTMLElement, dragHandle?: HTMLElement): DraggableInstance;
-
     export interface DraggableStatic extends ClassStatic {
         /**
          * Creates a DraggableInstance object for moving the given element when you start dragging
@@ -939,7 +933,7 @@ declare module L {
          * Resets the the given vector layer's style to the original GeoJSONInstance style,
          * useful for resetting style after hover events.
          */
-        resetStyle(layer: Path): GeoJSONInstance;
+        resetStyle(layer: PathInstance): GeoJSONInstance;
     }
 
     export interface GeoJSONOptions {
@@ -1354,7 +1348,7 @@ declare module L {
      */
     function latLng(coords: LatLngExpression): LatLngInstance;
 
-    export interface LatLngStatic extends ClassStatic {
+    export interface LatLngStatic {
         /**
          * Creates an object representing a geographical point with the given latitude
          * and longitude.
@@ -1438,7 +1432,7 @@ declare module L {
      */
     function latLngBounds(latlngs: LatLngBoundsExpression): LatLngBoundsInstance;
 
-    export interface LatLngBoundsStatic extends ClassStatic {
+    export interface LatLngBoundsStatic {
         /**
          * Creates a LatLngBounds object by defining south-west and north-east corners
          * of the rectangle.
@@ -2603,7 +2597,7 @@ declare module L {
      */
     function multiPolygon(latlngs: LatLngInstance[][], options?: PolylineOptions): MultiPolygonInstance;
 
-    export interface MultiPolylgonStatic extends ClassStatic {
+    export interface MultiPolygonStatic extends ClassStatic {
         /**
          * Instantiates a multi-polyline object given an array of latlngs arrays (one
          * for each individual polygon) and optionally an options object (the same
@@ -2611,7 +2605,7 @@ declare module L {
          */
         new(latlngs: LatLngInstance[][], options?: PolylineOptions): MultiPolygonInstance;
     }
-    export var MultiPolylgon: MultiPolylgonStatic;
+    export var MultiPolygon: MultiPolygonStatic;
 
     export interface MultiPolygonInstance extends FeatureGroupInstance<PolygonInstance> {
         /**
@@ -2709,49 +2703,81 @@ declare module L {
         noMoveStart?: boolean;
     }
 
+    export interface PathStatic {
+        /**
+         * True if SVG is used for vector rendering (true for most modern browsers).
+         */
+        SVG: boolean;
 
-    export interface Path extends ILayer, IEventPowered<Path> {
+        /**
+         * True if VML is used for vector rendering (IE 6-8).
+         */
+        VML: boolean;
+
+        /**
+         * True if Canvas is used for vector rendering (Android 2). You can also force
+         * this by setting global variable L_PREFER_CANVAS to true before the Leaflet
+         * include on your page — sometimes it can increase performance dramatically
+         * when rendering thousands of circle markers, but currently suffers from
+         * a bug that causes removing such layers to be extremely slow.
+         */
+        CANVAS: boolean;
+
+        /**
+         * How much to extend the clip area around the map view (relative to its size,
+         * e.g. 0.5 is half the screen in each direction). Smaller values mean that you
+         * will see clipped ends of paths while you're dragging the map, and bigger values
+         * decrease drawing performance.
+         */
+        CLIP_PADDING: number;
+
+        new (): Path; // TODO:
+    }
+
+    export var Path: PathStatic;
+
+    export interface PathInstance extends ILayer, IEventPowered<PathInstance> {
 
         /**
          * Adds the layer to the map.
          */
-        addTo(map: MapInstance): Path;
+        addTo(map: MapInstance): PathInstance;
 
         /**
          * Binds a popup with a particular HTML content to a click on this path.
          */
-        bindPopup(html: string, options?: PopupOptions): Path;
+        bindPopup(html: string, options?: PopupOptions): PathInstance;
 
         /**
          * Binds a popup with a particular HTML content to a click on this path.
          */
-        bindPopup(el: HTMLElement, options?: PopupOptions): Path;
+        bindPopup(el: HTMLElement, options?: PopupOptions): PathInstance;
 
         /**
          * Binds a popup with a particular HTML content to a click on this path.
          */
-        bindPopup(popup: PopupInstance, options?: PopupOptions): Path;
+        bindPopup(popup: PopupInstance, options?: PopupOptions): PathInstance;
 
         /**
          * Unbinds the popup previously bound to the path with bindPopup.
          */
-        unbindPopup(): Path;
+        unbindPopup(): PathInstance;
 
         /**
          * Opens the popup previously bound by the bindPopup method in the given point,
          * or in one of the path's points if not specified.
          */
-        openPopup(latlng?: LatLngExpression): Path;
+        openPopup(latlng?: LatLngExpression): PathInstance;
 
         /**
          * Closes the path's bound popup if it is opened.
          */
-        closePopup(): Path;
+        closePopup(): PathInstance;
 
         /**
          * Changes the appearance of a Path based on the options in the Path options object.
          */
-        setStyle(object: PathOptions): Path;
+        setStyle(object: PathOptions): PathInstance;
 
         /**
          * Returns the LatLngBounds of the path.
@@ -2761,18 +2787,18 @@ declare module L {
         /**
          * Brings the layer to the top of all path layers.
          */
-        bringToFront(): Path;
+        bringToFront(): PathInstance;
 
         /**
          * Brings the layer to the bottom of all path layers.
          */
-        bringToBack(): Path;
+        bringToBack(): PathInstance;
 
         /**
          * Redraws the layer. Sometimes useful after you changed the coordinates that
          * the path uses.
          */
-        redraw(): Path;
+        redraw(): PathInstance;
         ////////////
         ////////////
         /**
@@ -2790,49 +2816,20 @@ declare module L {
 
         ////////////////
         ////////////////
-        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): Path;
+        addEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PathInstance;
+        addOneTimeEventListener(type: string, fn: (e: LeafletEvent) => void, context?: any): PathInstance;
+        removeEventListener(type: string, fn?: (e: LeafletEvent) => void, context?: any): PathInstance;
         hasEventListeners(type: string): boolean;
-        fireEvent(type: string, data?: any): Path;
-        on(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        once(type: string, fn: (e: LeafletEvent) => void, context?: any): Path;
-        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): Path;
-        fire(type: string, data?: any): Path;
-        addEventListener(eventMap: any, context?: any): Path;
-        removeEventListener(eventMap?: any, context?: any): Path;
-        clearAllEventListeners(): Path;
-        on(eventMap: any, context?: any): Path;
-        off(eventMap?: any, context?: any): Path;
-    }
-
-    export module Path {
-        /**
-         * True if SVG is used for vector rendering (true for most modern browsers).
-         */
-        export var SVG: boolean;
-
-        /**
-         * True if VML is used for vector rendering (IE 6-8).
-         */
-        export var VML: boolean;
-
-        /**
-         * True if Canvas is used for vector rendering (Android 2). You can also force
-         * this by setting global variable L_PREFER_CANVAS to true before the Leaflet
-         * include on your page — sometimes it can increase performance dramatically
-         * when rendering thousands of circle markers, but currently suffers from
-         * a bug that causes removing such layers to be extremely slow.
-         */
-        export var CANVAS: boolean;
-
-        /**
-         * How much to extend the clip area around the map view (relative to its size,
-         * e.g. 0.5 is half the screen in each direction). Smaller values mean that you
-         * will see clipped ends of paths while you're dragging the map, and bigger values
-         * decrease drawing performance.
-         */
-        export var CLIP_PADDING: number;
+        fireEvent(type: string, data?: any): PathInstance;
+        on(type: string, fn: (e: LeafletEvent) => void, context?: any): PathInstance;
+        once(type: string, fn: (e: LeafletEvent) => void, context?: any): PathInstance;
+        off(type: string, fn?: (e: LeafletEvent) => void, context?: any): PathInstance;
+        fire(type: string, data?: any): PathInstance;
+        addEventListener(eventMap: any, context?: any): PathInstance;
+        removeEventListener(eventMap?: any, context?: any): PathInstance;
+        clearAllEventListeners(): PathInstance;
+        on(eventMap: any, context?: any): PathInstance;
+        off(eventMap?: any, context?: any): PathInstance;
     }
 
 
@@ -2936,7 +2933,7 @@ declare module L {
      */
     function point(x: number, y: number, round?: boolean): PointInstance;
 
-    export interface PointStatic extends ClassStatic {
+    export interface PointStatic {
         /**
          * Creates a PointInstance object with the given x and y coordinates. If optional round
          * is set to true, rounds the x and y values.
@@ -3045,7 +3042,7 @@ declare module L {
     }
     export var Polyline: PolylineStatic;
 
-    export interface PolylineInstance extends Path {
+    export interface PolylineInstance extends PathInstance {
         /**
          * Adds a given point to the polyline.
          */
@@ -3698,7 +3695,7 @@ declare module L {
         [additionalKeys: string]: any;
     }
 
-    export interface TransformationStatic extends ClassStatic {
+    export interface TransformationStatic {
         /**
          * Creates a transformation object with the given coefficients.
          */
