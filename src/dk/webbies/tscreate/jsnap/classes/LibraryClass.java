@@ -11,10 +11,7 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.paser.AST.Expression;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -144,14 +141,22 @@ public class LibraryClass {
     }
 
     public void setConstructor(Snap.Obj constructor) {
-        if (this.constructor != null && this.constructor != constructor) {
-            throw new RuntimeException("Cannot have two constructors to the same class");
+        if (constructor.function == null) {
+            return;
         }
-        this.constructor = constructor;
+        if (this.constructor != null) {
+            // This happens rarely, just use the one with the most arguments, since I don't even know.
+            if (constructor.properties.size() > this.constructor.properties.size()) {
+                this.constructor = constructor;
+            }
+        } else {
+            this.constructor = constructor;
+        }
+
         if (constructor.function != null && constructor.function.instance != null) {
             this.addInstance(constructor.function.instance);
         }
-        JSNAPUtil.getCalls(constructor.recordedCalls).stream().filter(call -> call.isNew).map(call -> call.callThis).forEach(this::addInstance);
+        JSNAPUtil.getCalls(constructor.recordedCalls).stream().filter(call -> call.isNew).map(call -> call.callReturn).filter(Objects::nonNull).filter(call -> !(call instanceof Snap.UndefinedConstant)).map(call -> (Snap.Obj)call).forEach(this::addInstance);
     }
 
     public void addInstance(Snap.Obj instance) {
