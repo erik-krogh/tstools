@@ -106,13 +106,27 @@ public final class UnionClass {
     private void makeIncludesPointToParent() {
         this.representative = this.representative.findParent();
         if (this.includes != null) {
-            this.includes = this.includes.stream().map(UnionNode::findParent).collect(Collectors.toSet());
+            makePointToParent(this.includes);
             this.includes.remove(this.representative);
         }
         if (this.includesUs != null) {
-            this.includesUs = this.includesUs.stream().map(UnionNode::findParent).collect(Collectors.toSet());
+            makePointToParent(this.includesUs);
             this.includesUs.remove(this.representative);
         }
+    }
+
+    private void makePointToParent(Set<UnionNode> includes) {
+        List<UnionNode> toRemove = new ArrayList<>();
+        List<UnionNode> toAdd = new ArrayList<>();
+        for (UnionNode node : includes) {
+            UnionNode parent = node.findParent();
+            if (node != parent) {
+                toRemove.add(node);
+                toAdd.add(parent);
+            }
+        }
+        toRemove.forEach(includes::remove);
+        toAdd.forEach(includes::add);
     }
 
 
