@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -16,7 +17,8 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClas
  */
 public class TypeReducer {
     public final HashMap<DeclarationType, List<DeclarationType>> originals = new HashMap<>();
-    private Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
+    private final Options options;
+    private final Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
 
     public HashMap<Set<DeclarationType>, DeclarationType> combinationTypeCache = new HashMap<>(); // Used inside combinationType.
 
@@ -27,6 +29,10 @@ public class TypeReducer {
 
         if (handler.getAClass() == handler.getBClass() && !(handler instanceof SameTypeReducer) && !(handler instanceof CantReduceReducer)) {
             throw new RuntimeException("I have an abstract class, use it for " + handler.getClass().getSimpleName());
+        }
+
+        if (options.reduceNothing) {
+            handler = new CantReduceReducer<>(handler.getAClass(), handler.getBClass());
         }
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> key1 = new Pair<>(handler.getAClass(), handler.getBClass());
@@ -43,7 +49,8 @@ public class TypeReducer {
         }
     }
 
-    public TypeReducer(Snap.Obj globalObject, NativeClassesMap nativeClasses) {
+    public TypeReducer(Snap.Obj globalObject, NativeClassesMap nativeClasses, Options options) {
+        this.options = options;
         register(new PrimitiveObjectReducer(globalObject));
         register(new FunctionObjectReducer(globalObject));
         register(new FunctionClassReducer(this));
@@ -175,23 +182,40 @@ public class TypeReducer {
                 interfaceParts.add(type);
             }
         }
-        if (interfaceParts.size() >= 2 || hadDynamicAccess) {
+        if (options.reduceNothing) {
             types.removeAll(interfaceParts);
-            InterfaceType result = new InterfaceType();
-            types.add(result);
             for (DeclarationType part : interfaceParts) {
-                if (part instanceof FunctionType) {
-                    assert result.function == null;
-                    result.function = (FunctionType) part;
-                } else if (part instanceof DynamicAccessType) {
+                InterfaceType result = new InterfaceType();
+                if (part instanceof DynamicAccessType) {
                     assert result.dynamicAccess == null;
                     result.dynamicAccess = (DynamicAccessType) part;
-                } else if (part instanceof UnnamedObjectType) {
-                    assert result.object == null;
-                    result.object = (UnnamedObjectType) part;
+                    types.add(result);
+                } else {
+                    types.add(part);
+                }
+            }
+        } else {
+            if (interfaceParts.size() >= 2 || hadDynamicAccess) {
+                types.removeAll(interfaceParts);
+                InterfaceType result = new InterfaceType();
+                types.add(result);
+                for (DeclarationType part : interfaceParts) {
+                    populateInterface(result, part);
                 }
             }
         }
+    }
 
+    private void populateInterface(InterfaceType result, DeclarationType part) {
+        if (part instanceof FunctionType) {
+            assert result.function == null;
+            result.function = (FunctionType) part;
+        } else if (part instanceof DynamicAccessType) {
+            assert result.dynamicAccess == null;
+            result.dynamicAccess = (DynamicAccessType) part;
+        } else if (part instanceof UnnamedObjectType) {
+            assert result.object == null;
+            result.object = (UnnamedObjectType) part;
+        }
     }
 }

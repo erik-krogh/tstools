@@ -37,7 +37,7 @@ public class TypeFactory {
         this.nativeClasses = nativeClasses;
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
-        this.typeReducer = new TypeReducer(globalObject, nativeClasses);
+        this.typeReducer = new TypeReducer(globalObject, nativeClasses, options);
     }
 
 
@@ -201,6 +201,9 @@ public class TypeFactory {
     private DeclarationType getClassType(LibraryClass libraryClass) {
         if (libraryClass == null) {
             return null;
+        }
+        if (libraryClass.getName(nativeClasses, takenClassNames).equals("Input")) {
+            System.out.println();
         }
         // FIXME: The heuristic needs to be revised after the ts-spec-reader bug has been fixed. Consider what the upper-case name policy should be.
         boolean hardCodedClassName = false;
