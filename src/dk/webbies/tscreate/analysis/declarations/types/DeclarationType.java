@@ -78,13 +78,6 @@ public abstract class DeclarationType {
         }
     }
 
-    public static List<List<DeclarationType>> getStronglyConnectedComponents(Collection<DeclarationType> types) {
-        List<FindReachableTarjanNode> nodes = types.stream().map((dec) -> dec.reachableTypesTarjanNode).collect(Collectors.toList());
-        return new Tarjan<FindReachableTarjanNode>().getSCComponents(nodes).stream().map((decList) -> {
-            return decList.stream().map(FindReachableTarjanNode::getType).collect(Collectors.toList());
-        }).collect(Collectors.toList());
-    }
-
     public List<DeclarationType> getReachable() {
         return new Tarjan<FindReachableTarjanNode>().getReachableSet(reachableTypesTarjanNode).stream().map(FindReachableTarjanNode::getType).collect(Collectors.toList());
     }
