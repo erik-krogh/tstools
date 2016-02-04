@@ -1,5 +1,6 @@
 ( function() {
 
+var supportjQuery = jQuery || $;
 // Can't test what ain't there
 if ( !jQuery.fx ) {
 	return;
