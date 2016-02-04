@@ -34,21 +34,34 @@ public class PrimitiveNode extends UnionNode {
     public static class Factory {
         private UnionFindSolver solver;
         private Snap.Obj globalObject;
+        private UnionNode bool;
+        private UnionNode number;
+        private UnionNode undefined;
+        private UnionNode string;
+        private UnionNode  any;
+        private UnionNode stringOrNumber;
+        private UnionNode nonVoid;
+        private UnionNode function;
+        private UnionNode array;
 
         public Factory(UnionFindSolver solver, Snap.Obj globalObject) {
             this.solver = solver;
             this.globalObject = globalObject;
+            this.bool = gen(PrimitiveDeclarationType.Boolean(), "Boolean");
+            this.number = gen(PrimitiveDeclarationType.Number(), "Number");
+            this.undefined = gen(PrimitiveDeclarationType.Void());
+            this.string = gen(PrimitiveDeclarationType.String(), "String");
+            this.any = gen(PrimitiveDeclarationType.Any());
+            this.stringOrNumber = gen(PrimitiveDeclarationType.StringOrNumber(), "Number", "String");
+            this.nonVoid = gen(PrimitiveDeclarationType.NonVoid());
+            this.function = solver.union(getPrototype("Function"), FunctionNode.create(Collections.EMPTY_LIST, this.solver));
+            this.array = solver.union(getPrototype("Array"), new DynamicAccessNode(this.solver, new EmptyNode(this.solver), number()));
         }
 
-        private UnionNode gen(PrimitiveDeclarationType type, String constructorName) {
+        private UnionNode gen(PrimitiveDeclarationType type, String... constructorNames) {
             PrimitiveNode result = new PrimitiveNode(type, solver);
-            if (constructorName != null) {
-                try {
-                    HasPrototypeNode hasProto = getPrototype(constructorName);
-                    solver.union(result, hasProto);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+            for (String constructorName : constructorNames) {
+                solver.union(result, getPrototype(constructorName));
             }
             return result;
         }
@@ -59,41 +72,39 @@ public class PrimitiveNode extends UnionNode {
         }
 
         public UnionNode number() {
-            return gen(PrimitiveDeclarationType.Number(), "Number");
+            return new IncludeNode(solver, number);
         }
 
         public UnionNode undefined() {
-            return gen(PrimitiveDeclarationType.Void(), null);
+            return new IncludeNode(solver, undefined);
         }
 
         public UnionNode bool() {
-            return gen(PrimitiveDeclarationType.Boolean(), "Boolean");
+            return new IncludeNode(solver, bool);
         }
 
         public UnionNode string() {
-            return gen(PrimitiveDeclarationType.String(), "String");
+            return new IncludeNode(solver, string);
         }
 
         public UnionNode any() {
-            return new PrimitiveNode(PrimitiveDeclarationType.Any(), solver);
+            return new IncludeNode(solver, any);
         }
 
         public UnionNode stringOrNumber() {
-            PrimitiveNode result = new PrimitiveNode(PrimitiveDeclarationType.StringOrNumber(), solver);
-            solver.union(result, getPrototype("Number"), getPrototype("String"));
-            return result;
+            return new IncludeNode(solver, stringOrNumber);
         }
 
         public UnionNode nonVoid() {
-            return new PrimitiveNode(PrimitiveDeclarationType.NonVoid(), solver);
+            return new IncludeNode(solver, nonVoid);
         }
 
         public UnionNode function() {
-            return solver.union(getPrototype("Function"), FunctionNode.create(Collections.EMPTY_LIST, solver));
+            return new IncludeNode(solver, function);
         }
 
         public UnionNode array() {
-            return solver.union(getPrototype("Array"), new DynamicAccessNode(solver, new EmptyNode(solver), number()));
+            return new IncludeNode(solver, array);
         }
     }
 }
