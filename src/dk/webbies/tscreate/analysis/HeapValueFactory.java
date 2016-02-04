@@ -1,8 +1,8 @@
 package dk.webbies.tscreate.analysis;
 
 import dk.webbies.tscreate.analysis.unionFind.*;
+import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
-import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.*;
 
@@ -12,18 +12,19 @@ import java.util.*;
 public class HeapValueFactory {
     private PrimitiveNode.Factory primitivesFactory;
     private UnionFindSolver solver;
-    private Map<Snap.Obj, LibraryClass> libraryClasses;
-
-    private final Map<Snap.Obj, FunctionNode> getterSetterCache = new HashMap<>();
     private final TypeAnalysis typeAnalysis;
 
     private final Map<Snap.Obj, UnionNode> cache = new HashMap<>();
+    public final Map<Snap.Property, UnionNode> propertyCache = new HashMap<>();
 
-    public HeapValueFactory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, TypeAnalysis typeAnalysis) {
-        this.libraryClasses = libraryClasses;
+    public HeapValueFactory(Snap.Obj globalObject, UnionFindSolver solver, TypeAnalysis typeAnalysis) {
         this.typeAnalysis = typeAnalysis;
         this.primitivesFactory = new PrimitiveNode.Factory(solver, globalObject);
         this.solver = solver;
+        JSNAPUtil.getAllObjects(globalObject).forEach(obj -> {
+            this.innerFromValue(obj);
+            obj.properties.forEach(this::innerFromProperty);
+        });
     }
 
     public UnionNode fromProperty(Snap.Property property) {
@@ -32,6 +33,9 @@ public class HeapValueFactory {
 
     private UnionNode innerFromProperty(Snap.Property property) {
         if (property.value == null) {
+            if (propertyCache.containsKey(property)) {
+                return propertyCache.get(property);
+            }
             if (property.get == null || property.set == null) {
                 // TODO: This sometimes happens with Symbols.
                 return new EmptyNode(solver);
@@ -47,7 +51,9 @@ public class HeapValueFactory {
                     setter = setterFunctionNode.arguments.get(0);
                 }
             }
-            return new IncludeNode(solver, getter, setter);
+            IncludeNode result = new IncludeNode(solver, getter, setter);
+            propertyCache.put(property, result);
+            return result;
         } else {
             return innerFromValue(property.value);
         }
