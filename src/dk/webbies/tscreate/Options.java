@@ -35,6 +35,9 @@ public class Options {
 
     public boolean skipStaticAnalysisWhenPossible = true; // Doesn't actually do much difference.
 
+    // Deactivates all but the trivial part of the type-inference. When doing this, there is union-types everywhere, instead of more readable types.
+    public boolean reduceNothing = false;
+
     public enum Runtime {
         PHANTOM,
         CHROME,
