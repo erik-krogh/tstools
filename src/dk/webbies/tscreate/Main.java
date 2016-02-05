@@ -53,9 +53,7 @@ public class Main {
         System.out.println("Analysing " + benchMark.name);
         String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
 
-        String script = getScript(benchMark);
-
-        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, script).toTSCreateAST();
+        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
 
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts(), benchMark.testFiles, benchMark.options.asyncTest), AST);
         Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.options, benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
@@ -70,7 +68,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
@@ -129,8 +127,7 @@ public class Main {
             }
         }
 
-        System.out.println();
-        System.out.println("Combined score: " + combinedScore);
+        System.out.println("\nCombined score: " + combinedScore);
     }
 
     private static void generateAllDeclarations() throws IOException {
