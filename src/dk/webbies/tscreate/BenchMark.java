@@ -95,7 +95,6 @@ public class BenchMark {
         Options options = new Options();
         options.recordCalls = true;
         options.asyncTest = true;
-        options.maxObjects = 50;
         BenchMark bench = new BenchMark("jQuery", "tests/jquery/jquery.js", "tests/jquery/jquery.d.ts", options, ES5);
 
         bench.dependencies.add(Dependency.QUnit);
@@ -103,9 +102,9 @@ public class BenchMark {
 
 //        bench.testFiles.add("tests/jquery/tests/ajax.js");
 //        bench.testFiles.add("tests/jquery/tests/animation.js");
-        bench.testFiles.add("tests/jquery/tests/attributes.js");
+//        bench.testFiles.add("tests/jquery/tests/attributes.js");
 //        bench.testFiles.add("tests/jquery/tests/basic.js");
-        bench.testFiles.add("tests/jquery/tests/callbacks.js");
+//        bench.testFiles.add("tests/jquery/tests/callbacks.js");
 //        bench.testFiles.add("tests/jquery/tests/core.js");
 //        bench.testFiles.add("tests/jquery/tests/css.js");
 //        bench.testFiles.add("tests/jquery/tests/data.js");
@@ -232,7 +231,8 @@ public class BenchMark {
     });
 
     // The stress test to rule all stress-tests. 10MB of JavaScript, 220000 lines of code.
-    public static final BenchMark ExtJS = evaluate(() -> {
+    // Node goes out of memory when ts-spec-reader attempts to parse the declaration file.
+    /*public static final BenchMark ExtJS = evaluate(() -> {
         Options options = new Options();
         // All of these are disabled, because the program is so big, and it is needed, otherwise stuff runs out of memory/time.
         options.createInstances = false;
@@ -240,11 +240,13 @@ public class BenchMark {
         options.classOptions.useInstancesForThis = false;
         options.recordCalls = false;
         return new BenchMark("Ext JS", "tests/extjs/ext.js", "tests/extjs/ext.d.ts", options, ES5);
-    });
+    });*/
 
     public static final BenchMark ember = evaluate(() -> {
         Options options = new Options();
         options.createInstances = false;
+        options.recordCalls = true;
+        options.debugPrint = true;
         BenchMark bench = new BenchMark("Ember.js", "tests/ember/ember.js", "tests/ember/ember.d.ts", options, ES5);
         bench.dependencies.add(Dependency.jQuery);
         return bench;
@@ -331,7 +333,7 @@ public class BenchMark {
 
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
-        options.debugPrint = true;
+//        options.debugPrint = true;
 
         return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
     });
