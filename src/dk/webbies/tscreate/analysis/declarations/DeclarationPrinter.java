@@ -517,9 +517,14 @@ public class DeclarationPrinter {
                 if (arg.contains(indexType)) {
                     arg.builder.append("any");
                 } else {
-                    arg.builder.append("Array<");
-                    indexType.accept(this, arg.cons(indexType, true));
-                    arg.builder.append(">");
+                    // Stopping if we just have arrays of arrays. Just printing is as any[][]; and stopping it there.
+                    if (((NamedObjectType) indexType).getName().equals("Array") && ((NamedObjectType) indexType).indexType.resolve() instanceof NamedObjectType && ((NamedObjectType) ((NamedObjectType) indexType).indexType.resolve()).getName().equals("Array")) {
+                        arg.builder.append("any[][]");
+                    } else {
+                        arg.builder.append("Array<");
+                        indexType.accept(this, arg.cons(indexType, true));
+                        arg.builder.append(">");
+                    }
                 }
             } else if (indexType instanceof UnnamedObjectType || indexType instanceof FunctionType || indexType instanceof DynamicAccessType) {
                 if (printsAsInterface.containsKey(indexType)) {
@@ -533,6 +538,9 @@ public class DeclarationPrinter {
                 arg.builder.append("Array<");
                 indexType.accept(this, arg);
                 arg.builder.append(">");
+            } else if (indexType instanceof ClassType) {
+                // This doesn't make sense.
+                arg.builder.append("any[]");
             } else {
                 throw new RuntimeException("Havn't considered arrays of " + indexType.getClass().getSimpleName() + " yet!");
             }
