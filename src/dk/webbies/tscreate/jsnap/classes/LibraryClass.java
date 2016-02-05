@@ -84,7 +84,7 @@ public class LibraryClass {
                     continue;
                 }
 
-                boolean newIsUpper = newName.charAt(0) == Character.toUpperCase(newName.charAt(0));
+                boolean newIsUpper = newName.charAt(0) == Character.toUpperCase(newName.charAt(0)) || newName.substring(0, 1).equals("$");
                 boolean oldIsUpper = name.charAt(0) == Character.toUpperCase(name.charAt(0)) && !(name.charAt(0) == "[".charAt(0));
 
                 if (newIsUpper && !oldIsUpper) {
