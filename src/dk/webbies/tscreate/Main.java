@@ -2,9 +2,11 @@ package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
+import dk.webbies.tscreate.analysis.optimal.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.analysis.pureSubsets.PureSubsetsTypeAnalysis;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
@@ -33,9 +35,9 @@ public class Main {
 
 //            tsCheck();
 //            generateAllDeclarations();
-            runAnalysis(BenchMark.test);
+//            runAnalysis(BenchMark.test);
 //            benchAll();
-//            printTable();
+            printTable();
 
 
             long end = System.currentTimeMillis();
@@ -62,7 +64,7 @@ public class Main {
 
         NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses);
 
-        TypeAnalysis typeAnalysis = new TypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+        TypeAnalysis typeAnalysis = createTypeAnalysis(benchMark, globalObject, libraryClasses, nativeClasses);
         typeAnalysis.analyseFunctions();
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
@@ -99,6 +101,18 @@ public class Main {
             }
             Util.writeFile(resultDeclarationFilePath, printedDeclaration + evaluationString);
             return evaluation.score();
+        }
+    }
+
+    private static MixedTypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
+        if (benchMark.options.useSubsets) {
+            if (benchMark.options.traditionalSubsets) {
+                return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            } else {
+                return new MixedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            }
+        } else {
+            throw new RuntimeException();
         }
     }
 

@@ -81,8 +81,8 @@ public class HeapValueFactory {
             List<UnionNode> result = new ArrayList<>();
             ObjectNode objectNode = new ObjectNode(solver);
             result.add(objectNode);
-            if (this.typeAnalysis.nativeClasses.nameFromObject(obj) != null) {
-                objectNode.setTypeName(this.typeAnalysis.nativeClasses.nameFromObject(obj));
+            if (this.typeAnalysis.getNativeClasses().nameFromObject(obj) != null) {
+                objectNode.setTypeName(this.typeAnalysis.getNativeClasses().nameFromObject(obj));
             }
 
             if (obj.prototype != null) {
@@ -145,8 +145,8 @@ public class HeapValueFactory {
             case "unknown": return FunctionNode.create(closure, solver);
             case "user":
             case "bind":
-                assert this.typeAnalysis.functionNodes.containsKey(closure);
-                return this.typeAnalysis.functionNodes.get(closure);
+                assert this.typeAnalysis.getFunctionNodes().containsKey(closure);
+                return this.typeAnalysis.getFunctionNodes().get(closure);
             case "native":
                 throw new UnsupportedOperationException();
             default:
