@@ -14,8 +14,8 @@ public class HeapValueFactory {
     private UnionFindSolver solver;
     private final TypeAnalysis typeAnalysis;
 
-    public final Map<Snap.Obj, UnionNode> cache = new HashMap<>();
-    public final Map<Snap.Property, UnionNode> propertyCache = new HashMap<>();
+    private final Map<Snap.Obj, UnionNode> cache = new HashMap<>();
+    private final Map<Snap.Property, UnionNode> propertyCache = new HashMap<>();
 
     public HeapValueFactory(Snap.Obj globalObject, UnionFindSolver solver, TypeAnalysis typeAnalysis) {
         this.typeAnalysis = typeAnalysis;

@@ -386,7 +386,6 @@ public class TypeFactory {
     }
 
     public DeclarationType getHeapPropType(Snap.Property prop) {
-        assert typeAnalysis.heapFactory.propertyCache.containsKey(prop); // FIXME: PropertyCache private.
         return getType(typeAnalysis.heapFactory.fromProperty(prop));
     }
 
