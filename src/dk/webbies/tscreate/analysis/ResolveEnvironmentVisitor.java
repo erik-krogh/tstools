@@ -22,7 +22,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private final Snap.Obj globalObject;
     private final Map<String, Snap.Property> globalValues;
     private final Map<String, Snap.Property> values;
-    private final PrimitiveNode.Factory primitivesBuilder;
+    private final PrimitiveNode.Factory primitiveFactory;
     private final HeapValueFactory heapFactory;
     private final Map<Snap.Obj, LibraryClass> libraryClasses;
     private final Options options;
@@ -48,7 +48,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
         this.options = options;
         this.globalValues = new HashMap<>(globalValues);
         this.values = new HashMap<>(values);
-        this.primitivesBuilder = new PrimitiveNode.Factory(solver, globalObject);
+        this.primitiveFactory = heapFactory.getPrimitivesFactory();
         function.declarations.keySet().forEach(this.values::remove);
         function.declarations.keySet().forEach(this.globalValues::remove);
 
@@ -72,14 +72,14 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
             solver.union(idNode, heapFactory.fromProperty(this.values.get(name)));
         } else if (identifier.isGlobal) {
             if (name.equals("arguments")) {
-                solver.union(idNode, new DynamicAccessNode(solver, primitivesBuilder.any(), primitivesBuilder.number()));
+                solver.union(idNode, new DynamicAccessNode(solver, primitiveFactory.any(), primitiveFactory.number()));
                 ObjectNode obj = new ObjectNode(solver);
-                obj.addField("length", primitivesBuilder.number());
+                obj.addField("length", primitiveFactory.number());
                 solver.union(idNode, obj);
             } else if (this.globalValues.containsKey(name)) {
                 solver.union(idNode, heapFactory.fromProperty(this.globalValues.get(name)));
             } else {
-                solver.union(idNode, primitivesBuilder.any());
+                solver.union(idNode, primitiveFactory.any());
             }
         } else {
             assert identifier.getDeclaration() != null;

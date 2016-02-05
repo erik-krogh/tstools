@@ -14,7 +14,7 @@ public class HeapValueFactory {
     private UnionFindSolver solver;
     private final TypeAnalysis typeAnalysis;
 
-    private final Map<Snap.Obj, UnionNode> cache = new HashMap<>();
+    public final Map<Snap.Obj, UnionNode> cache = new HashMap<>();
     public final Map<Snap.Property, UnionNode> propertyCache = new HashMap<>();
 
     public HeapValueFactory(Snap.Obj globalObject, UnionFindSolver solver, TypeAnalysis typeAnalysis) {
@@ -25,6 +25,10 @@ public class HeapValueFactory {
             this.innerFromValue(obj);
             obj.properties.forEach(this::innerFromProperty);
         });
+    }
+
+    public PrimitiveNode.Factory getPrimitivesFactory() {
+        return primitivesFactory;
     }
 
     public UnionNode fromProperty(Snap.Property property) {

@@ -41,12 +41,13 @@ public class TypeAnalysis {
         this.globalObject = globalObject;
         this.nativeClasses = nativeClasses;
         this.prototypeFunctions = createPrototypeFunctionMap(libraryClasses);
-        this.nativeTypeFactory = new NativeTypeFactory(new PrimitiveNode.Factory(solver, globalObject), solver, nativeClasses);
         List<Snap.Obj> functions = getAllFunctionInstances(globalObject);
         this.functionNodes = functions.stream().filter(closure -> closure.function.type.equals("user") || closure.function.type.equals("bind")).collect(Collectors.toMap(Function.identity(), obj -> FunctionNode.create(obj, solver)));
         this.nativeFunctions = functions.stream().filter(closure -> !(closure.function.type.equals("user") || closure.function.type.equals("bind"))).filter(closure -> !closure.function.callSignatures.isEmpty()).collect(Collectors.toList());
-        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this, nativeTypeFactory);
+
         this.heapFactory = new HeapValueFactory(globalObject, solver, this);
+        this.nativeTypeFactory = new NativeTypeFactory(heapFactory.getPrimitivesFactory(), solver, nativeClasses);
+        this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this, nativeTypeFactory);
     }
 
     public List<Snap.Obj> getFiltered(String contains) {

@@ -47,7 +47,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
-        this.primitiveFactory = new PrimitiveNode.Factory(solver, typeAnalysis.globalObject);
+        this.primitiveFactory = heapFactory.getPrimitivesFactory();
     }
 
     @Override
