@@ -151,6 +151,7 @@ public class Evaluation {
     }
 
     public void add(Evaluation evaluation) {
+        this.maxDepth = Math.max(this.maxDepth, evaluation.maxDepth);
         addAll(evaluation.falseNegatives, this.falseNegatives);
         addAll(evaluation.falsePositives, this.falsePositives);
         addAll(evaluation.truePositive, this.truePositive);
