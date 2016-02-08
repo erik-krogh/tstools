@@ -2,7 +2,7 @@ package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
-import dk.webbies.tscreate.analysis.methods.optimal.MixedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
@@ -40,9 +41,9 @@ public class Main {
 
 //            tsCheck();
 //            generateAllDeclarations();
-            runAnalysis(BenchMark.underscore);
+//            runAnalysis(BenchMark.underscore);
 //            benchAll();
-//            printTable();
+            printTable();
 
 
             long end = System.currentTimeMillis();
@@ -169,8 +170,10 @@ public class Main {
             if (benchmark.declarationPath == null || benchmark == BenchMark.test) {
                 continue;
             }
-            Score score = runAnalysis(benchmark);
-            if (!Double.isNaN(score.fMeasure)) {
+            Score score = runAnalysisWithTimeout(benchmark, Long.MAX_VALUE);
+            if (score == null) {
+                scores.put(benchmark, new Score(-1, -1, -1));
+            } else {
                 scores.put(benchmark, score);
             }
         }
@@ -204,6 +207,42 @@ public class Main {
         }
         System.out.println("Combined score: " + sumScore);
 
+    }
+
+    public static Score runAnalysisWithTimeout(BenchMark benchMark, long timeout) {
+        AtomicReference<Score> result = new AtomicReference<>(null);
+        Thread benchThread = new Thread(() -> {
+            try {
+                result.set(runAnalysis(benchMark));
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        });
+        benchThread.start();
+        Thread killThread = new Thread(() -> {
+            try {
+                Thread.sleep(timeout);
+            } catch (InterruptedException e) {
+                return;
+            }
+            if (result.get() != null) {
+                return;
+            }
+            if (benchThread.isAlive()) {
+                System.err.println("Stopping benchmark because of timeout.");
+                //noinspection deprecation
+                benchThread.stop(); // <- Deprecated, and i know it.
+            }
+        });
+        killThread.start();
+        try {
+            benchThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        killThread.interrupt();
+        return result.get();
     }
 
     public enum LanguageLevel {
