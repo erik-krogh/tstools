@@ -2,11 +2,11 @@ package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
-import dk.webbies.tscreate.analysis.optimal.MixedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.optimal.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.analysis.pureSubsets.PureSubsetsTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
