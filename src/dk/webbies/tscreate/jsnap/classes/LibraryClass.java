@@ -2,6 +2,7 @@ package dk.webbies.tscreate.jsnap.classes;
 
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
+import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
 import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;

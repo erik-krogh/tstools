@@ -1,10 +1,9 @@
-package dk.webbies.tscreate.analysis.methods.unionEverything;
+package dk.webbies.tscreate.analysis.methods.unionRecursively;
 
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedConstraintVisitor;
-import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -19,11 +18,12 @@ import java.util.stream.Collectors;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 @SuppressWarnings("Duplicates")
-public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
+public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
+    private UnionRecursivelyTypeAnalysis typeAnalysis;
 
-
-    public UnionEverythingConstraintVisitor(Snap.Obj closure, UnionFindSolver solver, Map<Identifier, UnionNode> identifierMap, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HeapValueFactory heapFactory, MixedTypeAnalysis typeAnalysis, NativeTypeFactory nativeTypeFactory) {
+    public UnionRecursivelyConstraintVisitor(Snap.Obj closure, UnionFindSolver solver, Map<Identifier, UnionNode> identifierMap, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HeapValueFactory heapFactory, NativeTypeFactory nativeTypeFactory, UnionRecursivelyTypeAnalysis typeAnalysis) {
         super(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, typeAnalysis, nativeTypeFactory);
+        this.typeAnalysis = typeAnalysis;
     }
 
     @Override
@@ -121,7 +121,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new UnionEverythingConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
+            new UnionRecursivelyConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, this.nativeTypeFactory, typeAnalysis).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
@@ -271,8 +271,15 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                 switch (closure.function.type) {
                     case "user":
                     case "bind": {
-                        assert UnionEverythingConstraintVisitor.this.functionNodes.containsKey(closure);
-                        solver.union(this.functionNode, UnionEverythingConstraintVisitor.this.functionNodes.get(closure)); // <- no includeNode, and it is supposed to be that way.
+                        Map<Snap.Obj, FunctionNode> functionNodes = UnionRecursivelyConstraintVisitor.this.functionNodes;
+                        if (!functionNodes.containsKey(closure)) {
+                            FunctionNode functionNode = FunctionNode.create(closure, solver);
+                            functionNodes.put(closure, functionNode);
+                            typeAnalysis.analyseKeepFunctionNodes(closure, functionNodes, solver, functionNode, heapFactory);
+                        }
+
+                        assert functionNodes.containsKey(closure);
+                        solver.union(this.functionNode, functionNodes.get(closure)); // <- no includeNode, and it is supposed to be that way.
 
                          /*// This is the traditional "points-to" way. By having the arguments flow to the parameters.
                         FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
@@ -318,7 +325,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                             });
                         } else {
                             // This is actually better than what TSCheck does, it ignores the arguments.
-                            List<FunctionNode> signatures = UnionEverythingConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
+                            List<FunctionNode> signatures = UnionRecursivelyConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
                             solver.union(functionNode, new IncludeNode(solver, signatures));
                             break;
                         }

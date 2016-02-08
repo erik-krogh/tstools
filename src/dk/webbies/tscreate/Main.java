@@ -8,6 +8,7 @@ import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.unionRecursively.UnionRecursivelyTypeAnalysis;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
@@ -41,9 +42,9 @@ public class Main {
 
 //            tsCheck();
 //            generateAllDeclarations();
-//            runAnalysis(BenchMark.underscore);
+            runAnalysis(BenchMark.materialize);
 //            benchAll();
-            printTable();
+//            printTable();
 
 
             long end = System.currentTimeMillis();
@@ -118,9 +119,8 @@ public class Main {
                 return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
                 return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            case TRADITIONAL_UNIFICATION_SEPARATE_METHODS:
-                throw new RuntimeException();
-
+            case TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH:
+                return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             default:
                 throw new RuntimeException("I don't even know this static analysis method. ");
         }

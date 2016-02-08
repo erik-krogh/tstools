@@ -13,7 +13,7 @@ import java.util.HashSet;
 public class PrimitiveNode extends UnionNode {
     private PrimitiveDeclarationType type;
 
-    private PrimitiveNode(PrimitiveDeclarationType type, UnionFindSolver solver) {
+    public PrimitiveNode(PrimitiveDeclarationType type, UnionFindSolver solver) {
         super(solver);
         this.type = type;
     }
@@ -31,80 +31,23 @@ public class PrimitiveNode extends UnionNode {
         feature.primitives.add(this.type.getType());
     }
 
-    public static class Factory {
-        private UnionFindSolver solver;
-        private Snap.Obj globalObject;
-        private UnionNode bool;
-        private UnionNode number;
-        private UnionNode undefined;
-        private UnionNode string;
-        private UnionNode  any;
-        private UnionNode stringOrNumber;
-        private UnionNode nonVoid;
-        private UnionNode function;
-        private UnionNode array;
+    public interface Factory {
+        UnionNode number();
 
-        public Factory(UnionFindSolver solver, Snap.Obj globalObject) {
-            this.solver = solver;
-            this.globalObject = globalObject;
-            this.bool = gen(PrimitiveDeclarationType.Boolean(), "Boolean");
-            this.number = gen(PrimitiveDeclarationType.Number(), "Number");
-            this.undefined = gen(PrimitiveDeclarationType.Void());
-            this.string = gen(PrimitiveDeclarationType.String(), "String");
-            this.any = gen(PrimitiveDeclarationType.Any());
-            this.stringOrNumber = gen(PrimitiveDeclarationType.StringOrNumber(), "Number", "String");
-            this.nonVoid = gen(PrimitiveDeclarationType.NonVoid());
-            this.function = solver.union(getPrototype("Function"), FunctionNode.create(Collections.EMPTY_LIST, this.solver));
-            this.array = solver.union(getPrototype("Array"), new DynamicAccessNode(this.solver, new EmptyNode(this.solver), number()));
-        }
+        UnionNode undefined();
 
-        private UnionNode gen(PrimitiveDeclarationType type, String... constructorNames) {
-            PrimitiveNode result = new PrimitiveNode(type, solver);
-            for (String constructorName : constructorNames) {
-                solver.union(result, getPrototype(constructorName));
-            }
-            return result;
-        }
+        UnionNode bool();
 
-        private HasPrototypeNode getPrototype(String constructorName) {
-            Snap.Obj prototype = (Snap.Obj) ((Snap.Obj) this.globalObject.getProperty(constructorName).value).getProperty("prototype").value;
-            return new HasPrototypeNode(solver, prototype);
-        }
+        UnionNode string();
 
-        public UnionNode number() {
-            return new IncludeNode(solver, number);
-        }
+        UnionNode any();
 
-        public UnionNode undefined() {
-            return new IncludeNode(solver, undefined);
-        }
+        UnionNode stringOrNumber();
 
-        public UnionNode bool() {
-            return new IncludeNode(solver, bool);
-        }
+        UnionNode nonVoid();
 
-        public UnionNode string() {
-            return new IncludeNode(solver, string);
-        }
+        UnionNode function();
 
-        public UnionNode any() {
-            return new IncludeNode(solver, any);
-        }
-
-        public UnionNode stringOrNumber() {
-            return new IncludeNode(solver, stringOrNumber);
-        }
-
-        public UnionNode nonVoid() {
-            return new IncludeNode(solver, nonVoid);
-        }
-
-        public UnionNode function() {
-            return new IncludeNode(solver, function);
-        }
-
-        public UnionNode array() {
-            return new IncludeNode(solver, array);
-        }
+        UnionNode array();
     }
 }

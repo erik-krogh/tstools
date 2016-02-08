@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis.methods.pureSubsets;
 
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
+import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.*;

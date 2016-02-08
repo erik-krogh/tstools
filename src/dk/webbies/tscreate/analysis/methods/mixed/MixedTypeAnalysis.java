@@ -47,7 +47,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
         this.functionNodes = functions.stream().filter(closure -> closure.function.type.equals("user") || closure.function.type.equals("bind")).collect(Collectors.toMap(Function.identity(), obj -> FunctionNode.create(obj, solver)));
         this.nativeFunctions = functions.stream().filter(closure -> !(closure.function.type.equals("user") || closure.function.type.equals("bind"))).filter(closure -> !closure.function.callSignatures.isEmpty()).collect(Collectors.toList());
 
-        this.heapFactory = new HeapValueFactory(globalObject, solver, this);
+        this.heapFactory = new SubsetHeapValueFactory(globalObject, solver, this);
         this.nativeTypeFactory = new NativeTypeFactory(heapFactory.getPrimitivesFactory(), solver, nativeClasses);
         this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this);
     }
