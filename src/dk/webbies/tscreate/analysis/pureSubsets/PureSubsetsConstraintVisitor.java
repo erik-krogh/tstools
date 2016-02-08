@@ -629,7 +629,10 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                     case "bind": {
                         assert PureSubsetsConstraintVisitor.this.functionNodes.containsKey(closure);
 
-                         // This is the traditional "points-to" way. By having the arguments flow to the parameters.
+                        // This is my "mixed" way of doing it.
+//                        solver.union(this.functionNode, new IncludeNode(solver, PureSubsetsConstraintVisitor.this.functionNodes.get(closure)));
+
+                        // This is the traditional "points-to" way. By having the arguments flow to the parameters.
                         FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
                         solver.union(newFunction, PureSubsetsConstraintVisitor.this.functionNodes.get(closure));
                         solver.union(functionNode.returnNode, new IncludeNode(solver, newFunction.returnNode));
@@ -670,7 +673,9 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                             });
                         } else {
                             List<FunctionNode> signatures = PureSubsetsConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
-                            solver.union(functionNode, new IncludeNode(solver, signatures));
+                            signatures.forEach(sig -> {
+                                solver.union(functionNode.returnNode, new IncludeNode(solver, sig.returnNode));
+                            });
                             break;
                         }
                     }
