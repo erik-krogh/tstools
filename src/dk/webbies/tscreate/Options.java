@@ -39,8 +39,14 @@ public class Options {
     // Deactivates all but the trivial part of the type-inference. When doing this, there is union-types everywhere, instead of more readable types.
     public boolean reduceNothing = false;
 
-    public boolean useSubsets = true;
-    public boolean traditionalSubsets = true; // The traditional "sound" style of subsets. // FIXME: Set to false before comitting.
+    public enum StaticAnalysisMethod {
+        MY_MIXED_METHOD,
+        TRADITIONAL_SUBSETS,
+        TRADITIONAL_UNION_FIND_SEPARATE_METHODS,
+        TRADITIONAL_UNION_FIND_UNIFY_EVERYTHING
+    }
+
+    public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.MY_MIXED_METHOD;
 
     public enum Runtime {
         PHANTOM,

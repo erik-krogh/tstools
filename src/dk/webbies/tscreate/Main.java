@@ -29,15 +29,19 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
 public class Main {
+    // FIXME: Test does the .gen compare to thhe handwritten, if one tries to take a program writen against the hand-written, og replace the hand-written with the generated. Are there then compile-errors, and why are they there.
+    // FIXME: If not, then the tool is a success.
+
+    // FIXME: Check the outout from underscore, and try to se how the evaluation does on a single static method, what does it say.
     public static void main(String[] args) throws IOException, InterruptedException {
         try {
             long start = System.currentTimeMillis();
 
 //            tsCheck();
 //            generateAllDeclarations();
-//            runAnalysis(BenchMark.test);
+            runAnalysis(BenchMark.test);
 //            benchAll();
-            printTable();
+//            printTable();
 
 
             long end = System.currentTimeMillis();
@@ -70,7 +74,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
@@ -105,14 +109,18 @@ public class Main {
     }
 
     private static MixedTypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
-        if (benchMark.options.useSubsets) {
-            if (benchMark.options.traditionalSubsets) {
-                return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            } else {
+        switch (benchMark.options.staticMethod) {
+            case MY_MIXED_METHOD:
                 return new MixedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            }
-        } else {
-            throw new RuntimeException();
+            case TRADITIONAL_SUBSETS:
+                return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case TRADITIONAL_UNION_FIND_UNIFY_EVERYTHING:
+                throw new RuntimeException();
+            case TRADITIONAL_UNION_FIND_SEPARATE_METHODS:
+                throw new RuntimeException();
+
+            default:
+                throw new RuntimeException("I don't even know this static analysis method. ");
         }
     }
 
