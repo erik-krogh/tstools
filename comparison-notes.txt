@@ -1,0 +1,65 @@
+underscore-tests.ts(5,1): error TS2346: Supplied parameters do not match any signature of call target.
+_.each( [1, 2, 3], (num) => alert(num.toString()) );
+
+static each: (obj: any, 
+iteratee: (accumulator: any, index: any, collection: any, collection1: any, arg4: any) => any, 
+context: any) => any;
+
+/**
+	* Iterates over a list of elements, yielding each in turn to an iterator function. The iterator is
+	* bound to the context object, if one is passed. Each invocation of iterator is called with three
+	* arguments: (element, index, list). If list is a JavaScript object, iterator's arguments will be
+	* (value, key, object). Delegates to the native forEach function if it exists.
+	* @param list Iterates over this list of elements.
+	* @param iterator Iterator function for each element `list`.
+	* @param context 'this' object in `iterator`, optional.
+	**/
+	each<T>(
+		list: _.List<T>,
+		iterator: _.ListIterator<T, void>,
+		context?: any): _.List<T>;
+
+	/**
+	* @see _.each
+	* @param object Iterates over properties of this object.
+	* @param iterator Iterator function for each property on `object`.
+	* @param context 'this' object in `iterator`, optional.
+	**/
+	each<T>(
+		object: _.Dictionary<T>,
+		iterator: _.ObjectIterator<T, void>,
+		context?: any): _.Dictionary<T>;
+
+	/**
+
+========================
+underscore-tests.ts(14,7): error TS2346: Supplied parameters do not match any signature of call target.
+sum = _.reduce<string, number>({'a':'1', 'b':'2', 'c':'3'}, (memo, numstr) => memo + (+numstr));
+
+Optional parameters?
+
+static reduce: (obj: interface_235, iteratee: any, memo: any, context: any) => any;
+
+/**
+	* Also known as inject and foldl, reduce boils down a list of values into a single value.
+	* Memo is the initial state of the reduction, and each successive step of it should be
+	* returned by iterator. The iterator is passed four arguments: the memo, then the value
+	* and index (or key) of the iteration, and finally a reference to the entire list.
+	* @param list Reduces the elements of this array.
+	* @param iterator Reduce iterator function for each element in `list`.
+	* @param memo Initial reduce state.
+	* @param context `this` object in `iterator`, optional.
+	* @return Reduced object result.
+	**/
+	reduce<T, TResult>(
+		list: _.Collection<T>,
+		iterator: _.MemoIterator<T, TResult>,
+		memo?: TResult,
+		context?: any): TResult;
+
+	reduce<T, TResult>(
+		list: _.Dictionary<T>,
+		iterator: _.MemoObjectIterator<T, TResult>,
+		memo?: TResult,
+		context?: any): TResult;
+
