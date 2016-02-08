@@ -2,7 +2,7 @@ package dk.webbies.tscreate.analysis.methods.pureSubsets;
 
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.methods.optimal.MixedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;

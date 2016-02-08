@@ -6,7 +6,6 @@ import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.FunctionReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
-import dk.webbies.tscreate.analysis.methods.optimal.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature.FunctionFeature;
