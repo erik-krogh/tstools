@@ -7,6 +7,7 @@ import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingTypeAnalysis;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
@@ -39,7 +40,7 @@ public class Main {
 
 //            tsCheck();
 //            generateAllDeclarations();
-            runAnalysis(BenchMark.test);
+            runAnalysis(BenchMark.underscore);
 //            benchAll();
 //            printTable();
 
@@ -108,15 +109,15 @@ public class Main {
         }
     }
 
-    private static MixedTypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
+    private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
         switch (benchMark.options.staticMethod) {
             case MY_MIXED_METHOD:
                 return new MixedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case TRADITIONAL_SUBSETS:
                 return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            case TRADITIONAL_UNION_FIND_UNIFY_EVERYTHING:
-                throw new RuntimeException();
-            case TRADITIONAL_UNION_FIND_SEPARATE_METHODS:
+            case TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
+                return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case TRADITIONAL_UNIFICATION_SEPARATE_METHODS:
                 throw new RuntimeException();
 
             default:

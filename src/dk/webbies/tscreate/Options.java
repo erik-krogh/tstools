@@ -42,8 +42,8 @@ public class Options {
     public enum StaticAnalysisMethod {
         MY_MIXED_METHOD,
         TRADITIONAL_SUBSETS,
-        TRADITIONAL_UNION_FIND_SEPARATE_METHODS,
-        TRADITIONAL_UNION_FIND_UNIFY_EVERYTHING
+        TRADITIONAL_UNIFICATION_SEPARATE_METHODS,
+        TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING
     }
 
     public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.MY_MIXED_METHOD;

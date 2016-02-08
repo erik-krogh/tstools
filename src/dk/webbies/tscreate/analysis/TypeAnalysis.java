@@ -24,4 +24,5 @@ public interface TypeAnalysis {
 
     Map<Snap.Obj, FunctionNode> getFunctionNodes();
 
+    HeapValueFactory getHeapFactory();
 }

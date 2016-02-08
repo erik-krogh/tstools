@@ -70,13 +70,13 @@ public class BenchMark {
 
         bench.dependencies.add(Dependency.QUnit);
 
-        bench.testFiles.add("tests/underscore/tests/arrays.js");
+        /*bench.testFiles.add("tests/underscore/tests/arrays.js");
         bench.testFiles.add("tests/underscore/tests/chaining.js");
         bench.testFiles.add("tests/underscore/tests/collections.js");
 //        bench.testFiles.add("tests/underscore/tests/cross-document.js");
         bench.testFiles.add("tests/underscore/tests/functions.js");
         bench.testFiles.add("tests/underscore/tests/objects.js");
-        bench.testFiles.add("tests/underscore/tests/utility.js");
+        bench.testFiles.add("tests/underscore/tests/utility.js");*/
         return bench;
     });
 

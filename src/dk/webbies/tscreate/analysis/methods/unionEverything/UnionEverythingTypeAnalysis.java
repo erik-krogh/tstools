@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.optimal;
+package dk.webbies.tscreate.analysis.methods.unionEverything;
 
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-public class MixedTypeAnalysis implements TypeAnalysis {
+@SuppressWarnings("Duplicates")
+public class UnionEverythingTypeAnalysis implements TypeAnalysis {
     public final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
     public final HeapValueFactory heapFactory;
@@ -35,7 +36,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     private final List<Snap.Obj> nativeFunctions;
     public boolean analysisFinished = false;
 
-    public MixedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
+    public UnionEverythingTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
         this.solver = new UnionFindSolver(this);
         this.libraryClasses = libraryClasses;
         this.options = options;
@@ -59,6 +60,11 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     @Override
     public Map<Snap.Obj, FunctionNode> getFunctionNodes() {
         return functionNodes;
+    }
+
+    @Override
+    public HeapValueFactory getHeapFactory() {
+        return heapFactory;
     }
 
     @Override
@@ -138,7 +144,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
             UnionFeature feature = functionNode.getFeature();
             assert UnionFeature.getReachable(functionNode.getFeature()).size() == 1;
-            typeFactory.registerFunction(closure, Arrays.asList(feature.getFunctionFeature()));
+            typeFactory.registerFunction(closure, Collections.singletonList(feature.getFunctionFeature()));
             typeFactory.currentClosure = closure;
             typeFactory.putResolvedFunctionType(closure, typeFactory.getTypeNoCache(feature));
             typeFactory.currentClosure = null;
@@ -274,7 +280,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     }
 
     public void applyConstraints(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Map<Identifier, UnionNode> identifierMap) {
-        new MixedConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory).visit(closure.function.astNode);
+        new UnionEverythingConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory).visit(closure.function.astNode);
     }
 
     private void addCallsToFunction(Snap.Obj closure, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {

@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
+@SuppressWarnings("Duplicates")
 public class MixedTypeAnalysis implements TypeAnalysis {
     public final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
@@ -59,6 +60,11 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     @Override
     public Map<Snap.Obj, FunctionNode> getFunctionNodes() {
         return functionNodes;
+    }
+
+    @Override
+    public HeapValueFactory getHeapFactory() {
+        return heapFactory;
     }
 
     @Override

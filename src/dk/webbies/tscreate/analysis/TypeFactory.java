@@ -6,7 +6,7 @@ import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.FunctionReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
-import dk.webbies.tscreate.analysis.optimal.MixedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.optimal.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature.FunctionFeature;
@@ -27,12 +27,12 @@ public class TypeFactory {
     private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
     private final NativeClassesMap nativeClasses;
     private final HashSet<String> takenClassNames = new HashSet<>();
-    private MixedTypeAnalysis typeAnalysis;
+    private TypeAnalysis typeAnalysis;
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
     public final TypeReducer typeReducer;
 
-    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, MixedTypeAnalysis typeAnalysis) {
+    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.nativeClasses = nativeClasses;
@@ -385,7 +385,7 @@ public class TypeFactory {
     }
 
     public DeclarationType getHeapPropType(Snap.Property prop) {
-        return getType(typeAnalysis.heapFactory.fromProperty(prop));
+        return getType(typeAnalysis.getHeapFactory().fromProperty(prop));
     }
 
     public Snap.Obj currentClosure; // Set by TypeAnalysis, to set which closure we have just finished analyzing, and therefore should create the type of.

@@ -1,9 +1,8 @@
-package dk.webbies.tscreate.analysis.pureSubsets;
+package dk.webbies.tscreate.analysis.methods.unionEverything;
 
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
-import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -22,26 +21,26 @@ import static dk.webbies.tscreate.analysis.ResolveEnvironmentVisitor.getIdentifi
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-@SuppressWarnings("Duplicates") // Largely a duplicate of MixedConstraintVisitor
-public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
+@SuppressWarnings("Duplicates")
+public class UnionEverythingConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
     private final Snap.Obj closure;
     private final UnionFindSolver solver;
     private final Map<Identifier, UnionNode> identifierMap;
     private final FunctionNode functionNode;
     private final Map<Snap.Obj, FunctionNode> functionNodes;
-    private TypeAnalysis typeAnalysis;
+    private UnionEverythingTypeAnalysis typeAnalysis;
     private final PrimitiveNode.Factory primitiveFactory;
     private HeapValueFactory heapFactory;
     private NativeTypeFactory nativeTypeFactory;
 
-    public PureSubsetsConstraintVisitor(
+    public UnionEverythingConstraintVisitor(
             Snap.Obj closure,
             UnionFindSolver solver,
             Map<Identifier, UnionNode> identifierMap,
             FunctionNode functionNode,
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
-            TypeAnalysis typeAnalysis,
+            UnionEverythingTypeAnalysis typeAnalysis,
             NativeTypeFactory nativeTypeFactory) {
         this.closure = closure;
         this.solver = solver;
@@ -69,23 +68,24 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         switch (op.getOperator()) {
             case PLUS: {
-                return primitiveFactory.stringOrNumber();
+                return solver.union(lhs, rhs, primitiveFactory.stringOrNumber());
             }
 
             case EQUAL: // = // assignment
-                solver.union(lhs, new IncludeNode(solver, rhs));
+                solver.union(lhs, rhs);
                 return lhs;
             case PLUS_EQUAL: // +=
-                solver.union(lhs, primitiveFactory.stringOrNumber());
+                solver.union(lhs, rhs, primitiveFactory.stringOrNumber());
                 return lhs;
             case NOT_EQUAL: // !=
             case EQUAL_EQUAL: // ==
             case NOT_EQUAL_EQUAL: // !==
             case EQUAL_EQUAL_EQUAL: // ===
+                solver.union(lhs, rhs);
                 return primitiveFactory.bool();
             case AND: // &&
             case OR: // ||
-                return new IncludeNode(solver, lhs, rhs);
+                return solver.union(lhs, rhs);
             case MINUS: // -
             case MULT: // *
             case DIV: // /
@@ -110,10 +110,14 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
             case BITWISE_OR_EQUAL: // |=
             case BITWISE_AND_EQUAL: // &=
             case BITWISE_XOR_EQUAL: // ^=
+                solver.union(primitiveFactory.number(), lhs);
+                solver.union(primitiveFactory.number(), rhs);
                 return primitiveFactory.number();
             case INSTANCEOF: // instanceof
                 return primitiveFactory.bool();
             case IN: // in
+                solver.union(lhs, primitiveFactory.string());
+                solver.union(rhs, new ObjectNode(solver));
                 return primitiveFactory.bool();
             default:
                 throw new UnsupportedOperationException("Don't yet handle the operator: " + op.getOperator());
@@ -134,6 +138,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
             case MINUS_MINUS:
             case PLUS_PLUS:
             case BITWISE_NOT:
+                solver.union(primitiveFactory.number(), exp);
                 result = primitiveFactory.number();
                 break;
             case NOT:
@@ -159,19 +164,20 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         forIn.getInitializer().accept(new NodeTransverse<Void>() {
             @Override
             public Void visit(Identifier identifier) {
-                solver.union(identifier.accept(PureSubsetsConstraintVisitor.this), primitiveFactory.string());
+                solver.union(identifier.accept(UnionEverythingConstraintVisitor.this), primitiveFactory.string());
                 return null;
             }
         });
+        solver.union(forIn.getCollection().accept(this), new ObjectNode(solver));
         return null;
     }
 
     @Override
     public UnionNode visit(ThisExpression thisExpression) {
-        if (typeAnalysis.getOptions().classOptions.onlyUseThisWithFieldAccesses) {
+        if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses) {
             return new EmptyNode(solver);
         } else {
-            return new IncludeNode(solver, this.functionNode.thisNode);
+            return this.functionNode.thisNode;
         }
     }
 
@@ -181,7 +187,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         UnionNode left = condExp.getLeft().accept(this);
         UnionNode right = condExp.getRight().accept(this);
-        return new IncludeNode(solver, left, right);
+        return solver.union(left, right);
     }
 
     @Override
@@ -197,7 +203,14 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
             return new EmptyNode(solver);
         }
         UnionNode exp = aReturn.getExpression().accept(this);
-        solver.union(new IncludeNode(solver, exp), functionNode.returnNode, primitiveFactory.nonVoid());
+        solver.union(exp, functionNode.returnNode, primitiveFactory.nonVoid());
+        return null;
+    }
+
+    @Override
+    public UnionNode visit(SwitchStatement switchStatement) {
+        solver.union(switchStatement.getExpression().accept(this), primitiveFactory.stringOrNumber());
+        StatementTransverse.super.visit(switchStatement);
         return null;
     }
 
@@ -211,7 +224,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         if (identifier.getDeclaration() == null) {
             throw new RuntimeException("Cannot have null declarations");
         }
-        if (!typeAnalysis.getOptions().unionHeapIdentifiers) {
+        if (!typeAnalysis.options.unionHeapIdentifiers) {
             return getIdentifier(identifier, solver, identifierMap);
         } else {
             return solver.union(getIdentifier(identifier, solver, identifierMap), getIdentifier(identifier.getDeclaration(), solver, identifierMap));
@@ -246,7 +259,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         for (Expression expression : arrayLiteral.getExpressions()) {
             UnionNode expressionNode = expression.accept(this);
-            solver.union(arrayType, new IncludeNode(solver, expressionNode));
+            solver.union(arrayType, expressionNode);
         }
 
         return result;
@@ -280,7 +293,11 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new PureSubsetsConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
+            new UnionEverythingConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
+            for (int i = 0; i < function.getArguments().size(); i++) {
+                UnionNode parameter = function.getArguments().get(i).accept(this);
+                solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
+            }
             solver.union(result, primitiveFactory.function());
             return result;
         }
@@ -310,7 +327,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
     public UnionNode visit(VariableNode variableNode) {
         UnionNode initNode = variableNode.getInit().accept(this);
         UnionNode identifierNode = variableNode.getlValue().accept(this);
-        solver.union(identifierNode, new IncludeNode(solver, initNode));
+        solver.union(initNode, identifierNode);
         return null;
     }
 
@@ -324,15 +341,16 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                 GetterExpression getter = (GetterExpression) value;
                 FunctionNode function = FunctionNode.create(0, solver);
                 solver.union(getter.asFunction().accept(this), function);
-                result.addField(key, new IncludeNode(solver, function.returnNode));
+                result.addField(key, function.returnNode);
             } else if (value instanceof SetterExpression) {
                 SetterExpression setter = (SetterExpression) value;
                 FunctionNode function = FunctionNode.create(1, solver);
                 solver.union(setter.asFunction().accept(this), function);
-                result.addField(key, new IncludeNode(solver, function.arguments.get(0)));
+                result.addField(key, function.arguments.get(0));
             } else {
                 UnionNode valueNode = value.accept(this);
-                result.addField(key, new IncludeNode(solver, valueNode, primitiveFactory.nonVoid()));
+                solver.union(valueNode, primitiveFactory.nonVoid());
+                result.addField(key, valueNode);
             }
         }
 
@@ -341,10 +359,13 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
     @Override
     public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
-        dynamicAccessExpression.getLookupKey().accept(this);
+        UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
         UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
         UnionNode returnType = new EmptyNode(solver);
 
+        solver.union(lookupKey, primitiveFactory.stringOrNumber());
+        DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(solver, returnType, lookupKey);
+        solver.union(operand, dynamicAccessNode);
         solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
         return returnType;
     }
@@ -381,16 +402,17 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         }
 
         public MemberExpressionVisitor invoke() {
-            objectExp = member.getExpression().accept(PureSubsetsConstraintVisitor.this);
+            objectExp = member.getExpression().accept(UnionEverythingConstraintVisitor.this);
             ObjectNode object = new ObjectNode(solver);
             result = new EmptyNode(solver);
             object.addField(member.getProperty(), result);
             solver.union(object, objectExp);
+            solver.union(primitiveFactory.nonVoid(), result);
             solver.runWhenChanged(object, new MemberResolver(member, objectExp, result));
             solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, ObjectNode.FIELD_PREFIX + member.getProperty()));
 
-            if (typeAnalysis.getOptions().classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
-                solver.union(PureSubsetsConstraintVisitor.this.functionNode.thisNode, object);
+            if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
+                solver.union(UnionEverythingConstraintVisitor.this.functionNode.thisNode, object);
             }
             return this;
         }
@@ -435,7 +457,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         @Override
         public void run() {
-            if (!typeAnalysis.getOptions().resolveIncludesWithFields) {
+            if (!typeAnalysis.options.resolveIncludesWithFields) {
                 return;
             }
             UnionClass myClass = this.node.getUnionClass();
@@ -548,21 +570,21 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                         }
                         List<FunctionNode> signatures = createNativeSignatureNodes(closure, true, nativeTypeFactory);
                         for (FunctionNode signature : signatures) {
-                            solver.union(this.thisNode, new IncludeNode(solver, signature.returnNode));
+                            solver.union(this.thisNode, new IncludeNode(solver, signature.returnNode)); // Does effectively the same thing as TSCheck, just more efficiently.
                         }
                         break;
                     case "user":
                         if (closure.getProperty("prototype").value instanceof Snap.UndefinedConstant) {
                             break;
                         }
-                        LibraryClass clazz = typeAnalysis.getLibraryClasses().get((Snap.Obj) closure.getProperty("prototype").value);
+                        LibraryClass clazz = typeAnalysis.libraryClasses.get((Snap.Obj) closure.getProperty("prototype").value);
                         if (clazz != null) {
-                            if (typeAnalysis.getOptions().classOptions.unionThisFromConstructedObjects) {
+                            if (typeAnalysis.options.classOptions.unionThisFromConstructedObjects) {
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));
 
-                            if (typeAnalysis.getOptions().classOptions.useConstructorUsages) {
+                            if (typeAnalysis.options.classOptions.useConstructorUsages) {
                                 solver.union(clazz.getNewConstructorNode(solver), this.function);
                             }
 
@@ -585,6 +607,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         }
     }
 
+    @SuppressWarnings("Duplicates")
     private final class CallGraphResolver implements Runnable {
         List<UnionNode> args;
         private final Expression callExpression; // Useful for debugging.
@@ -599,11 +622,9 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
             this.callExpression = callExpression;
 
             functionNode = FunctionNode.create(args.size(), solver);
-            solver.runWhenChanged(functionNode, new IncludesWithFieldsResolver(functionNode, getFunctionFields(args.size())));
+            solver.union(function, functionNode);
 
-            solver.union(new IncludeNode(solver, function), functionNode);
-
-            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.first, new IncludeNode(solver, pair.second), primitiveFactory.nonVoid()));
+            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.first, pair.second, primitiveFactory.nonVoid()));
 
             solver.union(functionNode.returnNode, returnNode);
             solver.union(functionNode.thisNode, thisNode);
@@ -627,19 +648,17 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                 switch (closure.function.type) {
                     case "user":
                     case "bind": {
-                        assert PureSubsetsConstraintVisitor.this.functionNodes.containsKey(closure);
+//                        assert MixedConstraintVisitor.this.functionNodes.containsKey(closure);
+                        solver.union(this.functionNode, UnionEverythingConstraintVisitor.this.functionNodes.get(closure)); // <- no includeNode, and it is supposed to be that way.
 
-                        // This is my "mixed" way of doing it.
-//                        solver.union(this.functionNode, new IncludeNode(solver, PureSubsetsConstraintVisitor.this.functionNodes.get(closure)));
-
-                        // This is the traditional "points-to" way. By having the arguments flow to the parameters.
+                         /*// This is the traditional "points-to" way. By having the arguments flow to the parameters.
                         FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
-                        solver.union(newFunction, PureSubsetsConstraintVisitor.this.functionNodes.get(closure));
+                        solver.union(newFunction, MixedConstraintVisitor.this.functionNodes.get(closure));
                         solver.union(functionNode.returnNode, new IncludeNode(solver, newFunction.returnNode));
                         solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
                         for (int i = 0; i < functionNode.arguments.size(); i++) {
                             solver.union(new IncludeNode(solver, functionNode.arguments.get(i)), newFunction.arguments.get(i));
-                        }
+                        }*/
 
                         break;
                     }
@@ -647,15 +666,18 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                         boolean emptyArgs = this.functionNode.arguments.isEmpty();
                         if (closure.function.id.equals("Function.prototype.call")) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
-                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, new ArrayList<>(), this.functionNode.returnNode, null));
+                            List<UnionNode> arguments = emptyArgs ? Collections.EMPTY_LIST : this.functionNode.arguments.subList(1, this.functionNode.arguments.size());
+                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, arguments, this.functionNode.returnNode, null));
                             break;
                         } else if (closure.function.id.equals("Function.prototype.apply")) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
                             UnionNode argsNode = this.functionNode.arguments.size() < 2 ? new EmptyNode(solver) : this.functionNode.arguments.get(1);
                             EmptyNode argumentType = new EmptyNode(solver);
-                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, new ArrayList<>(), this.functionNode.returnNode, null));
+                            solver.union(argsNode, new DynamicAccessNode(solver, argumentType, primitiveFactory.number()));
+                            List<UnionNode> arguments = Arrays.asList(argumentType, argumentType, argumentType, argumentType, argumentType);
+                            solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, arguments, this.functionNode.returnNode, null));
                             break;
-                        } else if (closure.function.id.equals("Function.prototype.bind") && typeAnalysis.getOptions().FunctionDotBind) {
+                        } else if (closure.function.id.equals("Function.prototype.bind") && typeAnalysis.options.FunctionDotBind) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
                             int boundArgs = this.functionNode.arguments.size() - 1;
                             AtomicInteger maxArgsSeen = new AtomicInteger(-1);
@@ -672,10 +694,9 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                                 }
                             });
                         } else {
-                            List<FunctionNode> signatures = PureSubsetsConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
-                            signatures.forEach(sig -> {
-                                solver.union(functionNode.returnNode, new IncludeNode(solver, sig.returnNode));
-                            });
+                            // This is actually better than what TSCheck does, it ignores the arguments.
+                            List<FunctionNode> signatures = UnionEverythingConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
+                            solver.union(functionNode, new IncludeNode(solver, signatures));
                             break;
                         }
                     }
