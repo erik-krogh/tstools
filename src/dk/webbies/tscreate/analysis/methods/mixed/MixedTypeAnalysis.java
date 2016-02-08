@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.methods.optimal;
+package dk.webbies.tscreate.analysis.methods.mixed;
 
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
@@ -24,16 +24,16 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     public final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
     public final HeapValueFactory heapFactory;
-    final UnionFindSolver solver;
+    protected final UnionFindSolver solver;
 
     public final Options options;
     public final NativeClassesMap nativeClasses;
 
-    private final TypeFactory typeFactory;
+    protected final TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
     protected final NativeTypeFactory nativeTypeFactory;
     public final Map<Snap.Obj, FunctionNode> functionNodes;
-    private final List<Snap.Obj> nativeFunctions;
+    protected final List<Snap.Obj> nativeFunctions;
     public boolean analysisFinished = false;
 
     public MixedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
@@ -158,7 +158,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
     }
 
-    private boolean canGetEverythingFromRecordedCalls(Snap.Obj closure) {
+    protected boolean canGetEverythingFromRecordedCalls(Snap.Obj closure) {
         if (closure.recordedCalls == null) {
             return false;
         }
@@ -283,7 +283,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
         new MixedConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory).visit(closure.function.astNode);
     }
 
-    private void addCallsToFunction(Snap.Obj closure, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {
+    protected void addCallsToFunction(Snap.Obj closure, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {
         List<RecordedCall> calls = JSNAPUtil.getCalls(closure.recordedCalls);
         if (calls.size() > options.maxObjects) {
             calls = calls.subList(0, options.maxObjects);

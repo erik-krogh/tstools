@@ -1,4 +1,4 @@
-package dk.webbies.tscreate.analysis.methods.optimal;
+package dk.webbies.tscreate.analysis.methods.mixed;
 
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
@@ -22,15 +22,15 @@ import static dk.webbies.tscreate.analysis.ResolveEnvironmentVisitor.getIdentifi
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
-    private final Snap.Obj closure;
-    private final UnionFindSolver solver;
-    private final Map<Identifier, UnionNode> identifierMap;
-    private final FunctionNode functionNode;
-    private final Map<Snap.Obj, FunctionNode> functionNodes;
-    private MixedTypeAnalysis typeAnalysis;
-    private final PrimitiveNode.Factory primitiveFactory;
-    private HeapValueFactory heapFactory;
-    private NativeTypeFactory nativeTypeFactory;
+    protected final Snap.Obj closure;
+    protected final UnionFindSolver solver;
+    protected final Map<Identifier, UnionNode> identifierMap;
+    protected final FunctionNode functionNode;
+    protected final Map<Snap.Obj, FunctionNode> functionNodes;
+    protected MixedTypeAnalysis typeAnalysis;
+    protected final PrimitiveNode.Factory primitiveFactory;
+    protected HeapValueFactory heapFactory;
+    protected NativeTypeFactory nativeTypeFactory;
 
     public MixedConstraintVisitor(
             Snap.Obj closure,
@@ -304,7 +304,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    private static boolean closureMatch(FunctionExpression function, Snap.Obj closure) {
+    protected static boolean closureMatch(FunctionExpression function, Snap.Obj closure) {
         String type = closure.function.type;
         if (type.equals("user")) {
             return function == closure.function.astNode;
@@ -385,7 +385,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return new MemberExpressionVisitor(member).invoke().getResult();
     }
 
-    private class MemberExpressionVisitor {
+    protected class MemberExpressionVisitor {
         private MemberExpression member;
         private UnionNode objectExp;
         private UnionNode result;
@@ -443,7 +443,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return thisNode;
     }
 
-    private final class IncludesWithFieldsResolver implements Runnable {
+    protected final class IncludesWithFieldsResolver implements Runnable {
         private final UnionNode node;
         private final List<String> fields;
 
@@ -709,7 +709,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
+    protected static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
         List<Signature> signatures;
         if (constructorCalls) {
             signatures = closure.function.constructorSignatures;
@@ -723,7 +723,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return result;
     }
 
-    private Collection<Snap.Obj> getFunctionClosures(UnionNode function, HashSet<Snap.Obj> seenHeap) {
+    protected Collection<Snap.Obj> getFunctionClosures(UnionNode function, HashSet<Snap.Obj> seenHeap) {
         Set<Snap.Obj> result = new HashSet<>();
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             if (feature.getFunctionFeature() != null) {
@@ -745,7 +745,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return result;
     }
 
-    private Collection<FunctionNode> getFunctionNodes(UnionNode function) {
+    protected Collection<FunctionNode> getFunctionNodes(UnionNode function) {
         Set<FunctionNode> result = new HashSet<>();
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             UnionFeature.FunctionFeature functionFeature = feature.getFunctionFeature();
