@@ -11,6 +11,7 @@ import dk.webbies.tscreate.analysis.unionFind.UnionFeature;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature.FunctionFeature;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
+import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
@@ -256,7 +257,7 @@ public class TypeFactory {
         Snap.Obj constructor = libraryClass.getConstructor();
         switch (constructor.function.type) {
             case "user":
-                CombinationType constructorType = createConstructorType(libraryClass, constructor);
+                DeclarationType constructorType = getPureFunction(constructor);
 
                 Map<String, DeclarationType> staticFields = new HashMap<>();
                 for (Map.Entry<String, Snap.Property> entry : constructor.getPropertyMap().entrySet()) {
@@ -279,20 +280,6 @@ public class TypeFactory {
             default: // Case "native" should already be handled here.
                 throw new UnsupportedOperationException("unhandled type for creating a class type: " + constructor.function.type);
         }
-    }
-
-    private CombinationType createConstructorType(LibraryClass libraryClass, Snap.Obj constructor) {
-        CombinationType constructorType = new CombinationType(typeReducer);
-
-        constructorType.addType(getPureFunction(constructor));
-
-        Set<UnionFeature> constructorFeatures = new HashSet<>(libraryClass.constructorNodes.stream().map(UnionNode::getFeature).map(UnionFeature::getReachable).reduce(new ArrayList<>(), Util::reduceList));
-
-        List<FunctionFeature> constructorFunctionFeatures = constructorFeatures.stream().filter(feature -> feature.getFunctionFeature() != null).map(UnionFeature::getFunctionFeature).collect(Collectors.toList());
-        constructorFunctionFeatures.forEach(constructorFeature -> {
-            createFunctionType(constructorFeature).forEach(constructorType::addType);
-        });
-        return constructorType;
     }
 
     private Map<String, DeclarationType> createClassFields(LibraryClass libraryClass) {
@@ -443,6 +430,13 @@ public class TypeFactory {
         }).collect(Collectors.toList());
 
         FunctionType result = new FunctionType(returnType, argumentsTypes);
+
+        if (closure.recordedCalls != null) {
+            result.minArgs = Integer.MAX_VALUE;
+            for (JSNAPUtil.RecordedCall call : JSNAPUtil.getCalls(closure.recordedCalls)) {
+                result.minArgs = Math.min(result.minArgs, call.arguments.size());
+            }
+        }
 
         unresolved.setResolvedType(result);
     }

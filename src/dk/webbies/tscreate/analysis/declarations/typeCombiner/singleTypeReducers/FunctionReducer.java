@@ -73,6 +73,10 @@ public class FunctionReducer extends SameTypeReducer<FunctionType> {
             arguments.add(arg);
         }
 
-        return new FunctionType(returnType, arguments);
+        FunctionType result = new FunctionType(returnType, arguments);
+
+        result.minArgs = Math.min(one.minArgs, two.minArgs);
+
+        return result;
     }
 }

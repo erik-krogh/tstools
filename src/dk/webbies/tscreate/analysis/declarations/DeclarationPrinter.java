@@ -199,7 +199,7 @@ public class DeclarationPrinter {
             ident(arg.builder);
             write(arg.builder, prefix + " function " + name + "(");
             List<FunctionType.Argument> args = functionType.getArguments();
-            printArguments(arg, args);
+            printArguments(arg, args, functionType.minArgs);
             write(arg.builder, "): ");
             functionType.getReturnType().accept(new TypeVisitor(), arg);
 
@@ -235,7 +235,7 @@ public class DeclarationPrinter {
             ident++;
             ident(arg.builder);
             write(arg.builder, "constructor (");
-            printArguments(arg, clazz.getConstructorType().getArguments());
+            printArguments(arg, clazz.getConstructorType().getArguments(), clazz.getConstructorType().minArgs);
             write(arg.builder, ");\n");
 
             for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet()) {
@@ -262,7 +262,7 @@ public class DeclarationPrinter {
         }
     }
 
-    private void printArguments(VisitorArg visitorArg, List<FunctionType.Argument> args) {
+    private void printArguments(VisitorArg visitorArg, List<FunctionType.Argument> args, Integer minArgs) {
         List<String> names = new ArrayList<>();
         args.stream().map(FunctionType.Argument::getName).forEach(orgName -> {
             String name = orgName;
@@ -273,9 +273,16 @@ public class DeclarationPrinter {
             names.add(name);
         });
 
+        if (minArgs == null) {
+            minArgs = Integer.MAX_VALUE;
+        }
+
         for (int i = 0; i < args.size(); i++) {
             FunctionType.Argument arg = args.get(i);
             write(visitorArg.builder, names.get(i));
+            if (i >= minArgs) {
+                write(visitorArg.builder, "?");
+            }
             write(visitorArg.builder, ": ");
             arg.getType().accept(new TypeVisitor(), visitorArg);
             if (i != args.size() - 1) {
@@ -370,7 +377,7 @@ public class DeclarationPrinter {
 
                 write(arg.builder, "(");
                 List<FunctionType.Argument> args = functionType.getArguments();
-                printArguments(arg, functionType.getArguments());
+                printArguments(arg, functionType.getArguments(), functionType.minArgs);
                 if (insideInterface) {
                     write(arg.builder, ") : ");
                 } else {
@@ -555,7 +562,7 @@ public class DeclarationPrinter {
                 ident++;
                 ident(arg.builder);
                 write(arg.builder, "new (");
-                printArguments(arg, classType.getConstructorType().getArguments());
+                printArguments(arg, classType.getConstructorType().getArguments(), classType.getConstructorType().minArgs);
                 write(arg.builder, ") : " + classType.getName() + "\n");
 
                 classType.getStaticFields().forEach((name, type) -> printObjectField(arg, name, type, this));

@@ -8,6 +8,7 @@ import java.util.List;
 public class FunctionType extends DeclarationType {
     private DeclarationType returnType;
     private List<Argument> arguments;
+    public int minArgs = Integer.MAX_VALUE;
 
     public FunctionType(DeclarationType returnType, List<Argument> arguments) {
         this.returnType = returnType;
