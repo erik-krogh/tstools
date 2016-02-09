@@ -30,9 +30,9 @@ public class Pair<A, B> {
 
     @Override
     public String toString() {
-        return "Pair{" +
-                "left=" + first +
-                ", right=" + second +
+        return "{" +
+                "1st=" + first +
+                ", 2nd=" + second +
                 '}';
     }
 }
