@@ -101,7 +101,7 @@ public class DeclarationPrinter {
         if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str)) {
             write(builder, str);
         } else {
-            write(builder, "\"" + str + "\"");
+            write(builder, "\"" + str.replace("\"", "\\\"") + "\"");
         }
     }
 
