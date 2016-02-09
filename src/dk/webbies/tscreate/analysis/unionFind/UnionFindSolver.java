@@ -69,7 +69,7 @@ public class UnionFindSolver {
      * @return Whether the element was successfully inserted.
      * @throws NullPointerException If elem is null.
      */
-    public boolean add(UnionNode node) {
+    boolean add(UnionNode node) {
         /* Check for null. */
         if (node == null)
             throw new NullPointerException("UnionFind does not support null.");
