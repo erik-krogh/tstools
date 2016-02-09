@@ -167,11 +167,14 @@ public class MixedTypeAnalysis implements TypeAnalysis {
         for (int i = 0; i < argsSize; i++) {
             notSeenArgs.add(i);
         }
-        List<RecordedCall> calls = JSNAPUtil.getCalls(closure);
+        List<RecordedCall> calls = JSNAPUtil.getCalls(closure.recordedCalls);
         for (RecordedCall call : calls) {
             Iterator<Integer> iter = notSeenArgs.iterator();
             while (iter.hasNext()) {
                 Integer notSeen = iter.next();
+                if (call.arguments.size() <= notSeen) {
+                    continue;
+                }
                 Snap.Value argValue = call.arguments.get(notSeen);
                 if (!(argValue instanceof Snap.UndefinedConstant) && !(argValue instanceof Snap.NullConstant)) {
                     iter.remove();
@@ -299,7 +302,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
         }
     }
 
-    private static List<Snap.Obj> getAllFunctionInstances(Snap.Obj root) {
+    public static List<Snap.Obj> getAllFunctionInstances(Snap.Obj root) {
         return JSNAPUtil.getAllObjects(root).stream().filter(obj -> obj.function != null).collect(Collectors.toList());
     }
 }
