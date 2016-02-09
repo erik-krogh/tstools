@@ -15,7 +15,7 @@ public class Options {
 
     // When we have some unionNode, that includes another union-node, and they both have fields. Something is done to make sure that the fields also know about that include (if the include has a matching field).
     // This option disables that, since it for some libraries (jQuery), runs EXTREMELY slow.
-    public boolean resolveIncludesWithFields = false;
+    public boolean resolveIncludesWithFields = true;
 
     // If false, then every time a value from the heap is used, it will be treated independently. And will not be unified.
     public boolean unionHeapIdentifiers = false; // makes next to zero difference, but false seems to be better.
