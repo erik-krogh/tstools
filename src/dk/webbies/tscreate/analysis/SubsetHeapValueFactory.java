@@ -140,6 +140,7 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
         return primitivesBuilder.undefined(); // TODO: Maybe fix whatever is causing this.
     }
 
+    @SuppressWarnings("Duplicates")
     public FunctionNode getGetterSetterNode(Snap.Obj closure) {
         if (closure == null || closure.function == null || closure.function.type == null) {
             System.out.printf("");
