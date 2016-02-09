@@ -207,10 +207,6 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));
 
-                            if (typeAnalysis.options.classOptions.useConstructorUsages) {
-                                solver.union(clazz.getNewConstructorNode(solver), this.function);
-                            }
-
                             if (functionClosures.size() == 1) { // If it resolves to a unique closure, mark the class with this construction-site.
                                 clazz.addUniqueConstructionSite(this.callExpression);
                             } else {

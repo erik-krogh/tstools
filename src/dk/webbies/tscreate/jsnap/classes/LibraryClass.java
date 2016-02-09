@@ -2,7 +2,6 @@ package dk.webbies.tscreate.jsnap.classes;
 
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
 import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
@@ -23,7 +22,6 @@ public class LibraryClass {
     public LibraryClass superClass;
     private String name = null;
 
-    public final List<UnionNode> constructorNodes = new ArrayList<>();
     public final List<UnionNode> thisNodes = new ArrayList<>();
 
     public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class.
@@ -44,12 +42,6 @@ public class LibraryClass {
 
     public Snap.Obj getPrototype() {
         return prototype;
-    }
-
-    public UnionNode getNewConstructorNode(UnionFindSolver solver) {
-        EmptyNode result = new EmptyNode(solver);
-        constructorNodes.add(result);
-        return result;
     }
 
     public void addPathSeen(String path) {

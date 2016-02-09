@@ -34,16 +34,21 @@ public class Options {
     public int maxObjects = 1000;
 
     // If enabled, then for functions where we have information about all arguments and the return, we use that information instead of doing the static analysis.
-    public boolean skipStaticAnalysisWhenPossible = true; // Doesn't actually do much difference.
+    public boolean skipStaticAnalysisWhenPossible = false; // FIXME: Test this thing, i just fixed a bug.
 
     // Deactivates all but the trivial part of the type-inference. When doing this, there is union-types everywhere, instead of more readable types.
     public boolean reduceNothing = false;
 
     public enum StaticAnalysisMethod {
-        MY_MIXED_METHOD,
-        TRADITIONAL_SUBSETS,
-        TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH,
-        TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING
+        MY_MIXED_METHOD("mixed"),
+        TRADITIONAL_SUBSETS("subsets"),
+        TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH("unify recursive"),
+        TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING("unify simple");
+        public final String prettyString;
+
+        StaticAnalysisMethod(String prettyString) {
+            this.prettyString = prettyString;
+        }
     }
 
     public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.MY_MIXED_METHOD;
@@ -57,7 +62,6 @@ public class Options {
     public static class ClassOptions {
         public boolean onlyUseThisWithFieldAccesses = true; // So as an example, in "foo(this)", this will not be unified with the functions this-node. But in "this.foo" it will.
 
-        public boolean useConstructorUsages = false;
         public boolean useClassInstancesFromHeap = true;
         // If the above is true, these ones are only used as fallback (that is, they are then only used if there are no instances of the class found in the heap).
 

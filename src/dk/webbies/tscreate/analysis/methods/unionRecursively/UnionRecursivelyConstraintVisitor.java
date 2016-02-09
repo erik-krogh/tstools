@@ -1,7 +1,6 @@
 package dk.webbies.tscreate.analysis.methods.unionRecursively;
 
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedConstraintVisitor;
 import dk.webbies.tscreate.analysis.unionFind.*;
@@ -206,10 +205,6 @@ public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));
-
-                            if (typeAnalysis.options.classOptions.useConstructorUsages) {
-                                solver.union(clazz.getNewConstructorNode(solver), this.function);
-                            }
 
                             if (functionClosures.size() == 1) { // If it resolves to a unique closure, mark the class with this construction-site.
                                 clazz.addUniqueConstructionSite(this.callExpression);

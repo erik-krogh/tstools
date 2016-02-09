@@ -2,13 +2,12 @@ package dk.webbies.tscreate;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
-import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.old.analysis.OldTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
-import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingTypeAnalysis;
-import dk.webbies.tscreate.analysis.methods.unionRecursively.UnionRecursivelyTypeAnalysis;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
@@ -20,6 +19,7 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
+import static dk.webbies.tscreate.util.Util.toFixed;
 
 /**
  * Created by Erik Krogh Kristensen on 01-09-2015.
@@ -42,19 +43,45 @@ public class Main {
 
 //            tsCheck();
 //            generateAllDeclarations();
-            runAnalysis(BenchMark.materialize);
+            runAnalysis(BenchMark.underscore);
 //            benchAll();
 //            printTable();
+//            compareMethods(Arrays.asList(BenchMark.underscore, BenchMark.box2d, BenchMark.hammer, BenchMark.handlebars, BenchMark.jQuery, BenchMark.knockout, BenchMark.leaflet, BenchMark.moment, BenchMark.Q, BenchMark.react, BenchMark.three), 5 * 60 * 1000);
 
 
             long end = System.currentTimeMillis();
 
-            System.out.println("Ran in " + Util.toFixed((end - start) / 1000.0, 1) + "s");
+            System.out.println("Ran in " + toFixed((end - start) / 1000.0, 1) + "s");
         } catch (Throwable e) {
             System.err.println("Crashed: ");
             e.printStackTrace(System.err);
         } finally {
             System.exit(0);
+        }
+    }
+
+    private static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
+        Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
+        for (BenchMark benchMark : benchMarks) {
+            Map<Options.StaticAnalysisMethod, Score> scores = new HashMap<>();
+            benchmarkScores.put(benchMark, scores);
+            for (Options.StaticAnalysisMethod method : Options.StaticAnalysisMethod.values()) {
+                benchMark.options.staticMethod = method;
+                System.out.println("With method: " + method.prettyString);
+                scores.put(method, runAnalysisWithTimeout(benchMark, timeout));
+            }
+        }
+
+        for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
+            Map<Options.StaticAnalysisMethod, Score> scores = entry.getValue();
+            System.out.println("Benchmark: " + entry.getKey().name);
+            for (Map.Entry<Options.StaticAnalysisMethod, Score> scoreEntry : scores.entrySet()) {
+                Score score = scoreEntry.getValue();
+                if (score == null) {
+                    score = new Score(-1, -1, -1);
+                }
+                System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, 2) + " - " + toFixed(score.recall, 2) + " - " + toFixed(score.precision, 2));
+            }
         }
     }
 
@@ -118,9 +145,11 @@ public class Main {
             case TRADITIONAL_SUBSETS:
                 return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
-                return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+//                return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH:
-                return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+//                return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             default:
                 throw new RuntimeException("I don't even know this static analysis method. ");
         }
@@ -186,9 +215,9 @@ public class Main {
         List<BenchMark> benches = scores.keySet().stream().sorted((o1, o2) -> o1.name.compareTo(o2.name)).collect(Collectors.toList());
         for (int i = 0; i < benches.size(); i++) {
             BenchMark benchMark = benches.get(i);
-            String fMeasure = Util.toFixed(scores.get(benchMark).fMeasure, 3);
-            String precision = Util.toFixed(scores.get(benchMark).precision, 3);
-            String recall = Util.toFixed(scores.get(benchMark).recall, 3);
+            String fMeasure = toFixed(scores.get(benchMark).fMeasure, 3);
+            String precision = toFixed(scores.get(benchMark).precision, 3);
+            String recall = toFixed(scores.get(benchMark).recall, 3);
             System.out.print(benchMark.name + " & " + Util.lines(benchMark.scriptPath) + " & " + fMeasure + " & " + precision + " & " + recall);
             if (i != benches.size() - 1) {
                 System.out.print(" \\\\");

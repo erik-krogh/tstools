@@ -2,9 +2,9 @@ package dk.webbies.tscreate.analysis.methods.pureSubsets;
 
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.mixed.MixedConstraintVisitor;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -387,7 +387,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
             result = new EmptyNode(solver);
             object.addField(member.getProperty(), result);
             solver.union(object, objectExp);
-            solver.runWhenChanged(object, new MemberResolver(member, objectExp, result));
+            solver.runWhenChanged(object, new MixedConstraintVisitor.MemberResolver(member, objectExp, result, solver, heapFactory));
             solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, ObjectNode.FIELD_PREFIX + member.getProperty()));
 
             if (typeAnalysis.getOptions().classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
@@ -469,56 +469,6 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         }
     }
 
-    private final class MemberResolver implements Runnable {
-        private MemberExpression member;
-        private final UnionNode expressionNode;
-        private final UnionNode memberNode;
-        private Set<Snap.Obj> seenPrototypes = new HashSet<>();
-
-        // expressionNode = node for "foo" in "foo.bar".
-        // memberNode = node for "foo.bar" in "foo.bar".
-        public MemberResolver(MemberExpression member, UnionNode expressionNode, UnionNode memberNode) {
-            this.member = member;
-            this.expressionNode = expressionNode;
-            this.memberNode = memberNode;
-        }
-
-        @Override
-        public void run() {
-            List<UnionFeature> features = UnionFeature.getReachable(expressionNode.getFeature());
-
-            Set<Snap.Obj> prototypes = new HashSet<>();
-            for (UnionFeature feature : features) {
-                prototypes.addAll(feature.getPrototypes());
-            }
-
-            prototypes.removeAll(seenPrototypes);
-            seenPrototypes.addAll(prototypes);
-            for (Snap.Obj prototype : new HashSet<>(prototypes)) {
-                UnionNode propertyNode = lookupProperty(prototype, member.getProperty());
-                solver.union(memberNode, propertyNode);
-            }
-        }
-
-        private UnionNode lookupProperty(Snap.Value value, String name) {
-            if (value == null || !(value instanceof Snap.Obj)) {
-                return new EmptyNode(solver);
-            }
-            Snap.Obj obj = (Snap.Obj) value;
-            Snap.Property property = obj.getProperty(name);
-            if (property != null) {
-                return heapFactory.fromProperty(property);
-            }
-
-            if (obj != obj.prototype) {
-                return lookupProperty(obj.prototype, name);
-            } else {
-                return new EmptyNode(solver);
-            }
-        }
-    }
-
-
 
     private final class NewCallResolver implements Runnable {
         private final UnionNode function;
@@ -539,7 +489,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap);
+            Collection<Snap.Obj> functionClosures = MixedConstraintVisitor.getFunctionClosures(function, seenHeap);
             for (Snap.Obj closure : functionClosures) {
                 switch (closure.function.type) {
                     case "native":
@@ -562,10 +512,6 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));
-
-                            if (typeAnalysis.getOptions().classOptions.useConstructorUsages) {
-                                solver.union(clazz.getNewConstructorNode(solver), this.function);
-                            }
 
                             if (functionClosures.size() == 1) { // If it resolves to a unique closure, mark the class with this construction-site.
                                 clazz.addUniqueConstructionSite(this.callExpression);
@@ -622,7 +568,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap);
+            Collection<Snap.Obj> functions = MixedConstraintVisitor.getFunctionClosures(functionNode, seenHeap);
 
             for (Snap.Obj closure : functions) {
                 switch (closure.function.type) {
@@ -700,28 +646,6 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         for (Signature signature : signatures) {
             result.add(functionNodeFactory.fromSignature(signature));
         }
-        return result;
-    }
-
-    private Collection<Snap.Obj> getFunctionClosures(UnionNode function, HashSet<Snap.Obj> seenHeap) {
-        Set<Snap.Obj> result = new HashSet<>();
-        for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
-            if (feature.getFunctionFeature() != null) {
-                for (Snap.Obj closure : feature.getFunctionFeature().getClosures()) {
-                    if (closure.function == null) {
-                        continue;
-                    }
-                    if (seenHeap.contains(closure)) {
-                        continue;
-                    }
-                    seenHeap.add(closure);
-
-                    result.add(closure);
-                }
-
-            }
-        }
-
         return result;
     }
 

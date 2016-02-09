@@ -2,7 +2,6 @@ package dk.webbies.tscreate.analysis.methods.mixed;
 
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -410,7 +409,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             object.addField(member.getProperty(), result);
             solver.union(object, objectExp);
             solver.union(primitiveFactory.nonVoid(), result);
-            solver.runWhenChanged(object, new MemberResolver(member, objectExp, result));
+            solver.runWhenChanged(object, new MemberResolver(member, objectExp, result, solver, heapFactory));
             solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, ObjectNode.FIELD_PREFIX + member.getProperty()));
 
             if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
@@ -492,18 +491,22 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    private final class MemberResolver implements Runnable {
+    public static final class MemberResolver implements Runnable {
         private MemberExpression member;
         private final UnionNode expressionNode;
         private final UnionNode memberNode;
+        private UnionFindSolver solver;
         private Set<Snap.Obj> seenPrototypes = new HashSet<>();
+        private final HeapValueFactory heapFactory;
 
         // expressionNode = node for "foo" in "foo.bar".
         // memberNode = node for "foo.bar" in "foo.bar".
-        public MemberResolver(MemberExpression member, UnionNode expressionNode, UnionNode memberNode) {
+        public MemberResolver(MemberExpression member, UnionNode expressionNode, UnionNode memberNode, UnionFindSolver solver, HeapValueFactory heapFactory) {
             this.member = member;
             this.expressionNode = expressionNode;
             this.memberNode = memberNode;
+            this.solver = solver;
+            this.heapFactory = heapFactory;
         }
 
         @Override
@@ -585,10 +588,6 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));
-
-                            if (typeAnalysis.options.classOptions.useConstructorUsages) {
-                                solver.union(clazz.getNewConstructorNode(solver), this.function);
-                            }
 
                             if (functionClosures.size() == 1) { // If it resolves to a unique closure, mark the class with this construction-site.
                                 clazz.addUniqueConstructionSite(this.callExpression);
@@ -724,7 +723,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return result;
     }
 
-    protected Collection<Snap.Obj> getFunctionClosures(UnionNode function, HashSet<Snap.Obj> seenHeap) {
+    public static Collection<Snap.Obj> getFunctionClosures(UnionNode function, Set<Snap.Obj> seenHeap) {
         Set<Snap.Obj> result = new HashSet<>();
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             if (feature.getFunctionFeature() != null) {
