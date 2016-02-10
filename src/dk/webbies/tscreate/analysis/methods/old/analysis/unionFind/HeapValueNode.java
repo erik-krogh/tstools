@@ -55,7 +55,7 @@ public class HeapValueNode extends ObjectNode {
             this.primitivesFactory = new DumbPrimitiveFactory(solver, globalObject);
             this.solver = solver;
             this.typeNames = typeNames;
-            this.functionNodeFactory = new NativeTypeFactory(primitivesFactory, solver, typeAnalysis.getNativeClasses());
+            this.functionNodeFactory = new NativeTypeFactory(primitivesFactory, solver, typeAnalysis.getNativeClasses(), false);
         }
 
         public UnionNode fromProperty(Snap.Property property) {
@@ -74,13 +74,16 @@ public class HeapValueNode extends ObjectNode {
                         setter = setterFunctionNode.arguments.get(0);
                     }
                 }
-                return new IncludeNode(solver, getter, setter);
+                return solver.union(getter, setter);
             } else {
                 return fromValue(property.value);
             }
         }
 
         public UnionNode fromValue(Snap.Value value) {
+            if (value == null) {
+                return new EmptyNode(solver);
+            }
             UnionNode primitive = getPrimitiveValue(value, primitivesFactory);
             if (primitive != null) {
                 return primitive;
@@ -98,6 +101,11 @@ public class HeapValueNode extends ObjectNode {
                     solver.union(libraryClass.getNewThisNode(solver), objectNode);
                 }
             }
+
+            if (this.typeAnalysis.getNativeClasses().nameFromObject(obj) != null) {
+                objectNode.setTypeName(this.typeAnalysis.getNativeClasses().nameFromObject(obj));
+            }
+
             if (obj.function != null) {
                 result.addAll(getFunctionNode(obj));
             }
@@ -151,7 +159,7 @@ public class HeapValueNode extends ObjectNode {
             if (value instanceof Snap.Obj) {
                 return null;
             }
-            throw new RuntimeException();
+            return null;
         }
 
         @SuppressWarnings("Duplicates")
@@ -166,7 +174,7 @@ public class HeapValueNode extends ObjectNode {
 
                     }
                 case "native":
-                    throw new UnsupportedOperationException();
+                    return FunctionNode.create(closure, solver);
                 default:
                     throw new RuntimeException();
             }
