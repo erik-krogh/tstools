@@ -68,7 +68,7 @@ public class BenchMark {
         options.recordCalls = true;
         BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
 
-        bench.dependencies.add(Dependency.QUnit);
+//        bench.dependencies.add(Dependency.QUnit);
 
         /*bench.testFiles.add("tests/underscore/tests/arrays.js");
         bench.testFiles.add("tests/underscore/tests/chaining.js");
@@ -329,6 +329,22 @@ public class BenchMark {
         benchMark.dependencies.add(Dependency.jQuery);
         return benchMark;
     });
+
+    // Some i have tried to infer types for.
+
+    public final static List<BenchMark> toInferFor = new ArrayList<>();
+    static {
+        File inferFor = new File("tests/toInferFor");
+        for (File file : inferFor.listFiles()) {
+            String path = file.getPath();
+            if (path.endsWith(".js")) {
+                Options options = new Options();
+                options.createInstances = false;
+                options.recordCalls = false;
+                toInferFor.add(new BenchMark(path, path, null, options, ES6));
+            }
+        }
+    }
 
 
     public static final BenchMark test = evaluate(() -> {
