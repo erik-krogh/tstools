@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.analysis.methods.old.analysis;
 
-import dk.webbies.tscreate.analysis.methods.old.analysis.unionFind.HeapValueNode;
+import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.methods.unionRecursively.DumbPrimitiveFactory;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -24,7 +24,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
     private Map<String, Snap.Property> globalValues;
     private Map<String, Snap.Value> values;
     private final PrimitiveNode.Factory primitivesBuilder;
-    private HeapValueNode.Factory heapFactory;
+    private HeapValueFactory heapFactory;
     private Map<Snap.Obj, LibraryClass> libraryClasses;
 
     public ResolveEnvironmentVisitor(
@@ -35,7 +35,7 @@ public class ResolveEnvironmentVisitor implements NodeTransverse<Void> {
             Map<String, Snap.Value> values,
             Map<String, Snap.Property> globalValues,
             Snap.Obj globalObject,
-            HeapValueNode.Factory heapFactory,
+            HeapValueFactory heapFactory,
             Map<Snap.Obj, LibraryClass> libraryClasses) {
         this.closure = closure;
         this.function = function;

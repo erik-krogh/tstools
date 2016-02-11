@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class MixedTypeAnalysis implements TypeAnalysis {
     public final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
-    public final HeapValueFactory heapFactory;
+    public HeapValueFactory heapFactory;
     protected final UnionFindSolver solver;
 
     public final Options options;
@@ -31,7 +31,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
     protected final TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
-    protected final NativeTypeFactory nativeTypeFactory;
+    protected NativeTypeFactory nativeTypeFactory;
     public final Map<Snap.Obj, FunctionNode> functionNodes;
     protected final List<Snap.Obj> nativeFunctions;
     public boolean analysisFinished = false;

@@ -1,7 +1,6 @@
 package dk.webbies.tscreate.analysis.methods.unionEverything;
 
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedConstraintVisitor;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
@@ -90,6 +89,16 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
             default:
                 throw new UnsupportedOperationException("Don't yet handle the operator: " + op.getOperator());
         }
+    }
+
+    @Override
+    public UnionNode visit(Return aReturn) {
+        if (aReturn.getExpression() instanceof UnaryExpression && ((UnaryExpression) aReturn.getExpression()).getOperator() == Operator.VOID) {
+            // This is a return;
+            return new EmptyNode(solver);
+        }
+        solver.union(aReturn.getExpression().accept(this), functionNode.returnNode, primitiveFactory.nonVoid());
+        return null;
     }
 
 

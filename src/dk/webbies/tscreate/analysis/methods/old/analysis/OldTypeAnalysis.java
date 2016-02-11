@@ -92,9 +92,9 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
 
         // Same as "separate methods".
         if (options.staticMethod == Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH) {
-            int counter = 1;
+            int counter = 0;
             for (Snap.Obj functionClosure : functions) {
-                System.out.println(counter++ + "/" + functions.size());
+                System.out.println(++counter + "/" + functions.size());
                 UnionFindSolver solver = new UnionFindSolver(this);
 
                 // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
@@ -117,14 +117,17 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
             typeFactory.resolveClassTypes();
 
         } else {
+            int counter = 0;
+
             HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
             for (Snap.Obj function : functions) {
-                analyse(function, functionNodes, solver, functionNodes.get(function), heapFactory, new HashSet<>());
+                System.out.println(++counter + "/" + functions.size());
+                analyse(function, functionNodes, solver, functionNodes.get(function), heapFactory, null);
             }
 
             solver.finish();
 
-            int counter = 0;
+            counter = 0;
 
             for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
                 System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
@@ -147,7 +150,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
         }
     }
 
-    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueNode.Factory heapFactory, Set<Snap.Obj> hasAnalysed) {
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Set<Snap.Obj> hasAnalysed) {
         if (closure.function.type.equals("unknown")) {
             return;
         }
@@ -169,7 +172,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
 
         new ResolveEnvironmentVisitor(closure, closure.function.astNode, solver, programPoints, values, JSNAPUtil.createPropertyMap(this.globalObject), this.globalObject, heapFactory, libraryClasses).visit(closure.function.astNode);
 
-        new UnionConstraintVisitor(closure, solver, programPoints, functionNode, functionNodes, heapFactory, this, hasAnalysed).visit(closure.function.astNode);
+        new UnionConstraintVisitor(closure, solver, functionNode, functionNodes, heapFactory, this, programPoints, nativeTypeFactory, hasAnalysed).visit(closure.function.astNode);
     }
 
     public DeclarationParser.NativeClassesMap getNativeClasses() {

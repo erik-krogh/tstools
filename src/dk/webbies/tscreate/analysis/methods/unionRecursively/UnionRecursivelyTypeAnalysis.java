@@ -3,8 +3,8 @@ package dk.webbies.tscreate.analysis.methods.unionRecursively;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.SubsetHeapValueFactory;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.old.analysis.unionFind.HeapValueNode;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -19,8 +19,11 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("Duplicates")
 public class UnionRecursivelyTypeAnalysis extends MixedTypeAnalysis {
+    private final Snap.Obj globalObject;
+
     public UnionRecursivelyTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
         super(libraryClasses, options, globalObject, nativeClasses);
+        this.globalObject = globalObject;
     }
 
     @Override
@@ -29,10 +32,10 @@ public class UnionRecursivelyTypeAnalysis extends MixedTypeAnalysis {
     }
 
     @Override
-    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> originalFunctionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory subSetBasedHeapValueFactory) {
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> originalFunctionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapValueFactory) {
         HashMap<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
         functionNodes.put(closure, functionNode);
-        this.analyseKeepFunctionNodes(closure, functionNodes, solver, functionNode, new DumbCachingHeapValueFactory((SubsetHeapValueFactory)subSetBasedHeapValueFactory));
+        this.analyseKeepFunctionNodes(closure, functionNodes, solver, functionNode, new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this));
     }
 
     void analyseKeepFunctionNodes(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {

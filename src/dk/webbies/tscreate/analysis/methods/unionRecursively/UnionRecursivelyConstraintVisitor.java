@@ -93,6 +93,16 @@ public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
 
 
     @Override
+    public UnionNode visit(Return aReturn) {
+        if (aReturn.getExpression() instanceof UnaryExpression && ((UnaryExpression) aReturn.getExpression()).getOperator() == Operator.VOID) {
+            // This is a return;
+            return new EmptyNode(solver);
+        }
+        solver.union(aReturn.getExpression().accept(this), functionNode.returnNode, primitiveFactory.nonVoid());
+        return null;
+    }
+
+    @Override
     public UnionNode visit(FunctionExpression function) {
         if (closureMatch(function, this.closure)) {
             // It is the function we are currently analyzing, special treatment.

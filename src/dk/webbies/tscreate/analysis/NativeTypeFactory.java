@@ -15,16 +15,14 @@ import java.util.stream.Collectors;
  */
 public class NativeTypeFactory {
     private final NativeClassesMap nativeClasses;
-    private boolean useCache;
-    private Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
-    private PrimitiveNode.Factory primitiveFactory;
-    private UnionFindSolver solver;
+    private final Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
+    private final PrimitiveNode.Factory primitiveFactory;
+    private final UnionFindSolver solver;
 
-    public NativeTypeFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, NativeClassesMap nativeClasses, boolean useCache) {
+    public NativeTypeFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, NativeClassesMap nativeClasses) {
         this.primitiveFactory = primitiveFactory;
         this.solver = solver;
         this.nativeClasses = nativeClasses;
-        this.useCache = useCache;
     }
 
     public FunctionNode fromSignature(Signature signature) {
@@ -71,18 +69,14 @@ public class NativeTypeFactory {
         if (isArgument && type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any) {
             return primitiveFactory.nonVoid();
         }
-        if (useCache) {
-            if (typeCache.containsKey(type)) {
-                return new IncludeNode(solver, typeCache.get(type));
-            } else {
-                EmptyNode node = new EmptyNode(solver);
-                typeCache.put(type, node);
-                List<UnionNode> result = type.accept(new UnionNativeTypeVisitor());
-                solver.union(node, result);
-                return new IncludeNode(solver, node);
-            }
+        if (typeCache.containsKey(type)) {
+            return new IncludeNode(solver, typeCache.get(type));
         } else {
-            return solver.union(new EmptyNode(solver), type.accept(new UnionNativeTypeVisitor()));
+            EmptyNode node = new EmptyNode(solver);
+            typeCache.put(type, node);
+            List<UnionNode> result = type.accept(new UnionNativeTypeVisitor());
+            solver.union(node, result);
+            return new IncludeNode(solver, node);
         }
     }
 

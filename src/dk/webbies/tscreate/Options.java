@@ -62,7 +62,7 @@ public class Options {
     }
 
     public static class ClassOptions {
-        public boolean onlyUseThisWithFieldAccesses = true; // So as an example, in "foo(this)", this will not be unified with the functions this-node. But in "this.foo" it will.
+        public boolean onlyUseThisWithFieldAccesses = false; // So as an example, in "foo(this)", this will not be unified with the functions this-node. But in "this.foo" it will.
 
         public boolean useClassInstancesFromHeap = true;
         // If the above is true, these ones are only used as fallback (that is, they are then only used if there are no instances of the class found in the heap).

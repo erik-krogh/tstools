@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.*;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.old.analysis.unionFind.HeapValueNode;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -18,8 +19,16 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("Duplicates")
 public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
+
+    private HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    private Snap.Obj globalObject;
+
     public UnionEverythingTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
         super(libraryClasses, options, globalObject, nativeClasses);
+        this.libraryClasses = libraryClasses;
+        this.globalObject = globalObject;
+        this.heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
+        this.nativeTypeFactory = new NativeTypeFactory(heapFactory.getPrimitivesFactory(), solver, nativeClasses);
     }
 
     @Override
@@ -94,4 +103,15 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
         System.out.println("Printing declarations");
 
     }
+
+    @Override
+    public HeapValueFactory getHeapFactory() {
+        return new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
+    }
+
+    @Override
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {
+        super.analyse(closure, functionNodes, solver, functionNode, heapFactory);
+    }
+
 }

@@ -55,7 +55,7 @@ public class HeapValueNode extends ObjectNode {
             this.primitivesFactory = new DumbPrimitiveFactory(solver, globalObject);
             this.solver = solver;
             this.typeNames = typeNames;
-            this.functionNodeFactory = new NativeTypeFactory(primitivesFactory, solver, typeAnalysis.getNativeClasses(), false);
+            this.functionNodeFactory = new NativeTypeFactory(primitivesFactory, solver, typeAnalysis.getNativeClasses());
         }
 
         public UnionNode fromProperty(Snap.Property property) {

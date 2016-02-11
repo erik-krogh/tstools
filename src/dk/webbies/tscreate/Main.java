@@ -41,12 +41,15 @@ public class Main {
         try {
             long start = System.currentTimeMillis();
 
+//            generateDeclarations(BenchMark.toInferFor);
 //            tsCheck();
-//            generateAllDeclarations();
-            runAnalysis(BenchMark.underscore);
+//            generateDeclarations();
+//            runAnalysis(BenchMark.underscore);
 //            benchAll();
 //            printTable();
-//            compareMethods(Arrays.asList(BenchMark.underscore, BenchMark.box2d, BenchMark.hammer, BenchMark.handlebars, BenchMark.jQuery, BenchMark.knockout, BenchMark.leaflet, BenchMark.moment, BenchMark.Q, BenchMark.react, BenchMark.three), 5 * 60 * 1000);
+//            compareMethods(BenchMark.allBenchmarks, 10 * 60 * 1000);
+            compareMethods(Arrays.asList(BenchMark.Q), 10 * 60 * 1000);
+
 
 
             long end = System.currentTimeMillis();
@@ -57,31 +60,6 @@ public class Main {
             e.printStackTrace(System.err);
         } finally {
             System.exit(0);
-        }
-    }
-
-    private static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
-        Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
-        for (BenchMark benchMark : benchMarks) {
-            Map<Options.StaticAnalysisMethod, Score> scores = new HashMap<>();
-            benchmarkScores.put(benchMark, scores);
-            for (Options.StaticAnalysisMethod method : Options.StaticAnalysisMethod.values()) {
-                benchMark.options.staticMethod = method;
-                System.out.println("With method: " + method.prettyString);
-                scores.put(method, runAnalysisWithTimeout(benchMark, timeout));
-            }
-        }
-
-        for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
-            Map<Options.StaticAnalysisMethod, Score> scores = entry.getValue();
-            System.out.println("Benchmark: " + entry.getKey().name);
-            for (Map.Entry<Options.StaticAnalysisMethod, Score> scoreEntry : scores.entrySet()) {
-                Score score = scoreEntry.getValue();
-                if (score == null) {
-                    score = new Score(-1, -1, -1);
-                }
-                System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, 2) + " - " + toFixed(score.recall, 2) + " - " + toFixed(score.precision, 2));
-            }
         }
     }
 
@@ -103,7 +81,7 @@ public class Main {
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
-        String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses).print();
+        String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
         System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
@@ -135,6 +113,48 @@ public class Main {
             }
             Util.writeFile(resultDeclarationFilePath, printedDeclaration + evaluationString);
             return evaluation.score();
+        }
+    }
+
+    @SuppressWarnings("Duplicates")
+    private static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
+        Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
+        for (BenchMark benchMark : benchMarks) {
+            if (benchMark.declarationPath == null) {
+                continue;
+            }
+            Map<Options.StaticAnalysisMethod, Score> scores = new HashMap<>();
+            benchmarkScores.put(benchMark, scores);
+            for (Options.StaticAnalysisMethod method : Options.StaticAnalysisMethod.values()) {
+                benchMark.options.staticMethod = method;
+                System.out.println("With method: " + method.prettyString);
+                scores.put(method, runAnalysisWithTimeout(benchMark, timeout));
+            }
+
+            for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
+                Map<Options.StaticAnalysisMethod, Score> dupScores = entry.getValue();
+                System.out.println("Benchmark: " + entry.getKey().name);
+                for (Map.Entry<Options.StaticAnalysisMethod, Score> scoreEntry : dupScores.entrySet()) {
+                    Score score = scoreEntry.getValue();
+                    if (score == null) {
+                        score = new Score(-1, -1, -1);
+                    }
+                    System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, 2) + " - " + toFixed(score.recall, 2) + " - " + toFixed(score.precision, 2));
+                }
+            }
+
+        }
+
+        for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
+            Map<Options.StaticAnalysisMethod, Score> scores = entry.getValue();
+            System.out.println("Benchmark: " + entry.getKey().name);
+            for (Map.Entry<Options.StaticAnalysisMethod, Score> scoreEntry : scores.entrySet()) {
+                Score score = scoreEntry.getValue();
+                if (score == null) {
+                    score = new Score(-1, -1, -1);
+                }
+                System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, 2) + " - " + toFixed(score.recall, 2) + " - " + toFixed(score.precision, 2));
+            }
         }
     }
 
@@ -183,9 +203,12 @@ public class Main {
         System.out.println("\nCombined score: " + combinedScore);
     }
 
-    private static void generateAllDeclarations() throws IOException {
+    private static void generateDeclarations(List<BenchMark> benchMarks) throws IOException {
+        if (benchMarks == null) {
+            benchMarks = BenchMark.allBenchmarks;
+        }
         double combinedScore = 0;
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+        for (BenchMark benchmark : benchMarks) {
             benchmark.declarationPath = null;
             runAnalysis(benchmark);
         }
