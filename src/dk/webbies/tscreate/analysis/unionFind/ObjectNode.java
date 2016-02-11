@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
+import dk.webbies.tscreate.util.Pair;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -10,7 +12,8 @@ import java.util.Map;
 public class ObjectNode extends UnionNodeWithFields {
     public static final String FIELD_PREFIX = "field-";
     private Map<String, UnionNode> objectFields = new HashMap<>();
-    private String typeName;
+    private String typeName = null;
+    private boolean isTypeNameBaseType = false;
 
     public ObjectNode(UnionFindSolver solver) {
         super(solver);
@@ -32,7 +35,7 @@ public class ObjectNode extends UnionNodeWithFields {
             if (feature.typeNames == null) {
                 feature.typeNames = new HashSet<>();
             }
-            feature.typeNames.add(this.typeName);
+            feature.typeNames.add(new Pair<>(this.typeName, this.isTypeNameBaseType));
         }
     }
     public void addField(String fieldName, UnionNode node) {
@@ -42,5 +45,9 @@ public class ObjectNode extends UnionNodeWithFields {
 
     public void setTypeName(String typeName) {
         this.typeName = typeName;
+    }
+
+    public void setIsBaseType(boolean isBaseType) {
+        this.isTypeNameBaseType = isBaseType;
     }
 }

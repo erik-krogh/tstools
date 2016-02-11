@@ -175,7 +175,7 @@ public class TypeFactory {
                 .map(nativeClasses::nameFromPrototype)
                 .filter(Objects::nonNull)
                 .map(name -> name.endsWith("Constructor") ? Util.removeSuffix(name, "Constructor") : name)
-                .map(NamedObjectType::new)
+                .map((name) -> new NamedObjectType(name, false))
                 .map(TypeFactory::filterPrimitives)
                 .filter(Objects::nonNull)
                 .forEach(result::add);
@@ -271,7 +271,8 @@ public class TypeFactory {
                 ClassType classType = new ClassType(libraryClass.getName(nativeClasses, takenClassNames), constructorType, prototypeProperties, staticFields);
                 if (libraryClass.superClass != null) {
                     if (libraryClass.superClass.isNativeClass()) {
-                        classType.setSuperClass(new NamedObjectType(nativeClasses.nameFromPrototype(libraryClass.superClass.prototype)));
+                        String name = nativeClasses.nameFromPrototype(libraryClass.superClass.prototype);
+                        classType.setSuperClass(new NamedObjectType(name, false));
                     } else {
                         classType.setSuperClass(getClassType(libraryClass.superClass));
                     }

@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis.unionFind;
 
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.util.Pair;
 
 import java.util.*;
 
@@ -15,7 +16,7 @@ public class UnionFeature {
     Set<PrimitiveDeclarationType.Type> primitives = null;
     FunctionFeature functionFeature = null;
     Map<String, UnionNode> objectFields = null;
-    public Set<String> typeNames = null;
+    public Set<Pair<String, Boolean>> typeNames = null; // The boolean is if it is a base-type.
 
     // Dynamic access
     UnionNode dynamicAccessReturnType = null;
@@ -92,7 +93,7 @@ public class UnionFeature {
         return objectFields;
     }
 
-    public Set<String> getTypeNames() {
+    public Set<Pair<String, Boolean>> getTypeNames() {
         if (typeNames == null) {
             return Collections.EMPTY_SET;
         }

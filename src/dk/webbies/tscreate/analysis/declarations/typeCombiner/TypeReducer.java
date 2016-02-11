@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.*;
 import dk.webbies.tscreate.analysis.declarations.types.*;
@@ -19,6 +21,7 @@ public class TypeReducer {
     public final HashMap<DeclarationType, List<DeclarationType>> originals = new HashMap<>();
     private final Options options;
     private final Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
+    private final Map<Class<? extends DeclarationType>, SameTypeMultiReducer> multiHandlers = new HashMap<>();
 
     public HashMap<Set<DeclarationType>, DeclarationType> combinationTypeCache = new HashMap<>(); // Used inside combinationType.
 
@@ -46,6 +49,11 @@ public class TypeReducer {
                 throw new RuntimeException("Duplicate handler registration, " + key2);
             }
             this.handlers.put(key2, new ReverseReducer<>(handler));
+        }
+
+        if (handler instanceof SameTypeMultiReducer) {
+            assert handler.getAClass() == handler.getBClass();
+            multiHandlers.put(handler.getAClass(), (SameTypeMultiReducer) handler);
         }
     }
 
@@ -130,6 +138,22 @@ public class TypeReducer {
     public DeclarationType combineTypes(Collection<DeclarationType> typeCollection, boolean avoidUnresolved) {
         // Copy, because i modify the list.
         ArrayList<DeclarationType> types = new ArrayList<>(typeCollection);
+
+        Multimap<Class<? extends DeclarationType>, DeclarationType> typesMultiMap = ArrayListMultimap.create();
+        types.forEach((type) -> typesMultiMap.put(type.getClass(), type));
+        for (Map.Entry<Class<? extends DeclarationType>, Collection<DeclarationType>> entry : typesMultiMap.asMap().entrySet()) {
+            Collection<DeclarationType> collection = entry.getValue();
+            if (multiHandlers.containsKey(entry.getKey()) && collection.size() > 1) {
+                types.removeAll(collection);
+                DeclarationType result = multiHandlers.get(entry.getKey()).reduce(collection);
+                assert result != null;
+                if (result instanceof UnionDeclarationType) {
+                    types.addAll(((UnionDeclarationType) result).getTypes());
+                } else {
+                    types.add(result);
+                }
+            }
+        }
 
         boolean fixPoint = false;
         while (!fixPoint) {

@@ -42,7 +42,8 @@ public class ClassType extends DeclarationType{
         DeclarationType resolved = DeclarationType.resolve(superClass);
         if (resolved instanceof NamedObjectType && ((NamedObjectType) resolved).getName().endsWith("Constructor")) {
             String name = ((NamedObjectType) resolved).getName();
-            resolved = new NamedObjectType(Util.removeSuffix(name, "Constructor"));
+            name = Util.removeSuffix(name, "Constructor");
+            resolved = new NamedObjectType(name, false);
         }
         this.superClass = resolved;
         return resolved;
