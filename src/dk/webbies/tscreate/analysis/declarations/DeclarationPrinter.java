@@ -1,9 +1,8 @@
 package dk.webbies.tscreate.analysis.declarations;
 
-import dk.au.cs.casa.typescript.types.*;
-import dk.webbies.tscreate.analysis.declarations.types.ClassType;
-import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
-import dk.webbies.tscreate.analysis.declarations.types.UnionDeclarationType;
+import dk.au.cs.casa.typescript.types.GenericType;
+import dk.au.cs.casa.typescript.types.Type;
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
@@ -12,10 +11,6 @@ import fj.pre.Ord;
 import fj.pre.Ordering;
 
 import java.util.*;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -34,10 +29,12 @@ public class DeclarationPrinter {
     // This is the functions or objects that are somehow recursive (or shows up in multiple locations).
     // That we therefore print as an interface instead.
     private final Map<DeclarationType, InterfaceType> printsAsInterface = new HashMap<>();
+    private Options options;
 
-    public DeclarationPrinter(Map<String, DeclarationType> declarations, DeclarationParser.NativeClassesMap nativeClasses) {
+    public DeclarationPrinter(Map<String, DeclarationType> declarations, DeclarationParser.NativeClassesMap nativeClasses, Options options) {
         this.declarations = declarations;
         this.nativeClasses = nativeClasses;
+        this.options = options;
     }
 
     private void addPrintAsInterface(fj.data.List<DeclarationType> functionalTypesList, DeclarationType singleType) {
@@ -96,7 +93,7 @@ public class DeclarationPrinter {
         builder.append(str);
     }
 
-    private static Set<String> keyWords = new HashSet<>(Arrays.asList("set get abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function goto if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield var".split(" ")));
+    private static Set<String> keyWords = new HashSet<>(Arrays.asList("set get abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield var".split(" ")));
     private void writeName(StringBuilder builder, String str) {
         if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str)) {
             write(builder, str);
@@ -193,6 +190,9 @@ public class DeclarationPrinter {
                 throw new GotCyclic(arg.getSeen());
             }
         }
+        if (exportNameBlacklist.contains(name)) {
+            throw new GotCyclic(arg.getSeen());
+        }
         if (type instanceof FunctionType) {
             arg = arg.cons(type, true);
             FunctionType functionType = (FunctionType) type;
@@ -261,6 +261,8 @@ public class DeclarationPrinter {
             write(arg.builder, ";\n");
         }
     }
+
+    private static final Set<String> exportNameBlacklist = new HashSet<>(Arrays.asList("function", "delete"));
 
     private void printArguments(VisitorArg visitorArg, List<FunctionType.Argument> args, Integer minArgs) {
         List<String> names = new ArrayList<>();
@@ -441,18 +443,25 @@ public class DeclarationPrinter {
                 }
                 // [s: string]: PropertyDescriptor;
                 if (interfaceType.getDynamicAccess() != null) {
-                    ident(arg.builder);
-                    write(arg.builder, "[");
+                    boolean isNumberIndexer = false;
                     DeclarationType resolvedLookup = interfaceType.getDynamicAccess().getLookupType().resolve();
-                    if (resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER) {
-                        write(arg.builder, "index: number");
-                    } else {
-                        write(arg.builder, "s: string");
-                    }
-                    write(arg.builder, "]: ");
-                    interfaceType.getDynamicAccess().getReturnType().accept(this, arg);
-                    write(arg.builder, ";\n");
 
+                    if (resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER) {
+                        isNumberIndexer = true;
+                    }
+
+                    if (isNumberIndexer || options.printStringIndexers) {
+                        ident(arg.builder);
+                        write(arg.builder, "[");
+                        if (resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER) {
+                            write(arg.builder, "index: number");
+                        } else {
+                            write(arg.builder, "s: string");
+                        }
+                        write(arg.builder, "]: ");
+                        interfaceType.getDynamicAccess().getReturnType().accept(this, arg);
+                        write(arg.builder, ";\n");
+                    }
                 }
                 if (interfaceType.getObject() != null) {
                     interfaceType.getObject().getDeclarations().forEach((name, type) -> printObjectField(arg, name, type, this));

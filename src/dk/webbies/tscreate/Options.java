@@ -31,13 +31,15 @@ public class Options {
     public boolean asyncTest = false;
 
     public boolean recordCalls = true;
-    public int maxObjects = 1000;
+    public int maxObjects = Integer.MAX_VALUE;
 
     // If enabled, then for functions where we have information about all arguments and the return, we use that information instead of doing the static analysis.
     public boolean skipStaticAnalysisWhenPossible = false; // FIXME: Test this thing, i just fixed a bug.
 
     // Deactivates all but the trivial part of the type-inference. When doing this, there is union-types everywhere, instead of more readable types.
     public boolean reduceNothing = false;
+
+    public boolean printStringIndexers = false;
 
     public enum StaticAnalysisMethod {
         MY_MIXED_METHOD("mixed"),
