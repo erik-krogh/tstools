@@ -11,6 +11,8 @@ import dk.webbies.tscreate.analysis.declarations.types.DynamicAccessType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 
+import java.util.Objects;
+
 /**
  * Created by Erik Krogh Kristensen on 11-11-2015.
  */
@@ -35,26 +37,35 @@ public class DynamicAccessNamedObjectReducer implements SingleTypeReducer<Dynami
 
     @Override
     public DeclarationType reduce(DynamicAccessType dynamic, NamedObjectType named) {
-        if (named.getName().equals("Array")) {
+        String name = named.getName();
+        if (name.equals("Array")) {
             CombinationType arrayType = new CombinationType(combiner, dynamic.getReturnType());
             if (named.indexType != null) {
                 arrayType.addType(named.indexType);
             }
-            return new NamedObjectType("Array", arrayType);
+            return new NamedObjectType("Array", named.isBaseType, arrayType);
         }
-        Type type = nativeClasses.typeFromName(named.getName());
+        Type type = nativeClasses.typeFromName(name);
         if (type == null) {
             return null;
         }
+        if (nameHasIndexer(type)) return named;
+        if (named.getKnownSubTypes().stream().map(nativeClasses::typeFromName).filter(Objects::nonNull).anyMatch(this::nameHasIndexer)) {
+            return named;
+        }
+        return null;
+    }
+
+    private boolean nameHasIndexer(Type type) {
         if (type instanceof GenericType) {
             type = ((GenericType) type).toInterface();
         }
         if (type instanceof InterfaceType) {
             InterfaceType inter = (InterfaceType) type;
             if (inter.getDeclaredNumberIndexType() != null || inter.getDeclaredStringIndexType() != null) {
-                return named;
+                return true;
             }
         }
-        return null;
+        return false;
     }
 }
