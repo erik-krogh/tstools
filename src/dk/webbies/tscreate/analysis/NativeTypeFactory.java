@@ -4,6 +4,8 @@ import com.google.common.collect.Iterables;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
+import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,14 +15,16 @@ import java.util.stream.Collectors;
  */
 public class NativeTypeFactory {
     private final NativeClassesMap nativeClasses;
+    private boolean useCache;
     private Map<Signature, FunctionNode> signatureCache = new HashMap<>(); // Used to get around recursive types.
     private PrimitiveNode.Factory primitiveFactory;
     private UnionFindSolver solver;
 
-    public NativeTypeFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, NativeClassesMap nativeClasses) {
+    public NativeTypeFactory(PrimitiveNode.Factory primitiveFactory, UnionFindSolver solver, NativeClassesMap nativeClasses, boolean useCache) {
         this.primitiveFactory = primitiveFactory;
         this.solver = solver;
         this.nativeClasses = nativeClasses;
+        this.useCache = useCache;
     }
 
     public FunctionNode fromSignature(Signature signature) {
@@ -67,30 +71,40 @@ public class NativeTypeFactory {
         if (isArgument && type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any) {
             return primitiveFactory.nonVoid();
         }
-        if (typeCache.containsKey(type)) {
-            return new IncludeNode(solver, typeCache.get(type));
+        if (useCache) {
+            if (typeCache.containsKey(type)) {
+                return new IncludeNode(solver, typeCache.get(type));
+            } else {
+                EmptyNode node = new EmptyNode(solver);
+                typeCache.put(type, node);
+                List<UnionNode> result = type.accept(new UnionNativeTypeVisitor());
+                solver.union(node, result);
+                return new IncludeNode(solver, node);
+            }
         } else {
-            EmptyNode node = new EmptyNode(solver);
-            typeCache.put(type, node);
-            List<UnionNode> result = type.accept(new UnionNativeTypeVisitor());
-            solver.union(node, result);
-            return new IncludeNode(solver, node);
+            return solver.union(new EmptyNode(solver), type.accept(new UnionNativeTypeVisitor()));
         }
     }
 
-    private Map<GenericType, List<UnionNode>> genericTypeCache = new HashMap<>();
-    private Map<InterfaceType, List<UnionNode>> interfaceCache = new HashMap<>();
+    private Map<Pair<GenericType, Boolean>, List<UnionNode>> genericTypeCache = new HashMap<>();
+    private Map<Pair<InterfaceType, Boolean>, List<UnionNode>> interfaceCache = new HashMap<>();
 
     private class UnionNativeTypeVisitor implements TypeVisitor<List<UnionNode>> {
+        private final boolean isBaseType;
+
+        public UnionNativeTypeVisitor(boolean isBaseType) {
+            this.isBaseType = isBaseType;
+        }
+
+        public UnionNativeTypeVisitor() {
+            this(false);
+        }
+
         private Map<InterfaceType, GenericType> convertedTypeMap = new HashMap<>();
 
-        private UnionNode recurse(Type t) {
-            List<UnionNode> nodes = t.accept(this);
-            if (nodes.isEmpty()) {
-                return new EmptyNode(solver);
-            } else {
-                return new IncludeNode(solver, nodes);
-            }
+        private List<UnionNode> recurse(Type t) {
+            return t.accept(this);
+
         }
 
         @Override
@@ -105,35 +119,41 @@ public class NativeTypeFactory {
 
         @Override
         public List<UnionNode> visit(GenericType t) {
-            if (genericTypeCache.containsKey(t)) {
-                return genericTypeCache.get(t);
+            if (genericTypeCache.containsKey(new Pair<>(t, isBaseType))) {
+                return genericTypeCache.get(new Pair<>(t, isBaseType));
             }
             ArrayList<UnionNode> result = new ArrayList<>();
-            genericTypeCache.put(t, result);
+            genericTypeCache.put(new Pair<>(t, isBaseType), result);
 
             InterfaceType interfaceType = t.toInterface();
             convertedTypeMap.put(interfaceType, t);
-            result.add(recurse(interfaceType));
+            result.addAll(recurse(interfaceType));
             return result;
         }
 
         @Override
         public List<UnionNode> visit(InterfaceType t) {
-            if (interfaceCache.containsKey(t)) {
-                return interfaceCache.get(t);
+            if (interfaceCache.containsKey(new Pair<>(t, isBaseType))) {
+                return interfaceCache.get(new Pair<>(t, isBaseType));
             }
             List<UnionNode> result = new ArrayList<>();
-            interfaceCache.put(t, result);
+            interfaceCache.put(new Pair<>(t, isBaseType), result);
 
             ObjectNode obj = new ObjectNode(solver);
             if (convertedTypeMap.containsKey(t)) {
                 GenericType type = convertedTypeMap.get(t);
                 if (nativeClasses.nameFromType(type) != null) {
                     obj.setTypeName(nativeClasses.nameFromType(type));
+                    if (isBaseType) {
+                        obj.setIsBaseType(true);
+                    }
                 }
             } else {
                 if (nativeClasses.nameFromType(t) != null) {
                     obj.setTypeName(nativeClasses.nameFromType(t));
+                    if (isBaseType) {
+                        obj.setIsBaseType(true);
+                    }
                 }
             }
 
@@ -143,9 +163,7 @@ public class NativeTypeFactory {
                 String key = entry.getKey();
                 Type type = entry.getValue();
 
-                EmptyNode fieldNode = new EmptyNode(solver);
-                obj.addField(key, fieldNode);
-                solver.union(fieldNode, recurse(type));
+                obj.addField(key, new IncludeNode(solver, recurse(type)));
             }
 
             if (!t.getDeclaredCallSignatures().isEmpty()) {
@@ -166,7 +184,7 @@ public class NativeTypeFactory {
             }
 
             t.getBaseTypes().forEach(type -> {
-                result.add(new IncludeNode(solver, type.accept(this)));
+                result.add(new IncludeNode(solver, type.accept(new UnionNativeTypeVisitor(true))));
             });
 
             return result;
@@ -174,7 +192,7 @@ public class NativeTypeFactory {
 
         @Override
         public List<UnionNode> visit(ReferenceType t) {
-            return Arrays.asList(recurse(t.getTarget()));
+            return recurse(t.getTarget());
         }
 
         @Override
@@ -194,14 +212,14 @@ public class NativeTypeFactory {
 
         @Override
         public List<UnionNode> visit(TupleType t) {
-            List<UnionNode> returnTypes = t.getElementTypes().stream().map(this::recurse).collect(Collectors.toList());
+            List<UnionNode> returnTypes = t.getElementTypes().stream().map(this::recurse).reduce(new ArrayList<>(), Util::reduceList);
             UnionNode result = solver.union(primitiveFactory.array(), new DynamicAccessNode(solver, new IncludeNode(solver, returnTypes), primitiveFactory.number()));
             return Arrays.asList(result);
         }
 
         @Override
         public List<UnionNode> visit(UnionType t) {
-            return t.getElements().stream().map(this::recurse).collect(Collectors.toList());
+            return t.getElements().stream().map(this::recurse).reduce(new ArrayList<>(), Util::reduceList);
         }
 
         @Override
