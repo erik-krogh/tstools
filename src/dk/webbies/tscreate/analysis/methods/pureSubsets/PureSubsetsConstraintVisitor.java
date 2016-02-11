@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.analysis.methods.pureSubsets;
 
-import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
@@ -497,7 +496,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                         if (prototypeProp != null) {
                             solver.union(this.thisNode, new HasPrototypeNode(solver, (Snap.Obj) prototypeProp.value));
                         }
-                        List<FunctionNode> signatures = createNativeSignatureNodes(closure, true, nativeTypeFactory);
+                        List<FunctionNode> signatures = MixedConstraintVisitor.createNativeSignatureNodes(closure, true, nativeTypeFactory);
                         for (FunctionNode signature : signatures) {
                             solver.union(this.thisNode, new IncludeNode(solver, signature.returnNode));
                         }
@@ -619,7 +618,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                                 }
                             });
                         } else {
-                            List<FunctionNode> signatures = PureSubsetsConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
+                            List<FunctionNode> signatures = MixedConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
                             signatures.forEach(sig -> {
                                 solver.union(functionNode.returnNode, new IncludeNode(solver, sig.returnNode));
                             });
@@ -633,20 +632,6 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                 }
             }
         }
-    }
-
-    private static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
-        List<Signature> signatures;
-        if (constructorCalls) {
-            signatures = closure.function.constructorSignatures;
-        } else {
-            signatures = closure.function.callSignatures;
-        }
-        List<FunctionNode> result = new ArrayList<>();
-        for (Signature signature : signatures) {
-            result.add(functionNodeFactory.fromSignature(signature));
-        }
-        return result;
     }
 
     private Collection<FunctionNode> getFunctionNodes(UnionNode function) {
