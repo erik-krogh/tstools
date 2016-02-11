@@ -43,6 +43,10 @@ public class CombinationType extends DeclarationType {
     public DeclarationType createCombined() {
         this.hasBeenUnfolded = true;
 
+        if (this.combined != null) {
+            return this.combined;
+        }
+
         if (this.types.size() == 0) {
             combined = PrimitiveDeclarationType.Void();
             return PrimitiveDeclarationType.Void();
@@ -64,7 +68,7 @@ public class CombinationType extends DeclarationType {
             this.types.clear();
             this.types.add(result);
 
-            combined = result;
+            this.combined = result;
 
             combiner.combinationTypeCache.put(unfolded, result);
 
