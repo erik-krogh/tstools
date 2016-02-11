@@ -11,6 +11,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -42,57 +43,68 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
                 List<DeclarationType> indexTypes = unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> Util.isInteger(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
                 indexTypes.add(named.indexType);
 
-                NamedObjectType resultNamed = new NamedObjectType("Array", new CombinationType(combiner, indexTypes));
+                NamedObjectType resultNamed = new NamedObjectType("Array", named.isBaseType, new CombinationType(combiner, indexTypes));
                 UnnamedObjectType resultUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
                 return new UnionDeclarationType(resultNamed, resultUnnamed); // This is OK, it will run again and reach the below, since we run until fixpoint.
             }
         }
-        if (objectMatchPrototype(unnamedObjectType, named)) {
+        HashSet<String> keysNotAccountedFor = getKeysNotAccountedFor(unnamedObjectType, named);
+        if (keysNotAccountedFor.isEmpty()) {
             return named;
-        } else {
+        } else if (unnamedObjectType.getDeclarations().size() == keysNotAccountedFor.size()){
             return null;
+        } else {
+            UnnamedObjectType newUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().keySet().stream().filter(keysNotAccountedFor::contains).collect(Collectors.toMap(Function.identity(), (key) -> unnamedObjectType.getDeclarations().get(key))));
+            return new UnionDeclarationType(named, newUnnamed);
         }
     }
 
-    public boolean objectMatchPrototype(UnnamedObjectType object, NamedObjectType type) {
+    private HashSet<String> getKeysNotAccountedFor(UnnamedObjectType object, NamedObjectType type) {
         HashSet<String> keysNotAccountedFor = new HashSet<>(object.getDeclarations().keySet());
-        removeKeys(type.getName(), keysNotAccountedFor);
+        keysNotAccountedFor.removeAll(getKeysFromName(type.getName()));
 
         for (String name : type.getKnownSubTypes()) {
             if (keysNotAccountedFor.isEmpty()) {
-                return true;
+                break;
             }
-            removeKeys(name, keysNotAccountedFor);
+            keysNotAccountedFor.removeAll(getKeysFromName(name));
+        }
+        return keysNotAccountedFor;
+    }
+
+    private final Map<String, Set<String>> cache = new HashMap<>();
+    private Set<String> getKeysFromName(String name) {
+        if (cache.containsKey(name)) {
+            return cache.get(name);
+        }
+        HashSet<String> result = new HashSet<>();
+
+        addAllProperties(result, this.nativeClasses.prototypeFromName(name));
+
+        if (this.nativeClasses.typeFromName(name) != null) {
+            addAllProperties(result, this.nativeClasses.typeFromName(name));
         }
 
-        return keysNotAccountedFor.isEmpty();
+        addAllProperties(result, this.nativeClasses.objectFromName(name));
+
+        cache.put(name, result);
+
+        return result;
     }
 
 
-    private Map<String, Set<String>> nameToPropertiesCache = new HashMap<>();
-    private void removeKeys(String name, Set<String> toRemoveFrom) {
-        if (!nameToPropertiesCache.containsKey(name)) {
-            HashSet<String> keys = new HashSet<>();
-            nameToPropertiesCache.put(name, keys);
-
-            Snap.Obj prototype = this.nativeClasses.prototypeFromName(name);
-
-            addAllProperties(keys, prototype);
-
-            Type type = this.nativeClasses.typeFromName(name);
-            if (type instanceof InterfaceType) {
-                keys.addAll(((InterfaceType) type).getDeclaredProperties().keySet());
-            } else if (type instanceof GenericType) {
-                keys.addAll(((GenericType) type).getDeclaredProperties().keySet());
-            }
-
-            if (this.nativeClasses.objectFromName(name) != null) {
-                Snap.Obj obj = this.nativeClasses.objectFromName(name);
-                addAllProperties(keys, obj);
-            }
+    private void addAllProperties(HashSet<String> keys, Type type) {
+        if (type instanceof InterfaceType) {
+            InterfaceType inter = (InterfaceType) type;
+            keys.addAll(inter.getDeclaredProperties().keySet());
+            inter.getBaseTypes().forEach(base -> addAllProperties(keys, base));
+        } else if (type instanceof GenericType) {
+            GenericType generic = (GenericType) type;
+            keys.addAll(generic.getDeclaredProperties().keySet());
+            generic.getBaseTypes().forEach(base -> addAllProperties(keys, base));
+        } else {
+            throw new RuntimeException("Don't know how to add keys from type " + type.getClass().getSimpleName());
         }
-
-        toRemoveFrom.removeAll(nameToPropertiesCache.get(name));
     }
 
     private void addAllProperties(HashSet<String> keys, Snap.Obj prototype) {
