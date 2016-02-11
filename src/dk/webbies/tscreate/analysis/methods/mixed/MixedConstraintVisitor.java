@@ -709,7 +709,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    protected static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
+    public static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory nativeTypeFactory) {
         List<Signature> signatures;
         if (constructorCalls) {
             signatures = closure.function.constructorSignatures;
@@ -718,7 +718,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
         List<FunctionNode> result = new ArrayList<>();
         for (Signature signature : signatures) {
-            result.add(functionNodeFactory.fromSignature(signature));
+            result.add(nativeTypeFactory.fromSignature(signature));
         }
         return result;
     }
