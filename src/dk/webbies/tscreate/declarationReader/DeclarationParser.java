@@ -329,8 +329,12 @@ public class DeclarationParser {
             return null;
         }
 
+        private Map<String, Set<String>> baseNameCache = new HashMap<>();
         public Set<String> getBaseNames(String name) {
             assert name != null;
+            if (baseNameCache.containsKey(name)) {
+                return baseNameCache.get(name);
+            }
             Type type = typeFromName(name);
             HashSet<String> result = new HashSet<>();
             if (type instanceof GenericType) {
@@ -345,6 +349,7 @@ public class DeclarationParser {
                 result.addAll(getBaseNames(baseName));
             }
             result.remove(null);
+            baseNameCache.put(name, result);
             return result;
         }
 
