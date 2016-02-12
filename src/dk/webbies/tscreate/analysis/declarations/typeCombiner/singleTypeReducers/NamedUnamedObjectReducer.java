@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducer
 
 import dk.au.cs.casa.typescript.types.GenericType;
 import dk.au.cs.casa.typescript.types.InterfaceType;
+import dk.au.cs.casa.typescript.types.ReferenceType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
@@ -100,6 +101,10 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
             inter.getBaseTypes().forEach(base -> addAllProperties(keys, base));
         } else if (type instanceof GenericType) {
             GenericType generic = (GenericType) type;
+            keys.addAll(generic.getDeclaredProperties().keySet());
+            generic.getBaseTypes().forEach(base -> addAllProperties(keys, base));
+        } else if (type instanceof ReferenceType) {
+            GenericType generic = (GenericType) ((ReferenceType) type).getTarget();
             keys.addAll(generic.getDeclaredProperties().keySet());
             generic.getBaseTypes().forEach(base -> addAllProperties(keys, base));
         } else {
