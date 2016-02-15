@@ -19,7 +19,6 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,18 +36,19 @@ public class Main {
     // FIXME: If not, then the tool is a success.
 
     // FIXME: Check the outout from underscore, and try to se how the evaluation does on a single static method, what does it say.
+
+    // FIXME: Ember is way to slow at the moment. 
     public static void main(String[] args) throws IOException, InterruptedException {
         try {
             long start = System.currentTimeMillis();
 
-//            generateDeclarations(BenchMark.toInferFor);
 //            tsCheck();
-//            generateDeclarations();
+//            generateDeclarations(BenchMark.allBenchmarks);
 //            runAnalysis(BenchMark.underscore);
 //            benchAll();
 //            printTable();
-//            compareMethods(BenchMark.allBenchmarks, 10 * 60 * 1000);
-            compareMethods(Arrays.asList(BenchMark.Q), 10 * 60 * 1000);
+//            compareMethods(BenchMark.allBenchmarks, 1 * 60 * 1000);
+//            compareMethods(Arrays.asList(BenchMark.underscore), 10 * 60 * 1000);
 
 
 
@@ -119,6 +119,7 @@ public class Main {
     @SuppressWarnings("Duplicates")
     private static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
         Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
+        int decimals = 4;
         for (BenchMark benchMark : benchMarks) {
             if (benchMark.declarationPath == null) {
                 continue;
@@ -139,7 +140,7 @@ public class Main {
                     if (score == null) {
                         score = new Score(-1, -1, -1);
                     }
-                    System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, 2) + " - " + toFixed(score.recall, 2) + " - " + toFixed(score.precision, 2));
+                    System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, decimals) + " - " + toFixed(score.recall, decimals) + " - " + toFixed(score.precision, decimals));
                 }
             }
 
@@ -153,7 +154,7 @@ public class Main {
                 if (score == null) {
                     score = new Score(-1, -1, -1);
                 }
-                System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, 2) + " - " + toFixed(score.recall, 2) + " - " + toFixed(score.precision, 2));
+                System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, decimals) + " - " + toFixed(score.recall, decimals) + " - " + toFixed(score.precision, decimals));
             }
         }
     }
