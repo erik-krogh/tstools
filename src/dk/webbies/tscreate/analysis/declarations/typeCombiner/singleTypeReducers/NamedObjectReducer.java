@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 08-11-2015.
  */
-public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> implements SameTypeMultiReducer<NamedObjectType> {
+public class NamedObjectReducer extends SameTypeMultiReducer<NamedObjectType> {
     private final Snap.Obj global;
     private final NativeClassesMap nativeClasses;
     private final TypeReducer combiner;
@@ -95,20 +95,15 @@ public class NamedObjectReducer extends SameTypeReducer<NamedObjectType> impleme
             finalResults.add(result);
         }
 
+        if (finalResults.size() == namedTypesCollection.size()) {
+            // We achieved nothing, we therefore do not have a strictly smaller type, therefore return null.
+            return null;
+        }
+
         if (finalResults.size() == 1) {
             return finalResults.iterator().next();
         } else {
             return new UnionDeclarationType(finalResults);
-        }
-    }
-
-    @Override
-    public NamedObjectType reduceIt(NamedObjectType one, NamedObjectType two) {
-        DeclarationType result = reduce(Arrays.asList(one, two));
-        if (result instanceof UnionDeclarationType) {
-            return null;
-        } else {
-            throw new RuntimeException("This should never happen, the above reduction is just a sanity check, and should do nothing at all, since it is already reduced by this being a SameTypeMultiReducer.");
         }
     }
 }

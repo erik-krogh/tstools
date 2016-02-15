@@ -22,8 +22,16 @@ public class TypeReducer {
     private final Options options;
     private final Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
     private final Map<Class<? extends DeclarationType>, SameTypeMultiReducer> multiHandlers = new HashMap<>();
+    private final Map<Class<? extends DeclarationType>, SameTypeSingleInstanceReducer> singleInstanceHandlers = new HashMap<>();
 
     public HashMap<Set<DeclarationType>, DeclarationType> combinationTypeCache = new HashMap<>(); // Used inside combinationType.
+
+    private void register(SameTypeSingleInstanceReducer<? extends DeclarationType> handler) {
+        if (this.singleInstanceHandlers.containsKey(handler.getTheClass())) {
+            throw new RuntimeException("Duplicate");
+        }
+        this.singleInstanceHandlers.put(handler.getTheClass(), handler);
+    }
 
     private void register(SingleTypeReducer<? extends DeclarationType, ? extends DeclarationType> handler) {
         if (!DeclarationType.class.isAssignableFrom(handler.getAClass()) || !DeclarationType.class.isAssignableFrom(handler.getBClass())) {
@@ -74,6 +82,7 @@ public class TypeReducer {
         register(new DynamicAccessNamedObjectReducer(nativeClasses, this));
         register(new FunctionNamedObjectReducer(nativeClasses));
         register(new DynamicAccessUnnamedObjectReducer(this));
+        register(new ObjectToArrayReducer(this));
 
         // The ones that I cant do anything about.
         register(new CantReduceReducer(ClassInstanceType.class, NamedObjectType.class));
@@ -139,14 +148,23 @@ public class TypeReducer {
         // Copy, because i modify the list.
         ArrayList<DeclarationType> types = new ArrayList<>(typeCollection);
 
+        // In 3 steps
+        // - first see if a whole group of the same type can be reduced (Named-type, looking at you).
+        // - Then in a loop:
+        //   - See if a single type can be reduced.
+        //   - See if a pair of types can be reduced.
+
+
         Multimap<Class<? extends DeclarationType>, DeclarationType> typesMultiMap = ArrayListMultimap.create();
         types.forEach((type) -> typesMultiMap.put(type.getClass(), type));
         for (Map.Entry<Class<? extends DeclarationType>, Collection<DeclarationType>> entry : typesMultiMap.asMap().entrySet()) {
             Collection<DeclarationType> collection = entry.getValue();
             if (multiHandlers.containsKey(entry.getKey()) && collection.size() > 1) {
-                types.removeAll(collection);
                 DeclarationType result = multiHandlers.get(entry.getKey()).reduce(collection);
-                assert result != null;
+                if (result == null) {
+                    continue;
+                }
+                types.removeAll(collection);
                 if (result instanceof UnionDeclarationType) {
                     types.addAll(((UnionDeclarationType) result).getTypes());
                 } else {
@@ -158,6 +176,27 @@ public class TypeReducer {
         boolean fixPoint = false;
         while (!fixPoint) {
             fixPoint = true;
+            for (int i = 0; i < types.size(); i++) {
+                DeclarationType type = types.get(i);
+                if (this.singleInstanceHandlers.containsKey(type.getClass())) {
+                    SameTypeSingleInstanceReducer handler = this.singleInstanceHandlers.get(type.getClass());
+                    DeclarationType result = handler.reduce(type);
+                    if (result == null) {
+                        continue;
+                    }
+                    types.remove(i);
+                    if (result instanceof UnionDeclarationType) {
+                        types.addAll(((UnionDeclarationType) result).getTypes());
+                    } else {
+                        types.add(result);
+                    }
+                    fixPoint = false;
+                    break;
+                }
+            }
+
+
+
             for (int i = 0; i < types.size(); i++) {
                 DeclarationType one = types.get(i);
                 for (int j = i + 1; j < types.size(); j++) {

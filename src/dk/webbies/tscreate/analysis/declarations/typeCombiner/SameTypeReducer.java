@@ -30,7 +30,11 @@ public abstract class SameTypeReducer<T extends DeclarationType> implements Sing
 
     @Override
     public final DeclarationType reduce(T one, T two) {
-        T result = reduceIt(one, two);
+        DeclarationType result = reduceIt(one, two);
+        // if (!(result instanceOf T))
+        if (!getTheClass().isInstance(result)) {
+            return result;
+        }
         if (result != one && result != two) {
             ArrayList<DeclarationType> originalsList = new ArrayList<>();
             originals.put(result, originalsList);
@@ -49,6 +53,6 @@ public abstract class SameTypeReducer<T extends DeclarationType> implements Sing
         return result;
     }
 
-    protected abstract T reduceIt(T one, T two);
+    protected abstract DeclarationType reduceIt(T one, T two);
 
 }
