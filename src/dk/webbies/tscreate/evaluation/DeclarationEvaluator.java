@@ -41,9 +41,9 @@ public class DeclarationEvaluator {
             assert queue.isEmpty();
             hasRun.set(true);
         };
-        evaluation = new Evaluation(options.debugPrint);
+        evaluation = new Evaluation(options);
         queue.add(new EvaluationQueueElement(0, () -> {
-            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>(), options)
+            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>(), options, !options.onlyEvaluateUnderFunctionArgsAndReturn)
                     .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
         }));
 

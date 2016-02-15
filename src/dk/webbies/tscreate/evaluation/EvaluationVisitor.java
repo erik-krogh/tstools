@@ -30,16 +30,18 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     private final NativeClassesMap myNativeClasses;
     private Set<Pair<Type, Type>> seen;
     private Options options;
+    private final boolean recordEvaluation; // If false, then the evaluation doesn't record anything. Used to only record things that are below a function-argument/return.
 
     public EvaluationVisitor(
             int depth,
             Evaluation evaluation,
-            PriorityQueue<DeclarationEvaluator.EvaluationQueueElement> queue,
+            PriorityQueue<EvaluationQueueElement> queue,
             Set<Type> nativeTypesInReal,
             NativeClassesMap realNativeClasses,
             NativeClassesMap myNativeClasses,
             Set<Pair<Type, Type>> seen,
-            Options options) {
+            Options options,
+            boolean recordEvaluation) {
         this.depth = depth;
         this.evaluation = evaluation;
         this.queue = queue;
@@ -48,6 +50,11 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         this.myNativeClasses = myNativeClasses;
         this.seen = seen;
         this.options = options;
+        this.recordEvaluation = recordEvaluation;
+    }
+
+    private EvaluationVisitor withRecordEvaluation() {
+        return new EvaluationVisitor(this.depth, this.evaluation, this.queue, this.nativeTypesInReal, this.realNativeClasses, this.myNativeClasses, this.seen, this.options, true);
     }
 
     static final class Arg {
@@ -155,8 +162,8 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             Type left = typePair.first;
             Type right = typePair.second;
 
-            Evaluation subEvaluation = new Evaluation(options.debugPrint);
-            EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options);
+            Evaluation subEvaluation = new Evaluation(options);
+            EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options, this.recordEvaluation);
 
             visitor.nextDepth(left, right, () -> {
                 evaluations.add(subEvaluation);
@@ -194,16 +201,16 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             String myTypeName = myNativeClasses.nameFromType(myType);
 
             if (realTypeName.equals(myTypeName)) {
-                evaluation.addTruePositive(depth + 1, "wrong native type", prefix);
+                addTruePositive(depth + 1, "wrong native type", prefix);
             } else {
-                evaluation.addFalseNegative(depth + 1, "wrong native type", prefix);
+                addFalseNegative(depth + 1, "wrong native type", prefix);
             }
             callback.run();
             return;
         }
 
 
-        EvaluationVisitor visitor = new EvaluationVisitor(depth + 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options);
+        EvaluationVisitor visitor = new EvaluationVisitor(depth + 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options, this.recordEvaluation);
         realType.accept(visitor, new Arg(myType, callback, prefix));
     }
 
@@ -244,7 +251,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
 
         if (type instanceof SimpleType) {
-            evaluation.addFalseNegative(depth, "got simple type, expected interface", arg.prefix);
+            addFalseNegative(depth, "got simple type, expected interface", arg.prefix);
             arg.callback.run();
             return null;
         }
@@ -252,7 +259,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         if (!(type instanceof InterfaceType)) {
             throw new RuntimeException();
         }
-        evaluation.addTruePositive(depth, "this was an interface, that is right.", arg.prefix);
+        addTruePositive(depth, "this was an interface, that is right.", arg.prefix);
         InterfaceType my = (InterfaceType) type;
 
         Set<InterfaceType> realWithBase = DeclarationParser.getWithBaseTypes(real);
@@ -269,9 +276,9 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth, arg.callback), queue);
         for (String property : properties) {
             if (!myProperties.containsKey(property)) {
-                evaluation.addFalseNegative(depth + 1, "property missing: " + property, arg.prefix);
+                addFalseNegative(depth + 1, "property missing: " + property, arg.prefix);
             } else if (!realProperties.containsKey(property)) {
-                evaluation.addFalsePositive(depth + 1, "excess property: " + property, arg.prefix);
+                addFalsePositive(arg.prefix, depth + 1, "excess property: " + property);
             } else {
                 Collection<Type> myTypes = myProperties.get(property);
                 Collection<Type> realTypes = realProperties.get(property);
@@ -282,8 +289,8 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
 
         // Functions
-        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredCallSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredCallSignatures), whenAllDone.newSubCallback(), real, arg.type, "function", arg.prefix);
-        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredConstructSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredConstructSignatures), whenAllDone.newSubCallback(), real, arg.type, "constructor", arg.prefix);
+        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredCallSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredCallSignatures), whenAllDone.newSubCallback(), real, arg.type, false, arg.prefix);
+        evaluateFunctions(getSignatures(realWithBase, InterfaceType::getDeclaredConstructSignatures), getSignatures(myWithBase, InterfaceType::getDeclaredConstructSignatures), whenAllDone.newSubCallback(), real, arg.type, true, arg.prefix);
 
 
         // Indexers:
@@ -344,7 +351,8 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return result;
     }
 
-    private void evaluateFunctions(List<Signature> realSignatures, List<Signature> mySignatures, Runnable callback, Type realType, Type myType, String description, String prefix) {
+    private void evaluateFunctions(List<Signature> realSignatures, List<Signature> mySignatures, Runnable callback, Type realType, Type myType, boolean isConstructor, String prefix) {
+        String description = isConstructor ? "constructor" : "function";
         if (realSignatures == null) {
             realSignatures = Collections.EMPTY_LIST;
         }
@@ -356,29 +364,34 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             return;
         }
         if (realSignatures.isEmpty() && !mySignatures.isEmpty()) {
-            evaluation.addFalsePositive(depth + 1, "shouldn't be a " + description, prefix);
+            addFalsePositive(prefix, depth + 1, "shouldn't be a " + description);
             callback.run();
             return;
         }
         if (!realSignatures.isEmpty() && mySignatures.isEmpty()) {
-            evaluation.addFalseNegative(depth + 1, "should be a " + description, prefix);
+            addFalseNegative(depth + 1, "should be a " + description, prefix);
             callback.run();
             return;
         }
-        evaluation.addTruePositive(depth + 1, "was a function, that was right", prefix);
+        addTruePositive(depth + 1, "was a function, that was right", prefix);
         if (realSignatures.size() == 1 && mySignatures.size() == 1) {
             WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth + 1, callback), queue);
             Signature realSignature = realSignatures.get(0);
             Signature mySignature = mySignatures.get(0);
-            nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[return]");
+
+            if (isConstructor) {
+                nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[return]");
+            } else {
+                withRecordEvaluation().nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[return]");
+            }
 
             for (int i = 0; i < Math.max(realSignature.getParameters().size(), mySignature.getParameters().size()); i++) {
                 if (i >= realSignature.getParameters().size()) {
-                    evaluation.addFalsePositive(depth + 1, "to many arguments for function", prefix + ".[" + description + "]");
+                    addFalsePositive(prefix + ".[" + description + "]", depth + 1, "to many arguments for function");
                 } else if (i >= mySignature.getParameters().size()) {
-                    evaluation.addFalseNegative(depth + 1, "to few arguments for function", prefix + ".[" + description + "]");
+                    addFalseNegative(depth + 1, "to few arguments for function", prefix + ".[" + description + "]");
                 } else {
-                    nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[arg" + i + "]");
+                    withRecordEvaluation().nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[arg" + i + "]");
                 }
             }
 
@@ -401,7 +414,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 return inter;
             }).collect(Collectors.toList()));
 
-            EvaluationVisitor visitor = new EvaluationVisitor(depth - 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options);
+            EvaluationVisitor visitor = new EvaluationVisitor(depth - 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options, this.recordEvaluation);
             visitor.nextDepth(realUnion, myUnion, callback, prefix);
         }
     }
@@ -409,13 +422,13 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
     private void evaluateIndexers(Type realType, Type myType, Runnable callback, String prefix) {
         if (realType != null && myType == null) {
-            evaluation.addFalseNegative(depth + 1, "missing indexer", prefix);
+            addFalseNegative(depth + 1, "missing indexer", prefix);
             callback.run();
         } else if (myType != null && realType == null) {
-            evaluation.addFalsePositive(depth + 1, "excess indexer", prefix);
+            addFalsePositive(prefix, depth + 1, "excess indexer");
             callback.run();
         } else if (myType != null /* && realString != null */) {
-            evaluation.addTruePositive(depth, "this was an indexer, that was right", prefix);
+            addTruePositive(depth, "this was an indexer, that was right", prefix);
             nextDepth(realType, myType, callback, prefix + ".[indexer]");
         } else {
             callback.run();
@@ -431,9 +444,9 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     public Void visit(SimpleType real, Arg arg) {
         Type type = arg.type;
         if (!real.equals(type)) {
-            evaluation.addFalseNegative(depth, "wrong simple type, " + real + " / " + arg.type, arg.prefix);
+            addFalseNegative(depth, "wrong simple type, " + real + " / " + arg.type, arg.prefix);
         } else {
-            evaluation.addTruePositive(depth, "right simple type: " + real, arg.prefix);
+            addTruePositive(depth, "right simple type: " + real, arg.prefix);
         }
         arg.callback.run();
         return null;
@@ -443,9 +456,9 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     public Void visit(TupleType real, Arg arg) {
         if (arg.type instanceof ReferenceType && myNativeClasses.nameFromType(((ReferenceType) arg.type).getTarget()).equals("Array")) {
             // A tuple is an array, and since i don't handle generics, i say that an Array is good enough.
-            evaluation.addTruePositive(depth, "tuple was array (and I'm happy with that)", arg.prefix);
+            addTruePositive(depth, "tuple was array (and I'm happy with that)", arg.prefix);
         } else {
-            evaluation.addFalseNegative(depth, "tuple wasn't an array", arg.prefix);
+            addFalseNegative(depth, "tuple wasn't an array", arg.prefix);
         }
         arg.callback.run();
         return null;
@@ -481,5 +494,23 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     @Override
     public Void visit(SymbolType real, Arg arg) {
         throw new RuntimeException();
+    }
+
+    private void addFalseNegative(int depth, String description, String prefix) {
+        if (recordEvaluation) {
+            evaluation.addFalseNegative(depth, description, prefix);
+        }
+    }
+
+    private void addFalsePositive(String prefix, int depth, String description) {
+        if (recordEvaluation) {
+            evaluation.addFalsePositive(depth, description, prefix);
+        }
+    }
+
+    private void addTruePositive(int depth, String description, String prefix) {
+        if (recordEvaluation) {
+            evaluation.addTruePositive(depth, description, prefix);
+        }
     }
 }

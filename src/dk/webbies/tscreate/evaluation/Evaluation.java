@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.evaluation;
 
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.util.Util;
 
@@ -10,6 +11,7 @@ import java.util.function.Function;
  * Created by Erik Krogh Kristensen on 14-12-2015.
  */
 public class Evaluation {
+    private final boolean skipFirstZeroEvaluations;
     int maxDepth = -1;
     Map<Integer, Object> falseNegatives = new HashMap<>();
     Map<Integer, Object> falsePositives = new HashMap<>();
@@ -17,8 +19,9 @@ public class Evaluation {
 
     private final boolean debug;
 
-    public Evaluation(boolean saveDebug) {
-        this.debug = saveDebug;
+    public Evaluation(Options options) {
+        this.debug = options.debugPrint;
+        this.skipFirstZeroEvaluations = options.onlyEvaluateUnderFunctionArgsAndReturn;
     }
 
     private void add(int depth, Map<Integer, Object> map, String description, String typePath) {
@@ -143,8 +146,20 @@ public class Evaluation {
     private double score(Function<Integer, Double> function) {
         double result = 0;
         double measure = 1;
-        for (int depth = 1; depth <= maxDepth; depth++) {
-            measure = function.apply(depth) * measure;
+        int startDepth = 1;
+        if (this.skipFirstZeroEvaluations) {
+            for (int i = 1; i < maxDepth; i++) {
+                if (function.apply(i) == 0) {
+                    startDepth = i;
+                }
+            }
+        }
+        for (int depth = startDepth; depth <= maxDepth; depth++) {
+            if (this.skipFirstZeroEvaluations) {
+                measure = function.apply(depth)/* * measure*/;
+            } else {
+                measure = function.apply(depth) * measure;
+            }
             result += measure * Math.pow(2, -depth);
         }
         return result;

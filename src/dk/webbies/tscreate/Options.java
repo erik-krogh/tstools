@@ -40,6 +40,7 @@ public class Options {
     public boolean reduceNothing = false;
 
     public boolean printStringIndexers = false;
+    public boolean onlyEvaluateUnderFunctionArgsAndReturn = true;
 
     public enum StaticAnalysisMethod {
         MY_MIXED_METHOD("mixed"),
