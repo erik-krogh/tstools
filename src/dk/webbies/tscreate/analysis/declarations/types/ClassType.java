@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.Map;
@@ -13,12 +14,14 @@ public class ClassType extends DeclarationType{
     private final Map<String, DeclarationType> staticFields;
     private final String name;
     public DeclarationType superClass;
+    private LibraryClass libraryClass;
 
-    public ClassType(String name, DeclarationType constructorType, Map<String, DeclarationType> properties, Map<String, DeclarationType> staticFields) {
+    public ClassType(String name, DeclarationType constructorType, Map<String, DeclarationType> properties, Map<String, DeclarationType> staticFields, LibraryClass libraryClass) {
         this.constructorType = constructorType;
         this.prototypeFields = properties;
         this.name = name;
         this.staticFields = staticFields;
+        this.libraryClass = libraryClass;
     }
 
     public void setSuperClass(DeclarationType superClass) {
@@ -61,5 +64,9 @@ public class ClassType extends DeclarationType{
     @Override
     public <T, A> T accept(DeclarationTypeVisitorWithArgument<T, A> visitor, A argument) {
         return visitor.visit(this, argument);
+    }
+
+    public LibraryClass getLibraryClass() {
+        return libraryClass;
     }
 }

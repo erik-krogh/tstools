@@ -268,7 +268,7 @@ public class TypeFactory {
 
                 Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass);
 
-                ClassType classType = new ClassType(libraryClass.getName(nativeClasses, takenClassNames), constructorType, prototypeProperties, staticFields);
+                ClassType classType = new ClassType(libraryClass.getName(nativeClasses, takenClassNames), constructorType, prototypeProperties, staticFields, libraryClass);
                 if (libraryClass.superClass != null) {
                     if (libraryClass.superClass.isNativeClass()) {
                         String name = nativeClasses.nameFromPrototype(libraryClass.superClass.prototype);

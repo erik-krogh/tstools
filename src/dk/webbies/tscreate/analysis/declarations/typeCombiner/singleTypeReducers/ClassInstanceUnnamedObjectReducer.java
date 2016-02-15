@@ -2,8 +2,16 @@ package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducer
 
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.ClassInstanceType;
+import dk.webbies.tscreate.analysis.declarations.types.ClassType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
+import dk.webbies.tscreate.jsnap.Snap;
+import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Erik Krogh Kristensen on 27-10-2015.
@@ -19,12 +27,25 @@ public class ClassInstanceUnnamedObjectReducer implements SingleTypeReducer<Clas
         return UnnamedObjectType.class;
     }
 
+    private Map<LibraryClass, Set<String>> classKeys = new HashMap<>();
+
     @Override
-    public DeclarationType reduce(ClassInstanceType classInstanceType, UnnamedObjectType unnamedObjectType) {
-        if (unnamedObjectType.getDeclarations().keySet().stream().allMatch(key -> {
-            return classInstanceType.getClazz().getPrototypeFields().containsKey(key);
-        })) {
-            return classInstanceType;
+    public DeclarationType reduce(ClassInstanceType instance, UnnamedObjectType object) {
+        LibraryClass libraryClass = instance.getClazz().getLibraryClass();
+        if (!classKeys.containsKey(libraryClass)) {
+            HashSet<String> set = new HashSet<>();
+            classKeys.put(libraryClass, set);
+            ClassType clazz = instance.getClazz();
+            while (clazz != null) {
+                set.addAll(clazz.getPrototypeFields().keySet());
+                clazz = (ClassType) clazz.getSuperClass();
+            }
+            libraryClass.getInstances().stream().map(Snap.Obj::getPropertyMap).map(Map::keySet).forEach(set::addAll);
+        }
+
+        Set<String> keySet = classKeys.get(libraryClass);
+        if (object.getDeclarations().keySet().stream().allMatch(keySet::contains)) {
+            return instance;
         } else {
             return null;
         }
