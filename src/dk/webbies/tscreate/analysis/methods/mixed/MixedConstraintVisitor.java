@@ -559,7 +559,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.args = args;
             this.thisNode = thisNode;
             this.callExpression = callExpression;
-            this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyNode(solver), callExpression);
+            this.callResolver = new CallGraphResolver(new IncludeNode(solver, thisNode), function, args, new EmptyNode(solver), callExpression); // I have to put a Include around the "this" node. Otherwise this gets poluted with all the super-classes.
             this.callResolver.constructorCalls = true;
         }
 

@@ -482,7 +482,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
             this.args = args;
             this.thisNode = thisNode;
             this.callExpression = callExpression;
-            this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyNode(solver), callExpression);
+            this.callResolver = new CallGraphResolver(new IncludeNode(solver, thisNode), function, args, new EmptyNode(solver), callExpression);
             this.callResolver.constructorCalls = true;
         }
 
