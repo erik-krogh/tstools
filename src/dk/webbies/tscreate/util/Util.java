@@ -24,6 +24,7 @@ import java.util.stream.StreamSupport;
 public class Util {
     private static final boolean alwaysRecreate = false;
     private static String runNodeScript(String args) throws IOException {
+        if (args.endsWith("\"")) args = args.replace("\"", "");
         Process process = Runtime.getRuntime().exec("node " + args);
 
         CountDownLatch latch = new CountDownLatch(2);
