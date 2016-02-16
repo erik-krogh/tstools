@@ -454,7 +454,7 @@ public class TypeFactory {
                 if (result.size() > i) {
                     result.get(i).add(argument);
                 } else {
-                    result.add(new ArrayList<>(Arrays.asList(argument)));
+                    result.add(new ArrayList<>(Collections.singletonList(argument)));
                 }
             }
         }
