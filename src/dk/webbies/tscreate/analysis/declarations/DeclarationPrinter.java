@@ -279,6 +279,10 @@ public class DeclarationPrinter {
             minArgs = Integer.MAX_VALUE;
         }
 
+        if (options.allArgumentsAreOptional) {
+            minArgs = 0;
+        }
+
         for (int i = 0; i < args.size(); i++) {
             FunctionType.Argument arg = args.get(i);
             write(visitorArg.builder, names.get(i));

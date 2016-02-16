@@ -31,7 +31,7 @@ public class Options {
     public boolean asyncTest = false;
 
     public boolean recordCalls = true;
-    public int maxObjects = Integer.MAX_VALUE;
+    public int maxObjects = 1000;
 
     // If enabled, then for functions where we have information about all arguments and the return, we use that information instead of doing the static analysis.
     public boolean skipStaticAnalysisWhenPossible = false; // FIXME: Test this thing, i just fixed a bug.
@@ -41,6 +41,8 @@ public class Options {
 
     public boolean printStringIndexers = false;
     public boolean onlyEvaluateUnderFunctionArgsAndReturn = true;
+
+    public boolean allArgumentsAreOptional = false;
 
     public enum StaticAnalysisMethod {
         MY_MIXED_METHOD("mixed"),
