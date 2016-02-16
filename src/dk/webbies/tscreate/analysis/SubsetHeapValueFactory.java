@@ -81,28 +81,30 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
         if (cache.containsKey(obj)) {
             return new IncludeNode(solver, cache.get(obj));
         } else {
-            List<UnionNode> result = new ArrayList<>();
+            List<UnionNode> resultList = new ArrayList<>();
             ObjectNode objectNode = new ObjectNode(solver);
-            result.add(objectNode);
+            resultList.add(objectNode);
             if (this.typeAnalysis.getNativeClasses().nameFromObject(obj) != null) {
                 objectNode.setTypeName(this.typeAnalysis.getNativeClasses().nameFromObject(obj));
             }
 
             if (obj.prototype != null) {
-                result.add(new HasPrototypeNode(solver, obj.prototype));
+                resultList.add(new HasPrototypeNode(solver, obj.prototype));
             }
 
             if (obj.function != null) {
-                result.addAll(getFunctionNode(obj));
+                resultList.addAll(getFunctionNode(obj));
             }
 
-            cache.put(obj, objectNode);
+            IncludeNode result = new IncludeNode(solver, resultList);
+
+            cache.put(obj, result);
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
                     objectNode.addField(property.name, this.innerFromProperty(property));
                 }
             }
-            return new IncludeNode(solver, solver.union(result));
+            return result;
         }
     }
 
