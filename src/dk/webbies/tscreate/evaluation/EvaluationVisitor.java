@@ -71,6 +71,15 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
     private static int runCounter = 0;
     private void nextDepth(Type realType, Type myType, Runnable callback, String prefix) {
+        String myTypeName = myNativeClasses.nameFromType(myType);
+        String realTypeName = realNativeClasses.nameFromType(realType);
+        if (myTypeName != null && realTypeName != null && myTypeName.equals(realTypeName)) {
+            addTruePositive(depth, "was native type of " + myTypeName + " and that was correct.", prefix);
+            callback.run();
+            return;
+        }
+
+
         if (options.maxEvaluationDepth != null) {
             if (depth > options.maxEvaluationDepth) {
                 callback.run();
@@ -364,16 +373,16 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             return;
         }
         if (realSignatures.isEmpty() && !mySignatures.isEmpty()) {
-            addFalsePositive(prefix, depth + 1, "shouldn't be a " + description);
+            addFalsePositive(prefix, depth, "shouldn't be a " + description);
             callback.run();
             return;
         }
         if (!realSignatures.isEmpty() && mySignatures.isEmpty()) {
-            addFalseNegative(depth + 1, "should be a " + description, prefix);
+            addFalseNegative(depth, "should be a " + description, prefix);
             callback.run();
             return;
         }
-        addTruePositive(depth + 1, "was a function, that was right", prefix);
+        addTruePositive(depth, "was a function, that was right", prefix);
         if (realSignatures.size() == 1 && mySignatures.size() == 1) {
             WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth + 1, callback), queue);
             Signature realSignature = realSignatures.get(0);
