@@ -203,6 +203,7 @@ public class Evaluation {
         HashMap<Integer, Object> falses = new HashMap<>();
         addAll(this.falseNegatives, falses);
         addAll(this.falsePositives, falses);
+        addAll(this.truePositive, falses);
         ArrayList<Integer> keys = new ArrayList<>(falses.keySet());
         Collections.sort(keys);
         for (Integer key : keys) {

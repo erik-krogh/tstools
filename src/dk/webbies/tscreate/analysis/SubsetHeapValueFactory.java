@@ -157,7 +157,7 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
                     return this.typeAnalysis.getFunctionNodes().get(closure);
                 }
             case "native":
-                return FunctionNode.create(closure, solver); // FIXME: NO NO NO.
+                throw new RuntimeException();
             default:
                 throw new RuntimeException();
         }

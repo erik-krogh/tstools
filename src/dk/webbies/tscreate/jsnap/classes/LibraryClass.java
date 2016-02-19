@@ -153,11 +153,23 @@ public class LibraryClass {
     }
 
     public void addInstance(Snap.Obj instance) {
-        // FIXME: Make sure that the prototype on the instance match.
+        if (!hasPrototype(instance, this.prototype)) {
+            throw new RuntimeException("Tried to add an instance, that is not instanceof this thing. ");
+        }
         this.instances.add(instance);
         if (this.superClass != null && this.superClass != this) {
             this.superClass.addInstance(instance);
         }
+    }
+
+    private static boolean hasPrototype(Snap.Obj obj, Snap.Obj prototype) {
+        while (obj != null && obj.prototype != prototype) {
+            if (obj == prototype) {
+                return true;
+            }
+            obj = obj.prototype;
+        }
+        return false;
     }
 
     public Snap.Obj getConstructor() {

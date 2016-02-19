@@ -224,8 +224,8 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                         }
                         break;
                     case "unknown":
-                    case "bind": // FIXME:
-                        break; // Nothing we can do.
+                    case "bind":
+                        throw new RuntimeException();
                     default:
                         throw new UnsupportedOperationException("Do now know functions of type " + closure.function.type + " here.");
                 }

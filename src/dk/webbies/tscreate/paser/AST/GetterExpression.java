@@ -1,7 +1,6 @@
 package dk.webbies.tscreate.paser.AST;
 
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 
 import java.util.Collections;
@@ -24,11 +23,6 @@ public class GetterExpression extends Expression {
     @Override
     public <T> T accept(ExpressionVisitor<T> visitor) {
         return visitor.visit(this);
-    }
-
-    @Override
-    public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {
-        return visitor.visit(this, aux);
     }
 
     FunctionExpression function = null;

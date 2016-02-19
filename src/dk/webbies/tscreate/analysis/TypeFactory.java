@@ -79,7 +79,6 @@ public class TypeFactory {
         if (unionClass == null) {
             throw new NullPointerException();
         }
-//        unionClass.getStronglyConnectedComponents(); // FIXME: Look at this.
         DeclarationType result = cache.get(unionClass);
         if (result != null) {
             return result;
@@ -202,11 +201,14 @@ public class TypeFactory {
         if (libraryClass == null) {
             return null;
         }
-        // FIXME: The heuristic needs to be revised after the ts-spec-reader bug has been fixed. Consider what the upper-case name policy should be.
         boolean hardCodedClassName = false;
         if (options.isClassNames.stream().anyMatch(str -> str.equals(libraryClass.getName(nativeClasses, takenClassNames)))) {
             hardCodedClassName = true;
             libraryClass.isUsedAsClass = true;
+        }
+        String name = libraryClass.getName(nativeClasses, takenClassNames);
+        if (name.toUpperCase().charAt(0) != name.charAt(0)) {
+            return null;
         }
         if (!libraryClass.isUsedAsClass && libraryClass.getUniqueConstructionSite().isEmpty()) {
             return null;

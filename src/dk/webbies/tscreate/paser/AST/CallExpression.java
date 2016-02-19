@@ -30,9 +30,5 @@ public class CallExpression extends Expression {
     public <T> T accept(ExpressionVisitor<T> visitor) {
         return visitor.visit(this);
     }
-    @Override
-    public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {
-        return visitor.visit(this, aux);
-    }
 
 }

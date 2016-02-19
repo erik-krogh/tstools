@@ -277,7 +277,7 @@ public class JavaScriptParser {
             if (this.env.containsKey(identifier.getName())) {
                 identifier.declaration = this.env.get(identifier.getName());
             } else if (this.globalEnv.containsKey(identifier.getName())) {
-                identifier.declaration = identifier; // TODO: Maybe mention this, global variables are not unified. We get a value from the heap, which is assumed to be the truth, so unifying it with anything will only increase imprecision.
+                identifier.declaration = identifier;
                 identifier.isGlobal = true;
             } else {
                 this.globalEnv.put(identifier.getName(), identifier);

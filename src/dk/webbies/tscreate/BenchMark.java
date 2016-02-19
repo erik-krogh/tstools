@@ -141,7 +141,6 @@ public class BenchMark {
         options.maxEvaluationDepth = null;
         options.recordCalls = true;
         options.asyncTest = true;
-        options.maxObjects = 50;
         BenchMark bench = new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
         bench.dependencies.add(Dependency.underscore);
         bench.dependencies.add(Dependency.QUnit);
@@ -350,6 +349,8 @@ public class BenchMark {
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
 //        options.debugPrint = true;
+        options.recordCalls = false;
+        options.createInstances = false;
 
         return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
     });

@@ -546,6 +546,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
 
 
+    @SuppressWarnings("Duplicates")
     private final class NewCallResolver implements Runnable {
         private final UnionNode function;
         private final List<UnionNode> args;
@@ -597,8 +598,8 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         break;
                     case "unknown":
-                    case "bind": // FIXME:
-                        break; // Nothing we can do.
+                    case "bind":
+                        throw new RuntimeException();
                     default:
                         throw new UnsupportedOperationException("Do now know functions of type " + closure.function.type + " here.");
                 }

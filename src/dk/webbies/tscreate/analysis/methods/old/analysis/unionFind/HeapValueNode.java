@@ -133,7 +133,7 @@ public class HeapValueNode extends ObjectNode {
                 result.add(functionNode);
             } else {
                 ArrayList<Signature> signatures = new ArrayList<>(obj.function.callSignatures);
-                signatures.addAll(obj.function.constructorSignatures); // TODO: Separate constructor calls?
+                signatures.addAll(obj.function.constructorSignatures);
                 result.addAll(signatures.stream().map(functionNodeFactory::fromSignature).collect(Collectors.toList()));
             }
             functionCache.putAll(obj, result);

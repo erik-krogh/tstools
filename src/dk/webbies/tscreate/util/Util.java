@@ -39,7 +39,7 @@ public class Util {
 
         if (!errGobbler.getResult().isEmpty()) {
             System.err.println("Error running node script: " + errGobbler.getResult());
-//            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult()); // FIXME: Compiler warnings also show up here.
+//            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
         }
 
         return inputGobbler.getResult();
@@ -275,31 +275,6 @@ public class Util {
     public static <E> Set<E> reduceSet(Set<E> acc, Set<E> elem) {
         acc.addAll(elem);
         return acc;
-    }
-
-    // Added by Hamid
-    // FIXME: Check where this is used, isn't hashcode better?
-    public static int ord(String s) {
-        int ret = 0;
-        for (int i=0; i < s.length(); i++) {
-            ret += ((int)s.charAt(i));
-        }
-        return ret;
-    }
-
-    // borrowed (and adapted) from typechef project (DotGraph.scala)
-    public static String escString(String i)  {
-        return i.replace("\n", "\\l").
-                replace("{", "\\{").
-                replace("}", "\\}").
-                replace("<", "\\<").
-                replace(">", "\\>").
-                replace("\"", "\\\"").
-                replace("|", "\\|").
-                replace(" ", "\\ ").
-                replace("\\\"", "\\\\\"").
-                replace("\\\\\"", "\\\\\\\"").
-                replace("\\\\\\\\\"", "\\\\\\\"");
     }
 
     public static <S, T, T1 extends T, S1 extends S> T getWithDefault(Map<S, T> map, S1 key, T1 defaultValue) {

@@ -4,7 +4,6 @@ import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 /**
  * This can only occur as expressions in properties of objects.
@@ -30,11 +29,6 @@ public class SetterExpression extends Expression {
     @Override
     public <T> T accept(ExpressionVisitor<T> visitor) {
         return visitor.visit(this);
-    }
-
-    @Override
-    public <T> T accept(CFGExpressionVisitor<T> visitor, T aux) {
-        return visitor.visit(this, aux);
     }
 
     FunctionExpression function = null;

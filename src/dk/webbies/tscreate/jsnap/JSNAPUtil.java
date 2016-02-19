@@ -151,7 +151,7 @@ public class JSNAPUtil {
                 function.target = getHeapObject(stateDump, (function.target).key);
                 obj.env = function.target.env;
                 if (!function.target.function.type.equals("user")) {
-                    function.type = "unknown"; // Such an edge case, i choose to ignore it (happens in React). // TODO: Not.
+                    function.type = "unknown"; // Such an edge case, i choose to ignore it (happens in React).
                 }
             }
         }
