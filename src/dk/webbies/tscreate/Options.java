@@ -40,19 +40,23 @@ public class Options {
     public boolean reduceNothing = false;
 
     public boolean printStringIndexers = false;
-    public boolean onlyEvaluateUnderFunctionArgsAndReturn = true;
+    public boolean onlyEvaluateUnderFunctionArgsAndReturn = false;
 
     public boolean allArgumentsAreOptional = false;
 
     public enum StaticAnalysisMethod {
-        MY_MIXED_METHOD("mixed"),
-        TRADITIONAL_SUBSETS("subsets"),
-        TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH("unify recursive"),
-        TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING("unify simple");
+        MY_MIXED_METHOD("mixed", "mixed"),
+        TRADITIONAL_SUBSETS("subsets", "subsets"),
+        TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH("unify recursive", "unifyRecursive"),
+        TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING("unify simple", "unify"),
+        OLD_TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH("old unify recursive", "oldUnifyRecursive"),
+        OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING("old unify simple", "oldUnify");
         public final String prettyString;
+        public final String fileSuffix;
 
-        StaticAnalysisMethod(String prettyString) {
+        StaticAnalysisMethod(String prettyString, String fileSuffix) {
             this.prettyString = prettyString;
+            this.fileSuffix = fileSuffix;
         }
     }
 

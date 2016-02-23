@@ -68,7 +68,7 @@ public class Main {
 
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
-        String resultDeclarationFilePath = benchMark.scriptPath + ".gen.d.ts";
+        String resultDeclarationFilePath = benchMark.scriptPath + "." + benchMark.options.staticMethod.fileSuffix + ".gen.d.ts";
 
         FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
 
