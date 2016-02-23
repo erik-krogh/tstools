@@ -1,11 +1,8 @@
 package dk.webbies.tscreate.analysis.declarations;
 
-import dk.au.cs.casa.typescript.types.GenericType;
-import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
-import dk.webbies.tscreate.jsnap.Snap;
 import fj.F;
 import fj.pre.Ord;
 import fj.pre.Ordering;
@@ -644,40 +641,11 @@ public class DeclarationPrinter {
     }
 
     private Predicate<String> notInSuperClassTest(DeclarationType superClass) {
-        Set<String> fieldsInSuper = new HashSet<>();
-        while (superClass != null) {
-            if (superClass instanceof ClassType) {
-                fieldsInSuper.addAll(((ClassType)superClass).getPrototypeFields().keySet());
-                superClass = ((ClassType)superClass).getSuperClass();
-            } else if (superClass instanceof NamedObjectType) {
-                Set<String> typeKeys = keysFrom(nativeClasses.typeFromName(((NamedObjectType) superClass).getName()));
-                fieldsInSuper.addAll(typeKeys);
-
-                Snap.Obj proto = nativeClasses.prototypeFromName(((NamedObjectType) superClass).getName());
-                while (proto != null && proto != proto.prototype) {
-                    fieldsInSuper.addAll(proto.getPropertyMap().keySet());
-                    proto = proto.prototype;
-                }
-                break;
-            } else {
-                throw new RuntimeException();
-            }
-        }
+        Set<String> fieldsInSuper = ClassType.getFieldsInclSuper(superClass, nativeClasses);
         return (name) -> !fieldsInSuper.contains(name);
     }
 
-    private Set<String> keysFrom(Type type) {
-        if (type instanceof dk.au.cs.casa.typescript.types.InterfaceType) {
-            dk.au.cs.casa.typescript.types.InterfaceType interfaceType = (dk.au.cs.casa.typescript.types.InterfaceType) type;
-            HashSet<String> result = new HashSet<>();
-            result.addAll(interfaceType.getDeclaredProperties().keySet());
-            interfaceType.getBaseTypes().forEach(base -> result.addAll(keysFrom(base)));
-            return result;
-        } else if (type instanceof GenericType) {
-            return keysFrom(((GenericType) type).toInterface());
-        }
-        throw new RuntimeException("Not yet! " + type.getClass().getSimpleName());
-    }
+
 
     // Functional set things
     private static final Ord<DeclarationType> ordering = Ord.ord(new F<DeclarationType, F<DeclarationType, Ordering>>() {

@@ -5,11 +5,11 @@ import dk.webbies.tscreate.analysis.declarations.types.ClassInstanceType;
 import dk.webbies.tscreate.analysis.declarations.types.ClassType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
+import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,6 +17,12 @@ import java.util.Set;
  * Created by Erik Krogh Kristensen on 27-10-2015.
  */
 public class ClassInstanceUnnamedObjectReducer implements SingleTypeReducer<ClassInstanceType, UnnamedObjectType> {
+    private final DeclarationParser.NativeClassesMap nativeClasses;
+
+    public ClassInstanceUnnamedObjectReducer(DeclarationParser.NativeClassesMap nativeClasses) {
+        this.nativeClasses = nativeClasses;
+    }
+
     @Override
     public Class<ClassInstanceType> getAClass() {
         return ClassInstanceType.class;
@@ -33,13 +39,8 @@ public class ClassInstanceUnnamedObjectReducer implements SingleTypeReducer<Clas
     public DeclarationType reduce(ClassInstanceType instance, UnnamedObjectType object) {
         LibraryClass libraryClass = instance.getClazz().getLibraryClass();
         if (!classKeys.containsKey(libraryClass)) {
-            HashSet<String> set = new HashSet<>();
+            Set<String> set = ClassType.getFieldsInclSuper(instance.getClazz(), nativeClasses);
             classKeys.put(libraryClass, set);
-            ClassType clazz = instance.getClazz();
-            while (clazz != null) {
-                set.addAll(clazz.getPrototypeFields().keySet());
-                clazz = (ClassType) clazz.getSuperClass();
-            }
             libraryClass.getInstances().stream().map(Snap.Obj::getPropertyMap).map(Map::keySet).forEach(set::addAll);
         }
 
