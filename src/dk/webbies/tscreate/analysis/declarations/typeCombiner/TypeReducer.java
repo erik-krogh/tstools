@@ -75,7 +75,7 @@ public class TypeReducer {
         register(new PrimitiveReducer(originals));
         register(new NamedUnamedObjectReducer(nativeClasses, this));
         register(new UnnamedObjectReducer(this, originals));
-        register(new ClassInstanceUnnamedObjectReducer());
+        register(new ClassInstanceUnnamedObjectReducer(nativeClasses));
         register(new ClassInstanceReducer(originals));
         register(new DynamicAccessReducer(this, originals));
         register(new NamedObjectReducer(globalObject, nativeClasses, originals, this));
