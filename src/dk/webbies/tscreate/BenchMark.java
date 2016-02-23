@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static dk.webbies.tscreate.Main.LanguageLevel;
-import static dk.webbies.tscreate.Main.LanguageLevel.ES5;
-import static dk.webbies.tscreate.Main.LanguageLevel.ES6;
+import static dk.webbies.tscreate.main.Main.LanguageLevel;
+import static dk.webbies.tscreate.main.Main.LanguageLevel.ES5;
+import static dk.webbies.tscreate.main.Main.LanguageLevel.ES6;
 import static dk.webbies.tscreate.util.Util.evaluate;
 
 /**
@@ -303,7 +303,6 @@ public class BenchMark {
         return new BenchMark("Box2dWeb", "tests/box2dweb/box2dweb.js", "tests/box2dweb/box2dweb.d.ts", options, ES5);
     });
 
-    // TODO: Evaluation is basically 0.
     public static final BenchMark Q = evaluate(() -> {
         Options options = new Options();
         return new BenchMark("Q", "tests/q/q.js", "tests/q/q.d.ts", options, ES5);
