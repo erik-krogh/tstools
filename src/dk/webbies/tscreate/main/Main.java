@@ -1,6 +1,8 @@
-package dk.webbies.tscreate;
+package dk.webbies.tscreate.main;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
+import dk.webbies.tscreate.BenchMark;
+import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
@@ -8,6 +10,8 @@ import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.old.analysis.OldTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.unionRecursively.UnionRecursivelyTypeAnalysis;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
@@ -26,29 +30,28 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
+import static dk.webbies.tscreate.main.CompareMethods.*;
 import static dk.webbies.tscreate.util.Util.toFixed;
 
 /**
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
 public class Main {
-    // FIXME: Test does the .gen compare to thhe handwritten, if one tries to take a program writen against the hand-written, og replace the hand-written with the generated. Are there then compile-errors, and why are they there.
+    // FIXME: Test does the .gen compare to the handwritten, if one tries to take a program writen against the hand-written, og replace the hand-written with the generated. Are there then compile-errors, and why are they there.
     // FIXME: If not, then the tool is a success.
 
-    // FIXME: Check the outout from underscore, and try to se how the evaluation does on a single static method, what does it say.
-
-    // FIXME: Ember is way to slow at the moment. 
     public static void main(String[] args) throws IOException, InterruptedException {
         try {
             long start = System.currentTimeMillis();
 
-//            tsCheck();
+//            printTable();
 //            generateDeclarations(BenchMark.allBenchmarks);
-//            runAnalysis(BenchMark.underscore);
+//            tsCheck();
+            runAnalysis(BenchMark.underscore);
 //            benchAll();
 //            printTable();
-//            compareMethods(BenchMark.allBenchmarks, 1 * 60 * 1000);
-//            compareMethods(Arrays.asList(BenchMark.underscore), 10 * 60 * 1000);
+//            compareMethods(Arrays.asList(BenchMark.ember, BenchMark.three), 10 * 60 * 1000);
+//            compareMethods(BenchMark.allBenchmarks, 10 * 60 * 1000);
 
 
 
@@ -82,7 +85,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
@@ -116,49 +119,6 @@ public class Main {
         }
     }
 
-    @SuppressWarnings("Duplicates")
-    private static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
-        Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
-        int decimals = 4;
-        for (BenchMark benchMark : benchMarks) {
-            if (benchMark.declarationPath == null) {
-                continue;
-            }
-            Map<Options.StaticAnalysisMethod, Score> scores = new HashMap<>();
-            benchmarkScores.put(benchMark, scores);
-            for (Options.StaticAnalysisMethod method : Options.StaticAnalysisMethod.values()) {
-                benchMark.options.staticMethod = method;
-                System.out.println("With method: " + method.prettyString);
-                scores.put(method, runAnalysisWithTimeout(benchMark, timeout));
-            }
-
-            for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
-                Map<Options.StaticAnalysisMethod, Score> dupScores = entry.getValue();
-                System.out.println("Benchmark: " + entry.getKey().name);
-                for (Map.Entry<Options.StaticAnalysisMethod, Score> scoreEntry : dupScores.entrySet()) {
-                    Score score = scoreEntry.getValue();
-                    if (score == null) {
-                        score = new Score(-1, -1, -1);
-                    }
-                    System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, decimals) + " - " + toFixed(score.recall, decimals) + " - " + toFixed(score.precision, decimals));
-                }
-            }
-
-        }
-
-        for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
-            Map<Options.StaticAnalysisMethod, Score> scores = entry.getValue();
-            System.out.println("Benchmark: " + entry.getKey().name);
-            for (Map.Entry<Options.StaticAnalysisMethod, Score> scoreEntry : scores.entrySet()) {
-                Score score = scoreEntry.getValue();
-                if (score == null) {
-                    score = new Score(-1, -1, -1);
-                }
-                System.out.println(scoreEntry.getKey().prettyString + " : " + toFixed(score.fMeasure, decimals) + " - " + toFixed(score.recall, decimals) + " - " + toFixed(score.precision, decimals));
-            }
-        }
-    }
-
     private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
         switch (benchMark.options.staticMethod) {
             case MY_MIXED_METHOD:
@@ -166,10 +126,12 @@ public class Main {
             case TRADITIONAL_SUBSETS:
                 return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
-//                return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-                return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH:
-//                return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case OLD_TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH:
+                return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
                 return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             default:
                 throw new RuntimeException("I don't even know this static analysis method. ");

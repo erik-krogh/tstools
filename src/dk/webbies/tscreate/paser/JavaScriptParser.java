@@ -12,7 +12,7 @@ import com.google.javascript.jscomp.parsing.parser.trees.ProgramTree;
 import com.google.javascript.jscomp.parsing.parser.util.SourcePosition;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import com.google.javascript.rhino.ErrorReporter;
-import dk.webbies.tscreate.Main;
+import dk.webbies.tscreate.main.Main;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.paser.AST.*;
 
