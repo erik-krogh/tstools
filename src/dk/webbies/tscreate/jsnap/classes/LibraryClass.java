@@ -154,7 +154,7 @@ public class LibraryClass {
 
     public void addInstance(Snap.Obj instance) {
         if (!hasPrototype(instance, this.prototype)) {
-            throw new RuntimeException("Tried to add an instance, that is not instanceof this thing. ");
+            return;
         }
         this.instances.add(instance);
         if (this.superClass != null && this.superClass != this) {
@@ -163,7 +163,7 @@ public class LibraryClass {
     }
 
     private static boolean hasPrototype(Snap.Obj obj, Snap.Obj prototype) {
-        while (obj != null && obj.prototype != prototype) {
+        while (obj != null && obj.prototype != obj) {
             if (obj == prototype) {
                 return true;
             }
