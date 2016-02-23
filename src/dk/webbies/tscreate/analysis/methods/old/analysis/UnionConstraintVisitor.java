@@ -583,6 +583,9 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         public void run() {
             Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap);
             for (Snap.Obj closure : functionClosures) {
+                if (closure.function.type.equals("bind")) {
+                    closure = closure.function.target;
+                }
                 switch (closure.function.type) {
                     case "native":
                         Snap.Property prototypeProp = closure.getProperty("prototype");
