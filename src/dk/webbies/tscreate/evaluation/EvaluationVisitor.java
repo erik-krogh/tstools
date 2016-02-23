@@ -265,6 +265,12 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             return null;
         }
 
+        if (type instanceof TupleType) {
+            addFalseNegative(depth, "got tuple type, expected interface", arg.prefix);
+            arg.callback.run();
+            return null;
+        }
+
         if (!(type instanceof InterfaceType)) {
             throw new RuntimeException();
         }
