@@ -124,7 +124,8 @@ public class CompareMethods {
         try {
             writer.write(str);
             writer.flush();
-            System.out.println(str);
+            System.out.print(str);
+            System.out.flush();
         } catch (IOException e) {
             throw new RuntimeException();
         }
