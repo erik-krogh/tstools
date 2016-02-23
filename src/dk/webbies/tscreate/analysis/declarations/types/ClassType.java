@@ -76,6 +76,31 @@ public class ClassType extends DeclarationType{
         return libraryClass;
     }
 
+    public static Set<String> getStaticFieldsInclSuper(DeclarationType superClass, DeclarationParser.NativeClassesMap nativeClasses) {
+        Set<String> fieldsInSuper = new HashSet<>();
+        while (superClass != null) {
+            if (superClass instanceof ClassType) {
+                fieldsInSuper.addAll(((ClassType)superClass).getStaticFields().keySet());
+                superClass = ((ClassType)superClass).getSuperClass();
+            } else if (superClass instanceof NamedObjectType) {
+                Snap.Obj proto = nativeClasses.prototypeFromName(((NamedObjectType) superClass).getName());
+                while (proto != null && proto != proto.prototype) {
+                    Snap.Property constructorProp = proto.getProperty("constructor");
+                    if (constructorProp != null && constructorProp.value instanceof Snap.Obj) {
+                        Snap.Obj constructor = (Snap.Obj) constructorProp.value;
+                        fieldsInSuper.addAll(constructor.getPropertyMap().keySet());
+                    }
+                    proto = proto.prototype;
+                }
+                break;
+            } else {
+                throw new RuntimeException();
+            }
+        }
+        return fieldsInSuper;
+    }
+
+
     public static Set<String> getFieldsInclSuper(DeclarationType superClass, DeclarationParser.NativeClassesMap nativeClasses) {
         Set<String> fieldsInSuper = new HashSet<>();
         while (superClass != null) {

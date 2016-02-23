@@ -88,7 +88,7 @@ public class LibraryClass {
                 }
             }
 
-            if (name.matches("[0-9]+.{0,}")) {
+            if (name.matches("[0-9]+.{0,}") || name.equals("[proto]") || name.equals("constructor")) {
                 name = "interface_" + InterfaceType.interfaceCounter++;
             }
             if (name.contains("-")) {

@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations;
 
+import dk.au.cs.casa.typescript.types.GenericType;
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
@@ -92,11 +94,15 @@ public class DeclarationPrinter {
 
     private static Set<String> keyWords = new HashSet<>(Arrays.asList("set get abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield var".split(" ")));
     private void writeName(StringBuilder builder, String str) {
-        if (str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str)) {
+        if (validName(str)) {
             write(builder, str);
         } else {
-            write(builder, "\"" + str.replace("\"", "\\\"") + "\"");
+            write(builder, "\"" + str.replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
         }
+    }
+
+    private boolean validName(String str) {
+        return str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str);
     }
 
     private Set<InterfaceType> printedInterfaces = new HashSet<>();
@@ -177,7 +183,6 @@ public class DeclarationPrinter {
         printDeclaration(arg, name, type, "declare");
     }
 
-    @SuppressWarnings("Duplicates")
     private void printDeclaration(VisitorArg arg, String name, DeclarationType type, String prefix) {
         type = type.resolve();
         if ((type instanceof FunctionType || type instanceof UnnamedObjectType) && printsAsInterface.containsKey(type)) {
@@ -187,7 +192,7 @@ public class DeclarationPrinter {
                 throw new GotCyclic(arg.getSeen());
             }
         }
-        if (exportNameBlacklist.contains(name)) {
+        if (exportNameBlacklist.contains(name) || !validName(name)) {
             throw new GotCyclic(arg.getSeen());
         }
         if (type instanceof FunctionType) {
@@ -235,8 +240,11 @@ public class DeclarationPrinter {
             printArguments(arg, clazz.getConstructorType().getArguments(), clazz.getConstructorType().minArgs);
             write(arg.builder, ");\n");
 
+            Predicate<String> notStaticInSuperClass = notStaticInSuperClassTest(clazz.getSuperClass());
             for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet()) {
-                printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
+                if (notStaticInSuperClass.test(entry.getKey())) {
+                    printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
+                }
             }
 
             Predicate<String> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
@@ -259,7 +267,7 @@ public class DeclarationPrinter {
         }
     }
 
-    private static final Set<String> exportNameBlacklist = new HashSet<>(Arrays.asList("function", "delete"));
+    private static final Set<String> exportNameBlacklist = new HashSet<>(Arrays.asList("function", "delete", "var", "with"));
 
     private void printArguments(VisitorArg visitorArg, List<FunctionType.Argument> args, Integer minArgs) {
         List<String> names = new ArrayList<>();
@@ -499,16 +507,34 @@ public class DeclarationPrinter {
         }
 
         @Override
-        public Void visit(NamedObjectType namedObjectType, VisitorArg arg) {
-            switch (namedObjectType.getName()) {
+        public Void visit(NamedObjectType named, VisitorArg arg) {
+            String name = named.getName();
+            switch (name) {
                 case "Array":
-                    printArray(arg, namedObjectType.indexType);
+                    printArray(arg, named.indexType);
                     break;
                 case "NodeListOf":
                     write(arg.builder, "NodeListOf<any>");
                     break;
                 default:
-                    write(arg.builder, namedObjectType.getName());
+                    Type type = nativeClasses.typeFromName(name);
+                    if (type != null && type instanceof GenericType) {
+                        GenericType generic = (GenericType) type;
+                        int typeArgs = generic.getTypeArguments().size();
+                        write(arg.builder, name);
+                        if (typeArgs > 0) {
+                            write(arg.builder, "<");
+                            for (int i = 0; i < typeArgs; i++) {
+                                write(arg.builder, "any");
+                                if (i != typeArgs - 1) {
+                                    write(arg.builder, ", ");
+                                }
+                            }
+                            write(arg.builder, ">");
+                        }
+                    } else {
+                        write(arg.builder, name);
+                    }
                     break;
             }
             return null;
@@ -638,6 +664,12 @@ public class DeclarationPrinter {
         } else {
             throw new RuntimeException();
         }
+    }
+
+
+    private Predicate<String> notStaticInSuperClassTest(DeclarationType superClass) {
+        Set<String> staticInSuper = ClassType.getStaticFieldsInclSuper(superClass, nativeClasses);
+        return (name) -> !staticInSuper.contains(name);
     }
 
     private Predicate<String> notInSuperClassTest(DeclarationType superClass) {
