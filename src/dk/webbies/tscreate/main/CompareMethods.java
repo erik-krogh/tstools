@@ -110,7 +110,7 @@ public class CompareMethods {
         }
     }
 
-    static File file = new File("methods 5 depth.txt");
+    /*static File file = new File("methods 5 depth.txt");
     static BufferedWriter writer;
     static {
         try {
@@ -119,14 +119,14 @@ public class CompareMethods {
             throw new RuntimeException();
         }
     }
-    
+    */
     private static void print(String str) {
         try {
-            writer.write(str);
-            writer.flush();
+//            writer.write(str);
+//            writer.flush();
             System.out.print(str);
             System.out.flush();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException();
         }
     }
