@@ -161,8 +161,12 @@ public class DeclarationPrinter {
             this.classNames = new ClassNameFinder(declarations, printsAsInterface).getClassNames();
             try {
                 for (Map.Entry<String, DeclarationType> entry : this.declarations.entrySet()) {
-                    String name = entry.getKey();
                     DeclarationType type = entry.getValue();
+                    String name = entry.getKey();
+                    if (!validName(name)) {
+                        System.err.println("Skipping printing global declaration: \"" + name + "\", because I couldn't print it properly.");
+                        continue;
+                    }
                     printDeclaration(new VisitorArg(builder, fj.data.List.nil(), name), name, type);
                 }
             } catch (GotCyclic e) {
@@ -193,7 +197,7 @@ public class DeclarationPrinter {
             }
         }
         if (exportNameBlacklist.contains(name) || !validName(name)) {
-            throw new GotCyclic(arg.getSeen());
+            throw new GotCyclic(arg.getSeen().cons(type));
         }
         if (type instanceof FunctionType) {
             arg = arg.cons(type, true);
@@ -342,6 +346,7 @@ public class DeclarationPrinter {
         final DeclarationType singleType;
 
         private GotCyclic(fj.data.List<DeclarationType> types) {
+            assert !types.isEmpty();
             this.types = types;
             this.singleType = null;
         }
