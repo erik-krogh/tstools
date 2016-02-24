@@ -490,7 +490,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         public void run() {
             Collection<Snap.Obj> functionClosures = MixedConstraintVisitor.getFunctionClosures(function, seenHeap);
             for (Snap.Obj closure : functionClosures) {
-                if (closure.function.type.equals("bind")) {
+                while (closure.function.type.equals("bind")) {
                     closure = closure.function.target;
                 }
                 switch (closure.function.type) {
@@ -523,6 +523,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                         }
                         break;
                     case "unknown":
+                        break;
                     case "bind":
                         throw new RuntimeException();
                     default:
