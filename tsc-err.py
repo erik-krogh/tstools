@@ -95,8 +95,70 @@ def cmp2():
     for n in d:
         print(l_m2[n])
         print("")
+
+def cmp3():
+    s1=open(sys.argv[1]).read()
+    s2=open(sys.argv[2]).read()
+    s3=open(sys.argv[3]).read()
+    msgs1= get_lines(s1)
+    msgs2 = get_lines(s2)
+    msgs3 = get_lines(s3)
+    e1=set()
+    e2=set()
+    e3=set()
+    ls1=set()
+    ls2=set()
+    ls3=set()
+    l_m1 = {}
+    l_m2 = {}
+    l_m3 = {}
+    for l in msgs1:
+        attrs=get_attr(l)
+        e1.add(attrs['error'])
+        ls1.add(attrs['line'])
+        l_m1[attrs['line']]=l #attrs['message']
+    for l in msgs2:
+        attrs=get_attr(l)
+        e2.add(attrs['error'])
+        ls2.add(attrs['line'])
+        l_m2[attrs['line']]=l #attrs['message']
+    for l in msgs3:
+        attrs=get_attr(l)
+        e3.add(attrs['error'])
+        ls3.add(attrs['line'])
+        l_m3[attrs['line']]=l #attrs['message']
+        
+    #print(e1)
+    print(len(ls1))
+    #print(e2)
+    print(len(ls2))
+    print(len(ls3))
+
     
+    print(len(ls1.intersection(ls2)))
+    print(len(ls2.intersection(ls1)))
+    print(len(ls1.intersection(ls3)))
+    
+    print('diff ' + sys.argv[1] + ' ' + sys.argv[2])
+    d = ls1.difference(ls2)
+    for n in d:
+        print(l_m1[n])
+        print("")
+    print('diff ' + sys.argv[2] + ' ' + sys.argv[1])
+    print('=========')
+    d = ls2.difference(ls1)
+    for n in d:
+        print(l_m2[n])
+        print("")
+
+    print('=========')
+    print('diff ' + sys.argv[1] + ' ' + sys.argv[3])
+    d = ls1.difference(ls3)
+    for n in d:
+        print(l_m1[n])
+        print("")
+
 if __name__ == '__main__':
     #print_lines_errors()
-    cmp2()
+    cmp3()
    
