@@ -22,7 +22,7 @@ public interface TypeAnalysis {
 
     DeclarationParser.NativeClassesMap getNativeClasses();
 
-    Map<Snap.Obj, FunctionNode> getFunctionNodes();
+    FunctionNode getFunctionNode(Snap.Obj closure);
 
     HeapValueFactory getHeapFactory();
 }

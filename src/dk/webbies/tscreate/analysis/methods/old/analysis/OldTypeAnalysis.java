@@ -180,8 +180,8 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
     }
 
     @Override
-    public Map<Snap.Obj, FunctionNode> getFunctionNodes() {
-        return functionNodes;
+    public FunctionNode getFunctionNode(Snap.Obj closure) {
+        return this.functionNodes.get(closure);
     }
 
     @Override

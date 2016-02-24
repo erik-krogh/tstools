@@ -34,7 +34,7 @@ public class Options {
     public int maxObjects = 1000;
 
     // If enabled, then for functions where we have information about all arguments and the return, we use that information instead of doing the static analysis.
-    public boolean skipStaticAnalysisWhenPossible = false; // FIXME: Test this thing, i just fixed a bug.
+    public boolean skipStaticAnalysisWhenPossible = true;
 
     // Deactivates all but the trivial part of the type-inference. When doing this, there is union-types everywhere, instead of more readable types.
     public boolean reduceNothing = false;
@@ -45,6 +45,7 @@ public class Options {
     public boolean allArgumentsAreOptional = false;
 
     public enum StaticAnalysisMethod {
+        COMBINED("combined", "combined"),
         MY_MIXED_METHOD("mixed", "mixed"),
         TRADITIONAL_SUBSETS("subsets", "subsets"),
         TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH("unify recursive", "unifyRecursive"),

@@ -168,8 +168,8 @@ public class HeapValueNode extends ObjectNode {
                 case "unknown": return FunctionNode.create(closure, solver);
                 case "user":
                 case "bind":
-                    if (this.typeAnalysis.getFunctionNodes().containsKey(closure)) {
-                        return this.typeAnalysis.getFunctionNodes().get(closure);
+                    if (this.typeAnalysis.getFunctionNode(closure) != null) {
+                        return this.typeAnalysis.getFunctionNode(closure);
                     } else {
 
                     }

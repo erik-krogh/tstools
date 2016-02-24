@@ -151,10 +151,10 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
             case "unknown": return FunctionNode.create(closure, solver);
             case "user":
             case "bind":
-                if (!this.typeAnalysis.getFunctionNodes().containsKey(closure)) {
+                if (this.typeAnalysis.getFunctionNode(closure) == null) {
                     return FunctionNode.create(closure, solver);
                 } else {
-                    return this.typeAnalysis.getFunctionNodes().get(closure);
+                    return this.typeAnalysis.getFunctionNode(closure);
                 }
             case "native":
                 throw new RuntimeException();

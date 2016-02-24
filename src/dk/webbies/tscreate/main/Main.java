@@ -1,12 +1,15 @@
 package dk.webbies.tscreate.main;
 
+import com.google.javascript.jscomp.ConformanceRules;
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.BenchMark;
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.analysis.methods.combined.CombinedTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.old.analysis.OldTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
@@ -23,6 +26,7 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +54,7 @@ public class Main {
             runAnalysis(BenchMark.underscore);
 //            benchAll();
 //            printTable();
-//            compareMethods(Arrays.asList(BenchMark.ember, BenchMark.three), 10 * 60 * 1000);
+//            compareMethods(Arrays.asList(BenchMark.three), 10 * 60 * 1000);
 //            compareMethods(BenchMark.allBenchmarks, 10 * 60 * 1000);
 
 
@@ -133,6 +137,8 @@ public class Main {
                 return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
                 return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case COMBINED:
+                return new CombinedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             default:
                 throw new RuntimeException("I don't even know this static analysis method. ");
         }

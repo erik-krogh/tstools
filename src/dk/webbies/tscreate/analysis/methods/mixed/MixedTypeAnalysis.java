@@ -24,12 +24,12 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     public final HashMap<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
     public HeapValueFactory heapFactory;
-    protected final UnionFindSolver solver;
+    public final UnionFindSolver solver;
 
     public final Options options;
     public final NativeClassesMap nativeClasses;
 
-    protected final TypeFactory typeFactory;
+    public TypeFactory typeFactory;
     private final Map<Snap.Obj, LibraryClass> prototypeFunctions;
     protected NativeTypeFactory nativeTypeFactory;
     public final Map<Snap.Obj, FunctionNode> functionNodes;
@@ -58,8 +58,8 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     }
 
     @Override
-    public Map<Snap.Obj, FunctionNode> getFunctionNodes() {
-        return functionNodes;
+    public FunctionNode getFunctionNode(Snap.Obj closure) {
+        return this.functionNodes.get(closure);
     }
 
     @Override
@@ -100,7 +100,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
         int counter = 0;
         for (Snap.Obj closure : functionNodes.keySet()) {
-            System.out.println("Analysis: " + ++counter + "/" + functionNodes.size());
+//            System.out.println("Analysis: " + ++counter + "/" + functionNodes.size());
             FunctionNode functionNode = functionNodes.get(closure);
 
             if (options.skipStaticAnalysisWhenPossible) {
@@ -138,7 +138,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
         counter = 0;
         for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
-            System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
+//            System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
             Snap.Obj closure = entry.getKey();
             FunctionNode functionNode = entry.getValue();
 
