@@ -5,9 +5,6 @@ import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.util.Pair;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -64,8 +61,13 @@ public class CompareMethods {
     }
 
     public static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
+        List<Options.StaticAnalysisMethod> methods = Arrays.asList(Options.StaticAnalysisMethod.values());
+        compareMethods(benchMarks, methods, timeout);
+    }
+
+    public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout) throws IOException {
         Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
-        int maxMethodLength = Arrays.asList(Options.StaticAnalysisMethod.values()).stream().map(method -> method.prettyString.length()).max(Integer::compare).get();
+        int maxMethodLength = methods.stream().map(method -> method.prettyString.length()).max(Integer::compare).get();
         int decimals = 4;
         for (BenchMark benchMark : benchMarks) {
             if (benchMark.declarationPath == null) {
@@ -73,7 +75,7 @@ public class CompareMethods {
             }
             Map<Options.StaticAnalysisMethod, Score> scores = new HashMap<>();
             benchmarkScores.put(benchMark, scores);
-            for (Options.StaticAnalysisMethod method : Options.StaticAnalysisMethod.values()) {
+            for (Options.StaticAnalysisMethod method : methods) {
                 if (blackList.contains(new Pair<>(benchMark, method))) {
                     scores.put(method, new Score(-1, -1, -1));
                     continue;
