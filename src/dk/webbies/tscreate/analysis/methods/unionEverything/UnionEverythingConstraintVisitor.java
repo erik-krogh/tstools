@@ -280,7 +280,14 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                     case "user":
                     case "bind": {
                         assert UnionEverythingConstraintVisitor.this.functionNodes.containsKey(closure);
-                        solver.union(this.functionNode, UnionEverythingConstraintVisitor.this.functionNodes.get(closure)); // <- no includeNode, and it is supposed to be that way.
+                        // no includeNode, and it is supposed to be that way.
+                        FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
+                        solver.union(newFunction, UnionEverythingConstraintVisitor.this.functionNodes.get(closure));
+                        solver.union(functionNode.returnNode, newFunction.returnNode);
+//                        solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
+                        for (int i = 0; i < functionNode.arguments.size(); i++) {
+                            solver.union(functionNode.arguments.get(i), newFunction.arguments.get(i));
+                        }
 
                          /*// This is the traditional "points-to" way. By having the arguments flow to the parameters.
                         FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);

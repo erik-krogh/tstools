@@ -68,15 +68,15 @@ public class BenchMark {
         options.recordCalls = true;
         BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
 
-        bench.dependencies.add(Dependency.QUnit);
+//        bench.dependencies.add(Dependency.QUnit);
 
-        bench.testFiles.add("tests/underscore/tests/arrays.js");
+        /* bench.testFiles.add("tests/underscore/tests/arrays.js");
         bench.testFiles.add("tests/underscore/tests/chaining.js");
         bench.testFiles.add("tests/underscore/tests/collections.js");
 //        bench.testFiles.add("tests/underscore/tests/cross-document.js");
         bench.testFiles.add("tests/underscore/tests/functions.js");
         bench.testFiles.add("tests/underscore/tests/objects.js");
-        bench.testFiles.add("tests/underscore/tests/utility.js");
+        bench.testFiles.add("tests/underscore/tests/utility.js"); */
         return bench;
     });
 

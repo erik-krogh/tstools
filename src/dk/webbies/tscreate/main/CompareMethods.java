@@ -16,53 +16,57 @@ import static dk.webbies.tscreate.util.Util.toFixed;
 public class CompareMethods {
     private static Set<Pair<BenchMark, Options.StaticAnalysisMethod>> blackList = new HashSet<>();
     static {
-        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
-        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
-        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
+        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
 
-        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.angular, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.angular, Options.StaticAnalysisMethod.OLD_UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.OLD_UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
-        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.angular, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.angular, Options.StaticAnalysisMethod.OLD_UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
-        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.ace, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.ace, Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
-        blackList.add(new Pair<>(BenchMark.ace, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.ace, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.ace, Options.StaticAnalysisMethod.OLD_UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.ace, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH));
-        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING));
+        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION));
     }
 
     public static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
         List<Options.StaticAnalysisMethod> methods = Arrays.asList(Options.StaticAnalysisMethod.values());
         compareMethods(benchMarks, methods, timeout);
+    }
+
+    public static void compareMethods(List<BenchMark> benchMarks, Options.StaticAnalysisMethod[] methods, long timeout) throws IOException {
+        compareMethods(benchMarks, Arrays.asList(methods), timeout);
     }
 
     public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout) throws IOException {

@@ -655,7 +655,13 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     case "user":
                     case "bind": {
 //                        assert MixedConstraintVisitor.this.functionNodes.containsKey(closure);
-                        solver.union(this.functionNode, new IncludeNode(solver, MixedConstraintVisitor.this.functionNodes.get(closure)));
+                        FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
+                        solver.union(newFunction, MixedConstraintVisitor.this.functionNodes.get(closure));
+                        solver.union(functionNode.returnNode, new IncludeNode(solver, newFunction.returnNode));
+                        solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
+                        for (int i = 0; i < functionNode.arguments.size(); i++) {
+                            solver.union(functionNode.arguments.get(i), new IncludeNode(solver, newFunction.arguments.get(i)));
+                        }
 
                          /*// This is the traditional "points-to" way. By having the arguments flow to the parameters.
                         FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);

@@ -46,12 +46,15 @@ public class Options {
 
     public enum StaticAnalysisMethod {
         COMBINED("combined", "combined"),
-        MY_MIXED_METHOD("mixed", "mixed"),
-        TRADITIONAL_SUBSETS("subsets", "subsets"),
-        TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH("unify recursive", "unifyRecursive"),
-        TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING("unify simple", "unify"),
-        OLD_TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH("old unify recursive", "oldUnifyRecursive"),
-        OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING("old unify simple", "oldUnify");
+        MIXED("mixed", "mixed"),
+        ANDERSON("subsets", "subsets"),
+        COMBINED_CONTEXT_SENSITIVE("combined, CS", "combined_cs"),
+        MIXED_CONTEXT_SENSITIVE("mixed, CS", "mixed_cs"),
+        ANDERSON_CONTEXT_SENSITIVE("subsets, CS", "subsets_cs"),
+        UNIFICATION_CONTEXT_SENSITIVE("unify, CS", "unify_cs"),
+        UNIFICATION("unify", "unify"),
+        OLD_UNIFICATION_CONTEXT_SENSITIVE("old unify, CS", "oldUnify_cs"),
+        OLD_UNIFICATION("old unify", "oldUnify");
         public final String prettyString;
         public final String fileSuffix;
 
@@ -61,7 +64,7 @@ public class Options {
         }
     }
 
-    public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.MY_MIXED_METHOD;
+    public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.MIXED;
 
     public enum Runtime {
         PHANTOM,

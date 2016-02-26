@@ -91,7 +91,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
         System.out.println("Analyzing " + functions.size() + " functions");
 
         // Same as "separate methods".
-        if (options.staticMethod == Options.StaticAnalysisMethod.OLD_TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH) {
+        if (options.staticMethod == Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE) {
             int counter = 0;
             for (Snap.Obj functionClosure : functions) {
                 System.out.println(++counter + "/" + functions.size());

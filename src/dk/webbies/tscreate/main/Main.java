@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.main;
 
-import com.google.javascript.jscomp.ConformanceRules;
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.webbies.tscreate.BenchMark;
 import dk.webbies.tscreate.Options;
@@ -10,6 +9,9 @@ import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.methods.combined.CombinedTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.contextSensitive.combined.CombinedContextSensitiveTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.contextSensitive.mixed.MixedContextSensitiveTypeAnalysis;
+import dk.webbies.tscreate.analysis.methods.contextSensitive.pureSubsets.PureSubsetsContextSensitiveTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.old.analysis.OldTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
@@ -26,16 +28,17 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tscreate.BenchMark.*;
+import static dk.webbies.tscreate.BenchMark.allBenchmarks;
+import static dk.webbies.tscreate.Options.StaticAnalysisMethod.*;
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
-import static dk.webbies.tscreate.main.CompareMethods.*;
+import static dk.webbies.tscreate.main.CompareMethods.compareMethods;
 import static dk.webbies.tscreate.util.Util.toFixed;
+import static java.util.Arrays.asList;
 
 /**
  * Created by Erik Krogh Kristensen on 01-09-2015.
@@ -54,10 +57,17 @@ public class Main {
             runAnalysis(BenchMark.underscore);
 //            benchAll();
 //            printTable();
-//            compareMethods(Arrays.asList(BenchMark.three), 10 * 60 * 1000);
-//            compareMethods(BenchMark.allBenchmarks, 10 * 60 * 1000);
 
-
+            /* List<BenchMark> benchs = new ArrayList<>(BenchMark.allBenchmarks);
+            // Either to slow, or gives an evaluation of ZERO anyway.
+            benchs.remove(jQuery);
+            benchs.remove(three);
+            benchs.remove(ember);
+            benchs.remove(pickdate);
+            benchs.remove(test);
+            benchs.remove(sugar);
+            compareMethods(benchs, asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE), 30 * 60 * 1000);
+            */
 
             long end = System.currentTimeMillis();
 
@@ -125,20 +135,26 @@ public class Main {
 
     private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
         switch (benchMark.options.staticMethod) {
-            case MY_MIXED_METHOD:
+            case MIXED:
                 return new MixedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            case TRADITIONAL_SUBSETS:
+            case ANDERSON:
                 return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            case TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
+            case UNIFICATION:
                 return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            case TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH:
+            case UNIFICATION_CONTEXT_SENSITIVE:
                 return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            case OLD_TRADITIONAL_UNIFICATION_RECURSIVELY_RESOLVE_CALLGRAPH:
+            case OLD_UNIFICATION_CONTEXT_SENSITIVE:
                 return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
-            case OLD_TRADITIONAL_UNIFICATION_UNIFY_EVERYTHING:
+            case OLD_UNIFICATION:
                 return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case COMBINED:
                 return new CombinedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case MIXED_CONTEXT_SENSITIVE:
+                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case ANDERSON_CONTEXT_SENSITIVE:
+                return new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+            case COMBINED_CONTEXT_SENSITIVE:
+                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             default:
                 throw new RuntimeException("I don't even know this static analysis method. ");
         }
@@ -154,7 +170,7 @@ public class Main {
     }
 
     public static void tsCheck() throws IOException {
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+        for (BenchMark benchmark : allBenchmarks) {
             benchmark.options.tsCheck = true;
             runAnalysis(benchmark);
         }
@@ -162,7 +178,7 @@ public class Main {
 
     private static void benchAll() throws IOException {
         double combinedScore = 0;
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+        for (BenchMark benchmark : allBenchmarks) {
             double score = runAnalysis(benchmark).fMeasure;
             if (!Double.isNaN(score)) {
                 combinedScore += score;
@@ -174,7 +190,7 @@ public class Main {
 
     private static void generateDeclarations(List<BenchMark> benchMarks) throws IOException {
         if (benchMarks == null) {
-            benchMarks = BenchMark.allBenchmarks;
+            benchMarks = allBenchmarks;
         }
         double combinedScore = 0;
         for (BenchMark benchmark : benchMarks) {
@@ -187,8 +203,8 @@ public class Main {
 
     private static void printTable() throws IOException {
         Map<BenchMark, Score> scores = new HashMap<>();
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            if (benchmark.declarationPath == null || benchmark == BenchMark.test) {
+        for (BenchMark benchmark : allBenchmarks) {
+            if (benchmark.declarationPath == null || benchmark == test) {
                 continue;
             }
             Score score = runAnalysisWithTimeout(benchmark, Long.MAX_VALUE);

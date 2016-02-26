@@ -1,7 +1,6 @@
-package dk.webbies.tscreate.analysis.methods.old.analysis;
+package dk.webbies.tscreate.analysis.methods.contextSensitive.mixed;
 
 import dk.au.cs.casa.typescript.types.Signature;
-import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.unionFind.*;
@@ -17,64 +16,46 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static dk.webbies.tscreate.analysis.ResolveEnvironmentVisitor.getIdentifier;
+
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
-public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
+@SuppressWarnings("Duplicates")
+public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
     protected final Snap.Obj closure;
     protected final UnionFindSolver solver;
+    protected final Map<Identifier, UnionNode> identifierMap;
     protected final FunctionNode functionNode;
     protected final Map<Snap.Obj, FunctionNode> functionNodes;
-    protected OldTypeAnalysis typeAnalysis;
-    private final Map<OldTypeAnalysis.ProgramPoint, UnionNode> nodes;
+    protected MixedContextSensitiveTypeAnalysis typeAnalysis;
     protected final PrimitiveNode.Factory primitiveFactory;
     protected HeapValueFactory heapFactory;
     protected NativeTypeFactory nativeTypeFactory;
-    private Set<Snap.Obj> hasAnalysed;
 
-    public UnionConstraintVisitor(
+    public MixedContextSensitiveConstraintVisitor(
             Snap.Obj closure,
             UnionFindSolver solver,
+            Map<Identifier, UnionNode> identifierMap,
             FunctionNode functionNode,
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
-            OldTypeAnalysis typeAnalysis,
-            Map<OldTypeAnalysis.ProgramPoint, UnionNode> nodes,
-            NativeTypeFactory nativeTypeFactory,
-            Set<Snap.Obj> hasAnalysed) {
+            MixedContextSensitiveTypeAnalysis typeAnalysis,
+            NativeTypeFactory nativeTypeFactory) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
+        this.identifierMap = identifierMap;
         this.functionNode = functionNode;
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
-        this.nodes = nodes;
         this.nativeTypeFactory = nativeTypeFactory;
-        this.hasAnalysed = hasAnalysed;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
-    }
-
-    UnionNode get(AstNode node) {
-        return getUnionNode(node, this.closure, this.nodes, solver);
     }
 
     @Override
     public ExpressionVisitor<UnionNode> getExpressionVisitor() {
         return this;
-    }
-
-    public static UnionNode getUnionNode(AstNode node, Snap.Obj closure, Map<OldTypeAnalysis.ProgramPoint, UnionNode> nodes, UnionFindSolver solver) {
-        if (node == null) {
-            throw new NullPointerException("node cannot be null");
-        }
-        OldTypeAnalysis.ProgramPoint key = new OldTypeAnalysis.ProgramPoint(closure, node);
-        if (nodes.containsKey(key)) {
-            return nodes.get(key);
-        } else {
-            EmptyNode result = new EmptyNode(solver);
-            nodes.put(key, result);
-            return result;
-        }
     }
 
     @Override
@@ -106,7 +87,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 return primitiveFactory.bool();
             case AND: // &&
             case OR: // ||
-                return solver.union(lhs, rhs);
+                return new IncludeNode(solver, lhs, rhs);
             case MINUS: // -
             case MULT: // *
             case DIV: // /
@@ -185,7 +166,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         forIn.getInitializer().accept(new NodeTransverse<Void>() {
             @Override
             public Void visit(Identifier identifier) {
-                solver.union(identifier.accept(UnionConstraintVisitor.this), primitiveFactory.string());
+                solver.union(identifier.accept(MixedContextSensitiveConstraintVisitor.this), primitiveFactory.string());
                 return null;
             }
         });
@@ -245,7 +226,11 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         if (identifier.getDeclaration() == null) {
             throw new RuntimeException("Cannot have null declarations");
         }
-        return solver.union(get(identifier), get(identifier.getDeclaration()));
+        if (!typeAnalysis.options.unionHeapIdentifiers) {
+            return getIdentifier(identifier, solver, identifierMap);
+        } else {
+            return solver.union(getIdentifier(identifier, solver, identifierMap), getIdentifier(identifier.getDeclaration(), solver, identifierMap));
+        }
     }
 
     @Override
@@ -310,10 +295,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new UnionConstraintVisitor(this.closure, solver, result, functionNodes, heapFactory, typeAnalysis, nodes, nativeTypeFactory, hasAnalysed).visit(function.getBody());
+            new MixedContextSensitiveConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
-                solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
+                solver.union(new IncludeNode(solver, parameter), result.arguments.get(i), primitiveFactory.nonVoid());
             }
             solver.union(result, primitiveFactory.function());
             return result;
@@ -419,7 +404,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
 
         public MemberExpressionVisitor invoke() {
-            objectExp = member.getExpression().accept(UnionConstraintVisitor.this);
+            objectExp = member.getExpression().accept(MixedContextSensitiveConstraintVisitor.this);
             ObjectNode object = new ObjectNode(solver);
             result = new EmptyNode(solver);
             object.addField(member.getProperty(), result);
@@ -429,7 +414,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, ObjectNode.FIELD_PREFIX + member.getProperty()));
 
             if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
-                solver.union(UnionConstraintVisitor.this.functionNode.thisNode, object);
+                solver.union(MixedContextSensitiveConstraintVisitor.this.functionNode.thisNode, object);
             }
             return this;
         }
@@ -562,6 +547,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
 
 
+    @SuppressWarnings("Duplicates")
     private final class NewCallResolver implements Runnable {
         private final UnionNode function;
         private final List<UnionNode> args;
@@ -575,7 +561,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             this.args = args;
             this.thisNode = thisNode;
             this.callExpression = callExpression;
-            this.callResolver = new CallGraphResolver(thisNode, function, args, new EmptyNode(solver), callExpression);
+            this.callResolver = new CallGraphResolver(new IncludeNode(solver, thisNode), function, args, new EmptyNode(solver), callExpression); // I have to put a Include around the "this" node. Otherwise this gets poluted with all the super-classes.
             this.callResolver.constructorCalls = true;
         }
 
@@ -594,7 +580,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         List<FunctionNode> signatures = createNativeSignatureNodes(closure, true, nativeTypeFactory);
                         for (FunctionNode signature : signatures) {
-                            solver.union(this.thisNode, signature.returnNode);
+                            solver.union(this.thisNode, new IncludeNode(solver, signature.returnNode));
                         }
                         break;
                     case "user":
@@ -616,6 +602,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         break;
                     case "unknown":
+                        break;
                     case "bind":
                         throw new RuntimeException();
                     default:
@@ -668,20 +655,19 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 switch (closure.function.type) {
                     case "user":
                     case "bind": {
-                        if (typeAnalysis.options.staticMethod == Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE && !hasAnalysed.contains(closure)) {
-                            FunctionNode newNode = FunctionNode.create(closure, solver);
-                            UnionConstraintVisitor.this.functionNodes.put(closure, newNode);
-                            hasAnalysed.add(closure);
-                            typeAnalysis.analyse(closure, functionNodes, solver, newNode, heapFactory, hasAnalysed);
+                        Map<Snap.Obj, FunctionNode> functionNodes = MixedContextSensitiveConstraintVisitor.this.functionNodes;
+                        if (!functionNodes.containsKey(closure)) {
+                            FunctionNode functionNode = FunctionNode.create(closure, solver);
+                            functionNodes.put(closure, functionNode);
+                            typeAnalysis.analyseKeepFunctionNodes(closure, functionNodes, solver, functionNode, heapFactory);
                         }
-                        assert UnionConstraintVisitor.this.functionNodes.containsKey(closure);
 
                         FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
-                        solver.union(newFunction, UnionConstraintVisitor.this.functionNodes.get(closure));
-                        solver.union(functionNode.returnNode, newFunction.returnNode);
-//                        solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
+                        solver.union(newFunction, MixedContextSensitiveConstraintVisitor.this.functionNodes.get(closure));
+                        solver.union(functionNode.returnNode, new IncludeNode(solver, newFunction.returnNode));
+                        solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
                         for (int i = 0; i < functionNode.arguments.size(); i++) {
-                            solver.union(functionNode.arguments.get(i), newFunction.arguments.get(i));
+                            solver.union(functionNode.arguments.get(i), new IncludeNode(solver, newFunction.arguments.get(i)));
                         }
 
                          /*// This is the traditional "points-to" way. By having the arguments flow to the parameters.
@@ -727,7 +713,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                                 }
                             });
                         } else {
-                            List<FunctionNode> signatures = UnionConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
+                            List<FunctionNode> signatures = MixedContextSensitiveConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
                             solver.union(functionNode, new IncludeNode(solver, signatures));
                             break;
                         }
@@ -741,7 +727,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    protected static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory functionNodeFactory) {
+    public static List<FunctionNode> createNativeSignatureNodes(Snap.Obj closure, boolean constructorCalls, NativeTypeFactory nativeTypeFactory) {
         List<Signature> signatures;
         if (constructorCalls) {
             signatures = closure.function.constructorSignatures;
@@ -750,7 +736,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
         List<FunctionNode> result = new ArrayList<>();
         for (Signature signature : signatures) {
-            result.add(functionNodeFactory.fromSignature(signature));
+            result.add(nativeTypeFactory.fromSignature(signature));
         }
         return result;
     }
