@@ -17,6 +17,9 @@ public class CompareMethods {
     private static Set<Pair<BenchMark, Options.StaticAnalysisMethod>> blackList = new HashSet<>();
     static {
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.MIXED_CONTEXT_SENSITIVE));
 
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION));
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_UNIFICATION));
@@ -31,6 +34,9 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.OLD_UNIFICATION));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.ANDERSON_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.MIXED_CONTEXT_SENSITIVE));
 
         blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION));
@@ -42,6 +48,9 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.MIXED_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.ANDERSON_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
 
         blackList.add(new Pair<>(BenchMark.angular, Options.StaticAnalysisMethod.OLD_UNIFICATION));
 
