@@ -328,6 +328,30 @@ public class BenchMark {
         return benchMark;
     });
 
+    public static final BenchMark please = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("Please.js", "tests/please/please.js", "tests/please/please.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark path = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("path.js", "tests/path/path.js", "tests/path/path.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark parallel = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("parallel.js", "tests/parallel/parallel.js", "tests/parallel/parallel.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark p2 = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("p2.js", "tests/p2/p2.js", "tests/p2/p2.d.ts", options, ES5);
+        return benchMark;
+    });
+
     // Some i have tried to infer types for.
 
     public final static List<BenchMark> toInferFor = new ArrayList<>();
