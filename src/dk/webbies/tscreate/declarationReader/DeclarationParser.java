@@ -210,6 +210,13 @@ public class DeclarationParser {
                     value.accept(this, (Obj) propValue);
                 }
             }
+            if (obj.getProperty("prototype") != null) {
+                Value prototype = obj.getProperty("prototype").value;
+                for (Signature constructor : type.getDeclaredConstructSignatures()) {
+                    constructor.getResolvedReturnType().accept(this, (Obj)prototype);
+                }
+            }
+
         }
 
         private static final class SyntheticInterface {
