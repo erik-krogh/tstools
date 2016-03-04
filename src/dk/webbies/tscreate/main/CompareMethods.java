@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.main;
 
+import com.google.common.collect.ArrayListMultimap;
 import dk.webbies.tscreate.BenchMark;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Score;
@@ -7,6 +8,8 @@ import dk.webbies.tscreate.util.Pair;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.util.Util.toFixed;
 
@@ -108,21 +111,71 @@ public class CompareMethods {
         print("\n\n\n\n\n");
 
         printMethods(benchmarkScores, maxMethodLength, decimals);
+
+        ArrayListMultimap<Options.StaticAnalysisMethod, Score> scores = ArrayListMultimap.create();
+        for (Map<Options.StaticAnalysisMethod, Score> map : benchmarkScores.values()) {
+            map.entrySet().stream().forEach(entry -> scores.put(entry.getKey(), entry.getValue()));
+        }
+
+        Map<Options.StaticAnalysisMethod, Score> sumScores = new LinkedHashMap<>();
+
+        for (Map.Entry<Options.StaticAnalysisMethod, Collection<Score>> entry : scores.asMap().entrySet()) {
+            Options.StaticAnalysisMethod method = entry.getKey();
+            Score score = entry.getValue().stream().reduce(new Score(0, 0, 0), (a, b) -> new Score(a.fMeasure + b.fMeasure, a.precision + b.precision, a.recall + b.recall));
+            sumScores.put(method, score);
+        }
+
+        print("\n\n\n\n\n");
+
+        println("The methods summed up: ");
+        // Ugly, but to keep it sorted.
+        Set<Map.Entry<Options.StaticAnalysisMethod, Score>> sumScoresClone = new HashMap<>(sumScores).entrySet();
+        sumScores.clear();
+        sumScoresClone.stream().sorted((a, b) -> Double.compare(a.getValue().fMeasure, b.getValue().fMeasure)).forEach(entry -> sumScores.put(entry.getKey(), entry.getValue()));
+        printScores(sumScores, maxMethodLength, decimals);
+
+
+
+
+
+        Map<Options.StaticAnalysisMethod, Integer> methodCounts = new HashMap<>();
+        methods.forEach(method -> methodCounts.put(method, 0));
+
+        for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
+            AtomicInteger counter = new AtomicInteger(0);
+            entry.getValue().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue().fMeasure, a.getValue().fMeasure)).forEach(scoreEntry -> {
+                Options.StaticAnalysisMethod method = scoreEntry.getKey();
+                methodCounts.put(method, methodCounts.get(method) + counter.incrementAndGet());
+            });
+        }
+
+        print("\n\n\n\n\n");
+        println("\"Scores\" for the different analysis");
+
+        methodCounts.entrySet().stream().sorted((a, b) -> Double.compare(b.getValue(), a.getValue())).forEach(entry -> {
+            println(entry.getKey().prettyString + "; " + entry.getValue());
+        });
+
+
     }
 
     private static void printMethods(Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores, int maxMethodLength, int decimals) {
         for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
             Map<Options.StaticAnalysisMethod, Score> dupScores = entry.getValue();
             println("Benchmark: " + entry.getKey().name);
-            dupScores.entrySet().stream().sorted((o1, o2) -> Double.compare(o2.getValue().fMeasure, o1.getValue().fMeasure)).forEach(scoreEntry -> {
-                Score score = scoreEntry.getValue();
-                String prettyString = scoreEntry.getKey().prettyString;
-                while (prettyString.length() < maxMethodLength) {
-                    prettyString = prettyString + " ";
-                }
-                println(prettyString + " : " + toFixed(score.fMeasure, decimals) + " - " + toFixed(score.recall, decimals) + " - " + toFixed(score.precision, decimals));
-            });
+            printScores(dupScores, maxMethodLength, decimals);
         }
+    }
+
+    private static void printScores(Map<Options.StaticAnalysisMethod, Score> scores, int maxMethodLength, int decimals) {
+        scores.entrySet().stream().sorted((o1, o2) -> Double.compare(o2.getValue().fMeasure, o1.getValue().fMeasure)).forEach(scoreEntry -> {
+            Score score = scoreEntry.getValue();
+            String prettyString = scoreEntry.getKey().prettyString;
+            while (prettyString.length() < maxMethodLength) {
+                prettyString = prettyString + " ";
+            }
+            println(prettyString + " : " + toFixed(score.fMeasure, decimals) + " - " + toFixed(score.recall, decimals) + " - " + toFixed(score.precision, decimals));
+        });
     }
 
     /*static File file = new File("methods 5 depth.txt");
