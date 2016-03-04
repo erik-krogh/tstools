@@ -102,8 +102,9 @@ public class DeclarationParser {
         List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("lib/ts-type-reader")));
         declarationFilePaths.stream().map(File::new).forEach(toCheckAgainst::add);
 
+        String specification;
         try {
-            String specification = Util.getCachedOrRunNode(cachePath, toCheckAgainst, runString);
+            specification = Util.getCachedOrRunNode(cachePath, toCheckAgainst, runString);
             return new SpecReader(specification.split("\\n")[specification.split("\\n").length - 1]);
         } catch (Exception e) {
             throw new RuntimeException(e);
