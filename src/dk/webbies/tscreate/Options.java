@@ -51,10 +51,10 @@ public class Options {
         COMBINED_CONTEXT_SENSITIVE("combined, CS", "combined_cs"),
         MIXED_CONTEXT_SENSITIVE("mixed, CS", "mixed_cs"),
         ANDERSON_CONTEXT_SENSITIVE("subsets, CS", "subsets_cs"),
-        UNIFICATION_CONTEXT_SENSITIVE("unify, CS", "unify_cs"),
-        UNIFICATION("unify", "unify"),
         OLD_UNIFICATION_CONTEXT_SENSITIVE("old unify, CS", "oldUnify_cs"),
-        OLD_UNIFICATION("old unify", "oldUnify");
+        OLD_UNIFICATION("old unify", "oldUnify"),
+        UNIFICATION_CONTEXT_SENSITIVE("unify, CS", "unify_cs"),
+        UNIFICATION("unify", "unify");
         public final String prettyString;
         public final String fileSuffix;
 
