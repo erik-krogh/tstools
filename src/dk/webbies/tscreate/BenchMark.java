@@ -261,7 +261,7 @@ public class BenchMark {
 
     public static final BenchMark materialize = evaluate(() -> {
         Options options = new Options();
-        BenchMark bench = new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", null, options, ES5);
+        BenchMark bench = new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", "tests/materialize/materialize.d.ts", options, ES5);
         bench.dependencies.add(Dependency.jQuery);
         bench.dependencies.add(Dependency.hammer);
         bench.dependencies.add(Dependency.pickdate);
@@ -340,17 +340,38 @@ public class BenchMark {
         return benchMark;
     });
 
-    public static final BenchMark parallel = evaluate(() -> {
-        Options options = new Options();
-        BenchMark benchMark = new BenchMark("parallel.js", "tests/parallel/parallel.js", "tests/parallel/parallel.d.ts", options, ES5);
-        return benchMark;
-    });
-
     public static final BenchMark p2 = evaluate(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("p2.js", "tests/p2/p2.js", "tests/p2/p2.d.ts", options, ES5);
         return benchMark;
     });
+
+    public static final BenchMark mathjax = evaluate(() -> {
+        Options options = new Options();
+        options.recordCalls = false;
+        BenchMark benchMark = new BenchMark("MathJax.js", "tests/mathjax/mathjax.js", "tests/mathjax/mathjax.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark photoswipe = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("Photoswipe", "tests/photoswipe/photoswipe.js", "tests/photoswipe/photoswipe.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark peer = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("Peer.js", "tests/peerjs/peer.js", "tests/peerjs/peer.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark async = evaluate(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("async", "tests/async/async.js", "tests/async/async.d.ts", options, ES5);
+        return benchMark;
+    });
+
+
 
     // Some i have tried to infer types for.
 
