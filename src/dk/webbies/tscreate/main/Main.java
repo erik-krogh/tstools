@@ -47,27 +47,28 @@ public class Main {
     // FIXME: Test does the .gen compare to the handwritten, if one tries to take a program writen against the hand-written, og replace the hand-written with the generated. Are there then compile-errors, and why are they there.
     // FIXME: If not, then the tool is a success.
 
+
     public static void main(String[] args) throws IOException, InterruptedException {
+        List<Options.StaticAnalysisMethod> methods = asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
+
+        // Benchmarks, where I can run ALL the static analysis methods.
+        List<BenchMark> stableBenches = asList(async, require, knockout, backbone, box2d, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
         try {
             long start = System.currentTimeMillis();
 
 //            printTable();
 //            generateDeclarations(BenchMark.allBenchmarks);
 //            tsCheck();
-            runAnalysis(BenchMark.underscore);
+//            runAnalysis(BenchMark.D3);
 //            benchAll();
 //            printTable();
 
-            /* List<BenchMark> benchs = new ArrayList<>(BenchMark.allBenchmarks);
-            // Either to slow, or gives an evaluation of ZERO anyway.
-            benchs.remove(jQuery);
-            benchs.remove(three);
-            benchs.remove(ember);
-            benchs.remove(pickdate);
-            benchs.remove(test);
-            benchs.remove(sugar);
-            compareMethods(benchs, asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE), 30 * 60 * 1000);
-            */
+//             List<BenchMark> benchs = Arrays.asList(three, ember, jQuery);
+//            compareMethods(benchs, asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE), 30 * 60 * 1000);
+
+            compareMethods(stableBenches, methods, 10 * 60 * 1000);
+//            compareMethods(Arrays.asList(peer), methods, 10 * 60 * 1000);
+
 
             long end = System.currentTimeMillis();
 
