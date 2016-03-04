@@ -10,6 +10,7 @@ import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.paser.AST.ObjectLiteral.Property;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,24 +52,29 @@ public class AstTransformer {
             if (literal instanceof IdentifierToken) {
                 return new Identifier(loc, ((IdentifierToken) literal).value);
             } else if (literal instanceof LiteralToken){
-                String value = ((LiteralToken) literal).value;
-                if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
-                    return new StringLiteral(loc, value.substring(1, value.length() - 1));
-                } else if (value.matches("[0-9]*.?[0-9]*")) {
-                    if (value.startsWith("0x")) {
-                        return new NumberLiteral(loc, Long.parseLong(value.substring(2, value.length()), 16));
+                try {
+                    String value = ((LiteralToken) literal).value;
+                    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+                        return new StringLiteral(loc, value.substring(1, value.length() - 1));
+                    } else if (value.matches("[0-9]*.?[0-9]*")) {
+                        if (value.startsWith("0x")) {
+                            return new NumberLiteral(loc, Long.parseLong(value.substring(2, value.length()), 16));
+                        } else {
+                            return new NumberLiteral(loc, Double.parseDouble(value));
+                        }
+                    } else if (value.startsWith("0x")) {
+                        return new NumberLiteral(loc, Long.parseLong(value.toLowerCase().substring(2, value.length()), 16));
+                    } else if (value.startsWith("/")) {
+                        String regExp = value.substring(1, value.length() - 1);
+                        return new NewExpression(loc, new Identifier(loc, "RegExp"), Arrays.asList(new StringLiteral(loc, regExp)));
+                    } else if (value.substring(0, 1).matches("[0-9]")) {
+                        return new NumberLiteral(loc, Double.valueOf(value));
                     } else {
-                        return new NumberLiteral(loc, Double.parseDouble(value));
+                        throw new RuntimeException("Could not recognize literal: " + value);
                     }
-                } else if (value.startsWith("0x")) {
-                    return new NumberLiteral(loc, Long.parseLong(value.toLowerCase().substring(2, value.length()), 16));
-                } else if (value.startsWith("/")) {
-                    String regExp = value.substring(1, value.length() - 1);
-                    return new NewExpression(loc, new Identifier(loc, "RegExp"), Arrays.asList(new StringLiteral(loc, regExp)));
-                } else if (value.substring(0, 1).matches("[0-9]")) {
-                    return new NumberLiteral(loc, Double.valueOf(value));
-                } else {
-                    throw new RuntimeException("Could not recognize literal: " + value);
+                } catch (NumberFormatException e) {
+                    System.err.println("Couldn't get a proper number value for: " + ((LiteralToken) literal).value + " using a mock integer instead.");
+                    return new NumberLiteral(loc, -1);
                 }
             } else {
                 switch (literal.type) {
