@@ -28,6 +28,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     private Set<Type> nativeTypesInReal;
     private final NativeClassesMap realNativeClasses;
     private final NativeClassesMap myNativeClasses;
+    private NativeClassesMap emptyNativeClasses;
     private Set<Pair<Type, Type>> seen;
     private Options options;
     private final boolean recordEvaluation; // If false, then the evaluation doesn't record anything. Used to only record things that are below a function-argument/return.
@@ -39,6 +40,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             Set<Type> nativeTypesInReal,
             NativeClassesMap realNativeClasses,
             NativeClassesMap myNativeClasses,
+            NativeClassesMap emptyNativeClasses,
             Set<Pair<Type, Type>> seen,
             Options options,
             boolean recordEvaluation) {
@@ -48,13 +50,14 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         this.nativeTypesInReal = nativeTypesInReal;
         this.realNativeClasses = realNativeClasses;
         this.myNativeClasses = myNativeClasses;
+        this.emptyNativeClasses = emptyNativeClasses;
         this.seen = seen;
         this.options = options;
         this.recordEvaluation = recordEvaluation;
     }
 
     private EvaluationVisitor withRecordEvaluation() {
-        return new EvaluationVisitor(this.depth, this.evaluation, this.queue, this.nativeTypesInReal, this.realNativeClasses, this.myNativeClasses, this.seen, this.options, true);
+        return new EvaluationVisitor(this.depth, this.evaluation, this.queue, this.nativeTypesInReal, this.realNativeClasses, this.myNativeClasses, this.emptyNativeClasses, this.seen, this.options, true);
     }
 
     static final class Arg {
@@ -73,7 +76,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     private void nextDepth(Type realType, Type myType, Runnable callback, String prefix) {
         String myTypeName = myNativeClasses.nameFromType(myType);
         String realTypeName = realNativeClasses.nameFromType(realType);
-        if (myTypeName != null && realTypeName != null && myTypeName.equals(realTypeName)) {
+        if (myTypeName != null && realTypeName != null && myTypeName.equals(realTypeName) && emptyNativeClasses.typeFromName(myTypeName) != null) {
             addTruePositive(depth, "was native type of " + myTypeName + " and that was correct.", prefix);
             callback.run();
             return;
@@ -172,7 +175,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             Type right = typePair.second;
 
             Evaluation subEvaluation = new Evaluation(options);
-            EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options, this.recordEvaluation);
+            EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options, this.recordEvaluation);
 
             visitor.nextDepth(left, right, () -> {
                 evaluations.add(subEvaluation);
@@ -219,7 +222,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
 
 
-        EvaluationVisitor visitor = new EvaluationVisitor(depth + 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options, this.recordEvaluation);
+        EvaluationVisitor visitor = new EvaluationVisitor(depth + 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options, this.recordEvaluation);
         realType.accept(visitor, new Arg(myType, callback, prefix));
     }
 
@@ -240,14 +243,6 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
     @Override
     public Void visit(InterfaceType real, Arg arg) {
-        if (real.getDeclaredCallSignatures().isEmpty() && real.getDeclaredConstructSignatures().isEmpty() && real.getDeclaredProperties().isEmpty() && real.getDeclaredNumberIndexType() == null && real.getDeclaredStringIndexType() == null) {
-            // Empty interface, this happens when we have a type constraint like Array<T> (where this empty interface is the T).
-            // We don't count this, not positively, not negatively, it is just ignored.
-            arg.callback.run();
-            return null;
-        }
-
-
         Type type = arg.type;
         if (type instanceof TypeParameterType) {
             type = ((TypeParameterType) type).getConstraint();
@@ -429,7 +424,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 return inter;
             }).collect(Collectors.toList()));
 
-            EvaluationVisitor visitor = new EvaluationVisitor(depth - 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, seen, options, this.recordEvaluation);
+            EvaluationVisitor visitor = new EvaluationVisitor(depth - 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options, this.recordEvaluation);
             visitor.nextDepth(realUnion, myUnion, callback, prefix);
         }
     }

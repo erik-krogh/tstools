@@ -43,7 +43,7 @@ public class DeclarationEvaluator {
         };
         evaluation = new Evaluation(options);
         queue.add(new EvaluationQueueElement(0, () -> {
-            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), new HashSet<>(), options, !options.onlyEvaluateUnderFunctionArgsAndReturn)
+            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses(), new HashSet<>(), options, !options.onlyEvaluateUnderFunctionArgsAndReturn)
                     .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
         }));
 
@@ -86,6 +86,7 @@ public class DeclarationEvaluator {
         private Set<Type> nativeTypesInReal;
         private NativeClassesMap realNativeClasses;
         private NativeClassesMap myNativeClasses;
+        private NativeClassesMap emptyNativeClasses;
 
         public ParsedDeclaration(String resultFilePath, BenchMark benchMark) {
             this.resultFilePath = resultFilePath;
@@ -114,6 +115,10 @@ public class DeclarationEvaluator {
 
         public NativeClassesMap getMyNativeClasses() {
             return myNativeClasses;
+        }
+
+        public NativeClassesMap getEmptyNativeClasses() {
+            return emptyNativeClasses;
         }
 
         public ParsedDeclaration invoke() {
@@ -145,8 +150,9 @@ public class DeclarationEvaluator {
             properties.removeAll(existingProperties);
 
             realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get());
-            NativeClassesMap emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
+            this.emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
             myNativeClasses = parseNatives(global, libraryClasses, myDeclaration.get());
+
 
             nativeTypesInReal = new HashSet<>();
             for (String name : emptyNativeClasses.getNames()) {
