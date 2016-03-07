@@ -39,12 +39,12 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
 
     @Override
     public DeclarationType reduce(UnnamedObjectType unnamedObjectType, NamedObjectType named) {
-        if (named.getName().equals("Array")) {
+        if (hasNumberIndexer(named.getName())) {
             if (unnamedObjectType.getDeclarations().keySet().stream().anyMatch(Util::isInteger)) {
                 List<DeclarationType> indexTypes = unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> Util.isInteger(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
                 indexTypes.add(named.indexType);
 
-                NamedObjectType resultNamed = new NamedObjectType("Array", named.isBaseType, new CombinationType(combiner, indexTypes));
+                NamedObjectType resultNamed = new NamedObjectType(named.getName(), named.isBaseType, new CombinationType(combiner, indexTypes));
                 UnnamedObjectType resultUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
                 return new UnionDeclarationType(resultNamed, resultUnnamed); // This is OK, it will run again and reach the below, since we run until fixpoint.
             }
@@ -58,6 +58,27 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
             UnnamedObjectType newUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().keySet().stream().filter(keysNotAccountedFor::contains).collect(Collectors.toMap(Function.identity(), (key) -> unnamedObjectType.getDeclarations().get(key))));
             return new UnionDeclarationType(named, newUnnamed);
         }
+    }
+
+    private boolean hasNumberIndexer(String name) {
+        Type type = nativeClasses.typeFromName(name);
+        if (type instanceof ReferenceType) {
+            type = ((ReferenceType) type).getTarget();
+        }
+        if (type instanceof GenericType) {
+            type = ((GenericType) type).toInterface();
+        }
+        if (type instanceof InterfaceType) {
+            Type numberType = ((InterfaceType) type).getDeclaredNumberIndexType();
+            if (name.equals("Array")) {
+                assert numberType != null;
+            }
+            return numberType != null;
+        } else {
+            assert !name.equals("Array");
+            return false;
+        }
+
     }
 
     private HashSet<String> getKeysNotAccountedFor(UnnamedObjectType object, NamedObjectType type) {
