@@ -321,13 +321,6 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark pickdate = evaluate(() -> {
-        Options options = new Options();
-        BenchMark benchMark = new BenchMark("pickdate.js", "tests/pickdate/picker.js", "tests/pickdate/picker.d.ts", options, ES5);
-        benchMark.dependencies.add(Dependency.jQuery);
-        return benchMark;
-    });
-
     public static final BenchMark please = evaluate(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("Please.js", "tests/please/please.js", "tests/please/please.d.ts", options, ES5);
@@ -393,10 +386,12 @@ public class BenchMark {
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
 //        options.debugPrint = true;
-        options.recordCalls = false;
-        options.createInstances = false;
+        options.recordCalls = true;
+        options.createInstances = true;
 
-        return new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
+        BenchMark bench = new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
+        bench.dependencies.add(Dependency.underscore);
+        return bench;
     });
 
 
