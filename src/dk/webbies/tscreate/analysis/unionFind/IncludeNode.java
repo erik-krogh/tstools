@@ -20,6 +20,10 @@ public class IncludeNode extends UnionNode {
         this.nodes = nodes.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
+    public List<UnionNode> getNodes() {
+        return nodes;
+    }
+
     @Override
     public void addTo(UnionClass unionClass) {
         for (UnionNode node : this.nodes) {
