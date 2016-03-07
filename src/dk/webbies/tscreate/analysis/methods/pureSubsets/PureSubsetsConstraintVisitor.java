@@ -74,6 +74,13 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
             case EQUAL: // = // assignment
                 solver.union(lhs, new IncludeNode(solver, rhs));
+                if (typeAnalysis.getOptions().unifyShortCurcuitOrsAtAssignments) {
+                    if (op.getRhs() instanceof BinaryExpression && ((BinaryExpression) op.getRhs()).getOperator() == Operator.OR) {
+                        BinaryExpression orExp = (BinaryExpression) op.getRhs();
+                        IncludeNode rhsInclude = (IncludeNode) rhs; // I here assume that the result returns an IncludeNode
+                        solver.union(rhsInclude.getNodes());
+                    }
+                }
                 return lhs;
             case PLUS_EQUAL: // +=
                 solver.union(lhs, primitiveFactory.stringOrNumber());

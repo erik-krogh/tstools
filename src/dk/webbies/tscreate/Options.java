@@ -44,6 +44,8 @@ public class Options {
 
     public boolean allArgumentsAreOptional = false;
 
+    public boolean unifyShortCurcuitOrsAtAssignments = false;
+
     public enum StaticAnalysisMethod {
         COMBINED("combined", "combined"),
         MIXED("mixed", "mixed"),

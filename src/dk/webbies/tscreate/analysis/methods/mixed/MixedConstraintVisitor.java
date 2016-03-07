@@ -74,6 +74,13 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
             case EQUAL: // = // assignment
                 solver.union(lhs, rhs);
+                if (typeAnalysis.options.unifyShortCurcuitOrsAtAssignments) {
+                    if (op.getRhs() instanceof BinaryExpression && ((BinaryExpression) op.getRhs()).getOperator() == Operator.OR) {
+                        BinaryExpression orExp = (BinaryExpression) op.getRhs();
+                        IncludeNode rhsInclude = (IncludeNode) rhs; // I here assume that the result returns an IncludeNode
+                        solver.union(rhsInclude.getNodes());
+                    }
+                }
                 return lhs;
             case PLUS_EQUAL: // +=
                 solver.union(lhs, rhs, primitiveFactory.stringOrNumber());
