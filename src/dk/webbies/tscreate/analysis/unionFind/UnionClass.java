@@ -116,16 +116,17 @@ public final class UnionClass {
     }
 
     private void makePointToParent(Set<UnionNode> includes) {
-        List<UnionNode> toRemove = new ArrayList<>();
         List<UnionNode> toAdd = new ArrayList<>();
-        for (UnionNode node : includes) {
+        Iterator<UnionNode> includesIterator = includes.iterator();
+        while (includesIterator.hasNext()) {
+            UnionNode node = includesIterator.next();
             UnionNode parent = node.findParent();
             if (node != parent) {
-                toRemove.add(node);
+                includesIterator.remove();
                 toAdd.add(parent);
             }
         }
-        toRemove.forEach(includes::remove);
+
         toAdd.forEach(includes::add);
     }
 
