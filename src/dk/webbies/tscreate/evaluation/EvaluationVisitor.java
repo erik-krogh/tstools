@@ -288,7 +288,9 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             if (!myProperties.containsKey(property)) {
                 addFalseNegative(depth + 1, "property missing: " + property, arg.prefix);
             } else if (!realProperties.containsKey(property)) {
-                addFalsePositive(arg.prefix, depth + 1, "excess property: " + property);
+                if (!options.evaluationSkipExcessProperties) {
+                    addFalsePositive(arg.prefix, depth + 1, "excess property: " + property);
+                }
             } else {
                 Collection<Type> myTypes = myProperties.get(property);
                 Collection<Type> realTypes = realProperties.get(property);
