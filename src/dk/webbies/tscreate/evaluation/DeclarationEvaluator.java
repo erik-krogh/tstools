@@ -2,6 +2,8 @@ package dk.webbies.tscreate.evaluation;
 
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.InterfaceType;
+import dk.au.cs.casa.typescript.types.SimpleType;
+import dk.au.cs.casa.typescript.types.SimpleTypeKind;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.BenchMark;
 import dk.webbies.tscreate.Options;
@@ -31,6 +33,15 @@ public class DeclarationEvaluator {
         InterfaceType myDeclaration = parsedDeclaration.getMyDeclaration();
         Set<String> properties = parsedDeclaration.getProperties();
         Set<Type> nativeTypesInReal = parsedDeclaration.getNativeTypesInReal();
+
+        // Globally variables of type "any", are really just modules, that contain nothing but interfaces (in other words, they don't exist. )
+        Iterator<Type> realGlobalIterator = realDeclaration.getDeclaredProperties().values().iterator();
+        while (realGlobalIterator.hasNext()) {
+            Type next = realGlobalIterator.next();
+            if (next instanceof SimpleType && ((SimpleType) next).getKind() == SimpleTypeKind.Any) {
+                realGlobalIterator.remove();
+            }
+        }
 
 
         realDeclaration.getDeclaredProperties().keySet().retainAll(properties);
