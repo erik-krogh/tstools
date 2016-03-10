@@ -94,7 +94,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
         if (options.staticMethod == Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE) {
             int counter = 0;
             for (Snap.Obj functionClosure : functions) {
-                System.out.println(++counter + "/" + functions.size());
+//                System.out.println(++counter + "/" + functions.size());
                 UnionFindSolver solver = new UnionFindSolver(this);
 
                 // This way, all the other functions will be "emptied" out, so that the result of them doesn't affect the analysis of this function.
@@ -130,7 +130,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
             counter = 0;
 
             for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
-                System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
+//                System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
                 Snap.Obj closure = entry.getKey();
                 FunctionNode functionNode = entry.getValue();
 

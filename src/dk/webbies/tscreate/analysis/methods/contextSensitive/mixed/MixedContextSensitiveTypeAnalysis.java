@@ -58,7 +58,7 @@ public class MixedContextSensitiveTypeAnalysis extends MixedTypeAnalysis {
 
         int counter = 0;
         for (Snap.Obj closure : functionNodes.keySet()) {
-            System.out.println("Analysis: " + ++counter + "/" + functionNodes.size());
+//            System.out.println("Analysis: " + ++counter + "/" + functionNodes.size());
             FunctionNode functionNode = functionNodes.get(closure);
 
             if (options.skipStaticAnalysisWhenPossible) {
@@ -84,7 +84,7 @@ public class MixedContextSensitiveTypeAnalysis extends MixedTypeAnalysis {
 
         counter = 0;
         for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
-            System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
+//            System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
             Snap.Obj closure = entry.getKey();
             FunctionNode functionNode = entry.getValue();
 
