@@ -166,7 +166,7 @@ public class DeclarationEvaluator {
 
 
             nativeTypesInReal = new HashSet<>();
-            for (String name : emptyNativeClasses.getNames()) {
+            for (String name : emptyNativeClasses.getNativeTypeNames()) {
                 Type type = realNativeClasses.typeFromName(name);
                 assert type != null;
                 nativeTypesInReal.add(type);

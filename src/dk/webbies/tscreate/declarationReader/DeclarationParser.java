@@ -389,12 +389,12 @@ public class DeclarationParser {
             return this.namedObjects.inverse().get(name);
         }
 
-        public Set<String> getNames() {
+        public Set<String> getNativeTypeNames() {
             return this.typeNames.values();
         }
 
-        public Set<String> getNativeTypeNames() {
-            return typeNames.values();
+        public Set<Type> getNativeTypes() {
+            return this.typeNames.keySet();
         }
     }
 
