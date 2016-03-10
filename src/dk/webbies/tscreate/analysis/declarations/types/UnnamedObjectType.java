@@ -16,6 +16,10 @@ public class UnnamedObjectType extends ObjectType {
         return declarations;
     }
 
+    public void setDeclarations(Map<String, DeclarationType> declarations) {
+        this.declarations = declarations;
+    }
+
     @Override
     public <T> T accept(DeclarationTypeVisitor<T> visitor) {
         return visitor.visit(this);
