@@ -100,8 +100,6 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
 
         typeFactory.resolveClassTypes();
 
-        System.out.println("Printing declarations");
-
     }
 
     @Override

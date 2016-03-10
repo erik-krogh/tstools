@@ -103,7 +103,5 @@ public class MixedContextSensitiveTypeAnalysis extends MixedTypeAnalysis {
 
         typeFactory.resolveClassTypes();
 
-        System.out.println("Printing declarations");
-
     }
 }

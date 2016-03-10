@@ -106,7 +106,5 @@ public class UnionRecursivelyTypeAnalysis extends MixedTypeAnalysis {
 
         typeFactory.resolveClassTypes();
 
-        System.out.println("Printing declarations");
-
     }
 }

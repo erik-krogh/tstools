@@ -154,8 +154,6 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
         typeFactory.resolveClassTypes();
 
-        System.out.println("Printing declarations");
-
     }
 
     protected boolean canGetEverythingFromRecordedCalls(Snap.Obj closure) {
