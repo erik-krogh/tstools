@@ -99,23 +99,30 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
         if (cache.containsKey(name)) {
             return cache.get(name);
         }
-        HashSet<String> result = new HashSet<>();
 
-        addAllProperties(result, this.nativeClasses.prototypeFromName(name));
-
-        if (this.nativeClasses.typeFromName(name) != null) {
-            addAllProperties(result, this.nativeClasses.typeFromName(name));
-        }
-
-        addAllProperties(result, this.nativeClasses.objectFromName(name));
+        Set<String> result = getKeysFromName(name, this.nativeClasses);
 
         cache.put(name, result);
 
         return result;
     }
 
+    public static Set<String> getKeysFromName(String name, NativeClassesMap nativeClasses) {
+        HashSet<String> result = new HashSet<>();
 
-    private void addAllProperties(HashSet<String> keys, Type type) {
+        addAllProperties(result, nativeClasses.prototypeFromName(name));
+
+        if (nativeClasses.typeFromName(name) != null) {
+            addAllProperties(result, nativeClasses.typeFromName(name));
+        }
+
+        addAllProperties(result, nativeClasses.objectFromName(name));
+
+        return result;
+    }
+
+
+    private static void addAllProperties(HashSet<String> keys, Type type) {
         if (type instanceof InterfaceType) {
             InterfaceType inter = (InterfaceType) type;
             keys.addAll(inter.getDeclaredProperties().keySet());
@@ -133,7 +140,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
         }
     }
 
-    private void addAllProperties(HashSet<String> keys, Snap.Obj prototype) {
+    private static void addAllProperties(HashSet<String> keys, Snap.Obj prototype) {
         while (prototype != null) {
             keys.addAll(prototype.getPropertyMap().keySet());
             if (prototype == prototype.prototype) {

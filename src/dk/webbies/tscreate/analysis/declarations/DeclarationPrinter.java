@@ -11,6 +11,7 @@ import fj.pre.Ordering;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 04-09-2015.
@@ -29,6 +30,7 @@ public class DeclarationPrinter {
     // That we therefore print as an interface instead.
     private final Map<DeclarationType, InterfaceType> printsAsInterface = new HashMap<>();
     private Options options;
+    private Set<DeclarationType> printedAsDeclaration = new HashSet<>();
 
     public DeclarationPrinter(Map<String, DeclarationType> declarations, DeclarationParser.NativeClassesMap nativeClasses, Options options) {
         this.declarations = declarations;
@@ -152,13 +154,32 @@ public class DeclarationPrinter {
     }
 
     public String print() {
+        System.out.println("Printing declarations");
+
         if (ident != 0) {
             throw new RuntimeException("Can only print top-level declarations with this method");
         }
+        while (true) {
+            try {
+                ident = 0;
+                this.printedClasses.clear();
+                this.printedInterfaces.clear();
+                this.printedAsDeclaration.clear();
+                return innerPrint();
+            } catch (AlreadyPrintedAsDeclaration e) {
+                addPrintAsInterface(null, e.type);
+            }
+        }
+    }
+
+    private String innerPrint() {
         StringBuilder builder;
         while (true) {
             builder = new StringBuilder();
             this.classNames = new ClassNameFinder(declarations, printsAsInterface).getClassNames();
+            if (options.neverPrintModules) {
+                this.classNames.clear();
+            }
             try {
                 for (Map.Entry<String, DeclarationType> entry : this.declarations.entrySet()) {
                     DeclarationType type = entry.getValue();
@@ -199,7 +220,13 @@ public class DeclarationPrinter {
         if (exportNameBlacklist.contains(name) || !validName(name)) {
             throw new GotCyclic(arg.getSeen().cons(type));
         }
+
+        this.printedAsDeclaration.add(type);
+
         if (type instanceof FunctionType) {
+            if (options.neverPrintModules) {
+                throw new GotCyclic(type);
+            }
             arg = arg.cons(type, true);
             FunctionType functionType = (FunctionType) type;
             ident(arg.builder);
@@ -211,6 +238,9 @@ public class DeclarationPrinter {
 
             write(arg.builder, ";\n");
         } else if (type instanceof UnnamedObjectType) {
+            if (options.neverPrintModules) {
+                throw new GotCyclic(type);
+            }
             arg = arg.cons(type, false);
             UnnamedObjectType module = (UnnamedObjectType) type;
             ident(arg.builder);
@@ -219,13 +249,16 @@ public class DeclarationPrinter {
             write(arg.builder, " {\n");
             ident++;
 
-            for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet()) {
+            for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet().stream().sorted((a, b) -> a.getKey().compareTo(b.getKey())).collect(Collectors.toList())) {
                 printDeclaration(arg.addPath(entry.getKey()), entry.getKey(), entry.getValue(), "export");
             }
 
             ident--;
             writeln(arg.builder, "}");
         } else if (type instanceof ClassType && arg.path.equals(classNames.get(type))) {
+            if (options.neverPrintModules) {
+                throw new GotCyclic(type);
+            }
             ClassType clazz = (ClassType) type;
             if (printedClasses.contains(clazz)) {
                 throw new RuntimeException();
@@ -357,6 +390,15 @@ public class DeclarationPrinter {
         }
     }
 
+    private static final class AlreadyPrintedAsDeclaration extends RuntimeException {
+        final DeclarationType type;
+
+        private AlreadyPrintedAsDeclaration(DeclarationType type) {
+            this.type = type;
+        }
+    }
+
+
     private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor) {
         printObjectField(arg, name, type, visitor, null);
     }
@@ -378,6 +420,9 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(FunctionType functionType, VisitorArg arg) {
+            if (printedAsDeclaration.contains(functionType)) {
+                throw new AlreadyPrintedAsDeclaration(functionType);
+            }
             printFunction(arg, functionType, false);
             return null;
         }
@@ -411,6 +456,9 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(UnnamedObjectType objectType, VisitorArg arg) {
+            if (printedAsDeclaration.contains(objectType)) {
+                throw new AlreadyPrintedAsDeclaration(objectType);
+            }
             if (printsAsInterface.containsKey(objectType)) {
                 return printsAsInterface.get(objectType).accept(this, arg);
             } else {
@@ -422,7 +470,7 @@ public class DeclarationPrinter {
                 StringBuilder builder = new StringBuilder();
                 VisitorArg subArg = new VisitorArg(builder, arg.seen, arg.path);
                 write(builder, "{");
-                ArrayList<String> keys = new ArrayList<>(objectType.getDeclarations().keySet());
+                List<String> keys = objectType.getDeclarations().keySet().stream().sorted(String::compareTo).collect(Collectors.toList());
                 for (int i = 0; i < keys.size(); i++) {
                     String name = keys.get(i);
                     writeName(builder, name);
@@ -457,17 +505,12 @@ public class DeclarationPrinter {
                 }
                 // [s: string]: PropertyDescriptor;
                 if (interfaceType.getDynamicAccess() != null) {
-                    boolean isNumberIndexer = false;
-                    DeclarationType resolvedLookup = interfaceType.getDynamicAccess().getLookupType().resolve();
-
-                    if (resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER) {
-                        isNumberIndexer = true;
-                    }
+                    boolean isNumberIndexer = interfaceType.getDynamicAccess().isNumberIndexer();
 
                     if (isNumberIndexer || options.printStringIndexers) {
                         ident(arg.builder);
                         write(arg.builder, "[");
-                        if (resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER) {
+                        if (isNumberIndexer) {
                             write(arg.builder, "index: number");
                         } else {
                             write(arg.builder, "s: string");

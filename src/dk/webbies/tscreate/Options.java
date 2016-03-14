@@ -43,11 +43,14 @@ public class Options {
 
 
     public boolean onlyEvaluateUnderFunctionArgsAndReturn = false;
-    public boolean evaluationSkipExcessProperties = true;
+    public boolean evaluationSkipExcessProperties = true;  // TODO: Look at this again later.
 
     public boolean allArgumentsAreOptional = false;
 
     public boolean unifyShortCurcuitOrsAtAssignments = false;
+    public boolean combineInterfacesAfterAnalysis = true;
+
+    public boolean neverPrintModules = false;
 
     public enum StaticAnalysisMethod {
         COMBINED("combined", "combined"),

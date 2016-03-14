@@ -47,15 +47,21 @@ public class DeclarationEvaluator {
         realDeclaration.getDeclaredProperties().keySet().retainAll(properties);
         myDeclaration.getDeclaredProperties().keySet().retainAll(properties);
 
+
+        this.evaluation = evaluate(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+    }
+
+    public static Evaluation evaluate(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
+        PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
         AtomicBoolean hasRun = new AtomicBoolean(false);
         Runnable doneCallback = () -> {
             assert queue.isEmpty();
             hasRun.set(true);
         };
-        evaluation = new Evaluation(options);
+        Evaluation evaluation = new Evaluation(options.debugPrint);
         queue.add(new EvaluationQueueElement(0, () -> {
-            new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses(), new HashSet<>(), options, !options.onlyEvaluateUnderFunctionArgsAndReturn)
-                    .visit(realDeclaration, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
+            EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options, !options.onlyEvaluateUnderFunctionArgsAndReturn);
+            realDeclaration.accept(visitor, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
         }));
 
         while (!queue.isEmpty()) {
@@ -64,9 +70,9 @@ public class DeclarationEvaluator {
         }
 
         assert hasRun.get();
+        return evaluation;
     }
 
-    PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
 
     final static class EvaluationQueueElement implements Comparable<EvaluationQueueElement> {
         final Runnable runnable;
@@ -84,7 +90,7 @@ public class DeclarationEvaluator {
     }
 
 
-    public Evaluation getEvaluation() {
+    public Evaluation evaluate() {
         return evaluation;
     }
 

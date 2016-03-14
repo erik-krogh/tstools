@@ -28,15 +28,15 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.BenchMark.*;
-import static dk.webbies.tscreate.BenchMark.allBenchmarks;
 import static dk.webbies.tscreate.Options.StaticAnalysisMethod.*;
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
-import static dk.webbies.tscreate.main.CompareMethods.compareMethods;
 import static dk.webbies.tscreate.util.Util.toFixed;
 import static java.util.Arrays.asList;
 
@@ -47,6 +47,9 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         List<Options.StaticAnalysisMethod> methods = asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
 
+        // FIXME: Try to record names, and have some way that they are preserved all the way. (Attach them to bottom, when going from nodes -> decs)
+
+        // TODO: Sørg for at declaration-printer generelt sørger for at printe duplikat-objects som interfaces.
         // Benchmarks, where I can run ALL the static analysis methods.
         List<BenchMark> stableBenches = asList(async, require, knockout, backbone, box2d, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
         long start = System.currentTimeMillis();
@@ -55,14 +58,14 @@ public class Main {
 //            printTable();
 //            generateDeclarations(BenchMark.allBenchmarks);
 //            tsCheck();
-//            runAnalysis(BenchMark.sugar);
+            runAnalysis(BenchMark.test);
 //            benchAll();
 //            printTable();
 
 //             List<BenchMark> benchs = Arrays.asList(three, ember, jQuery);
 //            compareMethods(benchs, asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE), 30 * 60 * 1000);
 
-            compareMethods(stableBenches, methods, 20 * 60 * 1000);
+//            compareMethods(allBenchmarks, methods, 20 * 60 * 1000);
 //            compareMethods(Arrays.asList(peer), methods, 10 * 60 * 1000);
 
         } catch (Throwable e) {
@@ -95,15 +98,20 @@ public class Main {
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
+        if (benchMark.options.combineInterfacesAfterAnalysis) {
+            // FIXME: Get back to this.
+//            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
+        }
+
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
         Evaluation evaluation = null;
         String debugString = null;
         if (benchMark.declarationPath != null) {
-            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.options).getEvaluation();
+            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.options).evaluate();
 
             System.out.println(evaluation);
 

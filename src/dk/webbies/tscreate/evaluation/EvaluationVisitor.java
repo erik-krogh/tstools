@@ -60,6 +60,10 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return new EvaluationVisitor(this.depth, this.evaluation, this.queue, this.nativeTypesInReal, this.realNativeClasses, this.myNativeClasses, this.emptyNativeClasses, this.seen, this.options, true);
     }
 
+    private EvaluationVisitor moreDepth(int extraDepth) {
+        return new EvaluationVisitor(this.depth + extraDepth, this.evaluation, this.queue, this.nativeTypesInReal, this.realNativeClasses, this.myNativeClasses, this.emptyNativeClasses, this.seen, this.options, this.recordEvaluation);
+    }
+
     static final class Arg {
         final Type type;
         final Runnable callback;
@@ -77,7 +81,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         String myTypeName = myNativeClasses.nameFromType(myType);
         String realTypeName = realNativeClasses.nameFromType(realType);
         if (myTypeName != null && realTypeName != null && myTypeName.equals(realTypeName) && emptyNativeClasses.typeFromName(myTypeName) != null) {
-            addTruePositive(depth, "was native type of " + myTypeName + " and that was correct.", prefix);
+            addTruePositive(prefix, depth, "was native type of " + myTypeName + " and that was correct.");
             callback.run();
             return;
         }
@@ -174,7 +178,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             Type left = typePair.first;
             Type right = typePair.second;
 
-            Evaluation subEvaluation = new Evaluation(options);
+            Evaluation subEvaluation = new Evaluation(options.debugPrint);
             EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options, this.recordEvaluation);
 
             visitor.nextDepth(left, right, () -> {
@@ -213,7 +217,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             String myTypeName = myNativeClasses.nameFromType(myType);
 
             if (realTypeName.equals(myTypeName)) {
-                addTruePositive(depth + 1, "wrong native type", prefix);
+                addTruePositive(prefix, depth + 1, "wrong native type");
             } else {
                 addFalseNegative(depth + 1, "wrong native type", prefix);
             }
@@ -269,7 +273,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         if (!(type instanceof InterfaceType)) {
             throw new RuntimeException();
         }
-        addTruePositive(depth, "this was an interface, that is right.", arg.prefix);
+        addTruePositive(arg.prefix, depth, "this was an interface, that is right.");
         InterfaceType my = (InterfaceType) type;
 
         Set<InterfaceType> realWithBase = DeclarationParser.getWithBaseTypes(real);
@@ -292,11 +296,12 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                     addFalsePositive(arg.prefix, depth + 1, "excess property: " + property);
                 }
             } else {
+                addTruePositive(arg.prefix, depth + 1, "property " + property + " was there, which was correct");
                 Collection<Type> myTypes = myProperties.get(property);
                 Collection<Type> realTypes = realProperties.get(property);
                 Type realType = toPossibleUnion(realTypes);
                 Type myType = toPossibleUnion(myTypes);
-                nextDepth(realType, myType, whenAllDone.newSubCallback(), arg.prefix + "." + property);
+                moreDepth(1).nextDepth(realType, myType, whenAllDone.newSubCallback(), arg.prefix + "." + property);
             }
         }
 
@@ -385,7 +390,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             callback.run();
             return;
         }
-        addTruePositive(depth, "was a function, that was right", prefix);
+        addTruePositive(prefix, depth, "was a function, that was right");
         if (realSignatures.size() == 1 && mySignatures.size() == 1) {
             WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth + 1, callback), queue);
             Signature realSignature = realSignatures.get(0);
@@ -440,7 +445,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             addFalsePositive(prefix, depth + 1, "excess indexer");
             callback.run();
         } else if (myType != null /* && realString != null */) {
-            addTruePositive(depth, "this was an indexer, that was right", prefix);
+            addTruePositive(prefix, depth, "this was an indexer, that was right");
             nextDepth(realType, myType, callback, prefix + ".[indexer]");
         } else {
             callback.run();
@@ -458,7 +463,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         if (!real.equals(type)) {
             addFalseNegative(depth, "wrong simple type, " + real + " / " + arg.type, arg.prefix);
         } else {
-            addTruePositive(depth, "right simple type: " + real, arg.prefix);
+            addTruePositive(arg.prefix, depth, "right simple type: " + real);
         }
         arg.callback.run();
         return null;
@@ -468,7 +473,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     public Void visit(TupleType real, Arg arg) {
         if (arg.type instanceof ReferenceType && myNativeClasses.nameFromType(((ReferenceType) arg.type).getTarget()).equals("Array")) {
             // A tuple is an array, and since i don't handle generics, i say that an Array is good enough.
-            addTruePositive(depth, "tuple was array (and I'm happy with that)", arg.prefix);
+            addTruePositive(arg.prefix, depth, "tuple was array (and I'm happy with that)");
         } else {
             addFalseNegative(depth, "tuple wasn't an array", arg.prefix);
         }
@@ -520,7 +525,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
     }
 
-    private void addTruePositive(int depth, String description, String prefix) {
+    private void addTruePositive(String prefix, int depth, String description) {
         if (recordEvaluation) {
             evaluation.addTruePositive(depth, description, prefix);
         }

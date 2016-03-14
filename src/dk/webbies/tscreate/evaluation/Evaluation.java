@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.evaluation;
 
-import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.util.Util;
 
@@ -11,7 +10,6 @@ import java.util.function.Function;
  * Created by Erik Krogh Kristensen on 14-12-2015.
  */
 public class Evaluation {
-    private final boolean skipFirstZeroEvaluations;
     int maxDepth = -1;
     Map<Integer, Object> falseNegatives = new HashMap<>();
     Map<Integer, Object> falsePositives = new HashMap<>();
@@ -19,9 +17,8 @@ public class Evaluation {
 
     private final boolean debug;
 
-    public Evaluation(Options options) {
-        this.debug = options.debugPrint;
-        this.skipFirstZeroEvaluations = options.onlyEvaluateUnderFunctionArgsAndReturn;
+    public Evaluation(boolean debugPrint) {
+        this.debug = debugPrint;
     }
 
     private void add(int depth, Map<Integer, Object> map, String description, String typePath) {
@@ -137,31 +134,34 @@ public class Evaluation {
     }
 
     public Score score() {
-        double fMeasure = score(this::fMeasure);
-        double precision = score(this::precision);
-        double recall = score(this::recall);
+        return score(false);
+    }
+
+    public Score score(boolean makeMax1) {
+        double fMeasure = score(this::fMeasure, makeMax1);
+        double precision = score(this::precision, makeMax1);
+        double recall = score(this::recall, makeMax1);
         return new Score(fMeasure, precision, recall);
     }
 
-    private double score(Function<Integer, Double> function) {
+    private double score(Function<Integer, Double> function, boolean makeMax1) {
         double result = 0;
         double measure = 1;
         int startDepth = 1;
-        if (this.skipFirstZeroEvaluations) {
-            for (int i = 1; i < maxDepth; i++) {
-                if (function.apply(i) == 0) {
-                    startDepth = i;
-                }
-            }
-        }
         for (int depth = startDepth; depth <= maxDepth; depth++) {
-            if (this.skipFirstZeroEvaluations) {
-                measure = function.apply(depth)/* * measure*/;
-            } else {
-                measure = function.apply(depth) * measure;
-            }
+            measure = function.apply(depth) * measure;
             result += measure * Math.pow(2, -depth);
         }
+        // Fixme: Multiply by a correcttion factor instead.
+
+        assert !Double.isNaN(result);
+
+        if (makeMax1) {
+            double makeMax1Factor = 1 / (1 - Math.pow(2, -(Math.max(maxDepth, 1))));
+            result *= makeMax1Factor;
+        }
+
+        assert result <= 1;
         return result;
     }
 

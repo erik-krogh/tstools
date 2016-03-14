@@ -12,6 +12,7 @@ import dk.webbies.tscreate.util.Util;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.jsnap.Snap.Obj;
 import static dk.webbies.tscreate.jsnap.Snap.Value;
@@ -324,6 +325,10 @@ public class DeclarationParser {
             return typeNames.get(type);
         }
 
+        public Set<Type> nativeTypes() {
+            return typeNames.keySet();
+        }
+
         public String nameFromPrototype(Obj prototype) {
             String result = classNames.get(prototype);
             if (result != null) {
@@ -390,11 +395,7 @@ public class DeclarationParser {
         }
 
         public Set<String> getNativeTypeNames() {
-            return this.typeNames.values();
-        }
-
-        public Set<Type> getNativeTypes() {
-            return this.typeNames.keySet();
+            return this.typeNames.values().stream().filter(name -> !name.startsWith("MS")).collect(Collectors.toSet());
         }
     }
 
