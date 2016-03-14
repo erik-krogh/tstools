@@ -338,4 +338,16 @@ public class Util {
         String contents = Util.readFile(file);
         return contents.split("\n").length;
     }
+
+    @SafeVarargs
+    public static <T> List<T> concat(Collection<T>... collections) {
+        ArrayList<T> result = new ArrayList<>();
+        for (Collection<T> collection : collections) {
+            if (collection == null) {
+                continue;
+            }
+            result.addAll(collection);
+        }
+        return result;
+    }
 }
