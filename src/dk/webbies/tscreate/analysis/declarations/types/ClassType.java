@@ -15,9 +15,9 @@ import java.util.Set;
  * Created by Erik Krogh Kristensen on 17-09-2015.
  */
 public class ClassType extends DeclarationType{
-    private final DeclarationType constructorType;
-    private final Map<String, DeclarationType> prototypeFields;
-    private final Map<String, DeclarationType> staticFields;
+    private DeclarationType constructorType;
+    private Map<String, DeclarationType> prototypeFields;
+    private Map<String, DeclarationType> staticFields;
     private final String name;
     public DeclarationType superClass;
     private LibraryClass libraryClass;
@@ -41,6 +41,18 @@ public class ClassType extends DeclarationType{
 
     public Map<String, DeclarationType> getPrototypeFields() {
         return prototypeFields;
+    }
+
+    public void setPrototypeFields(Map<String, DeclarationType> prototypeFields) {
+        this.prototypeFields = prototypeFields;
+    }
+
+    public void setStaticFields(Map<String, DeclarationType> staticFields) {
+        this.staticFields = staticFields;
+    }
+
+    public void setConstructorType(DeclarationType constructorType) {
+        this.constructorType = constructorType;
     }
 
     public Map<String, DeclarationType> getStaticFields() {

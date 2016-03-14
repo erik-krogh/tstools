@@ -19,6 +19,10 @@ public class FunctionType extends DeclarationType {
         return returnType;
     }
 
+    public void setReturnType(DeclarationType returnType) {
+        this.returnType = returnType;
+    }
+
     public List<Argument> getArguments() {
         return arguments;
     }

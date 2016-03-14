@@ -6,8 +6,8 @@ import java.util.Set;
  * Created by Erik Krogh Kristensen on 05-11-2015.
  */
 public class DynamicAccessType extends DeclarationType {
-    private final DeclarationType lookupType;
-    private final DeclarationType returnType;
+    private DeclarationType lookupType;
+    private DeclarationType returnType;
 
     public DynamicAccessType(DeclarationType lookupType, DeclarationType returnType) {
         this.lookupType = lookupType;
@@ -20,6 +20,19 @@ public class DynamicAccessType extends DeclarationType {
 
     public DeclarationType getReturnType() {
         return returnType;
+    }
+
+    public void setLookupType(DeclarationType lookupType) {
+        this.lookupType = lookupType;
+    }
+
+    public void setReturnType(DeclarationType returnType) {
+        this.returnType = returnType;
+    }
+
+    public boolean isNumberIndexer() {
+        DeclarationType resolvedLookup = this.lookupType.resolve();
+        return resolvedLookup instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType) resolvedLookup).getType() == PrimitiveDeclarationType.Type.NUMBER;
     }
 
     @Override

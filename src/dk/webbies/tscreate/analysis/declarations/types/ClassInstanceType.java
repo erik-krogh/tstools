@@ -21,6 +21,10 @@ public class ClassInstanceType extends DeclarationType {
         return (ClassType) clazz.resolve();
     }
 
+    public void setClazz(DeclarationType clazz) {
+        this.clazz = clazz;
+    }
+
     @Override
     public <T> T accept(DeclarationTypeVisitor<T> visitor) {
         return visitor.visit(this);
