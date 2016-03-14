@@ -301,7 +301,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 Collection<Type> realTypes = realProperties.get(property);
                 Type realType = toPossibleUnion(realTypes);
                 Type myType = toPossibleUnion(myTypes);
-                moreDepth(1).nextDepth(realType, myType, whenAllDone.newSubCallback(), arg.prefix + "." + property);
+                nextDepth(realType, myType, whenAllDone.newSubCallback(), arg.prefix + "." + property);
             }
         }
 
