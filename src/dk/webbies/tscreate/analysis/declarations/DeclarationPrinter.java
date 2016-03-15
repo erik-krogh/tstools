@@ -5,6 +5,7 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.util.Util;
 import fj.F;
 import fj.pre.Ord;
 import fj.pre.Ordering;
@@ -21,14 +22,14 @@ public class DeclarationPrinter {
     private Map<ClassType, String> classNames;
     private DeclarationParser.NativeClassesMap nativeClasses;
 
-    private final List<InterfaceType> interfacesToPrint = new ArrayList<>();
+    private final List<InterfaceDeclarationType> interfacesToPrint = new ArrayList<>();
     private final List<ClassType> classesToPrint = new ArrayList<>();
     private boolean finishing = false;
     private int ident = 0;
 
     // This is the functions or objects that are somehow recursive (or shows up in multiple locations).
     // That we therefore print as an interface instead.
-    private final Map<DeclarationType, InterfaceType> printsAsInterface = new HashMap<>();
+    private final Map<DeclarationType, InterfaceDeclarationType> printsAsInterface = new HashMap<>();
     private Options options;
     private Set<DeclarationType> printedAsDeclaration = new HashSet<>();
 
@@ -60,18 +61,18 @@ public class DeclarationPrinter {
         type = type.resolve();
         if (type instanceof FunctionType) {
             FunctionType func = (FunctionType) type;
-            InterfaceType inter = new InterfaceType("function_" + InterfaceType.interfaceCounter++, type.getNames());
-            inter.function = func;
+            InterfaceDeclarationType inter = new InterfaceDeclarationType("function_" + InterfaceDeclarationType.interfaceCounter++, type.getNames());
+            inter.setFunction(func);
             printsAsInterface.put(func, inter);
         } else if (type instanceof UnnamedObjectType) {
             UnnamedObjectType object = (UnnamedObjectType) type;
-            InterfaceType inter = new InterfaceType(type.getNames());
-            inter.object = object;
+            InterfaceDeclarationType inter = new InterfaceDeclarationType(type.getNames());
+            inter.setObject(object);
             printsAsInterface.put(object, inter);
         } else if (type instanceof DynamicAccessType) {
             DynamicAccessType dynamic = (DynamicAccessType) type;
-            InterfaceType inter = new InterfaceType(type.getNames());
-            inter.dynamicAccess = dynamic;
+            InterfaceDeclarationType inter = new InterfaceDeclarationType(type.getNames());
+            inter.setDynamicAccess(dynamic);
             printsAsInterface.put(dynamic, inter);
         } else {
             throw new RuntimeException();
@@ -107,7 +108,7 @@ public class DeclarationPrinter {
         return str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str);
     }
 
-    private Set<InterfaceType> printedInterfaces = new HashSet<>();
+    private Set<InterfaceDeclarationType> printedInterfaces = new HashSet<>();
     private Set<ClassType> printedClasses = new HashSet<>();
 
     private void finish(StringBuilder outerBuilder) {
@@ -123,9 +124,9 @@ public class DeclarationPrinter {
 
 
         while (interfacesToPrint.size() > 0) {
-            ArrayList<InterfaceType> copy = new ArrayList<>(interfacesToPrint);
+            ArrayList<InterfaceDeclarationType> copy = new ArrayList<>(interfacesToPrint);
             interfacesToPrint.clear();
-            for (InterfaceType type : copy) {
+            for (InterfaceDeclarationType type : copy) {
                 printInterface(outerBuilder, type, printedInterfaces);
             }
         }
@@ -249,7 +250,7 @@ public class DeclarationPrinter {
             write(arg.builder, " {\n");
             ident++;
 
-            for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet().stream().sorted((a, b) -> a.getKey().compareTo(b.getKey())).collect(Collectors.toList())) {
+            for (Map.Entry<String, DeclarationType> entry : module.getDeclarations().entrySet().stream().sorted(Util::compareStringEntry).collect(Collectors.toList())) {
                 printDeclaration(arg.addPath(entry.getKey()), entry.getKey(), entry.getValue(), "export");
             }
 
@@ -278,14 +279,14 @@ public class DeclarationPrinter {
             write(arg.builder, ");\n");
 
             Predicate<String> notStaticInSuperClass = notStaticInSuperClassTest(clazz.getSuperClass());
-            for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet()) {
+            for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet().stream().sorted(Util::compareStringEntry).collect(Collectors.toList())) {
                 if (notStaticInSuperClass.test(entry.getKey())) {
                     printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
                 }
             }
 
             Predicate<String> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
-            for (Map.Entry<String, DeclarationType> entry : clazz.getPrototypeFields().entrySet()) {
+            for (Map.Entry<String, DeclarationType> entry : clazz.getPrototypeFields().entrySet().stream().sorted(Util::compareStringEntry).collect(Collectors.toList())) {
                 if (notInSuperClass.test(entry.getKey())) {
                     this.printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor());
                 }
@@ -493,7 +494,7 @@ public class DeclarationPrinter {
         }
 
         @Override
-        public Void visit(InterfaceType interfaceType, VisitorArg arg) {
+        public Void visit(InterfaceDeclarationType interfaceType, VisitorArg arg) {
             if (finishing) {
                 finishing = false;
                 writeln(arg.builder, "// Seen as: " + interfaceType.getNames().stream().collect(Collectors.joining(", ")));
@@ -626,7 +627,7 @@ public class DeclarationPrinter {
                 } else {
                     throw new GotCyclic(indexType);
                 }
-            } else if (indexType instanceof InterfaceType || indexType instanceof ClassInstanceType) {
+            } else if (indexType instanceof InterfaceDeclarationType || indexType instanceof ClassInstanceType) {
                 arg.builder.append("Array<");
                 indexType.accept(this, arg);
                 arg.builder.append(">");
@@ -650,12 +651,13 @@ public class DeclarationPrinter {
                 printArguments(arg, classType.getConstructorType().getArguments(), classType.getConstructorType().minArgs);
                 write(arg.builder, ") : " + classType.getName() + "\n");
 
-                classType.getStaticFields().forEach((name, type) -> printObjectField(arg, name, type, this));
+                classType.getStaticFields().entrySet().stream().sorted(Util::compareStringEntry).forEach(entry -> printObjectField(arg, entry.getKey(), entry.getValue(), this));
 
                 ident--;
                 writeln(arg.builder, "}");
                 write(arg.builder, "\n");
 
+                writeln(arg.builder, "// Seen as: " + classType.getNames().stream().collect(Collectors.joining(", ")));
                 ident(arg.builder);
                 write(arg.builder, "interface " + classType.getName());
                 if (classType.getSuperClass() != null) {
@@ -666,7 +668,7 @@ public class DeclarationPrinter {
 
                 ident++;
                 Predicate<String> notInSuperClassTest = notInSuperClassTest(classType.getSuperClass());
-                classType.getPrototypeFields().entrySet().stream().filter((entry) -> notInSuperClassTest.test(entry.getKey())).forEach((entry) -> {
+                classType.getPrototypeFields().entrySet().stream().sorted(Util::compareStringEntry).filter((entry) -> notInSuperClassTest.test(entry.getKey())).forEach((entry) -> {
                     printObjectField(arg, entry.getKey(), entry.getValue(), this);
                 });
 

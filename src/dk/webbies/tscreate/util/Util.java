@@ -64,6 +64,10 @@ public class Util {
         return builder.toString();
     }
 
+    public static <T> int compareStringEntry(Map.Entry<String, T> o1, Map.Entry<String, T> o2) {
+        return o1.getKey().compareTo(o2.getKey());
+    }
+
     private static class StreamGobbler extends Thread {
         BufferedInputStream is;
         private CountDownLatch latch;
