@@ -71,7 +71,9 @@ public class CollectEveryTypeVisitor implements DeclarationTypeVisitor<Void> {
         add(interfaceType);
 
         // This is special, because the interfaceType is one big type, and I'm not interrested in the Object part of the interface type, I'm interested in the interface.
-        // That is why there is nothing for dynamic access types.
+        if (interfaceType.getDynamicAccess() != null) {
+            interfaceType.getDynamicAccess().getReturnType().accept(this);
+        }
         if (interfaceType.getFunction() != null) {
             interfaceType.getFunction().getReturnType().accept(this);
             interfaceType.getFunction().getArguments().forEach(arg -> arg.getType().accept(this));

@@ -6,6 +6,7 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.cleanup.heuristics.FindFunctionsHeuristic;
 import dk.webbies.tscreate.cleanup.heuristics.ReplaceInterfaceWithClassInstanceHeuristic;
 import dk.webbies.tscreate.cleanup.heuristics.ReplacementHeuristic;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
@@ -33,6 +34,7 @@ public class RedundantInterfaceCleaner {
         this.reducer = reducer;
 
         // The heuristics
+        this.heuristics.add(new FindFunctionsHeuristic());
         this.heuristics.add(new ReplaceInterfaceWithClassInstanceHeuristic(nativeClasses, reducer));
 
     }
@@ -55,7 +57,7 @@ public class RedundantInterfaceCleaner {
             progress = false;
             for (ReplacementHeuristic heuristic : heuristics) {
                 Multimap<DeclarationType, DeclarationType> replacements = heuristic.findReplacements(collector);
-                if (replacements.isEmpty()) {
+                if (replacements == null || replacements.isEmpty()) {
                     continue;
                 }
                 progress = true;
