@@ -33,7 +33,7 @@ public class RedundantInterfaceCleaner {
         this.reducer = reducer;
 
         // The heuristics
-        this.heuristics.add(new ReplaceInterfaceWithClassInstanceHeuristic(nativeClasses));
+        this.heuristics.add(new ReplaceInterfaceWithClassInstanceHeuristic(nativeClasses, reducer));
 
     }
 
@@ -79,6 +79,7 @@ public class RedundantInterfaceCleaner {
         Options options = new Options();
         options.maxEvaluationDepth = 4;
         options.debugPrint = true;
+        options.evaluationSkipExcessProperties = false;
         Set<Type> nativeTypes = nativeClasses.nativeTypes();
         return DeclarationEvaluator.evaluate(options, truthDeclaration, condidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
     }

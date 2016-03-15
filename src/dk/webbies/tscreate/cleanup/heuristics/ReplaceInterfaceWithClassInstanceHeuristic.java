@@ -2,6 +2,7 @@ package dk.webbies.tscreate.cleanup.heuristics;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.cleanup.CollectEveryTypeVisitor;
 import dk.webbies.tscreate.cleanup.DeclarationTypeToTSTypes;
@@ -19,10 +20,12 @@ import java.util.stream.Collectors;
  */
 public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHeuristic {
     private final DeclarationParser.NativeClassesMap nativeClasses;
+    private final TypeReducer reducer;
     private DeclarationTypeToTSTypes decsToTypes;
 
-    public ReplaceInterfaceWithClassInstanceHeuristic(DeclarationParser.NativeClassesMap nativeClasses) {
+    public ReplaceInterfaceWithClassInstanceHeuristic(DeclarationParser.NativeClassesMap nativeClasses, TypeReducer combiner) {
         this.nativeClasses = nativeClasses;
+        this.reducer = combiner;
         decsToTypes = new DeclarationTypeToTSTypes(this.nativeClasses);
     }
 
@@ -44,9 +47,27 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
             if (possibleReplacement.isEmpty()) {
                 continue;
             }
-            Pair<DeclarationType, Evaluation> replacement = Collections.max(possibleReplacement, (a, b) -> Double.compare(a.second.score(true).precision, b.second.score(true).precision));
-            if (replacement.second.score(true).precision >= 1) {
-                replacements.put(candidate, replacement.first);
+
+            Collections.sort(possibleReplacement, (a, b) -> Double.compare(a.second.score(true).precision, b.second.score(true).precision));
+
+            Pair<DeclarationType, Evaluation> bestPossible = possibleReplacement.get(0);
+
+            if (bestPossible.second.score(true).precision < 0.5) {
+                continue; // TODO: What to use?
+            }
+
+            if (possibleReplacement.size() >= 2 && bestPossible.second.score(true).precision == possibleReplacement.get(1).second.score(true).precision) {
+                // We got at least two that are equally good.
+                List<DeclarationType> equallyGood = possibleReplacement.stream().filter(pair -> pair.second.score(true).precision == bestPossible.second.score(true).precision).map(pair -> pair.first).collect(Collectors.toList());
+
+                DeclarationType combined = new CombinationType(reducer, equallyGood).getCombined();
+                if (!(combined instanceof UnionDeclarationType)) {
+                    replacements.put(candidate, combined);
+                }
+
+                System.out.println(bestPossible.second.score(true).precision + " I got two equally good replacements, and I cannot pick one");
+            } else {
+                replacements.put(candidate, bestPossible.first);
             }
         }
 
@@ -72,7 +93,10 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
     }
 
     private List<DeclarationType> getClassAndNamedTypes(Map<Class<? extends DeclarationType>, Set<DeclarationType>> byType) {
-        List<DeclarationType> result = byType.get(ClassType.class).stream().map(ClassInstanceType::new).collect(Collectors.toList());
+        List<DeclarationType> result = new ArrayList<>();
+        if (byType.get(ClassType.class) != null) {
+            byType.get(ClassType.class).stream().map(ClassInstanceType::new).forEach(result::add);
+        }
         nativeClasses.getNativeTypeNames().stream().map(name -> new NamedObjectType(name, false)).forEach(result::add);
         return result;
     }

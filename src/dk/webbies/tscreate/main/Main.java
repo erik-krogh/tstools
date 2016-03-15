@@ -17,6 +17,7 @@ import dk.webbies.tscreate.analysis.methods.old.analysis.OldTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionRecursively.UnionRecursivelyTypeAnalysis;
+import dk.webbies.tscreate.cleanup.RedundantInterfaceCleaner;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
@@ -58,7 +59,7 @@ public class Main {
 //            printTable();
 //            generateDeclarations(BenchMark.allBenchmarks);
 //            tsCheck();
-            runAnalysis(BenchMark.test);
+            runAnalysis(BenchMark.async);
 //            benchAll();
 //            printTable();
 
@@ -99,8 +100,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         if (benchMark.options.combineInterfacesAfterAnalysis) {
-            // FIXME: Get back to this.
-//            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
+            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
