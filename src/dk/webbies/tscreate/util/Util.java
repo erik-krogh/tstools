@@ -194,6 +194,9 @@ public class Util {
 
     // I would really like to force ColT and ColS to be the same subtype of Collection. But I don't think Java generics can handle that.
     public static <T, S, ColT extends Collection<T>, ColS extends Collection<S>> ColS cast(Class<S> clazz, ColT list) {
+        if (list == null) {
+            return null;
+        }
         for (T t : list) {
             if (!clazz.isInstance(t)) {
                 throw new ClassCastException("Cannot cast : " + t + " to class " + clazz.getName());
