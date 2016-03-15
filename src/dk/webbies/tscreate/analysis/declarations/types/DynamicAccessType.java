@@ -9,7 +9,8 @@ public class DynamicAccessType extends DeclarationType {
     private DeclarationType lookupType;
     private DeclarationType returnType;
 
-    public DynamicAccessType(DeclarationType lookupType, DeclarationType returnType) {
+    public DynamicAccessType(DeclarationType lookupType, DeclarationType returnType, Set<String> names) {
+        super(names);
         this.lookupType = lookupType;
         this.returnType = returnType;
     }

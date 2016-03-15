@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ public class CombinationType extends DeclarationType {
     private boolean hasBeenUnfolded = false;
 
     public CombinationType(TypeReducer combiner, List<DeclarationType> types) {
+        super(types.stream().map(DeclarationType::getNames).reduce(new HashSet<>(), Util::reduceSet));
         if (combiner == null) {
             throw new NullPointerException();
         }
@@ -48,8 +50,8 @@ public class CombinationType extends DeclarationType {
         }
 
         if (this.types.size() == 0) {
-            combined = PrimitiveDeclarationType.Void();
-            return PrimitiveDeclarationType.Void();
+            combined = PrimitiveDeclarationType.Void(Collections.EMPTY_SET);
+            return combined;
         } else {
             Set<DeclarationType> unfolded = unfold(this);
 
@@ -61,7 +63,7 @@ public class CombinationType extends DeclarationType {
 
             DeclarationType result;
             if (unfolded.isEmpty()) {
-                result = PrimitiveDeclarationType.Void();
+                result = PrimitiveDeclarationType.Void(Collections.EMPTY_SET);
             } else {
                 result = combiner.combineTypes(unfolded, false);
             }

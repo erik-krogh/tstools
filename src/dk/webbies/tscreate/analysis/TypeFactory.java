@@ -20,6 +20,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.*;
+
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
@@ -58,7 +60,7 @@ public class TypeFactory {
 
     private DeclarationType getType(Collection<UnionNode> nodes) {
         if (nodes.size() == 0) {
-            return PrimitiveDeclarationType.Void();
+            return PrimitiveDeclarationType.Void(EMPTY_SET);
         } else if (nodes.size() == 1) {
             return getType(nodes.iterator().next());
         } else {
@@ -99,12 +101,15 @@ public class TypeFactory {
             }
         }
 
+        // Adding the names here, then I don't have to elsewhere in the factory.
+        result.addType(PrimitiveDeclarationType.Void(feature.getNames()));
+
         // Adding primitives
-        feature.getPrimitives().stream().map(PrimitiveDeclarationType::fromType).forEach(result::addType);
+        feature.getPrimitives().stream().map(type -> PrimitiveDeclarationType.fromType(type, EMPTY_SET)).forEach(type -> result.addType((DeclarationType)type));
 
         // Adding function
         if (feature.getFunctionFeature() != null) {
-            createFunctionType(feature.getFunctionFeature()).forEach(result::addType);
+            createFunctionType(feature).forEach(result::addType);
         }
 
         // Adding names object types.
@@ -132,20 +137,20 @@ public class TypeFactory {
             feature.getObjectFields().forEach((name, node) -> {
                 fields.put(name, getType(node));
             });
-            result.addType(new UnnamedObjectType(fields));
+            result.addType(new UnnamedObjectType(fields, feature.getNames()));
         }
 
         if (feature.getDynamicAccessLookupExp() != null) {
             UnionNode lookupType = feature.getDynamicAccessLookupExp();
             UnionNode returnType = feature.getDynamicAccessReturnType();
-            DynamicAccessType dynamicAccessType = new DynamicAccessType(getType(lookupType), getType(returnType));
-            InterfaceType dynamicInterface = new InterfaceType();
+            DynamicAccessType dynamicAccessType = new DynamicAccessType(getType(lookupType), getType(returnType), feature.getNames());
+            InterfaceType dynamicInterface = new InterfaceType(feature.getNames());
             dynamicInterface.dynamicAccess = dynamicAccessType;
             result.addType(dynamicInterface);
         }
 
         if (result.types.size() == 0) {
-            return PrimitiveDeclarationType.Void();
+            return PrimitiveDeclarationType.Void(feature.getNames());
         } else if (result.types.size() == 1 && !(result.types.get(0) instanceof UnresolvedDeclarationType)) {
             return result.types.get(0);
         }
@@ -164,7 +169,7 @@ public class TypeFactory {
                 .filter(clazz -> !clazz.isNativeClass())
                 .map(this::getClassType)
                 .filter(classType -> classType != null)
-                .map(ClassInstanceType::new)
+                .map(clazz -> new ClassInstanceType(clazz, feature.getNames()))
                 .forEach(result::add);
 
         // Adding all the native classes
@@ -185,7 +190,7 @@ public class TypeFactory {
     // Primitives are handled by the PrimitiveDeclarationType, and filtering them out here allows for "spurious" prototypes (see PrimitiveDeclarationType.STRING_OR_NUMBER
     private static DeclarationType filterPrimitives(NamedObjectType named) {
         switch (named.getName()) {
-            case "Function": return new FunctionType(PrimitiveDeclarationType.Void(), Collections.EMPTY_LIST);
+            case "Function": return new FunctionType(PrimitiveDeclarationType.Void(EMPTY_SET), EMPTY_LIST, named.getNames());
             case "Number":
             case "Boolean":
             case "String":
@@ -359,7 +364,7 @@ public class TypeFactory {
             }
             result.addType(type);
         }
-        result.addType(PrimitiveDeclarationType.NonVoid());
+        result.addType(PrimitiveDeclarationType.NonVoid(Util.createSet(name)));
 
         if (onlyVoid) {
             for (UnionNode thisNode : thisNodes) {
@@ -378,9 +383,10 @@ public class TypeFactory {
     }
 
     public Snap.Obj currentClosure; // Set by TypeAnalysis, to set which closure we have just finished analyzing, and therefore should create the type of.
-    public List<DeclarationType> createFunctionType(FunctionFeature feature) {
-        if (!feature.getClosures().isEmpty()) {
-            return feature.getClosures().stream().map(closure -> {
+    public List<DeclarationType> createFunctionType(UnionFeature feature) {
+        FunctionFeature functionFeature = feature.getFunctionFeature();
+        if (!functionFeature.getClosures().isEmpty()) {
+            return functionFeature.getClosures().stream().map(closure -> {
                 boolean isUserDefined = closure.function.type.equals("user") || closure.function.type.equals("bind");
                 if (currentClosure != closure && isUserDefined) {
                     return getFunctionType(closure);
@@ -388,28 +394,28 @@ public class TypeFactory {
                     if (isUserDefined) {
                         return getPureFunction(closure);
                     } else {
-                        return getNativeFunctionType(closure);
+                        return getNativeFunctionType(closure, feature);
                     }
                 }
             }).collect(Collectors.toList());
         } else {
-            DeclarationType returnType = getType(feature.getReturnNode());
+            DeclarationType returnType = getType(functionFeature.getReturnNode());
 
-            List<FunctionType.Argument> arguments = feature.getArguments().stream().map((arg) -> {
-                DeclarationType type = getType(arg.node);
-                return new FunctionType.Argument(arg.name, type);
+            List<FunctionType.Argument> arguments = functionFeature.getArguments().stream().map((arg) -> {
+                DeclarationType type = getType(arg);
+                return new FunctionType.Argument(FunctionReducer.getBestArgumentName(arg.getFeature().getNames()), type);
             }).collect(Collectors.toList());
 
-            return Arrays.asList(new FunctionType(returnType, arguments));
+            return singletonList(new FunctionType(returnType, arguments, feature.getNames()));
         }
     }
 
-    private DeclarationType getNativeFunctionType(Snap.Obj closure) {
+    private DeclarationType getNativeFunctionType(Snap.Obj closure, UnionFeature feature) {
         if (pureFunctionCache.containsKey(closure)) {
             return getPureFunction(closure);
         }
         if (closure.function.callSignatures.isEmpty()) {
-            return new FunctionType(PrimitiveDeclarationType.Void(), new ArrayList<>());
+            return new FunctionType(PrimitiveDeclarationType.Void(EMPTY_SET), new ArrayList<>(), feature.getNames());
         }
         throw new RuntimeException("Should have gotten the types of all functions by now. Callsigs: " + closure.function.callSignatures.size());
     }
@@ -422,17 +428,18 @@ public class TypeFactory {
         return Util.getWithDefault(pureFunctionCache, closure, new UnresolvedDeclarationType());
     }
 
-    public void registerFunction(Snap.Obj closure, List<FunctionFeature> features) {
+    public void registerFunction(Snap.Obj closure, List<UnionFeature> features) {
+        List<FunctionFeature> functionFeatures = features.stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
         UnresolvedDeclarationType unresolved = getPureFunction(closure);
 
-        DeclarationType returnType = constructCombinationType(features, (feature) -> getType(feature.getReturnNode()));
+        DeclarationType returnType = constructCombinationType(functionFeatures, (feature) -> getType(feature.getReturnNode()));
 
-        List<FunctionType.Argument> argumentsTypes = getArguments(features).stream().map((arguments) -> {
-            String name = FunctionReducer.getBestArgumentName(arguments.stream().map(argument -> argument.name).collect(Collectors.toList()));
-            return new FunctionType.Argument(name, constructCombinationType(arguments, arg -> getType(arg.node)));
+        List<FunctionType.Argument> argumentsTypes = getArguments(functionFeatures).stream().map((arguments) -> {
+            String name = FunctionReducer.getBestArgumentName(arguments.stream().map(argument -> argument.getFeature().getNames()).reduce(new HashSet<>(), Util::reduceSet));
+            return new FunctionType.Argument(name, constructCombinationType(arguments, this::getType));
         }).collect(Collectors.toList());
 
-        FunctionType result = new FunctionType(returnType, argumentsTypes);
+        FunctionType result = new FunctionType(returnType, argumentsTypes, features.stream().map(UnionFeature::getNames).reduce(new HashSet<>(), Util::reduceSet));
 
         if (closure.recordedCalls != null) {
             result.minArgs = Integer.MAX_VALUE;
@@ -448,15 +455,15 @@ public class TypeFactory {
         return new CombinationType(typeReducer, collection.stream().map(mapper).collect(Collectors.toList()));
     }
 
-    private static List<List<FunctionFeature.Argument>> getArguments(List<FunctionFeature> features) {
-        ArrayList<List<FunctionFeature.Argument>> result = new ArrayList<>();
+    private static List<List<UnionNode>> getArguments(List<FunctionFeature> features) {
+        ArrayList<List<UnionNode>> result = new ArrayList<>();
         for (FunctionFeature feature : features) {
             for (int i = 0; i < feature.getArguments().size(); i++) {
-                FunctionFeature.Argument argument = feature.getArguments().get(i);
+                UnionNode argument = feature.getArguments().get(i);
                 if (result.size() > i) {
                     result.get(i).add(argument);
                 } else {
-                    result.add(new ArrayList<>(Collections.singletonList(argument)));
+                    result.add(new ArrayList<>(singletonList(argument)));
                 }
             }
         }

@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import java.util.Set;
+
 /**
  * Created by Erik Krogh Kristensen on 08-09-2015.
  */
@@ -13,7 +15,8 @@ public class InterfaceType extends DeclarationType {
 
     public static int interfaceCounter = 0;
 
-    public InterfaceType(String name) {
+    public InterfaceType(String name, Set<String> names) {
+        super(names);
         if (name != null) {
             this.name = name;
         } else {
@@ -21,8 +24,8 @@ public class InterfaceType extends DeclarationType {
         }
     }
 
-    public InterfaceType() {
-        this(null);
+    public InterfaceType(Set<String> names) {
+        this(null, names);
     }
 
     public FunctionType getFunction() {

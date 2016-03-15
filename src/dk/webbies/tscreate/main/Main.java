@@ -59,6 +59,7 @@ public class Main {
 //            printTable();
 //            generateDeclarations(BenchMark.allBenchmarks);
 //            tsCheck();
+            // FIXME: SomeThing about classes and DeclarationTypeToTSTypes doesn't work. Try with test.js and some classes.
             runAnalysis(BenchMark.async);
 //            benchAll();
 //            printTable();

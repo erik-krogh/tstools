@@ -233,11 +233,13 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
         if (identifier.getDeclaration() == null) {
             throw new RuntimeException("Cannot have null declarations");
         }
+        UnionNode result ;
         if (!typeAnalysis.options.unionHeapIdentifiers) {
-            return getIdentifier(identifier, solver, identifierMap);
+            result = getIdentifier(identifier, solver, identifierMap);
         } else {
-            return solver.union(getIdentifier(identifier, solver, identifierMap), getIdentifier(identifier.getDeclaration(), solver, identifierMap));
+            result = solver.union(getIdentifier(identifier, solver, identifierMap), getIdentifier(identifier.getDeclaration(), solver, identifierMap));
         }
+        return solver.union(result, new NameNode(solver, identifier.getName()));
     }
 
     @Override

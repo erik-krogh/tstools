@@ -82,8 +82,8 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
             }
             solver.finish();
 
-            List<UnionFeature.FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
-            typeFactory.registerFunction(closure, functionFeatures);
+            List<UnionFeature> features = UnionFeature.getReachable(node.getFeature());
+            typeFactory.registerFunction(closure, features);
         }
 
         Set<Snap.Obj> functions = functionNodes.keySet();
@@ -108,7 +108,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
 
                 UnionFeature feature = functionNode.getFeature();
                 assert UnionFeature.getReachable(functionNode.getFeature()).size() == 1;
-                typeFactory.registerFunction(functionClosure, Collections.singletonList(feature.getFunctionFeature()));
+                typeFactory.registerFunction(functionClosure, Collections.singletonList(feature));
                 typeFactory.currentClosure = functionClosure;
                 typeFactory.putResolvedFunctionType(functionClosure, typeFactory.getTypeNoCache(feature));
                 typeFactory.currentClosure = null;
@@ -134,7 +134,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
                 Snap.Obj closure = entry.getKey();
                 FunctionNode functionNode = entry.getValue();
 
-                typeFactory.registerFunction(closure, Collections.singletonList(functionNode.getFeature().getFunctionFeature()));
+                typeFactory.registerFunction(closure, Collections.singletonList(functionNode.getFeature()));
                 typeFactory.currentClosure = closure;
 
                 // This is a very ugly hack to make it actually infer a type-function, no-matter what garbage gets unified with the function.

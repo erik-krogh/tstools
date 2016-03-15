@@ -101,7 +101,7 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
             cache.put(obj, result);
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    objectNode.addField(property.name, this.innerFromProperty(property));
+                    objectNode.addField(property.name, solver.union(this.innerFromProperty(property), new NameNode(solver, property.name)));
                 }
             }
             return result;
@@ -183,13 +183,13 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
         public SubSetPrimitiveFactory(UnionFindSolver solver, Snap.Obj globalObject) {
             this.solver = solver;
             this.globalObject = globalObject;
-            this.bool = gen(PrimitiveDeclarationType.Boolean(), "Boolean");
-            this.number = gen(PrimitiveDeclarationType.Number(), "Number");
-            this.undefined = gen(PrimitiveDeclarationType.Void());
-            this.string = gen(PrimitiveDeclarationType.String(), "String");
-            this.any = gen(PrimitiveDeclarationType.Any());
-            this.stringOrNumber = gen(PrimitiveDeclarationType.StringOrNumber(), "Number", "String");
-            this.nonVoid = gen(PrimitiveDeclarationType.NonVoid());
+            this.bool = gen(PrimitiveDeclarationType.Boolean(Collections.EMPTY_SET), "Boolean");
+            this.number = gen(PrimitiveDeclarationType.Number(Collections.EMPTY_SET), "Number");
+            this.undefined = gen(PrimitiveDeclarationType.Void(Collections.EMPTY_SET));
+            this.string = gen(PrimitiveDeclarationType.String(Collections.EMPTY_SET), "String");
+            this.any = gen(PrimitiveDeclarationType.Any(Collections.EMPTY_SET));
+            this.stringOrNumber = gen(PrimitiveDeclarationType.StringOrNumber(Collections.EMPTY_SET), "Number", "String");
+            this.nonVoid = gen(PrimitiveDeclarationType.NonVoid(Collections.EMPTY_SET));
             this.function = solver.union(getPrototype("Function"), FunctionNode.create(Collections.EMPTY_LIST, this.solver));
             this.array = solver.union(getPrototype("Array"), new DynamicAccessNode(this.solver, new EmptyNode(this.solver), number()));
         }

@@ -67,8 +67,8 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
                 solver.union(node, new IncludeNode(solver, functionNode));
             }
 
-            List<UnionFeature.FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
-            typeFactory.registerFunction(closure, functionFeatures);
+            List<UnionFeature> features = UnionFeature.getReachable(node.getFeature());
+            typeFactory.registerFunction(closure, features);
         }
 
         solver.finish();
@@ -85,7 +85,7 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
             Snap.Obj closure = entry.getKey();
             FunctionNode functionNode = entry.getValue();
 
-            typeFactory.registerFunction(closure, Collections.singletonList(functionNode.getFeature().getFunctionFeature()));
+            typeFactory.registerFunction(closure, Collections.singletonList(functionNode.getFeature()));
             typeFactory.currentClosure = closure;
 
             // This is a very ugly hack to make it actually infer a type-function, no-matter what garbage gets unified with the function.

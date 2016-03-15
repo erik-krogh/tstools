@@ -60,17 +60,17 @@ public class DeclarationPrinter {
         type = type.resolve();
         if (type instanceof FunctionType) {
             FunctionType func = (FunctionType) type;
-            InterfaceType inter = new InterfaceType("function_" + InterfaceType.interfaceCounter++);
+            InterfaceType inter = new InterfaceType("function_" + InterfaceType.interfaceCounter++, type.getNames());
             inter.function = func;
             printsAsInterface.put(func, inter);
         } else if (type instanceof UnnamedObjectType) {
             UnnamedObjectType object = (UnnamedObjectType) type;
-            InterfaceType inter = new InterfaceType();
+            InterfaceType inter = new InterfaceType(type.getNames());
             inter.object = object;
             printsAsInterface.put(object, inter);
         } else if (type instanceof DynamicAccessType) {
             DynamicAccessType dynamic = (DynamicAccessType) type;
-            InterfaceType inter = new InterfaceType();
+            InterfaceType inter = new InterfaceType(type.getNames());
             inter.dynamicAccess = dynamic;
             printsAsInterface.put(dynamic, inter);
         } else {
@@ -496,6 +496,7 @@ public class DeclarationPrinter {
         public Void visit(InterfaceType interfaceType, VisitorArg arg) {
             if (finishing) {
                 finishing = false;
+                writeln(arg.builder, "// Seen as: " + interfaceType.getNames().stream().collect(Collectors.joining(", ")));
                 writeln(arg.builder, "interface " + interfaceType.name + " {");
                 ident++;
                 if (interfaceType.getFunction() != null) {

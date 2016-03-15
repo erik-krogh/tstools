@@ -126,8 +126,8 @@ public class MixedTypeAnalysis implements TypeAnalysis {
             }
             solver.finish();
 
-            List<UnionFeature.FunctionFeature> functionFeatures = UnionFeature.getReachable(node.getFeature()).stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
-            typeFactory.registerFunction(closure, functionFeatures);
+            List<UnionFeature> features = UnionFeature.getReachable(node.getFeature());
+            typeFactory.registerFunction(closure, features);
         }
 
         System.out.println("Collapsing cycles");
@@ -144,7 +144,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
             UnionFeature feature = functionNode.getFeature();
             assert UnionFeature.getReachable(functionNode.getFeature()).size() == 1;
-            typeFactory.registerFunction(closure, Arrays.asList(feature.getFunctionFeature()));
+            typeFactory.registerFunction(closure, Collections.singletonList(feature));
             typeFactory.currentClosure = closure;
             typeFactory.putResolvedFunctionType(closure, typeFactory.getTypeNoCache(feature));
             typeFactory.currentClosure = null;

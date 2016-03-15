@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import java.util.Collections;
+
 /**
  * Created by Erik Krogh Kristensen on 17-09-2015.
  */
@@ -10,6 +12,7 @@ public class UnresolvedDeclarationType extends DeclarationType {
     private final int counter;
 
     public UnresolvedDeclarationType() {
+        super(Collections.EMPTY_SET);
         this.counter = instanceCounter++;
     }
 

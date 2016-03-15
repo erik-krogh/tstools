@@ -2,10 +2,7 @@ package dk.webbies.tscreate.analysis.declarations.types;
 
 import dk.webbies.tscreate.util.Util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Erik Krogh Kristensen on 09-09-2015.
@@ -13,7 +10,8 @@ import java.util.List;
 public class UnionDeclarationType extends DeclarationType {
     private List<DeclarationType> types;
 
-    public UnionDeclarationType(DeclarationType ...types) {
+    public UnionDeclarationType(DeclarationType... types) {
+        super(Arrays.asList(types).stream().map(DeclarationType::getNames).reduce(new HashSet<>(), Util::reduceSet));
         if (types.length == 0) {
             throw new IllegalArgumentException();
         }

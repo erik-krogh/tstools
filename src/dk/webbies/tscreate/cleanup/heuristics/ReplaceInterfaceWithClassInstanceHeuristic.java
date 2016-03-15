@@ -95,7 +95,7 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
     private List<DeclarationType> getClassAndNamedTypes(Map<Class<? extends DeclarationType>, Set<DeclarationType>> byType) {
         List<DeclarationType> result = new ArrayList<>();
         if (byType.get(ClassType.class) != null) {
-            byType.get(ClassType.class).stream().map(ClassInstanceType::new).forEach(result::add);
+            byType.get(ClassType.class).stream().map(clazz -> new ClassInstanceType(clazz, Collections.EMPTY_SET)).forEach(type -> result.add((DeclarationType)type));
         }
         nativeClasses.getNativeTypeNames().stream().map(name -> new NamedObjectType(name, false)).forEach(result::add);
         return result;

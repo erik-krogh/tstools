@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Erik Krogh Kristensen on 06-09-2015.
@@ -8,7 +9,8 @@ import java.util.Map;
 public class UnnamedObjectType extends ObjectType {
     private Map<String, DeclarationType> declarations;
 
-    public UnnamedObjectType(Map<String, DeclarationType> declarations) {
+    public UnnamedObjectType(Map<String, DeclarationType> declarations, Set<String> names) {
+        super(names);
         this.declarations = declarations;
     }
 

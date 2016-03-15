@@ -21,6 +21,7 @@ public class UnionFeature {
     // Dynamic access
     UnionNode dynamicAccessReturnType = null;
     UnionNode dynamicAccessLookupExp = null;
+    Set<String> names = null;
 
     public UnionFeature(UnionClass unionClass) {
         this.unionClass = unionClass;
@@ -73,6 +74,21 @@ public class UnionFeature {
         if (other.dynamicAccessReturnType != null) {
             this.dynamicAccessReturnType = other.dynamicAccessReturnType;
         }
+
+        if (other.names != null) {
+            if (this.names == null) {
+                this.names = other.names;
+            } else {
+                this.names.addAll(other.names);
+            }
+        }
+    }
+
+    public Set<String> getNames() {
+        if (names == null) {
+            return Collections.EMPTY_SET;
+        }
+        return names;
     }
 
     public Set<PrimitiveDeclarationType.Type> getPrimitives() {
@@ -118,10 +134,10 @@ public class UnionFeature {
     public static class FunctionFeature {
         private final UnionNode thisNode;
         private final UnionNode returnNode;
-        private final List<Argument> arguments;
+        private final List<UnionNode> arguments;
         private final Set<Snap.Obj> closures = new HashSet<>();
 
-        public FunctionFeature(UnionNode thisNode, UnionNode returnNode, List<Argument> arguments, Snap.Obj closure) {
+        public FunctionFeature(UnionNode thisNode, UnionNode returnNode, List<UnionNode> arguments, Snap.Obj closure) {
             this.thisNode = thisNode;
             this.returnNode = returnNode;
             this.arguments = arguments;
@@ -138,7 +154,7 @@ public class UnionFeature {
             return returnNode;
         }
 
-        public List<Argument> getArguments() {
+        public List<UnionNode> getArguments() {
             return arguments;
         }
 
@@ -147,31 +163,12 @@ public class UnionFeature {
         }
 
         public void takeIn(FunctionFeature other) {
-            // Everything except the closure, and some argument stuff, is handled by the fields in the UnionClass
+            // Everything except the closure, and getting the argument list to the right size, is handled in UnionClass.
             this.closures.addAll(other.closures);
-            for (int i = 0; i < Math.min(this.arguments.size(), other.arguments.size()); i++) {
-                Argument thisArg = this.arguments.get(i);
-                Argument otherArg = other.arguments.get(i);
-                if (thisArg.name.startsWith("arg")) {
-                    thisArg.name = otherArg.name;
-                } else if (!otherArg.name.startsWith("arg") && otherArg.name.length() > thisArg.name.length()) {
-                    thisArg.name = otherArg.name;
-                }
-            }
             if (other.arguments.size() > this.arguments.size()) {
                 for (int i = this.arguments.size(); i < other.arguments.size(); i++) {
                     this.arguments.add(i, other.arguments.get(i));
                 }
-            }
-        }
-
-        public static class Argument {
-            public String name;
-            public final UnionNode node;
-
-            public Argument(String name, UnionNode node) {
-                this.name = name;
-                this.node = node;
             }
         }
     }

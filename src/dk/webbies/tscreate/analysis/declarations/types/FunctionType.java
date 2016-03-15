@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -10,7 +11,8 @@ public class FunctionType extends DeclarationType {
     private List<Argument> arguments;
     public int minArgs = Integer.MAX_VALUE;
 
-    public FunctionType(DeclarationType returnType, List<Argument> arguments) {
+    public FunctionType(DeclarationType returnType, List<Argument> arguments, Set<String> names) {
+        super(names);
         this.returnType = returnType;
         this.arguments = arguments;
     }

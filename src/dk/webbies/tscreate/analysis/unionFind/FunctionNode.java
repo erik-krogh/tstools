@@ -17,19 +17,16 @@ public class FunctionNode extends UnionNodeWithFields {
     public final UnionNode thisNode;
     public Snap.Obj closure = null;
 
-    private final List<String> argumentNames;
-
     public static final String FIELD_ARGUMENT_PREFIX = "function-argument-";
     public static final String FIELD_RETURN = "function-return";
     public static final String FIELD_THIS = "function-this";
 
     private FunctionNode(List<String> argumentNames, UnionFindSolver solver) {
         super(solver);
-        this.argumentNames = argumentNames;
         this.returnNode = new EmptyNode(solver);
         this.thisNode = new EmptyNode(solver);
         for (int i = 0; i < argumentNames.size(); i++) {
-            EmptyNode node = new EmptyNode(solver);
+            UnionNode node = new NameNode(solver, argumentNames.get(i));
             arguments.add(node);
             addField(FIELD_ARGUMENT_PREFIX + i, node);
         }
@@ -54,29 +51,34 @@ public class FunctionNode extends UnionNodeWithFields {
     }
 
     public static FunctionNode create(FunctionExpression function, UnionFindSolver solver) {
-        FunctionNode result = new FunctionNode(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()), solver);
-        return result;
+        return new FunctionNode(function.getArguments().stream().map(Identifier::getName).collect(Collectors.toList()), solver);
     }
 
     public static FunctionNode create(Snap.Obj closure, UnionFindSolver solver) {
         String type = closure.function.type;
-        if (type.equals("user")) {
-            FunctionNode result = create(closure.function.astNode, solver);
-            result.closure = closure;
-            return result;
-        } else if (type.equals("unknown") || type.equals("native")) {
-            FunctionNode result = create(0, solver);
-            result.closure = closure;
-            return result;
-        } else if (type.equals("bind")) {
-            int boundArguments = closure.function.arguments.size() - 1;
-            List<Identifier> allArguments = closure.function.target.function.astNode.getArguments();
-            List<Identifier> freeArguments = allArguments.subList(boundArguments, allArguments.size());
-            FunctionNode result = create(freeArguments.stream().map(Identifier::getName).collect(Collectors.toList()), solver);
-            result.closure = closure;
-            return result;
+        switch (type) {
+            case "user": {
+                FunctionNode result = create(closure.function.astNode, solver);
+                result.closure = closure;
+                return result;
+            }
+            case "unknown":
+            case "native": {
+                FunctionNode result = create(0, solver);
+                result.closure = closure;
+                return result;
+            }
+            case "bind": {
+                int boundArguments = closure.function.arguments.size() - 1;
+                List<Identifier> allArguments = closure.function.target.function.astNode.getArguments();
+                List<Identifier> freeArguments = allArguments.subList(boundArguments, allArguments.size());
+                FunctionNode result = create(freeArguments.stream().map(Identifier::getName).collect(Collectors.toList()), solver);
+                result.closure = closure;
+                return result;
+            }
+            default:
+                throw new RuntimeException();
         }
-        throw new RuntimeException();
     }
 
     public static FunctionNode create(Snap.Obj closure, List<String> argumentNames, UnionFindSolver solver) {
@@ -87,12 +89,7 @@ public class FunctionNode extends UnionNodeWithFields {
 
     @Override
     public void addTo(UnionClass unionClass) {
-        ArrayList<UnionFeature.FunctionFeature.Argument> arguments = new ArrayList<>();
-        for (int i = 0; i < this.arguments.size(); i++) {
-            UnionNode node = this.arguments.get(i);
-            String name = this.argumentNames.get(i);
-            arguments.add(new UnionFeature.FunctionFeature.Argument(name, node));
-        }
+        ArrayList<UnionNode> arguments = new ArrayList<>(this.arguments);
 
         UnionFeature.FunctionFeature functionFeature = new UnionFeature.FunctionFeature(this.thisNode, this.returnNode, arguments, this.closure);
         UnionFeature feature = unionClass.getFeature();

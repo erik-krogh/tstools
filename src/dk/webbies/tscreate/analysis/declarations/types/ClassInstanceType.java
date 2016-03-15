@@ -1,12 +1,18 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Created by Erik Krogh Kristensen on 18-09-2015.
  */
 public class ClassInstanceType extends DeclarationType {
     public DeclarationType clazz;
 
-    public ClassInstanceType(DeclarationType clazz) {
+    public ClassInstanceType(DeclarationType clazz, Set<String> names) {
+        super(names);
         if (clazz == null) {
             throw new NullPointerException();
         }

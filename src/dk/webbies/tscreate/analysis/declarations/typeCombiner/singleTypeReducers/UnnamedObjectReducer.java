@@ -7,6 +7,7 @@ import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -51,6 +52,6 @@ public class UnnamedObjectReducer extends SameTypeReducer<UnnamedObjectType> {
             }
         }
 
-        return new UnnamedObjectType(result);
+        return new UnnamedObjectType(result, Util.concatSet(one.getNames(), two.getNames()));
     }
 }

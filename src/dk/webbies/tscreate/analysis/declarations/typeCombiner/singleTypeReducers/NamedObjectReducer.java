@@ -1,7 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeMultiReducer;
-import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;

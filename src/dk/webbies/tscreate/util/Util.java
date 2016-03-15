@@ -253,8 +253,7 @@ public class Util {
     }
 
 
-    public static <A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a,
-                                                Stream<? extends B> b) {
+    public static <A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a, Stream<? extends B> b) {
         return zip(a, b, Pair::new);
     }
 
@@ -263,14 +262,10 @@ public class Util {
         return acc;
     }
 
-    ;
-
     public static <E> ArrayList<E> reduceList(ArrayList<E> acc, ArrayList<E> elem) {
         acc.addAll(elem);
         return acc;
     }
-
-    ;
 
     public static <E> Set<E> reduceSet(Set<E> acc, Set<E> elem) {
         acc.addAll(elem);
@@ -340,6 +335,18 @@ public class Util {
     }
 
     @SafeVarargs
+    public static <T> Set<T> concatSet(Collection<T>... collections) {
+        HashSet<T> result = new HashSet<>();
+        for (Collection<T> collection : collections) {
+            if (collection == null) {
+                continue;
+            }
+            result.addAll(collection);
+        }
+        return result;
+    }
+
+    @SafeVarargs
     public static <T> List<T> concat(Collection<T>... collections) {
         ArrayList<T> result = new ArrayList<>();
         for (Collection<T> collection : collections) {
@@ -349,5 +356,9 @@ public class Util {
             result.addAll(collection);
         }
         return result;
+    }
+
+    public static <T> Set<T> createSet(T... elements) {
+        return new HashSet<>(Arrays.asList(elements));
     }
 }

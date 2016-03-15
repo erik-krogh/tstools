@@ -7,6 +7,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,7 @@ public class ClassType extends DeclarationType{
     private LibraryClass libraryClass;
 
     public ClassType(String name, DeclarationType constructorType, Map<String, DeclarationType> properties, Map<String, DeclarationType> staticFields, LibraryClass libraryClass) {
+        super(Collections.EMPTY_SET); // <- Got the name elsewhere.
         this.constructorType = constructorType;
         this.prototypeFields = properties;
         this.name = name;

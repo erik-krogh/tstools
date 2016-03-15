@@ -36,8 +36,8 @@ public class DynamicAccessUnnamedObjectReducer implements SingleTypeReducer<Dyna
             List<DeclarationType> indexTypes = obj.getDeclarations().entrySet().stream().filter(entry -> Util.isInteger(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
             indexTypes.add(dynamicAccess.getReturnType());
 
-            UnnamedObjectType resultUnnamed = new UnnamedObjectType(obj.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-            DynamicAccessType resultDynamic = new DynamicAccessType(dynamicAccess.getLookupType(), new CombinationType(combiner, indexTypes));
+            UnnamedObjectType resultUnnamed = new UnnamedObjectType(obj.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), obj.getNames());
+            DynamicAccessType resultDynamic = new DynamicAccessType(dynamicAccess.getLookupType(), new CombinationType(combiner, indexTypes), dynamicAccess.getNames());
 
             return new UnionDeclarationType(resultUnnamed, resultDynamic);
         } else {

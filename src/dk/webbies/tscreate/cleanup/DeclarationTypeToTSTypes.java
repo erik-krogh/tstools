@@ -10,6 +10,8 @@ import dk.webbies.tscreate.util.Pair;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.*;
+
 /**
  * Created by erik1 on 11-03-2016.
  */
@@ -90,7 +92,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                 t.setDeclaredProperties(convertProperties(clazz.getStaticFields()));
 
                 Signature constructor = toSignature(clazz.getConstructorType());
-                t.setDeclaredConstructSignatures(Collections.singletonList(constructor));
+                t.setDeclaredConstructSignatures(singletonList(constructor));
 
                 dk.au.cs.casa.typescript.types.InterfaceType objectType = new dk.au.cs.casa.typescript.types.InterfaceType();
                 objectType.setDeclaredProperties(convertProperties(clazz.getPrototypeFields()));
@@ -100,7 +102,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                 if (superClass != null) {
                     superClass = superClass.resolve();
                     if (superClass instanceof ClassType) {
-                        objectType.setBaseTypes(Collections.singletonList(new ClassInstanceType(superClass).accept(DeclarationTypeToTSTypes.this)));
+                        objectType.setBaseTypes(singletonList(new ClassInstanceType(superClass, EMPTY_SET).accept(DeclarationTypeToTSTypes.this)));
                     } else {
                         throw new RuntimeException();
                     }
@@ -121,7 +123,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
         }
 
         private void addFunctionToInterface(dk.au.cs.casa.typescript.types.InterfaceType t, FunctionType type) {
-            t.setDeclaredCallSignatures(Collections.singletonList(toSignature(type)));
+            t.setDeclaredCallSignatures(singletonList(toSignature(type)));
         }
 
         private Map<FunctionType, Signature> signatureCache = new HashMap<>();
@@ -201,7 +203,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
             case NON_VOID: return new SimpleType(SimpleTypeKind.Any);
             case NUMBER: return new SimpleType(SimpleTypeKind.Number);
             case STRING: return new SimpleType(SimpleTypeKind.String);
-            case STRING_OR_NUMBER: return new UnionDeclarationType(PrimitiveDeclarationType.String(), PrimitiveDeclarationType.Number()).accept(this);
+            case STRING_OR_NUMBER: return new UnionDeclarationType(PrimitiveDeclarationType.String(EMPTY_SET), PrimitiveDeclarationType.Number(EMPTY_SET)).accept(this);
             case VOID: return new SimpleType(SimpleTypeKind.Void);
         }
         throw new RuntimeException();

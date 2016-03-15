@@ -12,9 +12,11 @@ import java.util.stream.Collectors;
 public abstract class DeclarationType {
     private static int instanceCounter = 0;
     public final int counter;
+    private Set<String> names;
 
-    public DeclarationType() {
+    public DeclarationType(Set<String> names) {
         this.counter = instanceCounter++;
+        this.names = names;
     }
 
     public abstract <T> T accept(DeclarationTypeVisitor<T> visitor);
@@ -35,6 +37,13 @@ public abstract class DeclarationType {
         }
     }
 
+    public Set<String> getNames() {
+        return names;
+    }
+
+    public void setNames(Set<String> names) {
+        this.names = names;
+    }
 
     private FindReachableTarjanNode reachableTypesTarjanNode = new FindReachableTarjanNode();
 
@@ -42,8 +51,9 @@ public abstract class DeclarationType {
         if (this instanceof UnresolvedDeclarationType) {
             UnresolvedDeclarationType unresolved = (UnresolvedDeclarationType) this;
             if (unresolved.isResolved()) {
-                return Arrays.asList(unresolved.getResolvedType());
+                return Collections.singletonList(unresolved.getResolvedType());
             } else {
+                //noinspection unchecked
                 return Collections.EMPTY_LIST;
             }
         } else if (this instanceof CombinationType) {
@@ -64,6 +74,7 @@ public abstract class DeclarationType {
             }
             return result;
         }
+        //noinspection unchecked
         return Collections.EMPTY_LIST;
     }
 

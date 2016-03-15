@@ -5,8 +5,10 @@ import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -30,15 +32,22 @@ public class FunctionReducer extends SameTypeReducer<FunctionType> {
         return one;
     }
 
-    public static String getBestArgumentName(List<String> names) {
+    public static String getBestArgumentName(Collection<String> names) {
         if (names.isEmpty()) {
             throw new RuntimeException();
         } else if (names.size() == 1) {
             return names.iterator().next();
         } else {
-            String name = names.get(0);
-            for (int i = 1; i < names.size(); i++) {
-                name = getBestArgumentName(name, names.get(i));
+            String name = null;
+            boolean first = true;
+            for (String newName : names) {
+                if (first) {
+                    name = newName;
+                    first = false;
+                } else {
+                    assert name != null;
+                    name = getBestArgumentName(name, newName);
+                }
             }
             return name;
         }
@@ -73,7 +82,7 @@ public class FunctionReducer extends SameTypeReducer<FunctionType> {
             arguments.add(arg);
         }
 
-        FunctionType result = new FunctionType(returnType, arguments);
+        FunctionType result = new FunctionType(returnType, arguments, Util.concatSet(one.getNames(), two.getNames()));
 
         result.minArgs = Math.min(one.minArgs, two.minArgs);
 

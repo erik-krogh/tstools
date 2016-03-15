@@ -245,7 +245,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         if (identifier.getDeclaration() == null) {
             throw new RuntimeException("Cannot have null declarations");
         }
-        return solver.union(get(identifier), get(identifier.getDeclaration()));
+        return solver.union(get(identifier), get(identifier.getDeclaration()), new NameNode(solver, identifier.getName()));
     }
 
     @Override

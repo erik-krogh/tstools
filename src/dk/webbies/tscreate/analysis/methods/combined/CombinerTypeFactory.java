@@ -23,11 +23,11 @@ public class CombinerTypeFactory extends TypeFactory {
         super(globalObject, libraryClasses, options, nativeClasses, typeAnalysis);
     }
 
-    private Map<Snap.Obj, List<UnionFeature.FunctionFeature>> calledRegisterFunction = new HashMap<>();
+    private Map<Snap.Obj, List<UnionFeature>> calledRegisterFunction = new HashMap<>();
     @Override
-    public void registerFunction(Snap.Obj closure, List<UnionFeature.FunctionFeature> features) {
+    public void registerFunction(Snap.Obj closure, List<UnionFeature> features) {
         if (calledRegisterFunction.containsKey(closure)) {
-            List<UnionFeature.FunctionFeature> result = new ArrayList<>();
+            List<UnionFeature> result = new ArrayList<>();
             result.addAll(calledRegisterFunction.get(closure));
             result.addAll(features);
             super.registerFunction(closure, result);

@@ -42,7 +42,7 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
                 return null;
             } else {
                 HashMap<String, DeclarationType> declarations = new HashMap<>(object.getDeclarations());
-                UnnamedObjectType newObject = new UnnamedObjectType(declarations);
+                UnnamedObjectType newObject = new UnnamedObjectType(declarations, object.getNames());
                 for (String matchingProperty : matchingProperties) {
                     declarations.remove(matchingProperty);
                 }

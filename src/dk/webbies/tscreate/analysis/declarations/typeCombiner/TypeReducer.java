@@ -7,6 +7,7 @@ import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.function.Function;
@@ -106,12 +107,12 @@ public class TypeReducer {
         specialPrimitives.put(PrimitiveDeclarationType.Type.VOID, other -> other);
         specialPrimitives.put(PrimitiveDeclarationType.Type.NON_VOID, other -> {
             if (other instanceof PrimitiveDeclarationType &&  ((PrimitiveDeclarationType)other).getType() == PrimitiveDeclarationType.Type.VOID) {
-                return PrimitiveDeclarationType.NonVoid();
+                return PrimitiveDeclarationType.NonVoid(Collections.EMPTY_SET);
             } else {
                 return other;
             }
         });
-        specialPrimitives.put(PrimitiveDeclarationType.Type.ANY, other -> PrimitiveDeclarationType.Any());
+        specialPrimitives.put(PrimitiveDeclarationType.Type.ANY, other -> PrimitiveDeclarationType.Any(Collections.EMPTY_SET));
     }
 
 
@@ -122,10 +123,14 @@ public class TypeReducer {
         }
 
         if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) one).getType())) {
-            return specialPrimitives.get(((PrimitiveDeclarationType) one).getType()).apply(two);
+            DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) one).getType()).apply(two);
+            result.setNames(Util.concatSet(one.getNames(), two.getNames()));
+            return result;
         }
         if (two instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) two).getType())) {
-            return specialPrimitives.get(((PrimitiveDeclarationType) two).getType()).apply(one);
+            DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) two).getType()).apply(one);
+            result.setNames(Util.concatSet(one.getNames(), two.getNames()));
+            return result;
         }
 
         Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>> typePair = new Pair<>(one.getClass(), two.getClass());
@@ -222,7 +227,7 @@ public class TypeReducer {
         extractInterfaces(types);
 
         if (types.size() == 0) {
-            return PrimitiveDeclarationType.Void();
+            return PrimitiveDeclarationType.Void(Collections.EMPTY_SET);
         } else if (types.size() == 1) {
             return types.get(0);
         } else {
@@ -245,10 +250,13 @@ public class TypeReducer {
                 interfaceParts.add(type);
             }
         }
+
+        Set<String> interfaceNames = interfaceParts.stream().map(DeclarationType::getNames).reduce(new HashSet<>(), Util::reduceSet);
+
         if (options.reduceNothing) {
             types.removeAll(interfaceParts);
             for (DeclarationType part : interfaceParts) {
-                InterfaceType result = new InterfaceType();
+                InterfaceType result = new InterfaceType(interfaceNames);
                 if (part instanceof DynamicAccessType) {
                     assert result.dynamicAccess == null;
                     result.dynamicAccess = (DynamicAccessType) part;
@@ -260,7 +268,7 @@ public class TypeReducer {
         } else {
             if (interfaceParts.size() >= 2 || hadDynamicAccess) {
                 types.removeAll(interfaceParts);
-                InterfaceType result = new InterfaceType();
+                InterfaceType result = new InterfaceType(interfaceNames);
                 types.add(result);
                 for (DeclarationType part : interfaceParts) {
                     populateInterface(result, part);

@@ -5,6 +5,7 @@ import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.DynamicAccessType;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,6 @@ public class DynamicAccessReducer extends SameTypeReducer<DynamicAccessType> {
     public DynamicAccessType reduceIt(DynamicAccessType one, DynamicAccessType two) {
         CombinationType returnType = new CombinationType(combiner, one.getReturnType(), two.getReturnType());
         CombinationType lookupType = new CombinationType(combiner, one.getLookupType(), two.getLookupType());
-        return new DynamicAccessType(lookupType, returnType);
+        return new DynamicAccessType(lookupType, returnType, Util.concatSet(one.getNames(), two.getNames()));
     }
 }

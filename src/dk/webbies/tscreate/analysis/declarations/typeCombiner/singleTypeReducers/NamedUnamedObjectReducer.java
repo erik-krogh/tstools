@@ -45,7 +45,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
                 indexTypes.add(named.indexType);
 
                 NamedObjectType resultNamed = new NamedObjectType(named.getName(), named.isBaseType, new CombinationType(combiner, indexTypes));
-                UnnamedObjectType resultUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                UnnamedObjectType resultUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), unnamedObjectType.getNames());
                 return new UnionDeclarationType(resultNamed, resultUnnamed); // This is OK, it will run again and reach the below, since we run until fixpoint.
             }
         }
@@ -55,7 +55,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
         } else if (unnamedObjectType.getDeclarations().size() == keysNotAccountedFor.size()){
             return null;
         } else {
-            UnnamedObjectType newUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().keySet().stream().filter(keysNotAccountedFor::contains).collect(Collectors.toMap(Function.identity(), (key) -> unnamedObjectType.getDeclarations().get(key))));
+            UnnamedObjectType newUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().keySet().stream().filter(keysNotAccountedFor::contains).collect(Collectors.toMap(Function.identity(), (key) -> unnamedObjectType.getDeclarations().get(key))), unnamedObjectType.getNames());
             return new UnionDeclarationType(named, newUnnamed);
         }
     }

@@ -1,10 +1,10 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.SameTypeReducer;
-import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.util.Pair;
+import dk.webbies.tscreate.util.Util;
 
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +54,7 @@ public class PrimitiveReducer extends SameTypeReducer<PrimitiveDeclarationType> 
             return one;
         }
         if (reductionRules.containsKey(new Pair<>(one.getType(), two.getType()))) {
-            return PrimitiveDeclarationType.fromType(reductionRules.get(new Pair<>(one.getType(), two.getType())));
+            return PrimitiveDeclarationType.fromType(reductionRules.get(new Pair<>(one.getType(), two.getType())), Util.concatSet(one.getNames(), two.getNames()));
         } else {
             throw new RuntimeException("Dont know how to reduce primitive " + one.getType() + " with " + two.getType());
         }

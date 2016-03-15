@@ -6,6 +6,8 @@ import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.Collections;
 
+import static java.util.Collections.EMPTY_SET;
+
 /**
  * Created by Erik Krogh Kristensen on 08-02-2016.
  */
@@ -32,31 +34,31 @@ public class DumbPrimitiveFactory implements PrimitiveNode.Factory {
     }
 
     public UnionNode number() {
-        return gen(PrimitiveDeclarationType.Number(), "Number");
+        return gen(PrimitiveDeclarationType.Number(EMPTY_SET), "Number");
     }
 
     public UnionNode undefined() {
-        return gen(PrimitiveDeclarationType.Void());
+        return gen(PrimitiveDeclarationType.Void(EMPTY_SET));
     }
 
     public UnionNode bool() {
-        return gen(PrimitiveDeclarationType.Boolean(), "Boolean");
+        return gen(PrimitiveDeclarationType.Boolean(EMPTY_SET), "Boolean");
     }
 
     public UnionNode string() {
-        return gen(PrimitiveDeclarationType.String(), "String");
+        return gen(PrimitiveDeclarationType.String(EMPTY_SET), "String");
     }
 
     public UnionNode any() {
-        return gen(PrimitiveDeclarationType.Any());
+        return gen(PrimitiveDeclarationType.Any(EMPTY_SET));
     }
 
     public UnionNode stringOrNumber() {
-        return gen(PrimitiveDeclarationType.StringOrNumber(), "Number", "String");
+        return gen(PrimitiveDeclarationType.StringOrNumber(EMPTY_SET), "Number", "String");
     }
 
     public UnionNode nonVoid() {
-        return gen(PrimitiveDeclarationType.NonVoid());
+        return gen(PrimitiveDeclarationType.NonVoid(EMPTY_SET));
     }
 
     public UnionNode function() {

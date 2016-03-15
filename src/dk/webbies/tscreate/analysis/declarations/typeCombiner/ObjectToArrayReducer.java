@@ -22,8 +22,8 @@ public class ObjectToArrayReducer implements SameTypeSingleInstanceReducer<Unnam
         if (object.getDeclarations().keySet().stream().map(Util::isInteger).filter(isInt -> isInt).count() >= 3) {
             List<DeclarationType> indexType = object.getDeclarations().entrySet().stream().filter(entry -> Util.isInteger(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
 
-            UnnamedObjectType resultObject = new UnnamedObjectType(object.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-            DeclarationType resultArray = new DynamicAccessType(PrimitiveDeclarationType.Number(), new CombinationType(combiner, indexType));
+            UnnamedObjectType resultObject = new UnnamedObjectType(object.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), object.getNames());
+            DeclarationType resultArray = new DynamicAccessType(PrimitiveDeclarationType.Number(object.getNames()), new CombinationType(combiner, indexType), object.getNames());
             return new UnionDeclarationType(resultObject, resultArray);
         }
         return null;

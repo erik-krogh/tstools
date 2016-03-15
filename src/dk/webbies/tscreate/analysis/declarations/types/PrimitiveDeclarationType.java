@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
+import java.util.Set;
+
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
@@ -8,32 +10,36 @@ public class PrimitiveDeclarationType extends DeclarationType {
         return type;
     }
 
-    public static PrimitiveDeclarationType NonVoid() {
-        return new PrimitiveDeclarationType(Type.NON_VOID);
+    public static PrimitiveDeclarationType Void(Set<String> names) {
+        return new PrimitiveDeclarationType(Type.VOID, names);
     }
 
-    public static PrimitiveDeclarationType Any() {
-        return new PrimitiveDeclarationType(Type.ANY);
+    public static PrimitiveDeclarationType NonVoid(Set<String> names) {
+        return new PrimitiveDeclarationType(Type.NON_VOID, names);
     }
 
-    public static PrimitiveDeclarationType Number() {
-        return new PrimitiveDeclarationType(Type.NUMBER);
+    public static PrimitiveDeclarationType Any(Set<String> names) {
+        return new PrimitiveDeclarationType(Type.ANY, names);
     }
 
-    public static PrimitiveDeclarationType Boolean() {
-        return new PrimitiveDeclarationType(Type.BOOLEAN);
+    public static PrimitiveDeclarationType Number(Set<String> names) {
+        return new PrimitiveDeclarationType(Type.NUMBER, names);
     }
 
-    public static PrimitiveDeclarationType String() {
-        return new PrimitiveDeclarationType(Type.STRING);
+    public static PrimitiveDeclarationType Boolean(Set<String> names) {
+        return new PrimitiveDeclarationType(Type.BOOLEAN, names);
     }
 
-    public static PrimitiveDeclarationType StringOrNumber() {
-        return new PrimitiveDeclarationType(Type.STRING_OR_NUMBER);
+    public static PrimitiveDeclarationType String(Set<String> names) {
+        return new PrimitiveDeclarationType(Type.STRING, names);
     }
 
-    public static PrimitiveDeclarationType fromType(Type type) {
-        return new PrimitiveDeclarationType(type);
+    public static PrimitiveDeclarationType StringOrNumber(Set<String> names) {
+        return new PrimitiveDeclarationType(Type.STRING_OR_NUMBER, names);
+    }
+
+    public static PrimitiveDeclarationType fromType(Type type, Set<String> names) {
+        return new PrimitiveDeclarationType(type, names);
     }
 
     public enum Type {
@@ -53,7 +59,8 @@ public class PrimitiveDeclarationType extends DeclarationType {
     }
 
     private final Type type;
-    private PrimitiveDeclarationType(Type type) {
+    private PrimitiveDeclarationType(Type type, Set<String> names) {
+        super(names);
         this.type = type;
     }
 
@@ -70,9 +77,5 @@ public class PrimitiveDeclarationType extends DeclarationType {
 
     public String getPrettyString() {
         return this.type.prettyString;
-    }
-
-    public static PrimitiveDeclarationType Void() {
-        return new PrimitiveDeclarationType(Type.VOID);
     }
 }
