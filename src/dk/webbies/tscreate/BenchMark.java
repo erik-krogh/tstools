@@ -315,7 +315,6 @@ public class BenchMark {
 
     public static final BenchMark hammer = evaluate(() -> {
         Options options = new Options();
-        options.debugPrint = true;
         BenchMark bench = new BenchMark("Hammer.js", "tests/hammer/hammer.js", "tests/hammer/hammer.d.ts", options, ES5);
         bench.testFiles.add("tests/hammer/myTest.js"); // Kind of cheating.
         return bench;
