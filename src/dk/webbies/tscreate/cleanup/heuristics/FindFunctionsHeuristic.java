@@ -44,6 +44,11 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
         return replacements;
     }
 
+    @Override
+    public String getDescription() {
+        return "{apply:..., call:...} -> Function";
+    }
+
     private void runOnObject(ArrayListMultimap<DeclarationType, DeclarationType> replacements, UnnamedObjectType object, DeclarationType fromType) {
         if (object.getDeclarations().size() == 1) {
             String key = object.getDeclarations().keySet().iterator().next();

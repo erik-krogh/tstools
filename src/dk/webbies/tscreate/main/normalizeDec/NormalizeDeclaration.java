@@ -31,11 +31,7 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.parseNativ
  */
 public class NormalizeDeclaration {
     public static void main(String[] args) throws IOException {
-        normalize(BenchMark.ember);
         for (BenchMark benchmark : BenchMark.allBenchmarks) {
-            if (benchmark == BenchMark.ember) {
-                continue;
-            }
             normalize(benchmark);
         }
 

@@ -47,13 +47,13 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
+        /*blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.UNIFICATION));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.MIXED_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.ANDERSON_CONTEXT_SENSITIVE));
-        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));*/
 
         blackList.add(new Pair<>(BenchMark.angular, Options.StaticAnalysisMethod.OLD_UNIFICATION));
 

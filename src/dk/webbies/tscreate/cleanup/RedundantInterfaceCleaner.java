@@ -6,6 +6,7 @@ import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.cleanup.heuristics.CombineInterfacesHeuristic;
 import dk.webbies.tscreate.cleanup.heuristics.FindFunctionsHeuristic;
 import dk.webbies.tscreate.cleanup.heuristics.ReplaceInterfaceWithClassInstanceHeuristic;
 import dk.webbies.tscreate.cleanup.heuristics.ReplacementHeuristic;
@@ -24,18 +25,19 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClas
  */
 public class RedundantInterfaceCleaner {
     private final Map<String, DeclarationType> declaration;
-    private final NativeClassesMap nativeClasses;
     private final TypeReducer reducer;
     private final List<ReplacementHeuristic> heuristics = new ArrayList<>();
 
     public RedundantInterfaceCleaner(Map<String, DeclarationType> declaration, NativeClassesMap nativeClasses, TypeReducer reducer) {
         this.declaration = declaration;
-        this.nativeClasses = nativeClasses;
         this.reducer = reducer;
+
+        DeclarationTypeToTSTypes decsToTS = new DeclarationTypeToTSTypes(nativeClasses);
 
         // The heuristics
         this.heuristics.add(new FindFunctionsHeuristic());
-        this.heuristics.add(new ReplaceInterfaceWithClassInstanceHeuristic(nativeClasses, reducer));
+        this.heuristics.add(new ReplaceInterfaceWithClassInstanceHeuristic(nativeClasses, reducer, decsToTS));
+        this.heuristics.add(new CombineInterfacesHeuristic(nativeClasses, decsToTS));
 
     }
 
@@ -60,10 +62,12 @@ public class RedundantInterfaceCleaner {
                 if (replacements == null || replacements.isEmpty()) {
                     continue;
                 }
+                System.out.println("Found redundant types using: " + heuristic.getDescription());
                 progress = true;
                 Set<DeclarationType> everyThing = collector.getEveryThing();
                 InplaceDeclarationReplacer replacer = new InplaceDeclarationReplacer(replacements, everyThing, reducer);
                 everyThing.forEach(dec -> dec.accept(replacer));
+                break;
             }
         }
     }
@@ -82,6 +86,7 @@ public class RedundantInterfaceCleaner {
         options.maxEvaluationDepth = 4;
         options.debugPrint = true;
         options.evaluationSkipExcessProperties = false;
+        options.evaluationAnyAreOK = true;
         Set<Type> nativeTypes = nativeClasses.nativeTypes();
         return DeclarationEvaluator.evaluate(options, truthDeclaration, condidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
     }

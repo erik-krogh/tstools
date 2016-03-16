@@ -9,4 +9,6 @@ import dk.webbies.tscreate.cleanup.CollectEveryTypeVisitor;
  */
 public interface ReplacementHeuristic {
     Multimap<DeclarationType, DeclarationType> findReplacements(CollectEveryTypeVisitor collected);
+
+    String getDescription();
 }

@@ -219,7 +219,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             if (realTypeName.equals(myTypeName)) {
                 addTruePositive(prefix, depth + 1, "wrong native type");
             } else {
-                addFalseNegative(depth + 1, "wrong native type", prefix);
+                addFalseNegative(prefix, depth + 1, "wrong native type");
             }
             callback.run();
             return;
@@ -259,13 +259,17 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
 
         if (type instanceof SimpleType) {
-            addFalseNegative(depth, "got simple type, expected interface", arg.prefix);
+            if (((SimpleType) type).getKind() == SimpleTypeKind.Any && options.evaluationAnyAreOK) {
+                addTruePositive(arg.prefix, depth, "any vs. interface");
+            } else {
+                addFalseNegative(arg.prefix, depth, "got simple type, expected interface");
+            }
             arg.callback.run();
             return null;
         }
 
         if (type instanceof TupleType) {
-            addFalseNegative(depth, "got tuple type, expected interface", arg.prefix);
+            addFalseNegative(arg.prefix, depth, "got tuple type, expected interface");
             arg.callback.run();
             return null;
         }
@@ -290,7 +294,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth, arg.callback), queue);
         for (String property : properties) {
             if (!myProperties.containsKey(property)) {
-                addFalseNegative(depth + 1, "property missing: " + property, arg.prefix);
+                addFalseNegative(arg.prefix, depth + 1, "property missing: " + property);
             } else if (!realProperties.containsKey(property)) {
                 if (!options.evaluationSkipExcessProperties) {
                     addFalsePositive(arg.prefix, depth + 1, "excess property: " + property);
@@ -386,7 +390,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             return;
         }
         if (!realSignatures.isEmpty() && mySignatures.isEmpty()) {
-            addFalseNegative(depth, "should be a " + description, prefix);
+            addFalseNegative(prefix, depth, "should be a " + description);
             callback.run();
             return;
         }
@@ -406,7 +410,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 if (i >= realSignature.getParameters().size()) {
                     addFalsePositive(prefix + ".[" + description + "]", depth + 1, "to many arguments for function");
                 } else if (i >= mySignature.getParameters().size()) {
-                    addFalseNegative(depth + 1, "to few arguments for function", prefix + ".[" + description + "]");
+                    addFalseNegative(prefix + ".[" + description + "]", depth + 1, "to few arguments for function");
                 } else {
                     withRecordEvaluation().nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[arg" + i + "]");
                 }
@@ -439,7 +443,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
     private void evaluateIndexers(Type realType, Type myType, Runnable callback, String prefix) {
         if (realType != null && myType == null) {
-            addFalseNegative(depth + 1, "missing indexer", prefix);
+            addFalseNegative(prefix, depth + 1, "missing indexer");
             callback.run();
         } else if (myType != null && realType == null) {
             addFalsePositive(prefix, depth + 1, "excess indexer");
@@ -460,8 +464,15 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     @Override
     public Void visit(SimpleType real, Arg arg) {
         Type type = arg.type;
+        if (options.evaluationAnyAreOK) {
+            if (real.getKind() == SimpleTypeKind.Any || type instanceof SimpleType && ((SimpleType) type).getKind() == SimpleTypeKind.Any) {
+                addTruePositive(arg.prefix, depth, "any!");
+                arg.callback.run();
+                return null;
+            }
+        }
         if (!real.equals(type)) {
-            addFalseNegative(depth, "wrong simple type, " + real + " / " + arg.type, arg.prefix);
+            addFalseNegative(arg.prefix, depth, "wrong simple type, " + real + " / " + arg.type);
         } else {
             addTruePositive(arg.prefix, depth, "right simple type: " + real);
         }
@@ -475,7 +486,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             // A tuple is an array, and since i don't handle generics, i say that an Array is good enough.
             addTruePositive(arg.prefix, depth, "tuple was array (and I'm happy with that)");
         } else {
-            addFalseNegative(depth, "tuple wasn't an array", arg.prefix);
+            addFalseNegative(arg.prefix, depth, "tuple wasn't an array");
         }
         arg.callback.run();
         return null;
@@ -513,7 +524,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         throw new RuntimeException();
     }
 
-    private void addFalseNegative(int depth, String description, String prefix) {
+    private void addFalseNegative(String prefix, int depth, String description) {
         if (recordEvaluation) {
             evaluation.addFalseNegative(depth, description, prefix);
         }

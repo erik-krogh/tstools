@@ -80,7 +80,14 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             if (foundReplacements.size() != 1) {
                 throw new RuntimeException("Cycles and the like should be gone by now.");
             }
-            return findReplacement(foundReplacements.iterator().next());
+            DeclarationType next = foundReplacements.iterator().next();
+            if (next == type) {
+                return next;
+            }
+            if (Thread.currentThread().getStackTrace().length > 200) {
+                System.out.println();
+            }
+            return findReplacement(next);
         } else {
             return type;
         }

@@ -51,6 +51,7 @@ public class Options {
     public boolean combineInterfacesAfterAnalysis = true;
 
     public boolean neverPrintModules = false;
+    public boolean evaluationAnyAreOK = false; // In the evaluation, any and anything is a true-positive.
 
     public enum StaticAnalysisMethod {
         COMBINED("combined", "combined"),

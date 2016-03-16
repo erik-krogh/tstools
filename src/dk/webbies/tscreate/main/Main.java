@@ -29,6 +29,7 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ public class Main {
 //            generateDeclarations(BenchMark.allBenchmarks);
 //            tsCheck();
             // FIXME: SomeThing about classes and DeclarationTypeToTSTypes doesn't work. Try with test.js and some classes.
-            runAnalysis(BenchMark.async);
+            runAnalysis(BenchMark.hammer);
 //            benchAll();
 //            printTable();
 
@@ -68,7 +69,7 @@ public class Main {
 //            compareMethods(benchs, asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE), 30 * 60 * 1000);
 
 //            compareMethods(allBenchmarks, methods, 20 * 60 * 1000);
-//            compareMethods(Arrays.asList(peer), methods, 10 * 60 * 1000);
+//            CompareMethods.compareMethods(Arrays.asList(handlebars), methods, 10 * 60 * 1000);
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -101,7 +102,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         if (benchMark.options.combineInterfacesAfterAnalysis) {
-            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
+//            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
