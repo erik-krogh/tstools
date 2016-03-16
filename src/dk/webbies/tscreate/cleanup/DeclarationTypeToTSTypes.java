@@ -96,7 +96,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                 Signature constructor = toSignature(clazz.getConstructorType());
                 t.setDeclaredConstructSignatures(singletonList(constructor));
 
-                t.setDeclaredProperties(convertProperties(clazz.getStaticFields()));
+                t.setDeclaredProperties(convertProperties(clazz.getPrototypeFields()));
 
                 return null;
             } else if (type instanceof ClassInstanceType) {
