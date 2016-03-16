@@ -144,7 +144,7 @@ public class TypeFactory {
             UnionNode lookupType = feature.getDynamicAccessLookupExp();
             UnionNode returnType = feature.getDynamicAccessReturnType();
             DynamicAccessType dynamicAccessType = new DynamicAccessType(getType(lookupType), getType(returnType), feature.getNames());
-            InterfaceType dynamicInterface = new InterfaceType(feature.getNames());
+            InterfaceDeclarationType dynamicInterface = new InterfaceDeclarationType(feature.getNames());
             dynamicInterface.dynamicAccess = dynamicAccessType;
             result.addType(dynamicInterface);
         }

@@ -25,6 +25,10 @@ public class FunctionType extends DeclarationType {
         this.returnType = returnType;
     }
 
+    public void setArguments(List<Argument> arguments) {
+        this.arguments = arguments;
+    }
+
     public List<Argument> getArguments() {
         return arguments;
     }

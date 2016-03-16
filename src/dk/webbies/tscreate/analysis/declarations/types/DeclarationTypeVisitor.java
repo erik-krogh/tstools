@@ -10,7 +10,7 @@ public interface DeclarationTypeVisitor<T> {
 
     T visit(UnnamedObjectType objectType);
 
-    T visit(InterfaceType interfaceType);
+    T visit(InterfaceDeclarationType interfaceType);
 
     T visit(UnionDeclarationType union);
 

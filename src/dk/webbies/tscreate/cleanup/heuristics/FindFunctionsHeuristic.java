@@ -4,7 +4,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
-import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
+import dk.webbies.tscreate.analysis.declarations.types.InterfaceDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.cleanup.CollectEveryTypeVisitor;
 import dk.webbies.tscreate.util.Util;
@@ -22,7 +22,7 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
     @Override
     public Multimap<DeclarationType, DeclarationType> findReplacements(CollectEveryTypeVisitor collected) {
         Set<UnnamedObjectType> objects = Util.cast(UnnamedObjectType.class, collected.getEverythingByType().get(UnnamedObjectType.class));
-        Set<InterfaceType> interfaces = Util.cast(InterfaceType.class, collected.getEverythingByType().get(InterfaceType.class));
+        Set<InterfaceDeclarationType> interfaces = Util.cast(InterfaceDeclarationType.class, collected.getEverythingByType().get(InterfaceDeclarationType.class));
 
         if (objects == null && interfaces == null) {
             return null;
@@ -34,7 +34,7 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
             }
         }
         if (interfaces != null) {
-            for (InterfaceType anInterface : interfaces) {
+            for (InterfaceDeclarationType anInterface : interfaces) {
                 if (anInterface.getObject() != null && anInterface.getFunction() == null) {
                     runOnObject(replacements, anInterface.getObject(), anInterface);
                 }

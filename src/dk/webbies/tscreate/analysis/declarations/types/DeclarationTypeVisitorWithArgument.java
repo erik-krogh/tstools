@@ -10,7 +10,7 @@ public interface DeclarationTypeVisitorWithArgument<T, A> {
 
     T visit(UnnamedObjectType objectType, A argument);
 
-    T visit(InterfaceType interfaceType, A argument);
+    T visit(InterfaceDeclarationType interfaceType, A argument);
 
     T visit(UnionDeclarationType union, A argument);
 

@@ -19,7 +19,7 @@ public class ClassType extends DeclarationType{
     private DeclarationType constructorType;
     private Map<String, DeclarationType> prototypeFields;
     private Map<String, DeclarationType> staticFields;
-    private final String name;
+    private String name;
     public DeclarationType superClass;
     private LibraryClass libraryClass;
 
@@ -30,6 +30,10 @@ public class ClassType extends DeclarationType{
         this.name = name;
         this.staticFields = staticFields;
         this.libraryClass = libraryClass;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setSuperClass(DeclarationType superClass) {

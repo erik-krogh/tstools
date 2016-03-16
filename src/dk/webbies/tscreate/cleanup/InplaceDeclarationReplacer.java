@@ -6,6 +6,7 @@ import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.util.Tarjan;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -14,10 +15,16 @@ import java.util.stream.Collectors;
  * Important note about this class, it does not have to do anything recursively, it is exposed to all the types one by one.
  */
 public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> {
+    private final Function<DeclarationType, DeclarationType> cleanerFunction;
     private Multimap<DeclarationType, DeclarationType> replacements;
 
     public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer) {
+        this(replacements, everyThing, reducer, Function.identity());
+    }
+
+    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer, Function<DeclarationType, DeclarationType> cleaner) {
         this.replacements = replacements;
+        this.cleanerFunction = cleaner;
 
         List<List<TypeNode>> cycles = new Tarjan<TypeNode>().getSCComponents(everyThing.stream().map(this::getNode).collect(Collectors.toList()));
         for (List<TypeNode> cycleNodes : cycles) {
@@ -27,7 +34,7 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             List<DeclarationType> cycle = cycleNodes.stream().map(TypeNode::getType).collect(Collectors.toList());
             cycle.forEach(replacements::removeAll);
 
-            CombinationType result = new CombinationType(reducer, cycle);
+            DeclarationType result = new CombinationType(reducer, cycle).getCombined();
             cycle.forEach(type -> replacements.put(type, result));
         }
     }
@@ -67,7 +74,7 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
         if (type == null) {
             return null;
         }
-        type = type.resolve();
+        type = cleanerFunction.apply(type.resolve());
         if (replacements.containsKey(type)) {
             Collection<DeclarationType> foundReplacements = replacements.get(type);
             if (foundReplacements.size() != 1) {
@@ -100,7 +107,7 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
     }
 
     @Override
-    public Void visit(InterfaceType interfaceType) {
+    public Void visit(InterfaceDeclarationType interfaceType) {
         DynamicAccessType dynamicAccess = interfaceType.getDynamicAccess();
         if (dynamicAccess != null) {
             dynamicAccess.setLookupType(findReplacement(dynamicAccess.getLookupType()));

@@ -16,7 +16,7 @@ public class CombinationType extends DeclarationType {
     private boolean hasBeenUnfolded = false;
 
     public CombinationType(TypeReducer combiner, List<DeclarationType> types) {
-        super(types.stream().map(DeclarationType::getNames).reduce(new HashSet<>(), Util::reduceSet));
+        super(types.stream().filter(Objects::nonNull).map(DeclarationType::getNames).reduce(new HashSet<>(), Util::reduceSet));
         if (combiner == null) {
             throw new NullPointerException();
         }
@@ -39,6 +39,10 @@ public class CombinationType extends DeclarationType {
         if (type != null) {
             this.types.add(type);
         }
+    }
+
+    public void addTypes(Collection<DeclarationType> types) {
+        types.forEach(this::addType);
     }
 
     private DeclarationType combined = null;
@@ -90,7 +94,7 @@ public class CombinationType extends DeclarationType {
                 return false;
             } else if (subType instanceof UnionDeclarationType) {
                 return false;
-            } else if (subType instanceof InterfaceType) {
+            } else if (subType instanceof InterfaceDeclarationType) {
                 return false;
             } else {
                 return true;

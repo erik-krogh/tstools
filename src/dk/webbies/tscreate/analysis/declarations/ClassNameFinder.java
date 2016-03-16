@@ -15,7 +15,7 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
     private final java.util.Set<DeclarationType> printsAsInterface;
     private Map<ClassType, String> classNames = new HashMap<>();
 
-    public ClassNameFinder(Map<String, DeclarationType> declarations, Map<DeclarationType, InterfaceType> printsAsInterface) {
+    public ClassNameFinder(Map<String, DeclarationType> declarations, Map<DeclarationType, InterfaceDeclarationType> printsAsInterface) {
         this.printsAsInterface = printsAsInterface.keySet();
         for (Map.Entry<String, DeclarationType> entry : declarations.entrySet()) {
             String name = entry.getKey();
@@ -52,7 +52,7 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
     }
 
     @Override
-    public Void visit(InterfaceType interfaceType, Arg argument) {
+    public Void visit(InterfaceDeclarationType interfaceType, Arg argument) {
         return null;
     }
 

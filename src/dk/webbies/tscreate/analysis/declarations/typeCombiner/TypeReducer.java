@@ -256,7 +256,7 @@ public class TypeReducer {
         if (options.reduceNothing) {
             types.removeAll(interfaceParts);
             for (DeclarationType part : interfaceParts) {
-                InterfaceType result = new InterfaceType(interfaceNames);
+                InterfaceDeclarationType result = new InterfaceDeclarationType(interfaceNames);
                 if (part instanceof DynamicAccessType) {
                     assert result.dynamicAccess == null;
                     result.dynamicAccess = (DynamicAccessType) part;
@@ -268,7 +268,7 @@ public class TypeReducer {
         } else {
             if (interfaceParts.size() >= 2 || hadDynamicAccess) {
                 types.removeAll(interfaceParts);
-                InterfaceType result = new InterfaceType(interfaceNames);
+                InterfaceDeclarationType result = new InterfaceDeclarationType(interfaceNames);
                 types.add(result);
                 for (DeclarationType part : interfaceParts) {
                     populateInterface(result, part);
@@ -277,7 +277,7 @@ public class TypeReducer {
         }
     }
 
-    private void populateInterface(InterfaceType result, DeclarationType part) {
+    private void populateInterface(InterfaceDeclarationType result, DeclarationType part) {
         if (part instanceof FunctionType) {
             assert result.function == null;
             result.function = (FunctionType) part;

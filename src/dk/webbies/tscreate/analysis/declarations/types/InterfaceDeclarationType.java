@@ -5,7 +5,7 @@ import java.util.Set;
 /**
  * Created by Erik Krogh Kristensen on 08-09-2015.
  */
-public class InterfaceType extends DeclarationType {
+public class InterfaceDeclarationType extends DeclarationType {
     public FunctionType function = null;
     public UnnamedObjectType object = null;
 
@@ -15,7 +15,7 @@ public class InterfaceType extends DeclarationType {
 
     public static int interfaceCounter = 0;
 
-    public InterfaceType(String name, Set<String> names) {
+    public InterfaceDeclarationType(String name, Set<String> names) {
         super(names);
         if (name != null) {
             this.name = name;
@@ -24,29 +24,41 @@ public class InterfaceType extends DeclarationType {
         }
     }
 
-    public InterfaceType(Set<String> names) {
+    public InterfaceDeclarationType(Set<String> names) {
         this(null, names);
     }
 
     public FunctionType getFunction() {
-        if (function == null && object == null && dynamicAccess == null) {
+        /*if (function == null && object == null && dynamicAccess == null) {
             throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
-        }
+        }*/
         return function;
     }
 
     public UnnamedObjectType getObject() {
-        if (function == null && object == null && dynamicAccess == null) {
+        /*if (function == null && object == null && dynamicAccess == null) {
             throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
-        }
+        }*/
         return object;
     }
 
     public DynamicAccessType getDynamicAccess() {
-        if (function == null && object == null && dynamicAccess == null) {
+        /*if (function == null && object == null && dynamicAccess == null) {
             throw new NullPointerException("An interface must have either an object or function associated, or have some dynamic property access");
-        }
+        }*/
         return dynamicAccess;
+    }
+
+    public void setFunction(FunctionType function) {
+        this.function = function;
+    }
+
+    public void setObject(UnnamedObjectType object) {
+        this.object = object;
+    }
+
+    public void setDynamicAccess(DynamicAccessType dynamicAccess) {
+        this.dynamicAccess = dynamicAccess;
     }
 
     @Override

@@ -2,7 +2,7 @@ package dk.webbies.tscreate.cleanup;
 
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.types.ClassType;
-import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
+import dk.webbies.tscreate.analysis.declarations.types.InterfaceDeclarationType;
 
 import java.util.*;
 
@@ -64,21 +64,21 @@ public class CollectEveryTypeVisitor implements DeclarationTypeVisitor<Void> {
     }
 
     @Override
-    public Void visit(InterfaceType interfaceType) {
+    public Void visit(InterfaceDeclarationType interfaceType) {
         if (everyThing.contains(interfaceType)) {
             return null;
         }
         add(interfaceType);
 
         // This is special, because the interfaceType is one big type, and I'm not interrested in the Object part of the interface type, I'm interested in the interface.
-        if (interfaceType.getDynamicAccess() != null) {
+        if (interfaceType.dynamicAccess != null) {
             interfaceType.getDynamicAccess().getReturnType().accept(this);
         }
-        if (interfaceType.getFunction() != null) {
+        if (interfaceType.function != null) {
             interfaceType.getFunction().getReturnType().accept(this);
             interfaceType.getFunction().getArguments().forEach(arg -> arg.getType().accept(this));
         }
-        if (interfaceType.getObject() != null) {
+        if (interfaceType.object != null) {
             interfaceType.getObject().getDeclarations().values().forEach(dec -> dec.accept(this));
         }
         return null;

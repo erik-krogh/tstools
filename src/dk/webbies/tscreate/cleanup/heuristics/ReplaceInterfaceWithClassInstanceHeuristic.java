@@ -37,7 +37,7 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
 
         Multimap<DeclarationType, DeclarationType> replacements = ArrayListMultimap.create();
 
-        List<DeclarationType> objects = Util.concat(byType.get(UnnamedObjectType.class), byType.get(InterfaceType.class), byType.get(FunctionType.class));
+        List<DeclarationType> objects = Util.concat(byType.get(UnnamedObjectType.class), byType.get(InterfaceDeclarationType.class), byType.get(FunctionType.class));
 
         // FIXME: Make sure functions and objects are not printed twice in DeclarationPrinter.
         // FIXME: Make sure union-types are "re-evaluated" when running the InplaceReplamentThunghy.
@@ -65,7 +65,6 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
                     replacements.put(candidate, combined);
                 }
 
-                System.out.println(bestPossible.second.score(true).precision + " I got two equally good replacements, and I cannot pick one");
             } else {
                 replacements.put(candidate, bestPossible.first);
             }
