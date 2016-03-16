@@ -114,7 +114,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                         Type superType = nativeClasses.typeFromName(((NamedObjectType) superClass).getName());
                         objectType.setBaseTypes(singletonList(superType));
                     } else {
-                        throw new RuntimeException(); //FIXME: This happens in underscore with mixed. And handleBars unify_cs.
+                        throw new RuntimeException();
                     }
                 }
                 return null;
