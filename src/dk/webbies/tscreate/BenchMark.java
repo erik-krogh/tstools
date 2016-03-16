@@ -230,7 +230,7 @@ public class BenchMark {
     });
 
     // The stress test to rule all stress-tests. 10MB of JavaScript, 220000 lines of code.
-    // Node goes out of memory when ts-spec-reader attempts to parse the declaration file.
+    // Node goes out of memory when ts-spec-reader attempts to parse the declaration file. // TODO: After combining interfaces, the resulting declaration file should be strictly smaller, so try again.
     /*public static final BenchMark ExtJS = evaluate(() -> {
         Options options = new Options();
         // All of these are disabled, because the program is so big, and it is needed, otherwise stuff runs out of memory/time.
@@ -241,15 +241,15 @@ public class BenchMark {
         return new BenchMark("Ext JS", "tests/extjs/ext.js", "tests/extjs/ext.d.ts", options, ES5);
     });*/
 
-    public static final BenchMark ember = evaluate(() -> {
+    /*public static final BenchMark ember = evaluate(() -> { // Somehow the JSnap crashes on this thing now. // TODO: Check out why JSNAP crash on ember.
         Options options = new Options();
         options.createInstances = false;
-        options.recordCalls = true;
+        options.recordCalls = false;
         options.debugPrint = true;
         BenchMark bench = new BenchMark("Ember.js", "tests/ember/ember.js", "tests/ember/ember.d.ts", options, ES5);
         bench.dependencies.add(Dependency.jQuery);
         return bench;
-    });
+    });*/
 
     public static final BenchMark backbone = evaluate(() -> {
         Options options = new Options();
