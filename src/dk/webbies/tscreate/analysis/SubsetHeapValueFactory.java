@@ -58,11 +58,11 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
                     setter = setterFunctionNode.arguments.get(0);
                 }
             }
-            IncludeNode result = new IncludeNode(solver, getter, setter);
+            IncludeNode result = new IncludeNode(solver, getter, setter, new NameNode(solver, property.name));
             propertyCache.put(property, result);
             return result;
         } else {
-            return innerFromValue(property.value);
+            return new IncludeNode(solver, innerFromValue(property.value), new NameNode(solver, property.name));
         }
     }
 
@@ -101,7 +101,7 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
             cache.put(obj, result);
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    objectNode.addField(property.name, solver.union(this.innerFromProperty(property), new NameNode(solver, property.name)));
+                    objectNode.addField(property.name,this.innerFromProperty(property));
                 }
             }
             return result;

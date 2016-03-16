@@ -29,7 +29,7 @@ public class HeapValueNode extends ObjectNode {
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    addField(property.name, solver.union(factory.fromProperty(property), new NameNode(solver, property.name)));
+                    addField(property.name, factory.fromProperty(property));
                 }
             }
         }
