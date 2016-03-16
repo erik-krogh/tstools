@@ -28,11 +28,10 @@ public class DeclarationParser {
     }
 
     public static NativeClassesMap parseNatives(Obj global, HashMap<Obj, LibraryClass> libraryClasses, SpecReader spec) {
-        Map<Type, String> typeNames = new HashMap<>();
 
         fixBind(global);
 
-        markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
+        Map<Type, String> typeNames = getTypeNamesMap(spec);
 
         Map<Obj, Type> prototypes = new HashMap<>();
         Map<Obj, String> namedObjects = new HashMap<>();
@@ -61,6 +60,12 @@ public class DeclarationParser {
         }
 
         return new NativeClassesMap(typeNames, prototypes, namedObjects, global, libraryClasses);
+    }
+
+    public static Map<Type, String> getTypeNamesMap(SpecReader spec) {
+        Map<Type, String> typeNames = new HashMap<>();
+        markNamedTypes((SpecReader.Node) spec.getNamedTypes(), "", typeNames);
+        return typeNames;
     }
 
     private static void fixBind(Obj global) {
@@ -199,7 +204,7 @@ public class DeclarationParser {
                 }
                 obj.function.callSignatures.addAll(type.getDeclaredCallSignatures());
                 obj.function.constructorSignatures.addAll(type.getDeclaredConstructSignatures());
-                if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype").value != null) {
+                if (!obj.function.constructorSignatures.isEmpty() && obj.getProperty("prototype") != null && obj.getProperty("prototype").value != null) {
                     this.prototypes.put((Obj)obj.getProperty("prototype").value, t);
                 }
             }
