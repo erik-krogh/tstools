@@ -60,16 +60,16 @@ public abstract class DeclarationType {
             return ((CombinationType) this).types;
         } else if (this instanceof UnionDeclarationType) {
             return ((UnionDeclarationType) this).getTypes();
-        } if (this instanceof InterfaceType) {
+        } if (this instanceof InterfaceDeclarationType) {
             List<DeclarationType> result = new ArrayList<>();
-            InterfaceType interfaceType = (InterfaceType) this;
+            InterfaceDeclarationType interfaceType = (InterfaceDeclarationType) this;
             if (interfaceType.function != null) {
                 result.add(interfaceType.function);
             }
             if (interfaceType.object != null) {
                 result.add(interfaceType.object);
             }
-            if (interfaceType.getDynamicAccess() != null) {
+            if (interfaceType.dynamicAccess != null) {
                 result.add(interfaceType.getDynamicAccess());
             }
             return result;
@@ -77,6 +77,21 @@ public abstract class DeclarationType {
         //noinspection unchecked
         return Collections.EMPTY_LIST;
     }
+
+    public void addName(String name) {
+        if (this.names == null || this.names == Collections.EMPTY_SET) {
+            this.names = new HashSet<>();
+        }
+        this.names.add(name);
+    }
+
+    public void addNames(Set<String> names) {
+        if (this.names == null || this.names == Collections.EMPTY_SET) {
+            this.names = new HashSet<>();
+        }
+        this.names.addAll(names);
+    }
+
 
     private class FindReachableTarjanNode extends Tarjan.Node<FindReachableTarjanNode> {
         @Override
