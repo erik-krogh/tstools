@@ -102,17 +102,16 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
             } else if (type instanceof ClassInstanceType) {
                 ClassInstanceType instance = (ClassInstanceType) type;
                 ClassType clazz = instance.getClazz();
-                dk.au.cs.casa.typescript.types.InterfaceType objectType = new dk.au.cs.casa.typescript.types.InterfaceType();
-                objectType.setDeclaredProperties(convertProperties(clazz.getPrototypeFields()));
+                t.setDeclaredProperties(convertProperties(clazz.getPrototypeFields()));
 
                 DeclarationType superClass = clazz.getSuperClass();
                 if (superClass != null) {
                     superClass = superClass.resolve();
                     if (superClass instanceof ClassType) {
-                        objectType.setBaseTypes(singletonList(new ClassInstanceType(superClass, EMPTY_SET).accept(DeclarationTypeToTSTypes.this)));
+                        t.setBaseTypes(singletonList(new ClassInstanceType(superClass, EMPTY_SET).accept(DeclarationTypeToTSTypes.this)));
                     } else if (superClass instanceof NamedObjectType) {
                         Type superType = nativeClasses.typeFromName(((NamedObjectType) superClass).getName());
-                        objectType.setBaseTypes(singletonList(superType));
+                        t.setBaseTypes(singletonList(superType));
                     } else {
                         throw new RuntimeException();
                     }
