@@ -105,7 +105,7 @@ public class Main {
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
@@ -166,7 +166,7 @@ public class Main {
         }
     }
 
-    private static String getScript(BenchMark benchMark) throws IOException {
+    public static String getScript(BenchMark benchMark) throws IOException {
         StringBuilder result = new StringBuilder();
         result.append(Util.readFile(benchMark.scriptPath)).append("\n");
         for (String testFile : benchMark.testFiles) {
