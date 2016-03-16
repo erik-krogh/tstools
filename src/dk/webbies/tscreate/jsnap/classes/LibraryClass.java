@@ -2,7 +2,7 @@ package dk.webbies.tscreate.jsnap.classes;
 
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
-import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
+import dk.webbies.tscreate.analysis.declarations.types.InterfaceDeclarationType;
 import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.analysis.unionFind.UnionNode;
@@ -59,60 +59,67 @@ public class LibraryClass {
 
     public String getName(NativeClassesMap natives, Set<String> takenNames) {
         if (name == null) {
-            name = getNameFromPath(pathsSeen.get(0));
-            // Finding the longest name, that preferably starts with an upper case.
-            for (int i = 1; i < pathsSeen.size(); i++) {
-                String path = pathsSeen.get(i);
-                String newName = getNameFromPath(path);
-                if (newName.equals("constructor")) {
-                    continue;
-                }
-                if (newName.equals("[proto]")) {
-                    continue;
-                }
-                if (newName.matches("[0-9]+.{0,}")) { // Starts with number.
-                    continue;
-                }
-                if (newName.contains("-")) {
-                    continue;
-                }
-
-                boolean newIsUpper = newName.charAt(0) == Character.toUpperCase(newName.charAt(0)) || newName.substring(0, 1).equals("$");
-                boolean oldIsUpper = name.charAt(0) == Character.toUpperCase(name.charAt(0)) && !(name.charAt(0) == "[".charAt(0));
-
-                if (newIsUpper && !oldIsUpper) {
-                    name = newName;
-                }
-                if (newName.length() > name.length() && !(!newIsUpper && oldIsUpper) && !newName.toLowerCase().contains("class")) {
-                    name = newName;
-                }
-            }
-
-            if (name.matches("[0-9]+.{0,}") || name.equals("[proto]") || name.equals("constructor")) {
-                name = "interface_" + InterfaceType.interfaceCounter++;
-            }
-            if (name.contains("-")) {
-                name = name.replace("-", "");
-            }
-
-            if (isNameTaken(name, natives, takenNames)) {
-                int counter = 1;
-                while (true) {
-                    if (!isNameTaken(name + counter, natives, takenNames)) {
-                        name = name + counter;
-                        break;
-                    } else {
-                        counter++;
-                    }
-                }
-            }
-
-            takenNames.add(name);
+            List<String> pathsSeen = this.pathsSeen;
+            name = calculateName(natives, takenNames, pathsSeen);
         }
         return name;
     }
 
-    private boolean isNameTaken(String newName, NativeClassesMap natives, Set<String> takenNames) {
+    public static String calculateName(NativeClassesMap natives, Set<String> takenNames, List<String> possibleNames) {
+        String name = getNameFromPath(possibleNames.get(0));
+        // Finding the longest name, that preferably starts with an upper case.
+        for (int i = 1; i < possibleNames.size(); i++) {
+            String path = possibleNames.get(i);
+            String newName = getNameFromPath(path);
+            if (newName.equals("constructor")) {
+                continue;
+            }
+            if (newName.equals("[proto]")) {
+                continue;
+            }
+            if (newName.matches("[0-9]+.{0,}")) { // Starts with number.
+                continue;
+            }
+            if (newName.contains("-")) {
+                continue;
+            }
+
+            boolean newIsUpper = newName.charAt(0) == Character.toUpperCase(newName.charAt(0)) || newName.substring(0, 1).equals("$");
+            boolean oldIsUpper = name.charAt(0) == Character.toUpperCase(name.charAt(0)) && !(name.charAt(0) == "[".charAt(0));
+
+            if (newIsUpper && !oldIsUpper) {
+                name = newName;
+            }
+            if (newName.length() > name.length() && !(!newIsUpper && oldIsUpper) && !newName.toLowerCase().contains("class")) {
+                name = newName;
+            }
+        }
+
+        if (name.matches("[0-9]+.{0,}") || name.equals("[proto]") || name.equals("constructor")) {
+            name = "interface_" + InterfaceDeclarationType.interfaceCounter++;
+        }
+        if (name.contains("-")) {
+            name = name.replace("-", "");
+        }
+
+        if (isNameTaken(name, natives, takenNames)) {
+            int counter = 1;
+            while (true) {
+                if (!isNameTaken(name + counter, natives, takenNames)) {
+                    name = name + counter;
+                    break;
+                } else {
+                    counter++;
+                }
+            }
+        }
+
+        takenNames.add(name);
+
+        return name;
+    }
+
+    private static boolean isNameTaken(String newName, NativeClassesMap natives, Set<String> takenNames) {
         if (natives.getNativeTypeNames().contains(newName)) {
             return true;
         }
@@ -123,7 +130,7 @@ public class LibraryClass {
         return false;
     }
 
-    private String getNameFromPath(String path) {
+    private static String getNameFromPath(String path) {
         String[] split = path.split("\\.");
         return split[split.length - 1];
     }
