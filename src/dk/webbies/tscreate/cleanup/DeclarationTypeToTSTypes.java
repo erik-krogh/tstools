@@ -3,7 +3,7 @@ package dk.webbies.tscreate.cleanup;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.analysis.declarations.types.ClassType;
-import dk.webbies.tscreate.analysis.declarations.types.InterfaceType;
+import dk.webbies.tscreate.analysis.declarations.types.InterfaceDeclarationType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.util.Pair;
 
@@ -18,6 +18,7 @@ import static java.util.Collections.*;
 public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
     private final DeclarationParser.NativeClassesMap nativeClasses;
     private final Map<DeclarationType, Type> cache = new HashMap<>();
+    private final Map<ClassType, Type> classInstanceCache = new HashMap<>();
     private final List<Pair<Type, DeclarationType>> finalizationQueue = new ArrayList<>();
 
     public DeclarationTypeToTSTypes(DeclarationParser.NativeClassesMap nativeClasses) {
@@ -25,7 +26,9 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
     }
 
     public Type getType(DeclarationType declaration) {
-        if (this.cache.containsKey(declaration)) {
+        if (declaration instanceof ClassInstanceType && classInstanceCache.containsKey(((ClassInstanceType) declaration).getClazz())) {
+            return classInstanceCache.get(((ClassInstanceType) declaration).getClazz());
+        } else if (this.cache.containsKey(declaration)) {
             return this.cache.get(declaration);
         } else {
             Type result = declaration.accept(this);
@@ -71,8 +74,8 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
             } else if (type instanceof UnnamedObjectType) {
                 t.setDeclaredProperties(convertProperties(((UnnamedObjectType) type).getDeclarations()));
                 return null;
-            } else if (type instanceof InterfaceType) {
-                InterfaceType inter = (InterfaceType) type;
+            } else if (type instanceof InterfaceDeclarationType) {
+                InterfaceDeclarationType inter = (InterfaceDeclarationType) type;
                 if (inter.getObject() != null) {
                     t.setDeclaredProperties(convertProperties(inter.getObject().getDeclarations()));
                 }
@@ -89,14 +92,18 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                 return null;
             } else if (type instanceof ClassType) {
                 ClassType clazz = (ClassType) type;
-                t.setDeclaredProperties(convertProperties(clazz.getStaticFields()));
-
+                clazz.getConstructorType().setReturnType(new ClassInstanceType(clazz, EMPTY_SET));
                 Signature constructor = toSignature(clazz.getConstructorType());
                 t.setDeclaredConstructSignatures(singletonList(constructor));
 
+                t.setDeclaredProperties(convertProperties(clazz.getStaticFields()));
+
+                return null;
+            } else if (type instanceof ClassInstanceType) {
+                ClassInstanceType instance = (ClassInstanceType) type;
+                ClassType clazz = instance.getClazz();
                 dk.au.cs.casa.typescript.types.InterfaceType objectType = new dk.au.cs.casa.typescript.types.InterfaceType();
                 objectType.setDeclaredProperties(convertProperties(clazz.getPrototypeFields()));
-                constructor.setResolvedReturnType(objectType);
 
                 DeclarationType superClass = clazz.getSuperClass();
                 if (superClass != null) {
@@ -104,10 +111,9 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                     if (superClass instanceof ClassType) {
                         objectType.setBaseTypes(singletonList(new ClassInstanceType(superClass, EMPTY_SET).accept(DeclarationTypeToTSTypes.this)));
                     } else {
-                        throw new RuntimeException();
+                        throw new RuntimeException(); //FIXME: This happens in underscore with mixed. And handleBars unify_cs.
                     }
                 }
-
                 return null;
             } else {
                 throw new RuntimeException(type.getClass().getSimpleName());
@@ -159,7 +165,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
         @Override
         public Void visit(UnionType t, DeclarationType type) {
             UnionDeclarationType union = (UnionDeclarationType) type;
-            List<Type> mappedTypes = union.getTypes().stream().map(subType -> subType.accept(DeclarationTypeToTSTypes.this)).collect(Collectors.toList());
+            List<Type> mappedTypes = union.getTypes().stream().map(subType -> subType.accept(DeclarationTypeToTSTypes.this)).filter(Objects::nonNull).collect(Collectors.toList());
             t.setElements(mappedTypes);
             return null;
         }
@@ -182,6 +188,9 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
 
     private void register(Pair<Type, DeclarationType> e) {
         cache.put(e.second, e.first);
+        if (e.second instanceof ClassInstanceType) {
+            classInstanceCache.put(((ClassInstanceType) e.second).getClazz(), e.first);
+        }
         finalizationQueue.add(e);
     }
 
@@ -220,7 +229,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
     }
 
     @Override
-    public Type visit(InterfaceType interfaceType) {
+    public Type visit(InterfaceDeclarationType interfaceType) {
         if (cache.containsKey(interfaceType)) {
             return cache.get(interfaceType);
         }
@@ -258,8 +267,11 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
 
     @Override
     public Type visit(ClassInstanceType instanceType) {
-        dk.au.cs.casa.typescript.types.InterfaceType clazzType = (dk.au.cs.casa.typescript.types.InterfaceType)instanceType.getClazz().accept(this);
-        finishQueue();
-        return clazzType.getDeclaredConstructSignatures().iterator().next().getResolvedReturnType();
+        if (classInstanceCache.containsKey(instanceType.getClazz())) {
+            return classInstanceCache.get(instanceType.getClazz());
+        }
+        InterfaceType result = new InterfaceType();
+        register(new Pair<>(result, instanceType));
+        return result;
     }
 }
