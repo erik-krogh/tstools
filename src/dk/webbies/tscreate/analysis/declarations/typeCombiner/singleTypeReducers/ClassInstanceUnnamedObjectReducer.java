@@ -33,18 +33,22 @@ public class ClassInstanceUnnamedObjectReducer implements SingleTypeReducer<Clas
         return UnnamedObjectType.class;
     }
 
-    private Map<LibraryClass, Set<String>> classKeys = new HashMap<>();
+    private Map<ClassType, Set<String>> classKeys = new HashMap<>();
 
     @Override
     public DeclarationType reduce(ClassInstanceType instance, UnnamedObjectType object) {
         LibraryClass libraryClass = instance.getClazz().getLibraryClass();
-        if (!classKeys.containsKey(libraryClass)) {
+        if (!classKeys.containsKey(instance.getClazz())) {
             Set<String> set = ClassType.getFieldsInclSuper(instance.getClazz(), nativeClasses);
-            classKeys.put(libraryClass, set);
-            libraryClass.getInstances().stream().map(Snap.Obj::getPropertyMap).map(Map::keySet).forEach(set::addAll);
+            classKeys.put(instance.getClazz(), set);
+            if (libraryClass != null) {
+                libraryClass.getInstances().stream().map(Snap.Obj::getPropertyMap).map(Map::keySet).forEach(set::addAll);
+            } else {
+                instance.getClazz().getPrototypeFields().keySet().forEach(set::add);
+            }
         }
 
-        Set<String> keySet = classKeys.get(libraryClass);
+        Set<String> keySet = classKeys.get(instance.getClazz());
         if (object.getDeclarations().keySet().stream().allMatch(keySet::contains)) {
             return instance;
         } else {
