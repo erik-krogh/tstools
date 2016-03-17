@@ -273,6 +273,7 @@ public class TypeReducer {
                 for (DeclarationType part : interfaceParts) {
                     populateInterface(result, part);
                 }
+                originals.put(result, interfaceParts);
             }
         }
     }
