@@ -97,7 +97,11 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             }
             return findReplacement(next);
         } else {
-            return type;
+            if (type instanceof UnionDeclarationType) {
+                return new CombinationType(reducer, ((UnionDeclarationType) type).getTypes()).getCombined();
+            } else {
+                return type;
+            }
         }
     }
 
