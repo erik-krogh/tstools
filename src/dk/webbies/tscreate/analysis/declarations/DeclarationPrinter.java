@@ -222,7 +222,9 @@ public class DeclarationPrinter {
             throw new GotCyclic(arg.getSeen().cons(type));
         }
 
-        this.printedAsDeclaration.add(type);
+        if (options.aggressivelyDontPrintTheSameThingTwice) {
+            this.printedAsDeclaration.add(type);
+        }
 
         if (type instanceof FunctionType) {
             if (options.neverPrintModules) {
@@ -421,9 +423,6 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(FunctionType functionType, VisitorArg arg) {
-            if (printedAsDeclaration.contains(functionType)) {
-                throw new AlreadyPrintedAsDeclaration(functionType);
-            }
             printFunction(arg, functionType, false);
             return null;
         }
@@ -435,6 +434,14 @@ public class DeclarationPrinter {
                 if (arg.contains(functionType)) {
                     throw new GotCyclic(arg.getSeen());
                 }
+
+                if (printedAsDeclaration.contains(functionType)) {
+                    throw new AlreadyPrintedAsDeclaration(functionType);
+                }
+                if (options.aggressivelyDontPrintTheSameThingTwice) {
+                    printedAsDeclaration.add(functionType);
+                }
+
                 arg = arg.cons(functionType, true);
 
                 write(arg.builder, "(");
@@ -457,15 +464,18 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(UnnamedObjectType objectType, VisitorArg arg) {
-            if (printedAsDeclaration.contains(objectType)) {
-                throw new AlreadyPrintedAsDeclaration(objectType);
-            }
             if (printsAsInterface.containsKey(objectType)) {
                 return printsAsInterface.get(objectType).accept(this, arg);
             } else {
                 if (arg.contains(objectType)) {
                     throw new GotCyclic(arg.getSeen());
                 }
+
+                if (printedAsDeclaration.contains(objectType)) {
+                    throw new AlreadyPrintedAsDeclaration(objectType);
+                }
+                printedAsDeclaration.add(objectType);
+
                 arg = arg.cons(objectType, false);
 
                 StringBuilder builder = new StringBuilder();

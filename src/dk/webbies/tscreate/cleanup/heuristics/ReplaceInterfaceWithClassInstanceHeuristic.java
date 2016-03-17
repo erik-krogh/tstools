@@ -40,7 +40,6 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
 
         List<DeclarationType> objects = Util.concat(byType.get(UnnamedObjectType.class), byType.get(InterfaceDeclarationType.class), byType.get(FunctionType.class));
 
-        // FIXME: Make sure functions and objects are not printed twice in DeclarationPrinter.
         // FIXME: Make sure union-types are "re-evaluated" when running the InplaceReplamentThunghy.
 
         for (DeclarationType candidate : objects) {
