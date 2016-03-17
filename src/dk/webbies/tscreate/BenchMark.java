@@ -230,7 +230,7 @@ public class BenchMark {
     });
 
     // The stress test to rule all stress-tests. 10MB of JavaScript, 220000 lines of code.
-    // Node goes out of memory when ts-spec-reader attempts to parse the declaration file. // TODO: After combining interfaces, the resulting declaration file should be strictly smaller, so try again.
+    // Node goes out of memory when ts-spec-reader attempts to parse the declaration file.
     /*public static final BenchMark ExtJS = evaluate(() -> {
         Options options = new Options();
         // All of these are disabled, because the program is so big, and it is needed, otherwise stuff runs out of memory/time.

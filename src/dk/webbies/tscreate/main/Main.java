@@ -48,9 +48,6 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         List<Options.StaticAnalysisMethod> methods = asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
 
-        // FIXME: Try to record names, and have some way that they are preserved all the way. (Attach them to bottom, when going from nodes -> decs)
-
-        // TODO: Sørg for at declaration-printer generelt sørger for at printe duplikat-objects som interfaces.
         // Benchmarks, where I can run ALL the static analysis methods.
         List<BenchMark> stableBenches = asList(async, require, knockout, backbone, box2d, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
         long start = System.currentTimeMillis();
@@ -59,7 +56,6 @@ public class Main {
 //            printTable();
 //            generateDeclarations(BenchMark.allBenchmarks);
 //            tsCheck();
-            // FIXME: SomeThing about classes and DeclarationTypeToTSTypes doesn't work. Try with test.js and some classes.
 //            runAnalysis(BenchMark.require);
 
 //            CompareMethods.compareMethods(stableBenches, asList(MIXED), 10 * 60 * 1000);
@@ -112,7 +108,7 @@ public class Main {
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
