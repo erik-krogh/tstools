@@ -103,14 +103,7 @@ public class NormalizeDeclaration {
 
     private static Map<String, DeclarationType> mapTypes(TypeReducer reducer, Map<String, DeclarationType> declaration, Function<DeclarationType, DeclarationType> mapper) {
         Set<DeclarationType> everything = new CollectEveryTypeVisitor(declaration.values()).getEveryThing();
-        InplaceDeclarationReplacer replacer =  new InplaceDeclarationReplacer(ArrayListMultimap.create(), everything, reducer, mapper);
-        everything.forEach(dec -> dec.accept(replacer));
-
-        declaration = declaration.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> {
-            entry.getValue().addName(entry.getKey());
-            return mapper.apply(entry.getValue());
-        }));
-
+        new InplaceDeclarationReplacer(ArrayListMultimap.create(), everything, reducer, declaration, mapper).cleanStuff();
         return declaration;
     }
 

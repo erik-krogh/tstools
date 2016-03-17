@@ -15,17 +15,33 @@ import java.util.stream.Collectors;
  * Important note about this class, it does not have to do anything recursively, it is exposed to all the types one by one.
  */
 public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> {
+    private Set<DeclarationType> everyThing;
+    private TypeReducer reducer;
+    private Map<String, DeclarationType> declarations;
     private final Function<DeclarationType, DeclarationType> cleanerFunction;
     private Multimap<DeclarationType, DeclarationType> replacements;
 
-    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer) {
-        this(replacements, everyThing, reducer, Function.identity());
+    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer, Map<String, DeclarationType> declarations) {
+        this(replacements, everyThing, reducer, declarations, Function.identity());
     }
 
-    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer, Function<DeclarationType, DeclarationType> cleaner) {
+    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer, Map<String, DeclarationType> declarations, Function<DeclarationType, DeclarationType> cleaner) {
         this.replacements = replacements;
+        this.everyThing = everyThing;
+        this.reducer = reducer;
+        this.declarations = declarations;
         this.cleanerFunction = cleaner;
+    }
 
+    private Map<DeclarationType, TypeNode> cache = new HashMap<>();
+    private TypeNode getNode(DeclarationType type) {
+        if (!cache.containsKey(type)) {
+            cache.put(type, new TypeNode(type, replacements));
+        }
+        return cache.get(type);
+    }
+
+    public void cleanStuff() {
         List<List<TypeNode>> cycles = new Tarjan<TypeNode>().getSCComponents(everyThing.stream().map(this::getNode).collect(Collectors.toList()));
         for (List<TypeNode> cycleNodes : cycles) {
             if (cycleNodes.size() <= 1) {
@@ -37,14 +53,9 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             DeclarationType result = new CombinationType(reducer, cycle).getCombined();
             cycle.forEach(type -> replacements.put(type, result));
         }
-    }
 
-    private Map<DeclarationType, TypeNode> cache = new HashMap<>();
-    private TypeNode getNode(DeclarationType type) {
-        if (!cache.containsKey(type)) {
-            cache.put(type, new TypeNode(type, replacements));
-        }
-        return cache.get(type);
+        everyThing.forEach(dec -> dec.accept(this));
+        declarations.entrySet().stream().forEach(entry -> declarations.put(entry.getKey(), this.findReplacement(entry.getValue())));
     }
 
     private final class TypeNode extends Tarjan.Node<TypeNode> {
@@ -70,7 +81,7 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
         }
     }
 
-    public DeclarationType findReplacement(DeclarationType type) {
+    private DeclarationType findReplacement(DeclarationType type) {
         if (type == null) {
             return null;
         }
@@ -83,9 +94,6 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             DeclarationType next = foundReplacements.iterator().next();
             if (next == type) {
                 return next;
-            }
-            if (Thread.currentThread().getStackTrace().length > 200) {
-                System.out.println();
             }
             return findReplacement(next);
         } else {
