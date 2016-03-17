@@ -29,7 +29,6 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,31 +60,38 @@ public class Main {
 //            generateDeclarations(BenchMark.allBenchmarks);
 //            tsCheck();
             // FIXME: SomeThing about classes and DeclarationTypeToTSTypes doesn't work. Try with test.js and some classes.
-            runAnalysis(BenchMark.hammer);
+//            runAnalysis(BenchMark.require);
+
+//            CompareMethods.compareMethods(stableBenches, asList(MIXED), 10 * 60 * 1000);
+            runAnalysis(async);
+
 //            benchAll();
 //            printTable();
 
 //             List<BenchMark> benchs = Arrays.asList(three, ember, jQuery);
 //            compareMethods(benchs, asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE), 30 * 60 * 1000);
 
-//            compareMethods(allBenchmarks, methods, 20 * 60 * 1000);
+//            CompareMethods.compareMethods(stableBenches, methods, 20 * 60 * 1000);
 //            CompareMethods.compareMethods(Arrays.asList(handlebars), methods, 10 * 60 * 1000);
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
 
             e.printStackTrace(System.err);
-        } finally {
-            long end = System.currentTimeMillis();
-            System.out.println("Ran in " + toFixed((end - start) / 1000.0, 1) + "s");
-
-            System.exit(0);
         }
+        long end = System.currentTimeMillis();
+        System.out.println("Ran in " + toFixed((end - start) / 1000.0, 1) + "s");
+
+        System.exit(0);
     }
 
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
         System.out.println("Analysing " + benchMark.name);
-        String resultDeclarationFilePath = benchMark.scriptPath + "." + benchMark.options.staticMethod.fileSuffix + ".gen.d.ts";
+        String fileSuffix = benchMark.options.staticMethod.fileSuffix;
+        if (benchMark.options.combineInterfacesAfterAnalysis) {
+            fileSuffix = fileSuffix + "_smaller";
+        }
+        String resultDeclarationFilePath = benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
 
         FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
 
@@ -102,7 +108,7 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         if (benchMark.options.combineInterfacesAfterAnalysis) {
-//            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
+            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
