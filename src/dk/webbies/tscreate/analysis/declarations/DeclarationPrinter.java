@@ -222,9 +222,7 @@ public class DeclarationPrinter {
             throw new GotCyclic(arg.getSeen().cons(type));
         }
 
-        if (options.aggressivelyDontPrintTheSameThingTwice) {
-            this.printedAsDeclaration.add(type);
-        }
+        this.printedAsDeclaration.add(type);
 
         if (type instanceof FunctionType) {
             if (options.neverPrintModules) {
@@ -474,7 +472,9 @@ public class DeclarationPrinter {
                 if (printedAsDeclaration.contains(objectType)) {
                     throw new AlreadyPrintedAsDeclaration(objectType);
                 }
-                printedAsDeclaration.add(objectType);
+                if (options.aggressivelyDontPrintTheSameThingTwice) {
+                    printedAsDeclaration.add(objectType);
+                }
 
                 arg = arg.cons(objectType, false);
 
