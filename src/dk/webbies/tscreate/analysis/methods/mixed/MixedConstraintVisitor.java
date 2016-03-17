@@ -639,7 +639,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             functionNode = FunctionNode.create(args.size(), solver);
             solver.union(function, functionNode);
 
-            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.first, pair.second, primitiveFactory.nonVoid()));
+            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, pair.right, primitiveFactory.nonVoid()));
 
             solver.union(functionNode.returnNode, returnNode);
             solver.union(functionNode.thisNode, thisNode);

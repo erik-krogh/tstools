@@ -561,7 +561,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
 
             solver.union(new IncludeNode(solver, function), functionNode);
 
-            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.first, new IncludeNode(solver, pair.second), primitiveFactory.nonVoid()));
+            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, new IncludeNode(solver, pair.right), primitiveFactory.nonVoid()));
 
             solver.union(functionNode.returnNode, returnNode);
             solver.union(functionNode.thisNode, thisNode);

@@ -9,7 +9,6 @@ import dk.webbies.tscreate.cleanup.CollectEveryTypeVisitor;
 import dk.webbies.tscreate.cleanup.DeclarationTypeToTSTypes;
 import dk.webbies.tscreate.cleanup.RedundantInterfaceCleaner;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
-import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.util.Pair;
 import dk.webbies.tscreate.util.Util;
 
@@ -73,14 +72,14 @@ public class FindInstancesByName implements ReplacementHeuristic {
             Score score = RedundantInterfaceCleaner.evaluteSimilarity(object, clazz, decsToTypes, nativeClasses).score(true);
             possibleReplacements.add(new Pair<>(score, clazz));
         }
-        double maxPrecision = Collections.max(possibleReplacements, (a, b) -> Double.compare(b.first.precision, a.first.precision)).first.precision;
-        possibleReplacements = possibleReplacements.stream().filter(pair -> pair.first.precision == maxPrecision).collect(Collectors.toList());
+        double maxPrecision = Collections.max(possibleReplacements, (a, b) -> Double.compare(b.left.precision, a.left.precision)).left.precision;
+        possibleReplacements = possibleReplacements.stream().filter(pair -> pair.left.precision == maxPrecision).collect(Collectors.toList());
 
-        boolean hasString = possibleReplacements.stream().map(Pair::getSecond).anyMatch(clazz -> clazz instanceof NamedObjectType && ((NamedObjectType) clazz).getName().equals("String"));
-        boolean hasArray = possibleReplacements.stream().map(Pair::getSecond).anyMatch(clazz -> clazz instanceof NamedObjectType && ((NamedObjectType) clazz).getName().equals("Array"));
+        boolean hasString = possibleReplacements.stream().map(Pair::getRight).anyMatch(clazz -> clazz instanceof NamedObjectType && ((NamedObjectType) clazz).getName().equals("String"));
+        boolean hasArray = possibleReplacements.stream().map(Pair::getRight).anyMatch(clazz -> clazz instanceof NamedObjectType && ((NamedObjectType) clazz).getName().equals("Array"));
 
         Pair<Score, DeclarationType> bestPossible = possibleReplacements.get(0);
-        Score score = bestPossible.first;
+        Score score = bestPossible.left;
         if (score.fMeasure == 0) {
             return; // No way to tell which is the best.
         } else if (score.precision <= 0.5) {
@@ -99,7 +98,7 @@ public class FindInstancesByName implements ReplacementHeuristic {
             System.out.println();
         }
 
-        List<DeclarationType> found = possibleReplacements.stream().filter(pair -> pair.first.precision == score.precision).map(pair -> pair.second).collect(Collectors.toList());
+        List<DeclarationType> found = possibleReplacements.stream().filter(pair -> pair.left.precision == score.precision).map(pair -> pair.right).collect(Collectors.toList());
         DeclarationType result = new CombinationType(reducer, found).getCombined();
 
         if (!(result instanceof UnionDeclarationType)) {

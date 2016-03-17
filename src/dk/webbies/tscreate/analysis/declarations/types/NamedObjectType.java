@@ -28,9 +28,9 @@ public class NamedObjectType extends ObjectType {
 
     public NamedObjectType(Pair<String, Boolean> pair, DeclarationType indexType) {
         super(Collections.EMPTY_SET);
-        this.name = pair.first;
+        this.name = pair.left;
         this.indexType = indexType;
-        this.isBaseType = pair.second;
+        this.isBaseType = pair.right;
     }
 
     public String getName() {

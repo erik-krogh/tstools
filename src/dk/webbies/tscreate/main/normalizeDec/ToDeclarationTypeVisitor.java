@@ -45,14 +45,14 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
     public void resolveClassHierarchy() {
         Map<Type, dk.webbies.tscreate.analysis.declarations.types.ClassType> classesMap = new HashMap<>();
         for (Pair<InterfaceType, dk.webbies.tscreate.analysis.declarations.types.ClassType> pair : this.classesForLater) {
-            Type instanceType = pair.first.getDeclaredConstructSignatures().iterator().next().getResolvedReturnType();
+            Type instanceType = pair.left.getDeclaredConstructSignatures().iterator().next().getResolvedReturnType();
             if (!(instanceType instanceof SimpleType)) {
-                classesMap.put(instanceType, pair.second);
+                classesMap.put(instanceType, pair.right);
             }
         }
 
         for (Pair<InterfaceType, dk.webbies.tscreate.analysis.declarations.types.ClassType> pair : classesForLater) {
-            Type uncastInstancetype = pair.first.getDeclaredConstructSignatures().iterator().next().getResolvedReturnType();
+            Type uncastInstancetype = pair.left.getDeclaredConstructSignatures().iterator().next().getResolvedReturnType();
             if (uncastInstancetype instanceof SimpleType || uncastInstancetype == null) {
                 continue;
             }
@@ -71,10 +71,10 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
                 Type superType = instanceType.getBaseTypes().iterator().next();
                 if (libraryTypeNames.containsKey(superType)) {
                     String name = libraryTypeNames.get(superType);
-                    pair.second.setSuperClass(new NamedObjectType(name, false));
+                    pair.right.setSuperClass(new NamedObjectType(name, false));
                 } else {
                     dk.webbies.tscreate.analysis.declarations.types.ClassType superClass = classesMap.get(superType);
-                    pair.second.setSuperClass(superClass);
+                    pair.right.setSuperClass(superClass);
                 }
             }
         }
@@ -96,7 +96,7 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
             ArrayList<Pair<Type, DeclarationType>> copy = new ArrayList<>(finalizationQueue);
             finalizationQueue.clear();
             for (Pair<Type, DeclarationType> pair : copy) {
-                pair.first.accept(new FinalizationVisitor(), pair.second);
+                pair.left.accept(new FinalizationVisitor(), pair.right);
             }
 
         }

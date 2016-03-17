@@ -43,7 +43,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
             ArrayList<Pair<Type, DeclarationType>> copy = new ArrayList<>(finalizationQueue);
             finalizationQueue.clear();
             copy.forEach(pair -> {
-                pair.first.accept(finalizationVisitor, pair.second);
+                pair.left.accept(finalizationVisitor, pair.right);
             });
         }
     }
@@ -189,9 +189,9 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
     }
 
     private void register(Pair<Type, DeclarationType> e) {
-        cache.put(e.second, e.first);
-        if (e.second instanceof ClassInstanceType) {
-            classInstanceCache.put(((ClassInstanceType) e.second).getClazz(), e.first);
+        cache.put(e.right, e.left);
+        if (e.right instanceof ClassInstanceType) {
+            classInstanceCache.put(((ClassInstanceType) e.right).getClazz(), e.left);
         }
         finalizationQueue.add(e);
     }

@@ -49,18 +49,18 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
                 continue;
             }
 
-            Collections.sort(possibleReplacement, (a, b) -> Double.compare(b.second.score(true).precision, a.second.score(true).precision));
+            Collections.sort(possibleReplacement, (a, b) -> Double.compare(b.right.score(true).precision, a.right.score(true).precision));
 
             Pair<DeclarationType, Evaluation> bestPossible = possibleReplacement.get(0);
 
-            Score score = bestPossible.second.score(true);
+            Score score = bestPossible.right.score(true);
             if (score.precision < 0.7) {
                 continue;
             }
 
-            if (possibleReplacement.size() >= 2 && score.precision == possibleReplacement.get(1).second.score(true).precision) {
+            if (possibleReplacement.size() >= 2 && score.precision == possibleReplacement.get(1).right.score(true).precision) {
                 // We got at least two that are equally good.
-                List<DeclarationType> equallyGood = possibleReplacement.stream().filter(pair -> pair.second.score(true).precision == score.precision).map(pair -> pair.first).collect(Collectors.toList());
+                List<DeclarationType> equallyGood = possibleReplacement.stream().filter(pair -> pair.right.score(true).precision == score.precision).map(pair -> pair.left).collect(Collectors.toList());
 
                 DeclarationType combined = new CombinationType(reducer, equallyGood).getCombined();
                 if (!(combined instanceof UnionDeclarationType)) {
@@ -68,7 +68,7 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
                 }
 
             } else {
-                replacements.put(candidate, bestPossible.first);
+                replacements.put(candidate, bestPossible.left);
             }
         }
 

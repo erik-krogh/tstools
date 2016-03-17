@@ -47,14 +47,14 @@ public class NamedObjectReducer extends SameTypeMultiReducer<NamedObjectType> {
             List<Pair<String, Integer>> candidatesWithScore = nonBaseNamedTypes.stream().map(NamedObjectType::getName).map((candidate) -> {
                 int count = (int) names.stream().filter(subName -> subName.equals(candidate) || nativeClasses.getBaseNames(subName).contains(candidate)).count();
                 return new Pair<>(candidate, count);
-            }).distinct().sorted((a, b) -> /* Reverse */- Integer.compare(a.second, b.second)).collect(Collectors.toList());
+            }).distinct().sorted((a, b) -> /* Reverse */- Integer.compare(a.right, b.right)).collect(Collectors.toList());
 
             if (candidatesWithScore.isEmpty()) {
                 throw new RuntimeException();
             }
-            int maxCount = candidatesWithScore.iterator().next().second;
+            int maxCount = candidatesWithScore.iterator().next().right;
 
-            Set<String> candidates = candidatesWithScore.stream().filter(cand -> cand.second == maxCount).map(cand -> cand.first).collect(Collectors.toSet());
+            Set<String> candidates = candidatesWithScore.stream().filter(cand -> cand.right == maxCount).map(cand -> cand.left).collect(Collectors.toSet());
 
             for (String s : new ArrayList<>(candidates)) {
                 if (candidates.size() <= 1) {
