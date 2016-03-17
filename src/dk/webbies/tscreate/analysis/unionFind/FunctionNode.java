@@ -34,7 +34,7 @@ public class FunctionNode extends UnionNodeWithFields {
         addField(FIELD_THIS, thisNode);
     }
 
-    public static  FunctionNode create(List<String> argumentNames, UnionFindSolver solver) {
+    public static FunctionNode create(List<String> argumentNames, UnionFindSolver solver) {
         return new FunctionNode(argumentNames, solver);
     }
 
@@ -79,12 +79,6 @@ public class FunctionNode extends UnionNodeWithFields {
             default:
                 throw new RuntimeException();
         }
-    }
-
-    public static FunctionNode create(Snap.Obj closure, List<String> argumentNames, UnionFindSolver solver) {
-        FunctionNode result = create(argumentNames, solver);
-        result.closure = closure;
-        return result;
     }
 
     @Override
