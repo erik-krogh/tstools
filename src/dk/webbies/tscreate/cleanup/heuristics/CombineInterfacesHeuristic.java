@@ -15,6 +15,11 @@ import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 
+import static dk.webbies.tscreate.cleanup.heuristics.HeuristicsUtil.*;
+import static dk.webbies.tscreate.cleanup.heuristics.HeuristicsUtil.hasDynAccess;
+import static dk.webbies.tscreate.cleanup.heuristics.HeuristicsUtil.hasObject;
+import static dk.webbies.tscreate.cleanup.heuristics.HeuristicsUtil.numberOfFields;
+
 /**
  * Created by erik1 on 15-03-2016.
  */
@@ -89,41 +94,5 @@ public class CombineInterfacesHeuristic implements ReplacementHeuristic{
     @Override
     public String getDescription() {
         return "interface == interface";
-    }
-
-    private int numberOfFields(DeclarationType type) {
-        if (type instanceof UnnamedObjectType) {
-            return ((UnnamedObjectType) type).getDeclarations().size();
-        } else if (type instanceof InterfaceDeclarationType) {
-            UnnamedObjectType object = ((InterfaceDeclarationType) type).getObject();
-            if (object == null) {
-                return 0;
-            }
-            return numberOfFields(object);
-        }
-        throw new RuntimeException("Whut?");
-    }
-
-    private boolean hasDynAccess(DeclarationType type) {
-        if (type instanceof UnnamedObjectType) {
-            return false;
-        } else if (type instanceof InterfaceDeclarationType) {
-            return ((InterfaceDeclarationType) type).getDynamicAccess() != null;
-        }
-        throw new RuntimeException("Wut?!?");
-    }
-
-    private boolean hasObject(DeclarationType type) {
-        if (type instanceof UnnamedObjectType) {
-            return true;
-        } else if (type instanceof InterfaceDeclarationType) {
-            return ((InterfaceDeclarationType) type).getObject() != null;
-        }
-        throw new RuntimeException("What???");
-    }
-
-    private void combine(DeclarationType inter1, DeclarationType inter2, ArrayListMultimap<DeclarationType, DeclarationType> replacements) {
-        replacements.put(inter1, inter2);
-        replacements.put(inter2, inter1);
     }
 }
