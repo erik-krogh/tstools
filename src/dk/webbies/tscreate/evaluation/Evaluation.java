@@ -152,8 +152,6 @@ public class Evaluation {
             measure = function.apply(depth) * measure;
             result += measure * Math.pow(2, -depth);
         }
-        // Fixme: Multiply by a correcttion factor instead.
-
         assert !Double.isNaN(result);
 
         if (makeMax1) {

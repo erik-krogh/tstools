@@ -40,8 +40,6 @@ public class RedundantInterfaceCleaner {
 
     }
 
-    // FIXME: Rules for making stuff like {apply: () => any} to a function.
-
     // FIXME: Other heuristic, that specifically looks at the similarity of types inside union-types.
     public void clean() {
         boolean progress = true;
