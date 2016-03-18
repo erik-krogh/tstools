@@ -533,7 +533,7 @@ public class DeclarationPrinter {
                     }
                 }
                 if (interfaceType.getObject() != null) {
-                    interfaceType.getObject().getDeclarations().forEach((name, type) -> printObjectField(arg, name, type, this));
+                    interfaceType.getObject().getDeclarations().entrySet().stream().sorted(Util::compareStringEntry).forEach(entry -> printObjectField(arg, entry.getKey(), entry.getValue(), this));
                 }
                 ident--;
                 writeln(arg.builder, "}");
