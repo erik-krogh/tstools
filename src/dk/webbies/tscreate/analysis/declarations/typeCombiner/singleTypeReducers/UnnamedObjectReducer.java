@@ -48,7 +48,7 @@ public class UnnamedObjectReducer extends SameTypeReducer<UnnamedObjectType> {
             } else if (types.size() == 1) {
                 result.put(entry.getKey(), types.iterator().next());
             } else {
-                result.put(entry.getKey(), new CombinationType(combiner, types.toArray(new DeclarationType[types.size()])));
+                result.put(entry.getKey(), new CombinationType(combiner, types));
             }
         }
 

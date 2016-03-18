@@ -100,6 +100,9 @@ public class CollectEveryTypeVisitor implements DeclarationTypeVisitor<Void> {
             return null;
         }
         add(type);
+        if (type.getIndexType() != null) {
+            type.getIndexType().accept(this);
+        }
         return null;
     }
 

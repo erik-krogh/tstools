@@ -12,7 +12,7 @@ public class NamedObjectType extends ObjectType {
     private final Set<String> knownSubTypes = new HashSet<>();
     public final boolean isBaseType;
 
-    public final DeclarationType indexType; // For generic arrays.
+    private DeclarationType indexType; // For generic arrays.
 
     public NamedObjectType(String name, boolean isBaseType) {
         this(name, isBaseType, null);
@@ -31,6 +31,14 @@ public class NamedObjectType extends ObjectType {
         this.name = pair.left;
         this.indexType = indexType;
         this.isBaseType = pair.right;
+    }
+
+    public DeclarationType getIndexType() {
+        return indexType;
+    }
+
+    public void setIndexType(DeclarationType indexType) {
+        this.indexType = indexType;
     }
 
     public String getName() {

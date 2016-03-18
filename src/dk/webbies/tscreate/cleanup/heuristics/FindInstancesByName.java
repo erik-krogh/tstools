@@ -26,11 +26,13 @@ public class FindInstancesByName implements ReplacementHeuristic {
     private final DeclarationParser.NativeClassesMap nativeClasses;
     private final DeclarationTypeToTSTypes decsToTypes;
     private final TypeReducer reducer;
+    private RedundantInterfaceCleaner redundantInterfaceCleaner;
 
-    public FindInstancesByName(DeclarationParser.NativeClassesMap nativeClasses, DeclarationTypeToTSTypes decsToTypes, TypeReducer reducer) {
+    public FindInstancesByName(DeclarationParser.NativeClassesMap nativeClasses, DeclarationTypeToTSTypes decsToTypes, TypeReducer reducer, RedundantInterfaceCleaner redundantInterfaceCleaner) {
         this.nativeClasses = nativeClasses;
         this.decsToTypes = decsToTypes;
         this.reducer = reducer;
+        this.redundantInterfaceCleaner = redundantInterfaceCleaner;
     }
 
     private static final Set<String> blackListedNames = Arrays.asList("window").stream().map(String::toLowerCase).collect(Collectors.toSet());
@@ -69,7 +71,7 @@ public class FindInstancesByName implements ReplacementHeuristic {
     private void handleManyNames(ArrayListMultimap<DeclarationType, DeclarationType> replacements, DeclarationType object, List<DeclarationType> classes) {
         List<Pair<Score, DeclarationType>> possibleReplacements = new ArrayList<>();
         for (DeclarationType clazz : classes) {
-            Score score = RedundantInterfaceCleaner.evaluteSimilarity(object, clazz, decsToTypes, nativeClasses).score(true);
+            Score score = redundantInterfaceCleaner.evaluteSimilarity(object, clazz, decsToTypes, nativeClasses).score(true);
             possibleReplacements.add(new Pair<>(score, clazz));
         }
         double maxPrecision = Collections.max(possibleReplacements, (a, b) -> Double.compare(b.left.precision, a.left.precision)).left.precision;
@@ -96,6 +98,7 @@ public class FindInstancesByName implements ReplacementHeuristic {
             // We good
         } else {
             System.out.println();
+            return; // TODO: See when it happens, and consider what should happen
         }
 
         List<DeclarationType> found = possibleReplacements.stream().filter(pair -> pair.left.precision == score.precision).map(pair -> pair.right).collect(Collectors.toList());
@@ -103,8 +106,6 @@ public class FindInstancesByName implements ReplacementHeuristic {
 
         if (!(result instanceof UnionDeclarationType)) {
             replacements.put(object, result);
-        } else {
-            System.err.println("Remove this line, its just to see what happens");
         }
 
     }

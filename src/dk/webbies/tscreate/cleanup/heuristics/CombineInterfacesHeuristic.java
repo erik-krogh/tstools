@@ -27,10 +27,12 @@ public class CombineInterfacesHeuristic implements ReplacementHeuristic{
 
     private final DeclarationParser.NativeClassesMap nativeClasses;
     private final DeclarationTypeToTSTypes decsToTS;
+    private RedundantInterfaceCleaner redundantInterfaceCleaner;
 
-    public CombineInterfacesHeuristic(DeclarationParser.NativeClassesMap nativeClasses, DeclarationTypeToTSTypes decsToTS) {
+    public CombineInterfacesHeuristic(DeclarationParser.NativeClassesMap nativeClasses, DeclarationTypeToTSTypes decsToTS, RedundantInterfaceCleaner redundantInterfaceCleaner) {
         this.nativeClasses = nativeClasses;
         this.decsToTS = decsToTS;
+        this.redundantInterfaceCleaner = redundantInterfaceCleaner;
     }
 
     @Override
@@ -48,7 +50,7 @@ public class CombineInterfacesHeuristic implements ReplacementHeuristic{
                     continue;
                 }
                 DeclarationType two = interfaces.get(j);
-                Evaluation similarity = RedundantInterfaceCleaner.evaluteSimilarity(one, two, decsToTS, nativeClasses);
+                Evaluation similarity = redundantInterfaceCleaner.evaluteSimilarity(one, two, decsToTS, nativeClasses);
                 Score score = similarity.score(true);
                 if (score.fMeasure >= 0.6) {
                     if (score.fMeasure >= 0.85) {

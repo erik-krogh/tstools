@@ -23,11 +23,13 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
     private final DeclarationParser.NativeClassesMap nativeClasses;
     private final TypeReducer reducer;
     private DeclarationTypeToTSTypes decsToTypes;
+    private RedundantInterfaceCleaner redundantInterfaceCleaner;
 
-    public ReplaceInterfaceWithClassInstanceHeuristic(DeclarationParser.NativeClassesMap nativeClasses, TypeReducer combiner, DeclarationTypeToTSTypes decsToTypes) {
+    public ReplaceInterfaceWithClassInstanceHeuristic(DeclarationParser.NativeClassesMap nativeClasses, TypeReducer combiner, DeclarationTypeToTSTypes decsToTypes, RedundantInterfaceCleaner redundantInterfaceCleaner) {
         this.nativeClasses = nativeClasses;
         this.reducer = combiner;
         this.decsToTypes = decsToTypes;
+        this.redundantInterfaceCleaner = redundantInterfaceCleaner;
     }
 
     @Override
@@ -86,7 +88,7 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
             if (candidate == truth) {
                 continue;
             }
-            Evaluation eval = RedundantInterfaceCleaner.evaluteSimilarity(candidate, truth, decsToTypes, nativeClasses);
+            Evaluation eval = redundantInterfaceCleaner.evaluteSimilarity(candidate, truth, decsToTypes, nativeClasses);
             if (eval.score(true).fMeasure == 0) {
                 continue;
             }

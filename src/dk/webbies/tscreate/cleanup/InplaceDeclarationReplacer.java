@@ -15,19 +15,19 @@ import java.util.stream.Collectors;
  * Important note about this class, it does not have to do anything recursively, it is exposed to all the types one by one.
  */
 public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> {
-    private Set<DeclarationType> everyThing;
+    private CollectEveryTypeVisitor collector;
     private TypeReducer reducer;
     private Map<String, DeclarationType> declarations;
     private final Function<DeclarationType, DeclarationType> cleanerFunction;
     private Multimap<DeclarationType, DeclarationType> replacements;
 
-    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer, Map<String, DeclarationType> declarations) {
-        this(replacements, everyThing, reducer, declarations, Function.identity());
+    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, CollectEveryTypeVisitor collector, TypeReducer reducer, Map<String, DeclarationType> declarations) {
+        this(replacements, collector, reducer, declarations, Function.identity());
     }
 
-    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> everyThing, TypeReducer reducer, Map<String, DeclarationType> declarations, Function<DeclarationType, DeclarationType> cleaner) {
+    public InplaceDeclarationReplacer(Multimap<DeclarationType, DeclarationType> replacements, CollectEveryTypeVisitor collector, TypeReducer reducer, Map<String, DeclarationType> declarations, Function<DeclarationType, DeclarationType> cleaner) {
         this.replacements = replacements;
-        this.everyThing = everyThing;
+        this.collector = collector;
         this.reducer = reducer;
         this.declarations = declarations;
         this.cleanerFunction = cleaner;
@@ -42,7 +42,7 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
     }
 
     public void cleanStuff() {
-        List<List<TypeNode>> cycles = new Tarjan<TypeNode>().getSCComponents(everyThing.stream().map(this::getNode).collect(Collectors.toList()));
+        List<List<TypeNode>> cycles = new Tarjan<TypeNode>().getSCComponents(collector.getEveryThing().stream().map(this::getNode).collect(Collectors.toList()));
         for (List<TypeNode> cycleNodes : cycles) {
             if (cycleNodes.size() <= 1) {
                 continue;
@@ -51,10 +51,11 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             cycle.forEach(replacements::removeAll);
 
             DeclarationType result = new CombinationType(reducer, cycle).getCombined();
+            result.accept(collector);
             cycle.forEach(type -> replacements.put(type, result));
         }
 
-        everyThing.forEach(dec -> dec.accept(this));
+        collector.getEveryThing().forEach(dec -> dec.accept(this));
         declarations.entrySet().stream().forEach(entry -> declarations.put(entry.getKey(), this.findReplacement(entry.getValue())));
     }
 
@@ -97,11 +98,7 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             }
             return findReplacement(next);
         } else {
-            if (type instanceof UnionDeclarationType) {
-                return new CombinationType(reducer, ((UnionDeclarationType) type).getTypes()).getCombined();
-            } else {
-                return type;
-            }
+            return type;
         }
     }
 
@@ -148,8 +145,8 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
     }
 
     @Override
-    public Void visit(NamedObjectType namedObjectType) {
-        // Nothing to do here.
+    public Void visit(NamedObjectType named) {
+        named.setIndexType(findReplacement(named.getIndexType()));
         return null;
     }
 

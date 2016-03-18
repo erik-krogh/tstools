@@ -15,7 +15,7 @@ public class CombinationType extends DeclarationType {
 
     private boolean hasBeenUnfolded = false;
 
-    public CombinationType(TypeReducer combiner, List<DeclarationType> types) {
+    public CombinationType(TypeReducer combiner, Collection<DeclarationType> types) {
         super(types.stream().filter(Objects::nonNull).map(DeclarationType::getNames).reduce(new HashSet<>(), Util::reduceSet));
         if (combiner == null) {
             throw new NullPointerException();

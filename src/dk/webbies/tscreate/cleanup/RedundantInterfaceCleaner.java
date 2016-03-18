@@ -9,12 +9,9 @@ import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.cleanup.heuristics.*;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
+import dk.webbies.tscreate.util.Pair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 
@@ -22,21 +19,24 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClas
  * Created by erik1 on 10-03-2016.
  */
 public class RedundantInterfaceCleaner {
+    private final NativeClassesMap nativeClasses;
     private Map<String, DeclarationType> declaration;
     private final TypeReducer reducer;
     private final List<ReplacementHeuristic> heuristics = new ArrayList<>();
+    private final DeclarationTypeToTSTypes decsToTS;
 
     public RedundantInterfaceCleaner(Map<String, DeclarationType> declaration, NativeClassesMap nativeClasses, TypeReducer reducer) {
         this.declaration = declaration;
         this.reducer = reducer;
+        this.nativeClasses = nativeClasses;
 
-        DeclarationTypeToTSTypes decsToTS = new DeclarationTypeToTSTypes(nativeClasses);
+        decsToTS = new DeclarationTypeToTSTypes(this.nativeClasses);
 
         // The heuristics
         this.heuristics.add(new FindFunctionsHeuristic(reducer));
-        this.heuristics.add(new ReplaceInterfaceWithClassInstanceHeuristic(nativeClasses, reducer, decsToTS));
-        this.heuristics.add(new FindInstancesByName(nativeClasses, decsToTS, reducer));
-        this.heuristics.add(new CombineInterfacesHeuristic(nativeClasses, decsToTS));
+        this.heuristics.add(new ReplaceInterfaceWithClassInstanceHeuristic(nativeClasses, reducer, decsToTS, this));
+        this.heuristics.add(new FindInstancesByName(nativeClasses, decsToTS, reducer, this));
+        this.heuristics.add(new CombineInterfacesHeuristic(nativeClasses, decsToTS, this));
 
     }
 
@@ -47,10 +47,11 @@ public class RedundantInterfaceCleaner {
 
         // Just making things cleaner.
         cleanDeclarations();
+//        reducer.clearCache();
 
         while (progress) {
-            System.out.println("Removing redundant types (" + counter++ + ")");
             CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration.values());
+            System.out.println("Removing redundant types (" + counter++ + ")   decs:(" + collector.getEveryThing().size() + ")");
 
             progress = false;
             for (ReplacementHeuristic heuristic : heuristics) {
@@ -60,28 +61,42 @@ public class RedundantInterfaceCleaner {
                 }
                 System.out.println("Found redundant types using: " + heuristic.getDescription());
                 progress = true;
-                Set<DeclarationType> everyThing = collector.getEveryThing();
-                new InplaceDeclarationReplacer(replacements, everyThing, reducer, declaration).cleanStuff();
+                new InplaceDeclarationReplacer(replacements, collector, reducer, declaration).cleanStuff();
+//                reducer.clearCache();
                 break;
             }
         }
+        Multimap<DeclarationType, DeclarationType> newReplacements = this.heuristics.get(3).findReplacements(new CollectEveryTypeVisitor(declaration.values()));
+
+        System.out.println();
+
+        newReplacements = this.heuristics.get(3).findReplacements(new CollectEveryTypeVisitor(declaration.values()));
+
+        System.out.println();
     }
 
     private void cleanDeclarations() {
-        Set<DeclarationType> everything = new CollectEveryTypeVisitor(declaration.values()).getEveryThing();
-        new InplaceDeclarationReplacer(ArrayListMultimap.create(), everything, reducer, declaration).cleanStuff();
+        CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration.values());
+        new InplaceDeclarationReplacer(ArrayListMultimap.create(), collector, reducer, declaration).cleanStuff();
     }
 
-    public static Evaluation evaluteSimilarity(DeclarationType candidateDec, DeclarationType truthDec, DeclarationTypeToTSTypes decsToTypes, NativeClassesMap nativeClasses) {
-        Type condidateDeclaration = decsToTypes.getType(candidateDec);
+    private Map<Pair<Type, Type>, Evaluation> evaluationCache = new HashMap<>();
+    public Evaluation evaluteSimilarity(DeclarationType candidateDec, DeclarationType truthDec, DeclarationTypeToTSTypes decsToTypes, NativeClassesMap nativeClasses) {
+        Type candidateDeclaration = decsToTypes.getType(candidateDec);
         Type truthDeclaration = decsToTypes.getType(truthDec);
 
+        if (evaluationCache.containsKey(new Pair<>(candidateDeclaration, truthDeclaration))) {
+            return evaluationCache.get(new Pair<>(candidateDeclaration, truthDeclaration));
+        }
+
         Options options = new Options();
-        options.maxEvaluationDepth = 4;
+        options.maxEvaluationDepth = 2;
         options.debugPrint = true;
         options.evaluationSkipExcessProperties = false;
         options.evaluationAnyAreOK = true;
         Set<Type> nativeTypes = nativeClasses.nativeTypes();
-        return DeclarationEvaluator.evaluate(options, truthDeclaration, condidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
+        Evaluation result = DeclarationEvaluator.evaluate(options, truthDeclaration, candidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
+        evaluationCache.put(new Pair<>(candidateDeclaration, truthDeclaration), result);
+        return result;
     }
 }
