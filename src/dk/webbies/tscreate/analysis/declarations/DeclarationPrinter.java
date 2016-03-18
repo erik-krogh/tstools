@@ -571,7 +571,7 @@ public class DeclarationPrinter {
             String name = named.getName();
             switch (name) {
                 case "Array":
-                    printArray(arg, named.indexType);
+                    printArray(arg, named.getIndexType());
                     break;
                 case "NodeListOf":
                     write(arg.builder, "NodeListOf<any>");
@@ -621,7 +621,7 @@ public class DeclarationPrinter {
                     arg.builder.append("any");
                 } else {
                     // Stopping if we just have arrays of arrays. Just printing is as any[][]; and stopping it there.
-                    if (((NamedObjectType) indexType).getName().equals("Array") && ((NamedObjectType) indexType).indexType != null && ((NamedObjectType) indexType).indexType.resolve() instanceof NamedObjectType && ((NamedObjectType) ((NamedObjectType) indexType).indexType.resolve()).getName().equals("Array")) {
+                    if (((NamedObjectType) indexType).getName().equals("Array") && ((NamedObjectType) indexType).getIndexType() != null && ((NamedObjectType) indexType).getIndexType().resolve() instanceof NamedObjectType && ((NamedObjectType) ((NamedObjectType) indexType).getIndexType().resolve()).getName().equals("Array")) {
                         arg.builder.append("any[][]");
                     } else {
                         arg.builder.append("Array<");

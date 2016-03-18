@@ -42,7 +42,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
         if (hasNumberIndexer(named.getName())) {
             if (unnamedObjectType.getDeclarations().keySet().stream().anyMatch(Util::isInteger)) {
                 List<DeclarationType> indexTypes = unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> Util.isInteger(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
-                indexTypes.add(named.indexType);
+                indexTypes.add(named.getIndexType());
 
                 NamedObjectType resultNamed = new NamedObjectType(named.getName(), named.isBaseType, new CombinationType(combiner, indexTypes));
                 UnnamedObjectType resultUnnamed = new UnnamedObjectType(unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> !Util.isInteger(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), unnamedObjectType.getNames());

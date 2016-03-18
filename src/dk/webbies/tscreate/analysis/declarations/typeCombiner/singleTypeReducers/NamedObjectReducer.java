@@ -80,8 +80,8 @@ public class NamedObjectReducer extends SameTypeMultiReducer<NamedObjectType> {
         }
 
         CombinationType indexType = null;
-        if (namedTypes.stream().anyMatch(named -> named.indexType != null)) {
-            indexType = new CombinationType(combiner, namedTypes.stream().map(named -> named.indexType).filter(Objects::nonNull).collect(Collectors.toList()));
+        if (namedTypes.stream().anyMatch(named -> named.getIndexType() != null)) {
+            indexType = new CombinationType(combiner, namedTypes.stream().map(NamedObjectType::getIndexType).filter(Objects::nonNull).collect(Collectors.toList()));
         }
 
         Set<String> knownSubTypes = namedTypes.stream().map(NamedObjectType::getName).collect(Collectors.toSet());

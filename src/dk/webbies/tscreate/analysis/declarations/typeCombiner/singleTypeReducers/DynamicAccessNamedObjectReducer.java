@@ -40,8 +40,8 @@ public class DynamicAccessNamedObjectReducer implements SingleTypeReducer<Dynami
         String name = named.getName();
         if (name.equals("Array")) {
             CombinationType arrayType = new CombinationType(combiner, dynamic.getReturnType());
-            if (named.indexType != null) {
-                arrayType.addType(named.indexType);
+            if (named.getIndexType() != null) {
+                arrayType.addType(named.getIndexType());
             }
             return new NamedObjectType("Array", named.isBaseType, arrayType);
         }
