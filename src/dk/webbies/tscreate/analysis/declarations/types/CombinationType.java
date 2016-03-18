@@ -83,10 +83,10 @@ public class CombinationType extends DeclarationType {
     }
 
     @SuppressWarnings("RedundantIfStatement")
-    private Set<DeclarationType> unfold(DeclarationType type) {
-        HashSet<DeclarationType> result = new HashSet<>();
+    private Set<DeclarationType> unfold(DeclarationType rootType) {
+        Set<DeclarationType> result = new HashSet<>();
 
-        type.getReachable().stream().filter((subType) -> {
+        rootType.getReachable().stream().filter((subType) -> {
             // We have the sub-types of these in the reachables, and we don't need the parents.
             if (subType instanceof UnresolvedDeclarationType) {
                 return false;
@@ -99,17 +99,25 @@ public class CombinationType extends DeclarationType {
             } else {
                 return true;
             }
-        }).forEach(subType -> {
-            if (combiner.originals.containsKey(subType)) {
-                result.addAll(combiner.originals.get(subType));
-            } else {
-                result.add(subType);
+        }).forEach(result::add);
+
+        boolean progress = true;
+        while (progress) {
+            progress = false;
+            Set<DeclarationType> previous = result;
+            result = new HashSet<>();
+            for (DeclarationType type : previous) {
+                if (combiner.originals.containsKey(type)) {
+                    result.addAll(combiner.originals.get(type));
+                    progress = true;
+                } else {
+                    result.add(type);
+                }
             }
-        });
-
-
+        }
         return result;
     }
+
 
     public DeclarationType getCombined() {
         if (this.combined == null) {
