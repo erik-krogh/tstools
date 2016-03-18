@@ -21,7 +21,7 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClas
 public class TypeReducer {
     public final HashMap<DeclarationType, List<DeclarationType>> originals = new HashMap<>();
     private final Options options;
-    private final Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducer> handlers = new HashMap<>();
+    private final Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducerInterface> handlers = new HashMap<>();
     private final Map<Class<? extends DeclarationType>, SameTypeMultiReducer> multiHandlers = new HashMap<>();
     private final Map<Class<? extends DeclarationType>, SameTypeSingleInstanceReducer> singleInstanceHandlers = new HashMap<>();
 
@@ -34,7 +34,7 @@ public class TypeReducer {
         this.singleInstanceHandlers.put(handler.getTheClass(), handler);
     }
 
-    private void register(SingleTypeReducer<? extends DeclarationType, ? extends DeclarationType> handler) {
+    private void register(SingleTypeReducerInterface<? extends DeclarationType, ? extends DeclarationType> handler) {
         if (!DeclarationType.class.isAssignableFrom(handler.getAClass()) || !DeclarationType.class.isAssignableFrom(handler.getBClass())) {
             throw new RuntimeException("Only works on declarationTypes and subclasses.");
         }
@@ -69,20 +69,20 @@ public class TypeReducer {
     public TypeReducer(Snap.Obj globalObject, NativeClassesMap nativeClasses, Options options) {
         this.options = options;
         register(new PrimitiveObjectReducer(globalObject));
-        register(new FunctionObjectReducer(globalObject));
+        register(new FunctionObjectReducer(globalObject, originals));
         register(new FunctionClassReducer(this));
         register(new ClassObjectReducer(globalObject, this));
         register(new FunctionReducer(this, originals));
         register(new PrimitiveReducer(originals));
-        register(new NamedUnamedObjectReducer(nativeClasses, this));
+        register(new NamedUnamedObjectReducer(nativeClasses, this, originals));
         register(new UnnamedObjectReducer(this, originals));
-        register(new ClassInstanceUnnamedObjectReducer(nativeClasses));
+        register(new ClassInstanceUnnamedObjectReducer(nativeClasses, originals));
         register(new ClassInstanceReducer(originals));
         register(new DynamicAccessReducer(this, originals));
         register(new NamedObjectReducer(globalObject, nativeClasses, originals, this));
-        register(new DynamicAccessNamedObjectReducer(nativeClasses, this));
-        register(new FunctionNamedObjectReducer(nativeClasses));
-        register(new DynamicAccessUnnamedObjectReducer(this));
+        register(new DynamicAccessNamedObjectReducer(nativeClasses, this, originals));
+        register(new FunctionNamedObjectReducer(nativeClasses, originals));
+        register(new DynamicAccessUnnamedObjectReducer(this, originals));
         register(new ObjectToArrayReducer(this));
 
         // The ones that I cant do anything about.
@@ -151,7 +151,7 @@ public class TypeReducer {
 
     public DeclarationType combineTypes(Collection<DeclarationType> typeCollection, boolean avoidUnresolved) {
         // Copy, because i modify the list.
-        ArrayList<DeclarationType> types = new ArrayList<>(typeCollection);
+        List<DeclarationType> types = new ArrayList<>(typeCollection);
 
         // In 3 steps
         // - first see if a whole group of the same type can be reduced (Named-type, looking at you).
@@ -231,11 +231,19 @@ public class TypeReducer {
         } else if (types.size() == 1) {
             return types.get(0);
         } else {
-            return new UnionDeclarationType(types);
+            HashSet<DeclarationType> key = new HashSet<>(types);
+            if (unionDeclarationTypeCache.containsKey(key)) {
+                return unionDeclarationTypeCache.get(key);
+            } else {
+                UnionDeclarationType result = new UnionDeclarationType(types);
+                unionDeclarationTypeCache.put(key, result);
+                return result;
+            }
         }
     }
+    private Map<Set<DeclarationType>, UnionDeclarationType> unionDeclarationTypeCache = new HashMap<>();
 
-    private void extractInterfaces(ArrayList<DeclarationType> types) {
+    private void extractInterfaces(List<DeclarationType> types) {
         // Works in place, so no return.
 
         List<DeclarationType> interfaceParts = new ArrayList<>();

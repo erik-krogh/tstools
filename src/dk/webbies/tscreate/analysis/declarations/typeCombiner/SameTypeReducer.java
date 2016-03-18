@@ -9,11 +9,9 @@ import java.util.Map;
 /**
  * Created by Erik Krogh Kristensen on 23-11-2015.
  */
-public abstract class SameTypeReducer<T extends DeclarationType> implements SingleTypeReducer<T, T> {
-    private final Map<DeclarationType, List<DeclarationType>> originals;
-
+public abstract class SameTypeReducer<T extends DeclarationType> extends SingleTypeReducer<T, T> {
     protected SameTypeReducer(Map<DeclarationType, List<DeclarationType>> originals) {
-        this.originals = originals;
+        super(originals);
     }
 
     @Override
@@ -27,32 +25,4 @@ public abstract class SameTypeReducer<T extends DeclarationType> implements Sing
     }
 
     public abstract Class<T> getTheClass();
-
-    @Override
-    public final DeclarationType reduce(T one, T two) {
-        DeclarationType result = reduceIt(one, two);
-        // if (!(result instanceOf T))
-        if (!getTheClass().isInstance(result)) {
-            return result;
-        }
-        if (result != one && result != two) {
-            ArrayList<DeclarationType> originalsList = new ArrayList<>();
-            originals.put(result, originalsList);
-            if (originals.containsKey(one)) {
-                originalsList.addAll(originals.get(one));
-            } else {
-                originalsList.add(one);
-            }
-            if (originals.containsKey(two)) {
-                originalsList.addAll(originals.get(two));
-            } else {
-                originalsList.add(two);
-            }
-
-        }
-        return result;
-    }
-
-    protected abstract DeclarationType reduceIt(T one, T two);
-
 }

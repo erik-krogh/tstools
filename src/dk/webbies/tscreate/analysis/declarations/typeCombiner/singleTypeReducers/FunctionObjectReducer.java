@@ -9,15 +9,17 @@ import dk.webbies.tscreate.jsnap.Snap;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 17-10-2015.
  */
-public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, UnnamedObjectType> {
+public class FunctionObjectReducer extends SingleTypeReducer<FunctionType, UnnamedObjectType> {
     private Snap.Obj globalObject;
 
-    public FunctionObjectReducer(Snap.Obj globalObject) {
+    public FunctionObjectReducer(Snap.Obj globalObject, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.globalObject = globalObject;
     }
 
@@ -32,7 +34,7 @@ public class FunctionObjectReducer implements SingleTypeReducer<FunctionType, Un
     }
 
     @Override
-    public DeclarationType reduce(FunctionType function, UnnamedObjectType object) {
+    public DeclarationType reduceIt(FunctionType function, UnnamedObjectType object) {
         if (objectMatchFunctionPrototype(object, globalObject)) {
             return function;
         } else {

@@ -9,15 +9,19 @@ import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.jsnap.Snap;
 
+import java.util.List;
+import java.util.Map;
+
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 
 /**
  * Created by Erik Krogh Kristensen on 19-11-2015.
  */
-public class FunctionNamedObjectReducer implements SingleTypeReducer<FunctionType, NamedObjectType> {
+public class FunctionNamedObjectReducer extends SingleTypeReducer<FunctionType, NamedObjectType> {
     private NativeClassesMap nativeClasses;
 
-    public FunctionNamedObjectReducer(NativeClassesMap nativeClasses) {
+    public FunctionNamedObjectReducer(NativeClassesMap nativeClasses, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.nativeClasses = nativeClasses;
     }
 
@@ -32,7 +36,7 @@ public class FunctionNamedObjectReducer implements SingleTypeReducer<FunctionTyp
     }
 
     @Override
-    public DeclarationType reduce(FunctionType function, NamedObjectType named) {
+    public DeclarationType reduceIt(FunctionType function, NamedObjectType named) {
         Snap.Obj obj = this.nativeClasses.objectFromName(named.getName());
         if (obj != null && obj.function != null) {
             return named; // Lot of assuming here,

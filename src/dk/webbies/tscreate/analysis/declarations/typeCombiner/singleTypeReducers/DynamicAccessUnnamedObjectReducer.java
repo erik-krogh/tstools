@@ -12,11 +12,12 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 19-11-2015.
  */
-public class DynamicAccessUnnamedObjectReducer implements SingleTypeReducer<DynamicAccessType, UnnamedObjectType> {
+public class DynamicAccessUnnamedObjectReducer extends SingleTypeReducer<DynamicAccessType, UnnamedObjectType> {
 
     private TypeReducer combiner;
 
-    public DynamicAccessUnnamedObjectReducer(TypeReducer combiner) {
+    public DynamicAccessUnnamedObjectReducer(TypeReducer combiner, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.combiner = combiner;
     }
 
@@ -31,7 +32,7 @@ public class DynamicAccessUnnamedObjectReducer implements SingleTypeReducer<Dyna
     }
 
     @Override
-    public DeclarationType reduce(DynamicAccessType dynamicAccess, UnnamedObjectType obj) {
+    public DeclarationType reduceIt(DynamicAccessType dynamicAccess, UnnamedObjectType obj) {
         if (obj.getDeclarations().keySet().stream().anyMatch(Util::isInteger)) {
             List<DeclarationType> indexTypes = obj.getDeclarations().entrySet().stream().filter(entry -> Util.isInteger(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
             indexTypes.add(dynamicAccess.getReturnType());

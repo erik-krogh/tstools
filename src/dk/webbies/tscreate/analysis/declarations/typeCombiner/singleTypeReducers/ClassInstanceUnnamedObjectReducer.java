@@ -10,16 +10,18 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Created by Erik Krogh Kristensen on 27-10-2015.
  */
-public class ClassInstanceUnnamedObjectReducer implements SingleTypeReducer<ClassInstanceType, UnnamedObjectType> {
+public class ClassInstanceUnnamedObjectReducer extends SingleTypeReducer<ClassInstanceType, UnnamedObjectType> {
     private final DeclarationParser.NativeClassesMap nativeClasses;
 
-    public ClassInstanceUnnamedObjectReducer(DeclarationParser.NativeClassesMap nativeClasses) {
+    public ClassInstanceUnnamedObjectReducer(DeclarationParser.NativeClassesMap nativeClasses, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.nativeClasses = nativeClasses;
     }
 
@@ -36,7 +38,7 @@ public class ClassInstanceUnnamedObjectReducer implements SingleTypeReducer<Clas
     private Map<ClassType, Set<String>> classKeys = new HashMap<>();
 
     @Override
-    public DeclarationType reduce(ClassInstanceType instance, UnnamedObjectType object) {
+    public DeclarationType reduceIt(ClassInstanceType instance, UnnamedObjectType object) {
         LibraryClass libraryClass = instance.getClazz().getLibraryClass();
         if (!classKeys.containsKey(instance.getClazz())) {
             Set<String> set = ClassType.getFieldsInclSuper(instance.getClazz(), nativeClasses);

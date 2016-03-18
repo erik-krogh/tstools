@@ -1,6 +1,6 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
-import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducerInterface;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
@@ -9,7 +9,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 /**
  * Created by Erik Krogh Kristensen on 17-10-2015.
  */
-public class PrimitiveObjectReducer implements SingleTypeReducer<PrimitiveDeclarationType, UnnamedObjectType> {
+public class PrimitiveObjectReducer implements SingleTypeReducerInterface<PrimitiveDeclarationType, UnnamedObjectType> {
     private final Snap.Obj globalObject;
 
     public PrimitiveObjectReducer(Snap.Obj globalObject) {

@@ -1,12 +1,12 @@
 package dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers;
 
-import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.SingleTypeReducerInterface;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 
 /**
  * Created by Erik Krogh Kristensen on 05-11-2015.
  */
-public class CantReduceReducer<A extends DeclarationType, B extends DeclarationType> implements SingleTypeReducer<A, B> {
+public class CantReduceReducer<A extends DeclarationType, B extends DeclarationType> implements SingleTypeReducerInterface<A, B> {
     private final Class<A> aClass;
     private final Class<B> bClass;
 

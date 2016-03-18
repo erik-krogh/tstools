@@ -11,16 +11,19 @@ import dk.webbies.tscreate.analysis.declarations.types.DynamicAccessType;
 import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * Created by Erik Krogh Kristensen on 11-11-2015.
  */
-public class DynamicAccessNamedObjectReducer implements SingleTypeReducer<DynamicAccessType, NamedObjectType> {
+public class DynamicAccessNamedObjectReducer extends SingleTypeReducer<DynamicAccessType, NamedObjectType> {
     private final DeclarationParser.NativeClassesMap nativeClasses;
     private final TypeReducer combiner;
 
-    public DynamicAccessNamedObjectReducer(DeclarationParser.NativeClassesMap nativeClasses, TypeReducer combiner) {
+    public DynamicAccessNamedObjectReducer(DeclarationParser.NativeClassesMap nativeClasses, TypeReducer combiner, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.nativeClasses = nativeClasses;
         this.combiner = combiner;
     }
@@ -36,7 +39,7 @@ public class DynamicAccessNamedObjectReducer implements SingleTypeReducer<Dynami
     }
 
     @Override
-    public DeclarationType reduce(DynamicAccessType dynamic, NamedObjectType named) {
+    public DeclarationType reduceIt(DynamicAccessType dynamic, NamedObjectType named) {
         String name = named.getName();
         if (name.equals("Array")) {
             CombinationType arrayType = new CombinationType(combiner, dynamic.getReturnType());

@@ -89,10 +89,12 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
         type = cleanerFunction.apply(type.resolve());
         if (replacements.containsKey(type)) {
             Collection<DeclarationType> foundReplacements = replacements.get(type);
-            if (foundReplacements.size() != 1) {
-                throw new RuntimeException("Cycles and the like should be gone by now.");
+            DeclarationType next;
+            if (foundReplacements.size() == 1) {
+                next = foundReplacements.iterator().next();
+            } else {
+                next = new CombinationType(reducer, foundReplacements).getCombined();
             }
-            DeclarationType next = foundReplacements.iterator().next();
             if (next == type) {
                 return next;
             }

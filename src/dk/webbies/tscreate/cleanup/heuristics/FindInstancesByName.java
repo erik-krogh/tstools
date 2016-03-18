@@ -97,7 +97,6 @@ public class FindInstancesByName implements ReplacementHeuristic {
         } else if (hasArray && hasDynAccess(object) && score.precision > 0.6) {
             // We good
         } else {
-            System.out.println();
             return; // TODO: See when it happens, and consider what should happen
         }
 

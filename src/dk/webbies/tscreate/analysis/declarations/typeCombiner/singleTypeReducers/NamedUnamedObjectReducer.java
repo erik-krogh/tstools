@@ -18,11 +18,12 @@ import java.util.stream.Collectors;
 /**
  * Created by Erik Krogh Kristensen on 18-10-2015.
  */
-public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObjectType, NamedObjectType> {
+public class NamedUnamedObjectReducer extends SingleTypeReducer<UnnamedObjectType, NamedObjectType> {
     private NativeClassesMap nativeClasses;
     private TypeReducer combiner;
 
-    public NamedUnamedObjectReducer(NativeClassesMap nativeClasses, TypeReducer combiner) {
+    public NamedUnamedObjectReducer(NativeClassesMap nativeClasses, TypeReducer combiner, Map<DeclarationType, List<DeclarationType>> originals) {
+        super(originals);
         this.nativeClasses = nativeClasses;
         this.combiner = combiner;
     }
@@ -38,7 +39,7 @@ public class NamedUnamedObjectReducer implements SingleTypeReducer<UnnamedObject
     }
 
     @Override
-    public DeclarationType reduce(UnnamedObjectType unnamedObjectType, NamedObjectType named) {
+    public DeclarationType reduceIt(UnnamedObjectType unnamedObjectType, NamedObjectType named) {
         if (hasNumberIndexer(named.getName())) {
             if (unnamedObjectType.getDeclarations().keySet().stream().anyMatch(Util::isInteger)) {
                 List<DeclarationType> indexTypes = unnamedObjectType.getDeclarations().entrySet().stream().filter(entry -> Util.isInteger(entry.getKey())).map(Map.Entry::getValue).collect(Collectors.toList());
