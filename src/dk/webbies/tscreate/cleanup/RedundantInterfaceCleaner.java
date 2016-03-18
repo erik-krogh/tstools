@@ -66,13 +66,6 @@ public class RedundantInterfaceCleaner {
                 break;
             }
         }
-        Multimap<DeclarationType, DeclarationType> newReplacements = this.heuristics.get(3).findReplacements(new CollectEveryTypeVisitor(declaration.values()));
-
-        System.out.println();
-
-        newReplacements = this.heuristics.get(3).findReplacements(new CollectEveryTypeVisitor(declaration.values()));
-
-        System.out.println();
     }
 
     private void cleanDeclarations() {
