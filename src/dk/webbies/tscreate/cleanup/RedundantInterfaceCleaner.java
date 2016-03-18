@@ -9,9 +9,11 @@ import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.cleanup.heuristics.*;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
-import dk.webbies.tscreate.util.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 
@@ -49,6 +51,8 @@ public class RedundantInterfaceCleaner {
         cleanDeclarations();
 //        reducer.clearCache();
 
+        Multimap<DeclarationType, DeclarationType> allReplacements = ArrayListMultimap.create();
+
         while (progress) {
             CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration.values());
             System.out.println("Removing redundant types (" + counter++ + ")   decs:(" + collector.getEveryThing().size() + ")");
@@ -59,9 +63,10 @@ public class RedundantInterfaceCleaner {
                 if (replacements == null || replacements.isEmpty()) {
                     continue;
                 }
+                allReplacements.putAll(replacements);
                 System.out.println("Found redundant types using: " + heuristic.getDescription());
                 progress = true;
-                new InplaceDeclarationReplacer(replacements, collector, reducer, declaration).cleanStuff();
+                new InplaceDeclarationReplacer(allReplacements, collector, reducer, declaration).cleanStuff();
 //                reducer.clearCache();
                 break;
             }
@@ -73,14 +78,10 @@ public class RedundantInterfaceCleaner {
         new InplaceDeclarationReplacer(ArrayListMultimap.create(), collector, reducer, declaration).cleanStuff();
     }
 
-    private Map<Pair<Type, Type>, Evaluation> evaluationCache = new HashMap<>();
     public Evaluation evaluteSimilarity(DeclarationType candidateDec, DeclarationType truthDec, DeclarationTypeToTSTypes decsToTypes, NativeClassesMap nativeClasses) {
         Type candidateDeclaration = decsToTypes.getType(candidateDec);
         Type truthDeclaration = decsToTypes.getType(truthDec);
 
-        if (evaluationCache.containsKey(new Pair<>(candidateDeclaration, truthDeclaration))) {
-            return evaluationCache.get(new Pair<>(candidateDeclaration, truthDeclaration));
-        }
 
         Options options = new Options();
         options.maxEvaluationDepth = 2;
@@ -89,7 +90,6 @@ public class RedundantInterfaceCleaner {
         options.evaluationAnyAreOK = true;
         Set<Type> nativeTypes = nativeClasses.nativeTypes();
         Evaluation result = DeclarationEvaluator.evaluate(options, truthDeclaration, candidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
-        evaluationCache.put(new Pair<>(candidateDeclaration, truthDeclaration), result);
         return result;
     }
 }
