@@ -261,21 +261,17 @@ public class Util {
 
 
     public static <A, B> Stream<Pair<A, B>> zip(Stream<? extends A> a, Stream<? extends B> b) {
-        return zip(a, b, Pair::new);
+        //noinspection Convert2MethodRef
+        return zip(a, b, (one,two) -> new Pair<>(one, two));
     }
 
-    public static <E> List<E> reduceList(List<E> acc, List<E> elem) {
+    public static <E, S extends List<E>, T extends Collection<E>> S reduceList(S acc, T elem) {
         acc.addAll(elem);
         return acc;
     }
 
-    public static <E> ArrayList<E> reduceList(ArrayList<E> acc, ArrayList<E> elem) {
-        acc.addAll(elem);
-        return acc;
-    }
-
-    public static <E> Set<E> reduceSet(Set<E> acc, Set<E> elem) {
-        acc.addAll(elem);
+    public static <E, S extends Set<E>, T extends Collection<E>> S reduceSet(S acc, T set) {
+        acc.addAll(set);
         return acc;
     }
 
