@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.FunctionReducer;
@@ -14,6 +15,7 @@ import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.paser.AST.Identifier;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
@@ -434,8 +436,36 @@ public class TypeFactory {
 
         DeclarationType returnType = constructCombinationType(functionFeatures, (feature) -> getType(feature.getReturnNode()));
 
+        List<String> argumentNames = new ArrayList<>();
+        switch (closure.function.type) {
+            case "bind":
+                closure = closure.function.target;
+                /* FALLTHROUGH */
+            case "user":
+                closure.function.astNode.getArguments().stream().map(Identifier::getName).forEach(argumentNames::add);
+                break;
+            case "native":
+                if (!closure.function.callSignatures.isEmpty()) {
+                    Signature signature = Collections.max(closure.function.callSignatures, (a, b) -> Integer.compare(a.getParameters().size(), b.getParameters().size()));
+                    signature.getParameters().stream().map(Signature.Parameter::getName).forEach(argumentNames::add);
+                }
+                break;
+            case "unknown":
+                break;
+            default:
+                throw new RuntimeException();
+        }
+
+        final int[] argCount = {0};
         List<FunctionType.Argument> argumentsTypes = getArguments(functionFeatures).stream().map((arguments) -> {
-            String name = FunctionReducer.getBestArgumentName(arguments.stream().map(argument -> argument.getFeature().getNames()).reduce(new HashSet<>(), Util::reduceSet));
+            String name;
+            if (argumentNames.size() > argCount[0]) {
+                name = argumentNames.get(argCount[0]);
+            } else {
+                name = FunctionReducer.getBestArgumentName(arguments.stream().map(argument -> argument.getFeature().getNames()).reduce(new HashSet<>(), Util::reduceSet));
+            }
+
+            argCount[0]++;
             return new FunctionType.Argument(name, constructCombinationType(arguments, this::getType));
         }).collect(Collectors.toList());
 
