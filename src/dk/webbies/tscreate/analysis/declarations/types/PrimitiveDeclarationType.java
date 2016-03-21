@@ -11,31 +11,31 @@ public class PrimitiveDeclarationType extends DeclarationType {
     }
 
     public static PrimitiveDeclarationType Void(Set<String> names) {
-        return new PrimitiveDeclarationType(Type.VOID, names);
+        return fromType(Type.VOID, names);
     }
 
     public static PrimitiveDeclarationType NonVoid(Set<String> names) {
-        return new PrimitiveDeclarationType(Type.NON_VOID, names);
+        return fromType(Type.NON_VOID, names);
     }
 
     public static PrimitiveDeclarationType Any(Set<String> names) {
-        return new PrimitiveDeclarationType(Type.ANY, names);
+        return fromType(Type.ANY, names);
     }
 
     public static PrimitiveDeclarationType Number(Set<String> names) {
-        return new PrimitiveDeclarationType(Type.NUMBER, names);
+        return fromType(Type.NUMBER, names);
     }
 
     public static PrimitiveDeclarationType Boolean(Set<String> names) {
-        return new PrimitiveDeclarationType(Type.BOOLEAN, names);
+        return fromType(Type.BOOLEAN, names);
     }
 
     public static PrimitiveDeclarationType String(Set<String> names) {
-        return new PrimitiveDeclarationType(Type.STRING, names);
+        return fromType(Type.STRING, names);
     }
 
     public static PrimitiveDeclarationType StringOrNumber(Set<String> names) {
-        return new PrimitiveDeclarationType(Type.STRING_OR_NUMBER, names);
+        return fromType(Type.STRING_OR_NUMBER, names);
     }
 
     public static PrimitiveDeclarationType fromType(Type type, Set<String> names) {
