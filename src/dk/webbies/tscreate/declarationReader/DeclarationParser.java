@@ -6,6 +6,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
+import dk.webbies.tscreate.analysis.declarations.types.NamedObjectType;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.util.Util;
@@ -307,6 +308,7 @@ public class DeclarationParser {
     public static final class NativeClassesMap {
         private final BiMap<Type, String> typeNames;
         private final BiMap<Snap.Obj, String> classNames = HashBiMap.create();
+        private final Set<NamedObjectType> nativeDeclarationTypes;
         private BiMap<Obj, String> namedObjects;
         private final Obj global;
         private Map<Obj, LibraryClass> libraryClasses;
@@ -321,6 +323,7 @@ public class DeclarationParser {
                     classNames.put(prototype, typeNames.get(type));
                 }
             });
+            this.nativeDeclarationTypes = this.typeNames.values().stream().filter(name -> !name.startsWith("MS")).map(name -> new NamedObjectType(name, false)).collect(Collectors.toSet());
         }
 
         public String nameFromType(Type type) {
@@ -328,6 +331,10 @@ public class DeclarationParser {
                 type = ((ReferenceType) type).getTarget();
             }
             return typeNames.get(type);
+        }
+
+        public Set<NamedObjectType> getNativeDeclarationTypes() {
+            return nativeDeclarationTypes;
         }
 
         public Set<Type> nativeTypes() {
