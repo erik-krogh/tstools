@@ -292,7 +292,8 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
 
     @Override
     public DeclarationType visit(UnionType t) {
-        return new UnionDeclarationType(t.getElements().stream().map(type -> type.accept(this)).collect(Collectors.toList()));
+        List<DeclarationType> types = t.getElements().stream().map(type -> type.accept(this)).collect(Collectors.toList());
+        return new UnionDeclarationType(types);
     }
 
     @Override
