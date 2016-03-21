@@ -66,6 +66,7 @@ public class RedundantInterfaceCleaner {
                 allReplacements.putAll(replacements);
                 System.out.println("Found redundant types using: " + heuristic.getDescription());
                 progress = true;
+                allReplacements.values().forEach(replacement -> replacement.accept(collector));
                 new InplaceDeclarationReplacer(allReplacements, collector, reducer, declaration).cleanStuff();
 //                reducer.clearCache();
                 break;

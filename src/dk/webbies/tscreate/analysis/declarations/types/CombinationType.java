@@ -65,12 +65,8 @@ public class CombinationType extends DeclarationType {
                 return result;
             }
 
-            DeclarationType result;
-            if (unfolded.isEmpty()) {
-                result = PrimitiveDeclarationType.Void(Collections.EMPTY_SET);
-            } else {
-                result = combiner.combineTypes(unfolded, false);
-            }
+            DeclarationType result = combiner.combineTypes(unfolded, false);
+
             this.types.clear();
             this.types.add(result);
 
@@ -84,7 +80,7 @@ public class CombinationType extends DeclarationType {
 
     @SuppressWarnings("RedundantIfStatement")
     private Set<DeclarationType> unfold(DeclarationType rootType) {
-        Set<DeclarationType> result = new HashSet<>();
+        final Set<DeclarationType> result = new HashSet<>();
 
         rootType.getReachable().stream().filter((subType) -> {
             // We have the sub-types of these in the reachables, and we don't need the parents.
@@ -99,25 +95,18 @@ public class CombinationType extends DeclarationType {
             } else {
                 return true;
             }
-        }).forEach(result::add);
+        }).forEach(type -> this.addToUnfolded(type, result));
 
-        boolean progress = true;
-        while (progress) {
-            progress = false;
-            Set<DeclarationType> previous = result;
-            result = new HashSet<>();
-            for (DeclarationType type : previous) {
-                if (combiner.originals.containsKey(type)) {
-                    result.addAll(combiner.originals.get(type));
-                    progress = true;
-                } else {
-                    result.add(type);
-                }
-            }
-        }
         return result;
     }
 
+    private void addToUnfolded(DeclarationType type, Set<DeclarationType> acc) {
+        if (combiner.originals.containsKey(type)) {
+            combiner.originals.get(type).forEach(subType -> addToUnfolded(subType, acc));
+        } else {
+            acc.add(type);
+        }
+    }
 
     public DeclarationType getCombined() {
         if (this.combined == null) {

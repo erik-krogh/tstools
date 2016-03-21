@@ -22,6 +22,7 @@ public class ClassType extends DeclarationType{
     private String name;
     public DeclarationType superClass;
     private LibraryClass libraryClass;
+    private final ClassInstanceType instance = new ClassInstanceType(this, Collections.EMPTY_SET);
 
     public ClassType(String name, DeclarationType constructorType, Map<String, DeclarationType> properties, Map<String, DeclarationType> staticFields, LibraryClass libraryClass) {
         super(Collections.EMPTY_SET); // <- Got the name elsewhere.
@@ -30,6 +31,10 @@ public class ClassType extends DeclarationType{
         this.name = name;
         this.staticFields = staticFields;
         this.libraryClass = libraryClass;
+    }
+
+    public ClassInstanceType getEmptyNameInstance() {
+        return this.instance;
     }
 
     public void setName(String name) {

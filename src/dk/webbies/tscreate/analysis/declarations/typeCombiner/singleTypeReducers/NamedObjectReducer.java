@@ -98,6 +98,10 @@ public class NamedObjectReducer extends SameTypeMultiReducer<NamedObjectType> {
             // We achieved nothing, we therefore do not have a strictly smaller type, therefore return null.
             return null;
         }
+        ArrayList<DeclarationType> namedTypesList = new ArrayList<>(namedTypesCollection);
+        finalResults.forEach(result -> {
+            combiner.originals.put(result, namedTypesList);
+        });
 
         if (finalResults.size() == 1) {
             return finalResults.iterator().next();

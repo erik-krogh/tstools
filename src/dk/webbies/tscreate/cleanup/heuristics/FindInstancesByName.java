@@ -48,10 +48,10 @@ public class FindInstancesByName implements ReplacementHeuristic {
         Map<String, DeclarationType> candidateMap = new HashMap<>();
         // Adding classes we have inferred.
         if (byType.get(ClassType.class) != null) {
-            byType.get(ClassType.class).stream().map(clazz -> (ClassType)clazz).forEach(clazz -> candidateMap.put(clazz.getName().toLowerCase(), new ClassInstanceType(clazz, Collections.EMPTY_SET)));
+            byType.get(ClassType.class).stream().map(clazz -> (ClassType)clazz).forEach(clazz -> candidateMap.put(clazz.getName().toLowerCase(), clazz.getEmptyNameInstance()));
         }
         // Adding natives
-        nativeClasses.getNativeTypeNames().forEach(name -> candidateMap.put(name.toLowerCase(), new NamedObjectType(name, false)));
+        nativeClasses.getNativeDeclarationTypes().forEach(dec -> candidateMap.put(dec.getName().toLowerCase(), dec));
 
 
 

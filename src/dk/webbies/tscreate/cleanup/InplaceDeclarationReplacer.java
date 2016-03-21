@@ -42,12 +42,8 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
     }
 
     public void cleanStuff() {
-        List<List<TypeNode>> cycles = new Tarjan<TypeNode>().getSCComponents(collector.getEveryThing().stream().map(this::getNode).collect(Collectors.toList()));
-        for (List<TypeNode> cycleNodes : cycles) {
-            if (cycleNodes.size() <= 1) {
-                continue;
-            }
-            List<DeclarationType> cycle = cycleNodes.stream().map(TypeNode::getType).collect(Collectors.toList());
+        List<List<DeclarationType>> cycles = computeCycles();
+        for (List<DeclarationType> cycle : cycles) {
             cycle.forEach(replacements::removeAll);
 
             DeclarationType result = new CombinationType(reducer, cycle).getCombined();
@@ -57,6 +53,12 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
 
         collector.getEveryThing().forEach(dec -> dec.accept(this));
         declarations.entrySet().stream().forEach(entry -> declarations.put(entry.getKey(), this.findReplacement(entry.getValue())));
+    }
+
+    private List<List<DeclarationType>> computeCycles() {
+        return new Tarjan<TypeNode>().getSCComponents(collector.getEveryThing().stream().map(this::getNode).collect(Collectors.toList())).stream().filter(cycle -> cycle.size() > 1).map(cycle -> {
+            return cycle.stream().map(TypeNode::getType).collect(Collectors.toList());
+        }).collect(Collectors.toList());
     }
 
     private final class TypeNode extends Tarjan.Node<TypeNode> {

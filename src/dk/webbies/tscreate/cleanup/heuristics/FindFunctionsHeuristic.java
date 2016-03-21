@@ -64,11 +64,17 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
             if (!(fieldType instanceof FunctionType)) {
                 return;
             }
-            DeclarationType returnType = ((FunctionType) fieldType).getReturnType();
-            FunctionType function = new FunctionType(returnType, Collections.EMPTY_LIST, object.getNames());
+            FunctionType function = getFunctionFromApplyProp(object, (FunctionType) fieldType);
 
             putFunctionOnInterface(replacements, anInterface, function, "apply");
         }
+    }
+
+    private FunctionType getFunctionFromApplyProp(UnnamedObjectType object, FunctionType fieldType) {
+        DeclarationType returnType = fieldType.getReturnType();
+        FunctionType result = new FunctionType(returnType, Collections.EMPTY_LIST, object.getNames());
+        this.reducer.originals.put(result, Collections.singletonList(object));
+        return result;
     }
 
     private static final Set<String> keysInFunction = new HashSet<>(Arrays.asList("length", "name", "arguments", "caller", "apply", "bind", "call", "toString", "constructor"));
@@ -81,6 +87,7 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
         result.setDynamicAccess(anInterface.getDynamicAccess());
         Map<String, DeclarationType> filteredDeclarations = anInterface.getObject().getDeclarations().entrySet().stream().filter(entry -> !entry.getKey().equals(keyToRemove)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         UnnamedObjectType newObject = new UnnamedObjectType(filteredDeclarations, anInterface.getNames());
+        this.reducer.originals.put(newObject, Collections.singletonList(anInterface.getObject()));
         result.setObject(newObject);
 
         if (anInterface.getFunction() != null) {
@@ -98,7 +105,9 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
         for (int i = 1; i < callArguments.size(); i++) {
             arguments.add(callArguments.get(i));
         }
-        return new FunctionType(returnType, arguments, object.getNames());
+        FunctionType result = new FunctionType(returnType, arguments, object.getNames());
+        this.reducer.originals.put(result, Collections.singletonList(object));
+        return result;
     }
 
     @Override
@@ -117,26 +126,16 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
             }
             FunctionType function = getFunctionFromCallProp(object, (FunctionType) fieldType);
 
-            putFunctionOnObject(replacements, object, function, "call");
+            replacements.put(object, function);
 
         } else if (object.getDeclarations().keySet().stream().anyMatch(key -> key.equals("apply"))) {
             DeclarationType fieldType = object.getDeclarations().get("apply");
             if (!(fieldType instanceof FunctionType)) {
                 return;
             }
-            DeclarationType returnType = ((FunctionType) fieldType).getReturnType();
-            FunctionType function = new FunctionType(returnType, Collections.EMPTY_LIST, object.getNames());
+            FunctionType function = getFunctionFromApplyProp(object, (FunctionType) fieldType);
 
-            putFunctionOnObject(replacements, object, function, "apply");
+            replacements.put(object, function);
         }
-    }
-
-    private void putFunctionOnObject(ArrayListMultimap<DeclarationType, DeclarationType> replacements, UnnamedObjectType object, FunctionType function, String keyToRemove) {
-        InterfaceDeclarationType result = new InterfaceDeclarationType(null, object.getNames());
-        UnnamedObjectType newObject = new UnnamedObjectType(object.getDeclarations().entrySet().stream().filter(entry -> !entry.getKey().equals(keyToRemove)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), object.getNames());
-        result.setObject(newObject);
-
-        result.setFunction(function);
-        replacements.put(object, result);
     }
 }

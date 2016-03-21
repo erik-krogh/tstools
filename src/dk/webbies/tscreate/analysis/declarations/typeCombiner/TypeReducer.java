@@ -102,17 +102,18 @@ public class TypeReducer {
         register(new CantReduceReducer(ClassInstanceType.class, ClassType.class));
     }
 
-    private static Map<PrimitiveDeclarationType.Type, Function<DeclarationType, DeclarationType>> specialPrimitives = new HashMap<>();
+    private static Map<PrimitiveDeclarationType.Type, Function<Pair<DeclarationType, DeclarationType>, DeclarationType>> specialPrimitives = new HashMap<>();
     static {
-        specialPrimitives.put(PrimitiveDeclarationType.Type.VOID, other -> other);
-        specialPrimitives.put(PrimitiveDeclarationType.Type.NON_VOID, other -> {
+        specialPrimitives.put(PrimitiveDeclarationType.Type.VOID, other -> other.right);
+        specialPrimitives.put(PrimitiveDeclarationType.Type.NON_VOID, pair -> {
+            DeclarationType other = pair.right;
             if (other instanceof PrimitiveDeclarationType &&  ((PrimitiveDeclarationType)other).getType() == PrimitiveDeclarationType.Type.VOID) {
-                return PrimitiveDeclarationType.NonVoid(Collections.EMPTY_SET);
+                return pair.left;
             } else {
                 return other;
             }
         });
-        specialPrimitives.put(PrimitiveDeclarationType.Type.ANY, other -> PrimitiveDeclarationType.Any(Collections.EMPTY_SET));
+        specialPrimitives.put(PrimitiveDeclarationType.Type.ANY, pair -> pair.left);
     }
 
 
@@ -123,12 +124,12 @@ public class TypeReducer {
         }
 
         if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) one).getType())) {
-            DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) one).getType()).apply(two);
+            DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) one).getType()).apply(new Pair<>(one, two));
             result.setNames(Util.concatSet(one.getNames(), two.getNames()));
             return result;
         }
         if (two instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) two).getType())) {
-            DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) two).getType()).apply(one);
+            DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) two).getType()).apply(new Pair<>(two, one));
             result.setNames(Util.concatSet(one.getNames(), two.getNames()));
             return result;
         }

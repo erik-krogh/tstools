@@ -570,6 +570,11 @@ public class DeclarationPrinter {
         public Void visit(NamedObjectType named, VisitorArg arg) {
             String name = named.getName();
             switch (name) {
+                case "String" :
+                case "Boolean" :
+                case "Number" :
+                    new NamedObjectType(name.toLowerCase(), false).accept(this, arg);
+                    break;
                 case "Array":
                     printArray(arg, named.getIndexType());
                     break;

@@ -38,7 +38,6 @@ public class FunctionObjectReducer extends SingleTypeReducer<FunctionType, Unnam
         if (objectMatchFunctionPrototype(object, globalObject)) {
             return function;
         } else {
-            // According to my test, this is less precise. I want it anyway.
             List<String> matchingProperties = getMatchingProperties(object, globalObject);
             if (matchingProperties.isEmpty()) {
                 return null;
@@ -53,7 +52,7 @@ public class FunctionObjectReducer extends SingleTypeReducer<FunctionType, Unnam
         }
     }
 
-    public static boolean objectMatchFunctionPrototype(UnnamedObjectType object, Snap.Obj globalObject) {
+    private static boolean objectMatchFunctionPrototype(UnnamedObjectType object, Snap.Obj globalObject) {
         return getMatchingProperties(object, globalObject).size() == object.getDeclarations().size();
     }
 
