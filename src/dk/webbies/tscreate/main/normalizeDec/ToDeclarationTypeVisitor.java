@@ -20,6 +20,7 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
     private Map<Type, String> typeNames;
     private Map<DeclarationType, List<DeclarationType>> interfaceExtensions = new HashMap<>();
     private List<Pair<InterfaceType, dk.webbies.tscreate.analysis.declarations.types.ClassType>> classesForLater = new ArrayList<>();
+    public final Map<InterfaceDeclarationType, ClassInstanceType> interfaceToClassInstanceMap = new HashMap<>();
 
     public ToDeclarationTypeVisitor(Map<Type, String> libraryTypeNames, Map<Type, String> allTypeNames, TypeReducer reducer) {
         this.typeNames = allTypeNames;
@@ -244,6 +245,8 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
             } else {
                 returnType = (InterfaceDeclarationType) uncastReturnType;
             }
+
+            interfaceToClassInstanceMap.put(returnType, new ClassInstanceType(clazz, EMPTY_SET));
 
             Map<String, DeclarationType> declarations = new HashMap<>();
             if (returnType.object != null) {

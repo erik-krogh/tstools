@@ -70,6 +70,14 @@ public class NormalizeDeclaration {
         converter.resolveClassHierarchy();
 
         declaration = mapTypes(reducer, declaration, (type) -> {
+            if (type instanceof InterfaceDeclarationType && converter.interfaceToClassInstanceMap.containsKey(type)) {
+                return converter.interfaceToClassInstanceMap.get(type);
+            } else {
+                return type;
+            }
+        });
+
+        declaration = mapTypes(reducer, declaration, (type) -> {
             if (converter.getInterfaceExtensions().containsKey(type)) {
                 CombinationType result = new CombinationType(reducer, type);
                 result.addTypes(converter.getInterfaceExtensions().get(type));
