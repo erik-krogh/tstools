@@ -268,6 +268,10 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
             return cache.get(t);
         }
         DeclarationType result = t.getTarget().accept(this);
+        if ("Array".equals(typeNames.get(t.getTarget())) && t.getTypeArguments().size() == 1) {
+            DeclarationType arrayType = t.getTypeArguments().iterator().next().accept(this);
+            result = new CombinationType(reducer, result, new DynamicAccessType(PrimitiveDeclarationType.Number(EMPTY_SET), arrayType, EMPTY_SET));
+        }
         cache.put(t, result);
         return result;
     }
