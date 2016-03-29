@@ -4,6 +4,7 @@ cache/
 node_modules/
 paper/
 tests/**/*.gen.d.ts
+tests/**/*.normalized.d.ts
 tests/**/*.jsnap
 lib/jsnap
 lib/ts-type-reader
