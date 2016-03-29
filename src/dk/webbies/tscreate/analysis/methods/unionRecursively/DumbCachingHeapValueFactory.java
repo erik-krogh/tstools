@@ -54,7 +54,7 @@ public class DumbCachingHeapValueFactory implements HeapValueFactory {
             valueCache.put(obj, objectNode);
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    objectNode.addField(property.name, this.fromProperty(property));
+                    objectNode.addField(property.name, solver.union(this.fromProperty(property), getPrimitivesFactory().nonVoid()));
                 }
             }
             return solver.union(result);

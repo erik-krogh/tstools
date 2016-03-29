@@ -8,7 +8,6 @@ import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionRecursively.DumbPrimitiveFactory;
 import dk.webbies.tscreate.analysis.unionFind.*;
-import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 
@@ -29,7 +28,7 @@ public class HeapValueNode extends ObjectNode {
             Snap.Obj obj = (Snap.Obj) value;
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    addField(property.name, factory.fromProperty(property));
+                    addField(property.name, solver.union(factory.fromProperty(property), factory.primitivesFactory.nonVoid()));
                 }
             }
         }
@@ -37,7 +36,6 @@ public class HeapValueNode extends ObjectNode {
 
     public static class Factory implements HeapValueFactory {
         private final Snap.Obj globalObject;
-        private final DeclarationParser.NativeClassesMap typeNames;
         private final Map<Snap.Value, HeapValueNode> cache = new HashMap<>();
         private final PrimitiveNode.Factory primitivesFactory;
         private final UnionFindSolver solver;
@@ -45,16 +43,14 @@ public class HeapValueNode extends ObjectNode {
         private final Multimap<Snap.Obj, UnionNode> functionCache = ArrayListMultimap.create();
         private final Map<Snap.Obj, LibraryClass> libraryClasses;
 
-        private final Map<Snap.Obj, FunctionNode> getterSetterCache = new HashMap<>();
         private final TypeAnalysis typeAnalysis;
 
-        public Factory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, DeclarationParser.NativeClassesMap typeNames, TypeAnalysis typeAnalysis) {
+        public Factory(Snap.Obj globalObject, UnionFindSolver solver, Map<Snap.Obj, LibraryClass> libraryClasses, TypeAnalysis typeAnalysis) {
             this.libraryClasses = libraryClasses;
             this.globalObject = globalObject;
             this.typeAnalysis = typeAnalysis;
             this.primitivesFactory = new DumbPrimitiveFactory(solver, globalObject);
             this.solver = solver;
-            this.typeNames = typeNames;
             this.functionNodeFactory = new NativeTypeFactory(primitivesFactory, solver, typeAnalysis.getNativeClasses());
         }
 

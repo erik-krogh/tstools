@@ -101,7 +101,7 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
             cache.put(obj, result);
             if (obj.properties != null) {
                 for (Snap.Property property : obj.properties) {
-                    objectNode.addField(property.name,this.innerFromProperty(property));
+                    objectNode.addField(property.name,solver.union(this.innerFromProperty(property), primitivesFactory.nonVoid()));
                 }
             }
             return result;
