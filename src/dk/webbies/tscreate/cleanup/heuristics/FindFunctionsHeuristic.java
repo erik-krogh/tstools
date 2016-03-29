@@ -3,12 +3,15 @@ package dk.webbies.tscreate.cleanup.heuristics;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.FunctionReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.cleanup.CollectEveryTypeVisitor;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static dk.webbies.tscreate.cleanup.heuristics.HeuristicsUtil.hasFunction;
 
 /**
  * Created by erik1 on 15-03-2016.
@@ -47,10 +50,23 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
 
     private void runOnInterface(ArrayListMultimap<DeclarationType, DeclarationType> replacements, InterfaceDeclarationType anInterface) {
         UnnamedObjectType object = anInterface.getObject();
-        if (!objectCouldBeFunction(object) && !HeuristicsUtil.hasFunction(anInterface)) {
+        if (!objectCouldBeFunction(object) && !hasFunction(anInterface)) {
             return;
         }
-        if (object.getDeclarations().keySet().stream().anyMatch(key -> key.equals("call"))) {
+        if (object.getDeclarations().keySet().stream().anyMatch(key -> key.equals("call")) && object.getDeclarations().keySet().stream().anyMatch(key -> key.equals("apply"))) {
+            DeclarationType callType = object.getDeclarations().get("call");
+            DeclarationType applyType = object.getDeclarations().get("apply");
+            if (!(callType instanceof FunctionType) || !(applyType instanceof FunctionType)) {
+                return;
+            }
+            FunctionType callFunc = getFunctionFromCallProp(object, (FunctionType) callType);
+            FunctionType applyFunc = getFunctionFromApplyProp(object, (FunctionType) callType);
+
+            FunctionType resultFunc = reduceFunctions(callFunc, applyFunc);
+
+            putFunctionOnInterface(replacements, anInterface, resultFunc, Util.createSet("call", "apply"));
+
+        } else if (object.getDeclarations().keySet().stream().anyMatch(key -> key.equals("call"))) {
             DeclarationType fieldType = object.getDeclarations().get("call");
             if (!(fieldType instanceof FunctionType)) {
                 return;
@@ -70,6 +86,10 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
         }
     }
 
+    private FunctionType reduceFunctions(FunctionType one, FunctionType two) {
+        return (FunctionType) new FunctionReducer(reducer, reducer.originals).reduce(one, two);
+    }
+
     private FunctionType getFunctionFromApplyProp(UnnamedObjectType object, FunctionType fieldType) {
         DeclarationType returnType = fieldType.getReturnType();
         FunctionType result = new FunctionType(returnType, Collections.EMPTY_LIST, object.getNames());
@@ -83,15 +103,19 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic{
     }
 
     private void putFunctionOnInterface(ArrayListMultimap<DeclarationType, DeclarationType> replacements, InterfaceDeclarationType anInterface, FunctionType function, String keyToRemove) {
+        putFunctionOnInterface(replacements, anInterface, function, Util.createSet(keyToRemove));
+    }
+
+    private void putFunctionOnInterface(ArrayListMultimap<DeclarationType, DeclarationType> replacements, InterfaceDeclarationType anInterface, FunctionType function, Set<String> keysToRemove) {
         InterfaceDeclarationType result = new InterfaceDeclarationType(anInterface.name, anInterface.getNames());
         result.setDynamicAccess(anInterface.getDynamicAccess());
-        Map<String, DeclarationType> filteredDeclarations = anInterface.getObject().getDeclarations().entrySet().stream().filter(entry -> !entry.getKey().equals(keyToRemove)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, DeclarationType> filteredDeclarations = anInterface.getObject().getDeclarations().entrySet().stream().filter(entry -> !keysToRemove.contains(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         UnnamedObjectType newObject = new UnnamedObjectType(filteredDeclarations, anInterface.getNames());
         this.reducer.originals.put(newObject, Collections.singletonList(anInterface.getObject()));
         result.setObject(newObject);
 
         if (anInterface.getFunction() != null) {
-            result.setFunction((FunctionType) new CombinationType(reducer, anInterface.getFunction(), function).getCombined());
+            result.setFunction(reduceFunctions(anInterface.getFunction(), function));
         } else {
             result.setFunction(function);
         }
