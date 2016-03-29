@@ -24,7 +24,7 @@ public class LibraryClass {
 
     public final List<UnionNode> thisNodes = new ArrayList<>();
 
-    public boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class.
+    private boolean isUsedAsClass = false; // All functions are potential library classes, this marks if it is actually used as a class.
 
     public final Snap.Obj prototype;
 
@@ -49,6 +49,14 @@ public class LibraryClass {
         if (!this.pathsSeen.contains(path)) {
             this.pathsSeen.add(path);
         }
+    }
+
+    public boolean isUsedAsClass() {
+        return isUsedAsClass;
+    }
+
+    public void setUsedAsClass(boolean usedAsClass) {
+        isUsedAsClass = usedAsClass;
     }
 
     public UnionNode getNewThisNode(UnionFindSolver solver) {

@@ -87,7 +87,7 @@ public class ClassHierarchyExtractor {
         }
         LibraryClass libraryClass = new LibraryClass(path, prototype, options);
         if (prototype.properties.size() > 1) {
-            libraryClass.isUsedAsClass = true;
+            libraryClass.setUsedAsClass(true);
         }
         classes.put(prototype, libraryClass);
 
@@ -118,7 +118,7 @@ public class ClassHierarchyExtractor {
                 if (obj.prototype != null) {
                     LibraryClass libraryClass = libraryClasses.get(obj.prototype);
                     if (libraryClass != null) {
-                        libraryClass.isUsedAsClass = true;
+//                        libraryClass.setUsedAsClass(true);
                     }
                 }
 
@@ -144,7 +144,7 @@ public class ClassHierarchyExtractor {
 
         for (LibraryClass libraryClass : libraryClasses.values()) {
             if (libraryClass.hasInstanceLookingLikeAClass()) {
-                libraryClass.isUsedAsClass = true;
+                libraryClass.setUsedAsClass(true);
             }
         }
 
@@ -175,19 +175,19 @@ public class ClassHierarchyExtractor {
         while (changed) {
             changed = false;
             for (LibraryClass aClass : classes) {
-                boolean isUsedAsClass = aClass.isUsedAsClass;
+                boolean isUsedAsClass = aClass.isUsedAsClass();
                 Set<LibraryClass> chain = new HashSet<>();
                 while (aClass != null && !chain.contains(aClass)) {
-                    isUsedAsClass |= aClass.isUsedAsClass;
+                    isUsedAsClass |= aClass.isUsedAsClass();
                     chain.add(aClass);
                     aClass = aClass.superClass;
                 }
                 if (isUsedAsClass) {
                     for (LibraryClass libraryClass : chain) {
-                        if (!libraryClass.isUsedAsClass) {
+                        if (!libraryClass.isUsedAsClass()) {
                             changed = true;
                         }
-                        libraryClass.isUsedAsClass = true;
+                        libraryClass.setUsedAsClass(true);
                     }
                 }
             }

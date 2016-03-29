@@ -35,11 +35,13 @@ public class TypeFactory {
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
     public final TypeReducer typeReducer;
+    private final Snap.Obj globalObject;
 
     public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.nativeClasses = nativeClasses;
+        this.globalObject = globalObject;
         this.typeAnalysis = typeAnalysis;
         this.typeReducer = new TypeReducer(globalObject, nativeClasses, options);
     }
@@ -211,10 +213,10 @@ public class TypeFactory {
         boolean hardCodedClassName = false;
         if (options.isClassNames.stream().anyMatch(str -> str.equals(libraryClass.getName(nativeClasses, takenClassNames)))) {
             hardCodedClassName = true;
-            libraryClass.isUsedAsClass = true;
+            libraryClass.setUsedAsClass(true);
         }
         String name = libraryClass.getName(nativeClasses, takenClassNames);
-        if (!libraryClass.isUsedAsClass && libraryClass.getUniqueConstructionSite().isEmpty()) {
+        if (!libraryClass.isUsedAsClass() && libraryClass.getUniqueConstructionSite().isEmpty()) {
             return null;
         }
         /*if (!hardCodedClassName) {
@@ -226,6 +228,12 @@ public class TypeFactory {
         Snap.Obj constructor = libraryClass.getConstructor();
         if (constructor == null) {
             return null;
+        }
+
+        if (name.toUpperCase().charAt(0) != name.charAt(0) && libraryClass.prototype.properties.stream().map(prop -> prop.name).filter(propName -> !propName.equals("constructor")).count() == 0) {
+            if (libraryClass.prototype.prototype == ((Snap.Obj) globalObject.getProperty("Object").value).getProperty("prototype").value) {
+                return null;
+            }
         }
 
         switch (constructor.function.type) {
