@@ -676,11 +676,10 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         assert UnionConstraintVisitor.this.functionNodes.containsKey(closure);
 
-                        FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
-                        solver.union(newFunction, UnionConstraintVisitor.this.functionNodes.get(closure));
+                        FunctionNode newFunction = UnionConstraintVisitor.this.functionNodes.get(closure);
                         solver.union(functionNode.returnNode, newFunction.returnNode);
 //                        solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
-                        for (int i = 0; i < functionNode.arguments.size(); i++) {
+                        for (int i = 0; i < Math.min(functionNode.arguments.size(), newFunction.arguments.size()); i++) {
                             solver.union(functionNode.arguments.get(i), newFunction.arguments.get(i));
                         }
 

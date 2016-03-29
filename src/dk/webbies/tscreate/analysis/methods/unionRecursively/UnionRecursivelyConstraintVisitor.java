@@ -288,12 +288,11 @@ public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
 
                         assert functionNodes.containsKey(closure);
                         // no includeNode, and it is supposed to be that way.
-                        FunctionNode newFunction = FunctionNode.create(this.functionNode.arguments.size(), solver);
-                        solver.union(newFunction, UnionRecursivelyConstraintVisitor.this.functionNodes.get(closure));
-                        solver.union(functionNode.returnNode, newFunction.returnNode);
+                        FunctionNode calledFunction = UnionRecursivelyConstraintVisitor.this.functionNodes.get(closure);
+                        solver.union(functionNode.returnNode, calledFunction.returnNode);
 //                        solver.union(functionNode.thisNode, new IncludeNode(solver, newFunction.thisNode));
-                        for (int i = 0; i < functionNode.arguments.size(); i++) {
-                            solver.union(functionNode.arguments.get(i), newFunction.arguments.get(i));
+                        for (int i = 0; i < Math.min(functionNode.arguments.size(), calledFunction.arguments.size()); i++) {
+                            solver.union(functionNode.arguments.get(i), calledFunction.arguments.get(i));
                         }
 
                          /*// This is the traditional "points-to" way. By having the arguments flow to the parameters.
