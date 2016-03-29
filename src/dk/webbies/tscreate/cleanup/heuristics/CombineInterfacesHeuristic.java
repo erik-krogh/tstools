@@ -52,7 +52,7 @@ public class CombineInterfacesHeuristic implements ReplacementHeuristic{
                 DeclarationType two = interfaces.get(j);
                 Evaluation similarity = redundantInterfaceCleaner.evaluteSimilarity(one, two, decsToTS, nativeClasses);
                 Score score = similarity.score(true);
-                if (score.fMeasure >= 0.6) {
+                if (score.precision > 0.7 && score.recall > 0.7) {
                     if (score.fMeasure >= 0.85) {
                         combine(one, two, replacements);
                     } else if (score.precision == 1 || score.recall == 1){
