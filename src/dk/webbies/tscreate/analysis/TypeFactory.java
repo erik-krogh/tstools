@@ -214,18 +214,15 @@ public class TypeFactory {
             libraryClass.isUsedAsClass = true;
         }
         String name = libraryClass.getName(nativeClasses, takenClassNames);
-        if (name.toUpperCase().charAt(0) != name.charAt(0)) {
-            return null;
-        }
         if (!libraryClass.isUsedAsClass && libraryClass.getUniqueConstructionSite().isEmpty()) {
             return null;
         }
-        if (!hardCodedClassName) {
+        /*if (!hardCodedClassName) {
             String firstLetter = libraryClass.getName(nativeClasses, takenClassNames).substring(0, 1);
             if (!firstLetter.equals(firstLetter.toUpperCase()) && libraryClass.getUniqueConstructionSite().isEmpty()) {
                 return null;
             }
-        }
+        }*/
         Snap.Obj constructor = libraryClass.getConstructor();
         if (constructor == null) {
             return null;
@@ -263,6 +260,12 @@ public class TypeFactory {
 
     // This is only to be used from within resolveClassTypes.
     private DeclarationType createClassType(LibraryClass libraryClass) {
+        String name = libraryClass.getName(nativeClasses, takenClassNames);
+
+        if (name.toUpperCase().charAt(0) != name.charAt(0)) {
+            System.err.println("Couldn't infer a class-name that starts with an upper-case letter, class: \"" + name + "\"");
+        }
+
         Snap.Obj constructor = libraryClass.getConstructor();
         switch (constructor.function.type) {
             case "user":
@@ -277,11 +280,11 @@ public class TypeFactory {
 
                 Map<String, DeclarationType> prototypeProperties = createClassFields(libraryClass);
 
-                ClassType classType = new ClassType(libraryClass.getName(nativeClasses, takenClassNames), constructorType, prototypeProperties, staticFields, libraryClass);
+                ClassType classType = new ClassType(name, constructorType, prototypeProperties, staticFields, libraryClass);
                 if (libraryClass.superClass != null) {
                     if (libraryClass.superClass.isNativeClass()) {
-                        String name = nativeClasses.nameFromPrototype(libraryClass.superClass.prototype);
-                        classType.setSuperClass(new NamedObjectType(name, false));
+                        String superName = nativeClasses.nameFromPrototype(libraryClass.superClass.prototype);
+                        classType.setSuperClass(new NamedObjectType(superName, false));
                     } else {
                         classType.setSuperClass(getClassType(libraryClass.superClass));
                     }
