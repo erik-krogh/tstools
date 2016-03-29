@@ -507,7 +507,7 @@ public class DeclarationPrinter {
         public Void visit(InterfaceDeclarationType interfaceType, VisitorArg arg) {
             if (finishing) {
                 finishing = false;
-                writeln(arg.builder, "// Seen as: " + interfaceType.getNames().stream().collect(Collectors.joining(", ")));
+                writeln(arg.builder, "// Seen as: " + interfaceType.getNames().stream().sorted().collect(Collectors.joining(", ")));
                 writeln(arg.builder, "interface " + interfaceType.name + " {");
                 ident++;
                 if (interfaceType.getFunction() != null) {
@@ -672,7 +672,7 @@ public class DeclarationPrinter {
                 writeln(arg.builder, "}");
                 write(arg.builder, "\n");
 
-                writeln(arg.builder, "// Seen as: " + classType.getNames().stream().collect(Collectors.joining(", ")));
+                writeln(arg.builder, "// Seen as: " + classType.getNames().stream().sorted().collect(Collectors.joining(", ")));
                 ident(arg.builder);
                 write(arg.builder, "interface " + classType.getName());
                 if (classType.getSuperClass() != null) {
