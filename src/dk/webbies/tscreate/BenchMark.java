@@ -64,7 +64,7 @@ public class BenchMark {
         Options options = new Options();
         options.createInstances = true;
         options.createInstancesClassFilter = true;
-        options.asyncTest = true;
+        options.asyncTest = false;
         options.recordCalls = true;
         BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
 
