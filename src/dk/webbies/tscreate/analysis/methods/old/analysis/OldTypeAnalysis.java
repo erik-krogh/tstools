@@ -40,7 +40,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
         this.options = options;
         this.globalObject = globalObject;
         this.solver = new UnionFindSolver(this);
-        this.heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
+        this.heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this);
         this.functionNodes = OldTypeAnalysis.getFunctionNodes(globalObject, solver);
         this.nativeFunctions = MixedTypeAnalysis.getAllFunctionInstances(globalObject).stream().filter(closure -> !(closure.function.type.equals("user") || closure.function.type.equals("bind"))).filter(closure -> !closure.function.callSignatures.isEmpty()).collect(Collectors.toList());
         this.typeFactory = new TypeFactory(globalObject, libraryClasses, options, nativeClasses, this);
@@ -102,7 +102,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
                 HashMap<Snap.Obj, FunctionNode> subFunctions = new HashMap<>();
                 subFunctions.put(functionClosure, functionNode); // But the one we are analysing, should still be the right one.
 
-                HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
+                HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this);
 
                 analyse(functionClosure, subFunctions, solver, functionNode, heapFactory, new HashSet<>());
 
@@ -119,7 +119,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
         } else {
             int counter = 0;
 
-            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
+            HeapValueNode.Factory heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this);
             for (Snap.Obj function : functions) {
                 System.out.println(++counter + "/" + functions.size());
                 analyse(function, functionNodes, solver, functionNodes.get(function), heapFactory, null);

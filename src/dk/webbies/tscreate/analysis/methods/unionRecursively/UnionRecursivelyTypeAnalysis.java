@@ -12,7 +12,6 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -35,7 +34,7 @@ public class UnionRecursivelyTypeAnalysis extends MixedTypeAnalysis {
     public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> originalFunctionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapValueFactory) {
         HashMap<Snap.Obj, FunctionNode> functionNodes = new HashMap<>();
         functionNodes.put(closure, functionNode);
-        this.analyseKeepFunctionNodes(closure, functionNodes, solver, functionNode, new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this));
+        this.analyseKeepFunctionNodes(closure, functionNodes, solver, functionNode, new HeapValueNode.Factory(globalObject, solver, libraryClasses, this));
     }
 
     void analyseKeepFunctionNodes(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {

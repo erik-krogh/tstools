@@ -12,7 +12,6 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -27,7 +26,7 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
         super(libraryClasses, options, globalObject, nativeClasses);
         this.libraryClasses = libraryClasses;
         this.globalObject = globalObject;
-        this.heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
+        this.heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this);
         this.nativeTypeFactory = new NativeTypeFactory(heapFactory.getPrimitivesFactory(), solver, nativeClasses);
     }
 
@@ -104,7 +103,7 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
 
     @Override
     public HeapValueFactory getHeapFactory() {
-        return new HeapValueNode.Factory(globalObject, solver, libraryClasses, nativeClasses, this);
+        return new HeapValueNode.Factory(globalObject, solver, libraryClasses, this);
     }
 
     @Override
