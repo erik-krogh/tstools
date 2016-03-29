@@ -10,7 +10,7 @@ declare module "hammerjs" {
 }
 
 interface HammerStatic {
-    new(element:HTMLElement, options?:any): HammerManager;
+    (element:HTMLElement, options?:any): HammerManager; 
 
     defaults:HammerDefaults;
 
@@ -37,8 +37,8 @@ interface HammerStatic {
     DIRECTION_HORIZONTAL: number;
     DIRECTION_VERTICAL:   number;
     DIRECTION_ALL:        number;
-
-    Manager:     HammerManager;
+    
+    Manager:     HammerManagerConstructor;
     Input:       HammerInput;
     TouchAction: TouchAction;
 
@@ -89,6 +89,10 @@ interface CssProps {
 
 interface HammerOptions extends HammerDefaults {
 
+}
+
+interface HammerManagerConstructor {
+    new(element:HTMLElement, options?:any):HammerManager;
 }
 
 interface HammerManager {
