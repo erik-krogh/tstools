@@ -42,13 +42,15 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
     }
 
     public void cleanStuff() {
-        List<List<DeclarationType>> cycles = computeCycles();
-        for (List<DeclarationType> cycle : cycles) {
-            cycle.forEach(replacements::removeAll);
+        List<List<DeclarationType>> cycles;
+        while (!(cycles = computeCycles()).isEmpty()) {
+            for (List<DeclarationType> cycle : cycles) {
+                cycle.forEach(replacements::removeAll);
 
-            DeclarationType result = new CombinationType(reducer, cycle).getCombined();
-            result.accept(collector);
-            cycle.forEach(type -> replacements.put(type, result));
+                DeclarationType result = new CombinationType(reducer, cycle).getCombined();
+                result.accept(collector);
+                cycle.forEach(type -> replacements.put(type, result));
+            }
         }
 
         collector.getEveryThing().forEach(dec -> dec.accept(this));
@@ -99,6 +101,9 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             }
             if (next == type) {
                 return next;
+            }
+            if (Thread.currentThread().getStackTrace().length > 300) {
+                System.out.println();
             }
             return findReplacement(next);
         } else {
