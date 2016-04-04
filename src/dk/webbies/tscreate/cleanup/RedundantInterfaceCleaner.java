@@ -63,6 +63,7 @@ public class RedundantInterfaceCleaner {
                 if (replacements == null || replacements.isEmpty()) {
                     continue;
                 }
+                replacements.keySet().forEach(allReplacements::removeAll);
                 allReplacements.putAll(replacements);
                 System.out.println("Found redundant types using: " + heuristic.getDescription());
                 progress = true;
