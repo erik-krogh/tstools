@@ -1,4 +1,4 @@
-// Type definitions for Pixi.js 3.0.9 dev
+// Type definitions for Pixi.js v3.0.10
 // Project: https://github.com/GoodBoyDigital/pixi.js/
 // Definitions by: clark-stevenson <https://github.com/pixijs/pixi-typescript>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
@@ -80,6 +80,38 @@ declare module PIXI {
     ////////////////////////////////CORE//////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////
 
+    //accessibility
+    export class AccessibilityManager {
+
+        protected div: HTMLElement;
+        protected pool: HTMLElement[];
+        protected renderId: number;
+        protected children: DisplayObject[];
+        protected isActive: boolean;
+
+        debug: boolean;
+        renderer: PIXI.SystemRenderer;
+
+        constructor(renderer: PIXI.SystemRenderer);
+
+        protected activate(): void;
+        protected deactivate(): void;
+        protected updateAccessibleObjects(displayObject: DisplayObject): void;
+        protected update(): void;
+        protected capHitArea(hitArea: any): void;
+        protected addChild(displayObject: DisplayObject): void;
+
+        destroy(): void;
+
+    }
+
+    export interface AccessibleTarget {
+
+        //TODO Not 100% here.
+        //src/accessibility/accessibleTarget.js
+
+    }
+
     //display
 
     export class DisplayObject extends utils.EventEmitter implements interaction.InteractiveTarget {
@@ -117,6 +149,7 @@ declare module PIXI {
         pivot: Point;
         rotation: number;
         renderable: boolean;
+        skew: Point;
         alpha: number;
         visible: boolean;
         parent: Container;
@@ -134,7 +167,7 @@ declare module PIXI {
         getBounds(matrix?: Matrix): Rectangle;
         getLocalBounds(): Rectangle;
         toGlobal(position: Point): Point;
-        toLocal(position: Point, from?: DisplayObject): Point;
+        toLocal(position: Point, from?: DisplayObject, to?: Point): Point;
         generateTexture(renderer: CanvasRenderer | WebGLRenderer, scaleMode: number, resolution: number): Texture;
         setParent(container: Container): Container;
         setTransform(x?: number, y?: number, scaleX?: number, scaleY?: number, rotation?: number, skewX?: number, skewY?: number, pivotX?: number, pivotY?: number): DisplayObject;
@@ -147,6 +180,9 @@ declare module PIXI {
         interactiveChildren: boolean;
         defaultCursor: string;
         hitArea: HitArea;
+        accessible: boolean;
+        accessibleTitle: string;
+        tabIndex: number;
 
         on(event: 'click', fn: (event: interaction.InteractionEvent) => void, context?: any): utils.EventEmitter;
         on(event: 'mousedown', fn: (event: interaction.InteractionEvent) => void, context?: any): utils.EventEmitter;
@@ -198,7 +234,7 @@ declare module PIXI {
         width: number;
         height: number;
 
-        addChild(child: DisplayObject): DisplayObject;
+        addChild(...child: DisplayObject[]): DisplayObject;
         addChildAt(child: DisplayObject, index: number): DisplayObject;
         swapChildren(child: DisplayObject, child2: DisplayObject): void;
         getChildIndex(child: DisplayObject): number;
@@ -284,7 +320,7 @@ declare module PIXI {
 
     }
     export class GraphicsRenderer extends ObjectRenderer {
-        new (renderer: PIXI.WebGLRenderer);
+        new(renderer: PIXI.WebGLRenderer);
 
         buildCircle: (graphicsData: PIXI.Graphics, webGLData: Object) => void;
         buildPoly: (graphicsData: PIXI.Graphics, webGLData: Object) => boolean;
@@ -297,7 +333,7 @@ declare module PIXI {
         switchMode: (webGL: WebGLRenderingContext, type: number) => WebGLGraphicsData;
     }
     export class WebGLGraphicsData {
-        new (gl: WebGLRenderingContext);
+        new(gl: WebGLRenderingContext);
 
         upload: () => void;
         reset: () => void;
@@ -305,6 +341,12 @@ declare module PIXI {
     }
 
     //math
+
+    export class GroupD8 {
+
+        //wip
+
+    }
 
     export class Point {
 
@@ -486,7 +528,7 @@ declare module PIXI {
 
     }
     export class ParticleRenderer extends ObjectRenderer {
-        new (renderer: PIXI.WebGLRenderer);
+        new(renderer: PIXI.WebGLRenderer);
 
         buildCircle: (graphicsData: PIXI.Graphics, webGLData: WebGLGraphicsData) => void;
         buildPoly: (graphicsData: PIXI.Graphics, webGLData: WebGLGraphicsData) => boolean;
@@ -926,11 +968,14 @@ declare module PIXI {
         strokeThickness?: number;
         wordWrap?: boolean;
         wordWrapWidth?: number;
+        letterSpacing?: number;
+        breakWords?: boolean;
         lineHeight?: number;
         dropShadow?: boolean;
         dropShadowColor?: string | number;
         dropShadowAngle?: number;
         dropShadowDistance?: number;
+        dropShadowBlur?: number;
         padding?: number;
         textBaseline?: string;
         lineJoin?: string;
@@ -948,6 +993,7 @@ declare module PIXI {
 
         protected updateText(): void;
         protected updateTexture(): void;
+        protected drawLetterSpacing(text: string, x: number, y: number, isStroke: boolean): void;
         protected determineFontProperties(fontStyle: TextStyle): TextStyle;
         protected wordWrap(text: string): boolean;
 
@@ -1054,7 +1100,7 @@ declare module PIXI {
         protected onBaseTextureLoaded(baseTexture: BaseTexture): void;
         protected _updateUvs(): void;
 
-        constructor(baseTexture: BaseTexture, frame?: Rectangle, crop?: Rectangle, trim?: Rectangle, rotate?: boolean);
+        constructor(baseTexture: BaseTexture, frame?: Rectangle, crop?: Rectangle, trim?: Rectangle, rotate?: number);
 
         noFrame: boolean;
         baseTexture: BaseTexture;
@@ -1064,7 +1110,7 @@ declare module PIXI {
         width: number;
         height: number;
         crop: Rectangle;
-        rotate: boolean;
+        rotate: number;
 
         frame: Rectangle;
 
@@ -1084,7 +1130,7 @@ declare module PIXI {
         x3: number;
         y3: number;
 
-        set(frame: Rectangle, baseFrame: Rectangle, rotate: boolean): void;
+        protected set(frame: Rectangle, baseFrame: Rectangle, rotate: number): void;
 
     }
     export class VideoBaseTexture extends BaseTexture {
@@ -1121,6 +1167,7 @@ declare module PIXI {
         export function sayHello(type: string): void;
         export function isWebGLSupported(): boolean;
         export function sign(n: number): number;
+        export function removeItems<T>(arr: T[], startIdx: number, removeCount: number): void;
         export var TextureCache: any;
         export var BaseTextureCache: any;
 
@@ -1204,7 +1251,7 @@ declare module PIXI {
 
             protected update(deltaTime: number): void;
 
-            constructor(textures: Texture[]);
+            constructor(textures: Texture[] | { texture: Texture, time?: number }[]);
 
             animationSpeed: number;
             loop: boolean;
@@ -1213,7 +1260,7 @@ declare module PIXI {
             playing: boolean;
 
             totalFrames: number;
-            textures: Texture[];
+            textures: Texture[] | { texture: Texture, time?: number }[];
 
             stop(): void;
             play(): void;
@@ -1484,6 +1531,7 @@ declare module PIXI {
 
             protected interactionDOMElement: HTMLElement;
             protected eventsAdded: boolean;
+            protected moveWhenInside: boolean;
             protected _tempPoint: Point;
 
             protected setTargetElement(element: HTMLElement, resolution: number): void;
@@ -1547,13 +1595,15 @@ declare module PIXI {
     ///////////////////////////////LOADER/////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////
     //https://github.com/englercj/resource-loader/blob/master/src/Loader.js
+    //1.6.4
 
     export module loaders {
         export interface LoaderOptions {
 
-            crossOrigin?: boolean;
+            crossOrigin?: boolean | string;
             loadType?: number;
             xhrType?: string;
+            metaData?: any;
 
         }
         export interface ResourceDictionary {
@@ -1632,11 +1682,12 @@ declare module PIXI {
             textures: Texture[];
             url: string;
             data: any;
-            crossOrigin: string;
+            crossOrigin: boolean | string;
             loadType: number;
             xhrType: string;
             error: Error;
             xhr: XMLHttpRequest;
+            SVGMetadataElement: any;
 
             complete(): void;
             load(cb?: () => void): void;
