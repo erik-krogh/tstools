@@ -125,12 +125,12 @@ public class TypeReducer {
 
         if (one instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) one).getType())) {
             DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) one).getType()).apply(new Pair<>(one, two));
-            result.setNames(Util.concatSet(one.getNames(), two.getNames()));
+//            result.setNames(Util.concatSet(one.getNames(), two.getNames())); // Commented out on purpose, since they return the same object as was given in, this potentially merges every single name.
             return result;
         }
         if (two instanceof PrimitiveDeclarationType && specialPrimitives.containsKey(((PrimitiveDeclarationType) two).getType())) {
             DeclarationType result = specialPrimitives.get(((PrimitiveDeclarationType) two).getType()).apply(new Pair<>(two, one));
-            result.setNames(Util.concatSet(one.getNames(), two.getNames()));
+//            result.setNames(Util.concatSet(one.getNames(), two.getNames()));
             return result;
         }
 
