@@ -51,7 +51,7 @@ public class PrimitiveReducer extends SameTypeReducer<PrimitiveDeclarationType> 
     @Override
     public PrimitiveDeclarationType reduceIt(PrimitiveDeclarationType one, PrimitiveDeclarationType two) {
         if (one.getType() == two.getType()) {
-            return one;
+            return PrimitiveDeclarationType.fromType(one.getType(), Util.concatSet(one.getNames(), two.getNames()));
         }
         if (reductionRules.containsKey(new Pair<>(one.getType(), two.getType()))) {
             return PrimitiveDeclarationType.fromType(reductionRules.get(new Pair<>(one.getType(), two.getType())), Util.concatSet(one.getNames(), two.getNames()));
