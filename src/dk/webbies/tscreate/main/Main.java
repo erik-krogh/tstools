@@ -29,9 +29,7 @@ import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -45,30 +43,19 @@ import static java.util.Arrays.asList;
  * Created by Erik Krogh Kristensen on 01-09-2015.
  */
 public class Main {
-    public static void main(String[] args) throws IOException, InterruptedException {
-        List<Options.StaticAnalysisMethod> methods = asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
 
+    public static void main(String[] args) throws IOException, InterruptedException {
         // Benchmarks, where I can run ALL the static analysis methods.
-        List<BenchMark> stableBenches = asList(async, require, knockout, backbone, box2d, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
+        List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
+        List<Options.StaticAnalysisMethod> methods = asList(COMBINED, COMBINED_CONTEXT_SENSITIVE, MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
         long start = System.currentTimeMillis();
         try {
 
-//            printTable();
-//            generateDeclarations(BenchMark.allBenchmarks);
-//            tsCheck();
-//            runAnalysis(BenchMark.require);
+            stableBenches.forEach(bench -> bench.options.combineInterfacesAfterAnalysis = false);
+            CompareMethods.compareMethods(stableBenches, methods, 20 * 60 * 1000);
 
-//            CompareMethods.compareMethods(stableBenches, asList(MIXED), 10 * 60 * 1000);
-            runAnalysis(async);
-
-//            benchAll();
-//            printTable();
-
-//             List<BenchMark> benchs = Arrays.asList(three, ember, jQuery);
-//            compareMethods(benchs, asList(MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, COMBINED, COMBINED_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE), 30 * 60 * 1000);
-
-//            CompareMethods.compareMethods(stableBenches, methods, 20 * 60 * 1000);
-//            CompareMethods.compareMethods(Arrays.asList(handlebars), methods, 10 * 60 * 1000);
+            stableBenches.forEach(bench -> bench.options.combineInterfacesAfterAnalysis = true);
+            CompareMethods.compareMethods(stableBenches, methods, 20 * 60 * 1000);
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -82,12 +69,13 @@ public class Main {
     }
 
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
-        System.out.println("Analysing " + benchMark.name);
         String fileSuffix = benchMark.options.staticMethod.fileSuffix;
         if (benchMark.options.combineInterfacesAfterAnalysis) {
             fileSuffix = fileSuffix + "_smaller";
         }
         String resultDeclarationFilePath = benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
+
+        System.out.println("Analysing " + benchMark.name + " - output: " + resultDeclarationFilePath);
 
         FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
 
@@ -108,7 +96,7 @@ public class Main {
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
@@ -201,7 +189,6 @@ public class Main {
         if (benchMarks == null) {
             benchMarks = allBenchmarks;
         }
-        double combinedScore = 0;
         for (BenchMark benchmark : benchMarks) {
             benchmark.declarationPath = null;
             runAnalysis(benchmark);
