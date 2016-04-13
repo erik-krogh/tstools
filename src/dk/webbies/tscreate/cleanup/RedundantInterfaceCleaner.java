@@ -54,7 +54,7 @@ public class RedundantInterfaceCleaner {
         Multimap<DeclarationType, DeclarationType> allReplacements = ArrayListMultimap.create();
 
         while (progress) {
-            CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration.values());
+            CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration, true);
             System.out.println("Removing redundant types (" + counter++ + ")   decs:(" + collector.getEveryThing().size() + ")");
 
             progress = false;
@@ -63,11 +63,15 @@ public class RedundantInterfaceCleaner {
                 if (replacements == null || replacements.isEmpty()) {
                     continue;
                 }
+                collector = new CollectEveryTypeVisitor(declaration, false);
                 replacements.keySet().forEach(allReplacements::removeAll);
                 allReplacements.putAll(replacements);
                 System.out.println("Found redundant types using: " + heuristic.getDescription());
                 progress = true;
-                allReplacements.values().forEach(replacement -> replacement.accept(collector));
+                for (DeclarationType replacement : allReplacements.values()) {
+                    replacement.accept(collector);
+                }
+
                 new InplaceDeclarationReplacer(allReplacements, collector, reducer, declaration).cleanStuff();
 //                reducer.clearCache();
                 break;
@@ -76,7 +80,7 @@ public class RedundantInterfaceCleaner {
     }
 
     private void cleanDeclarations() {
-        CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration.values());
+        CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration, false);
         new InplaceDeclarationReplacer(ArrayListMultimap.create(), collector, reducer, declaration).cleanStuff();
     }
 
@@ -87,11 +91,10 @@ public class RedundantInterfaceCleaner {
 
         Options options = new Options();
         options.maxEvaluationDepth = 2;
-        options.debugPrint = true;
+        options.debugPrint = false;
         options.evaluationSkipExcessProperties = false;
         options.evaluationAnyAreOK = true;
         Set<Type> nativeTypes = nativeClasses.nativeTypes();
-        Evaluation result = DeclarationEvaluator.evaluate(options, truthDeclaration, candidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
-        return result;
+        return DeclarationEvaluator.evaluate(options, truthDeclaration, candidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
     }
 }
