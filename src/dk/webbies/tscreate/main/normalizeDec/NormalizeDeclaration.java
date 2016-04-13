@@ -110,7 +110,7 @@ public class NormalizeDeclaration {
     }
 
     private static Map<String, DeclarationType> mapTypes(TypeReducer reducer, Map<String, DeclarationType> declaration, Function<DeclarationType, DeclarationType> mapper) {
-        CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration.values());
+        CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration, false);
         new InplaceDeclarationReplacer(ArrayListMultimap.create(), collector, reducer, declaration, mapper).cleanStuff();
         return declaration;
     }

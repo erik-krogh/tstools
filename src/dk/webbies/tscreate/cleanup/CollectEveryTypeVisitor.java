@@ -13,8 +13,90 @@ public class CollectEveryTypeVisitor implements DeclarationTypeVisitor<Void> {
     private Set<DeclarationType> everyThing = new HashSet<>();
     private Map<Class<? extends DeclarationType>, Set<DeclarationType>> everythingByType = new HashMap<>();
 
-    public CollectEveryTypeVisitor(Collection<DeclarationType> values) {
-        values.forEach(dec -> dec.accept(this));
+    public CollectEveryTypeVisitor(Map<String, DeclarationType> declarations, boolean dontCollectHeapTypes) {
+        declarations.values().forEach(dec -> dec.accept(this));
+        if (dontCollectHeapTypes) {
+            HeapTypeCollector heapTypeCollector = new HeapTypeCollector();
+            declarations.values().forEach(dec -> dec.accept(heapTypeCollector));
+            Set<DeclarationType> heapTypes = heapTypeCollector.collected;
+            heapTypes.forEach(everyThing::remove);
+            heapTypes.forEach(type -> {
+                everythingByType.get(type.getClass()).remove(type);
+            });
+        }
+    }
+
+    private static final class HeapTypeCollector implements DeclarationTypeVisitor<Void> {
+        Set<DeclarationType> collected = new HashSet<>();
+
+        @Override
+        public Void visit(FunctionType functionType) {
+            collected.add(functionType);
+            return null;
+        }
+
+        @Override
+        public Void visit(PrimitiveDeclarationType primitive) {
+            collected.add(primitive);
+            return null;
+        }
+
+        @Override
+        public Void visit(UnnamedObjectType objectType) {
+            if (collected.contains(objectType)) {
+                return null;
+            }
+            collected.add(objectType);
+            objectType.getDeclarations().values().forEach(dec -> dec.accept(this));
+            return null;
+        }
+
+        @Override
+        public Void visit(InterfaceDeclarationType interfaceType) {
+            if (collected.contains(interfaceType)) {
+                return null;
+            }
+            collected.add(interfaceType);
+            if (interfaceType.getObject() != null) {
+                interfaceType.getObject().accept(this);
+            }
+            if (interfaceType.getFunction() != null) {
+                interfaceType.getFunction().accept(this);
+            }
+            if (interfaceType.getDynamicAccess() != null) {
+                interfaceType.getDynamicAccess().getLookupType().accept(this);
+                interfaceType.getDynamicAccess().getReturnType().accept(this);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visit(UnionDeclarationType union) {
+            throw new RuntimeException("I don't expect to run into a union-type here. ");
+        }
+
+        @Override
+        public Void visit(NamedObjectType namedObjectType) {
+            collected.add(namedObjectType);
+            return null;
+        }
+
+        @Override
+        public Void visit(ClassType classType) {
+            if (collected.contains(classType)) {
+                return null;
+            }
+            collected.add(classType);
+            classType.getConstructorType().accept(this);
+            classType.getStaticFields().values().forEach(dec -> dec.accept(this));
+            return null;
+        }
+
+        @Override
+        public Void visit(ClassInstanceType instanceType) {
+            collected.add(instanceType);
+            return null;
+        }
     }
 
     private void add(DeclarationType type) {
