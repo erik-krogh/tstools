@@ -43,23 +43,23 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
         List<DeclarationType> objects = Util.concat(byType.get(UnnamedObjectType.class), byType.get(InterfaceDeclarationType.class), byType.get(FunctionType.class));
 
         for (DeclarationType candidate : objects) {
-            List<Pair<DeclarationType, Evaluation>> possibleReplacement = getPossibleReplacements(classTypes, candidate);
+            List<Pair<DeclarationType, Score>> possibleReplacement = getPossibleReplacements(classTypes, candidate);
             if (possibleReplacement.isEmpty()) {
                 continue;
             }
 
-            Collections.sort(possibleReplacement, (a, b) -> Double.compare(b.right.score(true).precision, a.right.score(true).precision));
+            Collections.sort(possibleReplacement, (a, b) -> Double.compare(b.right.precision, a.right.precision));
 
-            Pair<DeclarationType, Evaluation> bestPossible = possibleReplacement.get(0);
+            Pair<DeclarationType, Score> bestPossible = possibleReplacement.get(0);
 
-            Score score = bestPossible.right.score(true);
+            Score score = bestPossible.right;
             if (score.precision < 0.7) {
                 continue;
             }
 
-            if (possibleReplacement.size() >= 2 && score.precision == possibleReplacement.get(1).right.score(true).precision) {
+            if (possibleReplacement.size() >= 2 && score.precision == possibleReplacement.get(1).right.precision) {
                 // We got at least two that are equally good.
-                List<DeclarationType> equallyGood = possibleReplacement.stream().filter(pair -> pair.right.score(true).precision == score.precision).map(pair -> pair.left).collect(Collectors.toList());
+                List<DeclarationType> equallyGood = possibleReplacement.stream().filter(pair -> pair.right.precision == score.precision).map(pair -> pair.left).collect(Collectors.toList());
 
                 DeclarationType combined = new CombinationType(reducer, equallyGood).getCombined();
                 if (!(combined instanceof UnionDeclarationType)) {
@@ -79,8 +79,9 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
         return "Interface -> ClassInstance";
     }
 
-    private List<Pair<DeclarationType, Evaluation>> getPossibleReplacements(List<DeclarationType> classTypes, DeclarationType candidate) {
-        List<Pair<DeclarationType, Evaluation>> possibleReplacement = new ArrayList<>();
+    private List<Pair<DeclarationType, Score>> getPossibleReplacements(List<DeclarationType> classTypes, DeclarationType candidate) {
+        List<Pair<DeclarationType, Score>> possibleReplacement = new ArrayList<>();
+        double maxPrecision = -1; // No point in saving something, if we already got something better.
         for (DeclarationType truth : classTypes) {
             if (candidate instanceof FunctionType && truth instanceof NamedObjectType) {
                 continue; // To many of these are simply false.
@@ -89,10 +90,14 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
                 continue;
             }
             Evaluation eval = redundantInterfaceCleaner.evaluteSimilarity(candidate, truth, decsToTypes, nativeClasses);
-            if (eval.score(true).fMeasure == 0) {
+            Score score = eval.score(true);
+            if (score.fMeasure == 0) {
                 continue;
             }
-            possibleReplacement.add(new Pair<>(truth, eval));
+            if (score.precision >= maxPrecision) {
+                maxPrecision = score.precision; // We sort on precision higher up, that is we compare on precision here.
+                possibleReplacement.add(new Pair<>(truth, score));
+            }
         }
         return possibleReplacement;
     }
