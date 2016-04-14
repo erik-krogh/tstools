@@ -102,9 +102,6 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
             if (next == type) {
                 return next;
             }
-            if (Thread.currentThread().getStackTrace().length > 300) {
-                System.out.println();
-            }
             return findReplacement(next);
         } else {
             return type;
