@@ -132,7 +132,9 @@ public class BenchMark {
         Options options = new Options();
         options.createInstancesClassFilter = true;
         options.recordCalls = false;
-        return new BenchMark("AngularJS", "tests/angular/angular.js", "tests/angular/angular.d.ts", options, ES5);
+        BenchMark bench = new BenchMark("AngularJS", "tests/angular/angular.js", "tests/angular/angular.d.ts", options, ES5);
+        bench.dependencies.add(Dependency.jQuery);
+        return bench;
     });
 
     public static final BenchMark three = evaluate(() -> {
@@ -385,11 +387,11 @@ public class BenchMark {
     public static final BenchMark test = evaluate(() -> {
         Options options = new Options();
 //        options.debugPrint = true;
-        options.recordCalls = true;
-        options.createInstances = true;
+        options.recordCalls = false;
+        options.createInstances = false;
 
         BenchMark bench = new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
-        bench.dependencies.add(Dependency.underscore);
+//        bench.dependencies.add(Dependency.underscore);
         return bench;
     });
 
