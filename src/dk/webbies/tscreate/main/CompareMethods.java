@@ -23,6 +23,7 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.MIXED_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.ANDERSON_CONTEXT_SENSITIVE));
 
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION));
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_UNIFICATION));
@@ -72,6 +73,16 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION));
     }
 
+    private static Set<Pair<BenchMark, Options.StaticAnalysisMethod>> blacklistWhenCombining = new HashSet<>();
+    static {
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.COMBINED));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.MIXED));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION));
+
+        blackList.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+    }
+
     public static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
         List<Options.StaticAnalysisMethod> methods = Arrays.asList(Options.StaticAnalysisMethod.values());
         compareMethods(benchMarks, methods, timeout);
@@ -92,7 +103,7 @@ public class CompareMethods {
             Map<Options.StaticAnalysisMethod, Score> scores = new HashMap<>();
             benchmarkScores.put(benchMark, scores);
             for (Options.StaticAnalysisMethod method : methods) {
-                if (blackList.contains(new Pair<>(benchMark, method))) {
+                if (blackList.contains(new Pair<>(benchMark, method)) || (benchMark.options.combineInterfacesAfterAnalysis && blacklistWhenCombining.contains(new Pair<>(benchMark, method)))) {
                     scores.put(method, new Score(-1, -1, -1));
                     continue;
                 }
