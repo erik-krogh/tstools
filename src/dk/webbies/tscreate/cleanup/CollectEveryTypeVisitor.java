@@ -72,7 +72,8 @@ public class CollectEveryTypeVisitor implements DeclarationTypeVisitor<Void> {
 
         @Override
         public Void visit(UnionDeclarationType union) {
-            throw new RuntimeException("I don't expect to run into a union-type here. ");
+            // Union types that are accessible through the global object, I think I'll let this run through the redundant-thinghy.
+            return null;
         }
 
         @Override
