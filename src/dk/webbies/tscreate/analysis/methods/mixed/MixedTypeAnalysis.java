@@ -235,10 +235,17 @@ public class MixedTypeAnalysis implements TypeAnalysis {
         }
 
         Map<String, Snap.Property> values = new HashMap<>();
-        if (closure.env.properties != null) {
-            for (Snap.Property property : closure.env.properties) {
-                values.put(property.name, property);
+        Snap.Obj env = closure.env;
+        while (env != null) {
+            if (env.properties != null) {
+                for (Snap.Property property : env.properties) {
+                    if (values.containsKey(property.name)) {
+                        continue;
+                    }
+                    values.put(property.name, property);
+                }
             }
+            env = env.env;
         }
 
         if (prototypeFunctions.containsKey(closure)) {
