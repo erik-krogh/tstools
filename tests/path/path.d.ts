@@ -38,8 +38,8 @@ interface IPath {
     map(path: string): IPathRoute;
 	
 	root(path: string): void;
-	
-	rescure(fn: Function): void;
+
+	rescue(fn: Function): void;
 	
 	history: IPathHistory;
 	
