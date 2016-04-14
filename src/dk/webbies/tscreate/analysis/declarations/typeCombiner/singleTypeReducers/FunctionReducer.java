@@ -5,6 +5,7 @@ import dk.webbies.tscreate.analysis.declarations.types.CombinationType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
+import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.ArrayList;
@@ -60,6 +61,12 @@ public class FunctionReducer extends SameTypeReducer<FunctionType> {
 
     @Override
     protected FunctionType reduceIt(FunctionType one, FunctionType two) {
+        if (isEmptyFunction(one)) {
+            return two;
+        }
+        if (isEmptyFunction(two)) {
+            return one;
+        }
         CombinationType returnType = new CombinationType(combiner);
         returnType.addType(one.getReturnType());
         returnType.addType(two.getReturnType());
@@ -87,5 +94,9 @@ public class FunctionReducer extends SameTypeReducer<FunctionType> {
         result.minArgs = Math.min(one.minArgs, two.minArgs);
 
         return result;
+    }
+
+    private boolean isEmptyFunction(FunctionType function) {
+        return function.getArguments().isEmpty() && function.getReturnType() instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType) function.getReturnType()).getType() == PrimitiveDeclarationType.Type.VOID;
     }
 }
