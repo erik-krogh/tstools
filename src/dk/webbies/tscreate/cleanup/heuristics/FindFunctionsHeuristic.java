@@ -16,7 +16,7 @@ import static dk.webbies.tscreate.cleanup.heuristics.HeuristicsUtil.hasFunction;
 /**
  * Created by erik1 on 15-03-2016.
  */
-public class FindFunctionsHeuristic implements ReplacementHeuristic{
+public class FindFunctionsHeuristic implements ReplacementHeuristic {
     private final TypeReducer reducer;
 
     public FindFunctionsHeuristic(TypeReducer reducer) {
