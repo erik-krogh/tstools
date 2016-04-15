@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument<Void, ClassNameFinder.Arg> {
     private final java.util.Set<DeclarationType> printsAsInterface;
-    private Map<ClassType, String> classNames = new HashMap<>();
+    private Map<DeclarationType, String> declarationNames = new HashMap<>();
 
     public ClassNameFinder(Map<String, DeclarationType> declarations, Map<DeclarationType, InterfaceDeclarationType> printsAsInterface) {
         this.printsAsInterface = printsAsInterface.keySet();
@@ -25,7 +25,8 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
     }
 
     @Override
-    public Void visit(FunctionType functionType, Arg argument) {
+    public Void visit(FunctionType functionType, Arg arg) {
+        putNamedType(functionType, arg.path);
         return null;
     }
 
@@ -35,8 +36,9 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
     }
 
     @Override
-    public Void visit(UnnamedObjectType object, Arg argument) {
-        if (argument.seen.member(object)) {
+    public Void visit(UnnamedObjectType object, Arg arg) {
+        putNamedType(object, arg.path);
+        if (arg.seen.member(object)) {
             return null;
         }
         if (printsAsInterface.contains(object)) {
@@ -45,7 +47,7 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
         for (Map.Entry<String, DeclarationType> entry : object.getDeclarations().entrySet()) {
             String name = entry.getKey();
             DeclarationType type = entry.getValue();
-            type.accept(this, argument.cons(name, object));
+            type.accept(this, arg.cons(name, object));
         }
 
         return null;
@@ -68,22 +70,26 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
 
     @Override
     public Void visit(ClassType classType, Arg arg) {
-        if (classNames.containsKey(classType)) {
-            String prevName = classNames.get(classType);
-            if (arg.path.endsWith(classType.getName()) && !prevName.endsWith(classType.getName())) {
-                classNames.put(classType, arg.path);
-                return null;
+        putNamedType(classType, arg.path);
+        return null;
+    }
+
+    private void putNamedType(DeclarationType type, String path) {
+        if (declarationNames.containsKey(type)) {
+            String prevName = declarationNames.get(type);
+            if (type instanceof ClassType && path.endsWith(((ClassType)type).getName()) && !prevName.endsWith(((ClassType)type).getName())) {
+                declarationNames.put(type, path);
+                return;
             }
             int prevDots = StringUtils.countMatches(prevName, ".");
-            int newDots = StringUtils.countMatches(arg.path, ".");
+            int newDots = StringUtils.countMatches(path, ".");
             if (newDots < prevDots) {
-                classNames.put(classType, arg.path);
-                return null;
+                declarationNames.put(type, path);
+                return;
             }
         } else {
-            classNames.put(classType, arg.path);
+            declarationNames.put(type, path);
         }
-        return null;
     }
 
     @Override
@@ -91,13 +97,17 @@ public final class ClassNameFinder implements DeclarationTypeVisitorWithArgument
         return null;
     }
 
-    public Map<ClassType, String> getClassNames() {
+    Map<DeclarationType, String> getDeclarationNames() {
         // Making sure that also the super-classes have names.
-        HashMap<ClassType, String> result = new HashMap<>(classNames);
+        Map<DeclarationType, String> result = new HashMap<>(declarationNames);
         boolean change = true;
         while (change) {
             change = false;
-            for (ClassType clazz : new ArrayList<>(result.keySet())) {
+            for (DeclarationType type : new ArrayList<>(result.keySet())) {
+                if (!(type instanceof ClassType)) {
+                    continue;
+                }
+                ClassType clazz = (ClassType) type;
                 //noinspection SuspiciousMethodCalls
                 if (clazz.getSuperClass() != null && !result.containsKey(clazz.getSuperClass())) {
                     result.remove(clazz);

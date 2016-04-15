@@ -11,6 +11,10 @@ import fj.pre.Ord;
 import fj.pre.Ordering;
 
 import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -19,7 +23,7 @@ import java.util.stream.Collectors;
  */
 public class DeclarationPrinter {
     private final Map<String, DeclarationType> declarations;
-    private Map<ClassType, String> classNames;
+    private Map<DeclarationType, String> declarationNames;
     private DeclarationParser.NativeClassesMap nativeClasses;
 
     private final List<InterfaceDeclarationType> interfacesToPrint = new ArrayList<>();
@@ -31,7 +35,6 @@ public class DeclarationPrinter {
     // That we therefore print as an interface instead.
     private final Map<DeclarationType, InterfaceDeclarationType> printsAsInterface = new HashMap<>();
     private Options options;
-    private Set<DeclarationType> printedAsDeclaration = new HashSet<>();
 
     public DeclarationPrinter(Map<String, DeclarationType> declarations, DeclarationParser.NativeClassesMap nativeClasses, Options options) {
         this.declarations = declarations;
@@ -95,7 +98,7 @@ public class DeclarationPrinter {
         builder.append(str);
     }
 
-    private static Set<String> keyWords = new HashSet<>(Arrays.asList("set get abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield var".split(" ")));
+    private static Set<String> keyWords = new HashSet<>(Arrays.asList("abstract arguments boolean break byte case catch char class const continue debugger default delete do double else enum eval export extends false final finally float for function if implements import in instanceof int interface let long native new null package private protected public return short static super switch synchronized this throw throws transient true try typeof var void volatile while with yield var".split(" ")));
     private void writeName(StringBuilder builder, String str) {
         if (validName(str)) {
             write(builder, str);
@@ -160,26 +163,17 @@ public class DeclarationPrinter {
         if (ident != 0) {
             throw new RuntimeException("Can only print top-level declarations with this method");
         }
-        while (true) {
-            try {
-                ident = 0;
-                this.printedClasses.clear();
-                this.printedInterfaces.clear();
-                this.printedAsDeclaration.clear();
-                return innerPrint();
-            } catch (AlreadyPrintedAsDeclaration e) {
-                addPrintAsInterface(null, e.type);
-            }
-        }
+        ident = 0;
+        return innerPrint();
     }
 
     private String innerPrint() {
         StringBuilder builder;
         while (true) {
             builder = new StringBuilder();
-            this.classNames = new ClassNameFinder(declarations, printsAsInterface).getClassNames();
+            this.declarationNames = new ClassNameFinder(declarations, printsAsInterface).getDeclarationNames();
             if (options.neverPrintModules) {
-                this.classNames.clear();
+                this.declarationNames.clear();
             }
             try {
                 for (Map.Entry<String, DeclarationType> entry : this.declarations.entrySet()) {
@@ -194,12 +188,12 @@ public class DeclarationPrinter {
             } catch (GotCyclic e) {
                 ident = 0;
                 addPrintAsInterface(e.types, e.singleType);
-                printedClasses.clear();
+                this.printedClasses.clear();
+                this.printedInterfaces.clear();
                 continue;
             }
             break;
         }
-
 
         finish(builder);
         return builder.toString();
@@ -213,20 +207,18 @@ public class DeclarationPrinter {
         type = type.resolve();
         if ((type instanceof FunctionType || type instanceof UnnamedObjectType) && printsAsInterface.containsKey(type)) {
             type = printsAsInterface.get(type);
-        } else {
-            if (arg.contains(type)) {
-                throw new GotCyclic(arg.getSeen());
-            }
         }
         if (exportNameBlacklist.contains(name) || !validName(name)) {
-            throw new GotCyclic(arg.getSeen().cons(type));
+            throw new GotCyclic(arg.getSeen().cons(type), 1);
         }
 
-        this.printedAsDeclaration.add(type);
+        if (type instanceof FunctionType && !this.declarationNames.containsKey(type)) {
+            throw new RuntimeException();
+        }
 
-        if (type instanceof FunctionType) {
+        if (type instanceof FunctionType && arg.path.equals(declarationNames.get(type))) {
             if (options.neverPrintModules) {
-                throw new GotCyclic(type);
+                throw new GotCyclic(type, 2);
             }
             arg = arg.cons(type, true);
             FunctionType functionType = (FunctionType) type;
@@ -238,9 +230,9 @@ public class DeclarationPrinter {
             functionType.getReturnType().accept(new TypeVisitor(), arg);
 
             write(arg.builder, ";\n");
-        } else if (type instanceof UnnamedObjectType) {
+        } else if (type instanceof UnnamedObjectType && arg.path.equals(declarationNames.get(type))) {
             if (options.neverPrintModules) {
-                throw new GotCyclic(type);
+                throw new GotCyclic(type, 3);
             }
             arg = arg.cons(type, false);
             UnnamedObjectType module = (UnnamedObjectType) type;
@@ -256,9 +248,9 @@ public class DeclarationPrinter {
 
             ident--;
             writeln(arg.builder, "}");
-        } else if (type instanceof ClassType && arg.path.equals(classNames.get(type))) {
+        } else if (type instanceof ClassType && arg.path.equals(declarationNames.get(type))) {
             if (options.neverPrintModules) {
-                throw new GotCyclic(type);
+                throw new GotCyclic(type, 4);
             }
             ClassType clazz = (ClassType) type;
             if (printedClasses.contains(clazz)) {
@@ -375,30 +367,24 @@ public class DeclarationPrinter {
         }
     }
 
-    private static final class GotCyclic extends RuntimeException {
+    private final class GotCyclic extends RuntimeException {
         final fj.data.List<DeclarationType> types;
         final DeclarationType singleType;
+        final int i;
 
-        private GotCyclic(fj.data.List<DeclarationType> types) {
+        private GotCyclic(fj.data.List<DeclarationType> types, int i) {
+            this.i = i;
             assert !types.isEmpty();
             this.types = types;
             this.singleType = null;
         }
 
-        private GotCyclic(DeclarationType type) {
+        private GotCyclic(DeclarationType type, int i) {
             this.singleType = type;
+            this.i = i;
             this.types = null;
         }
     }
-
-    private static final class AlreadyPrintedAsDeclaration extends RuntimeException {
-        final DeclarationType type;
-
-        private AlreadyPrintedAsDeclaration(DeclarationType type) {
-            this.type = type;
-        }
-    }
-
 
     private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor) {
         printObjectField(arg, name, type, visitor, null);
@@ -421,7 +407,11 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(FunctionType functionType, VisitorArg arg) {
-            printFunction(arg, functionType, false);
+            if (declarationNames.containsKey(functionType)) {
+                write(arg.builder, "typeof " + declarationNames.get(functionType));
+            } else {
+                printFunction(arg, functionType, false);
+            }
             return null;
         }
 
@@ -430,14 +420,7 @@ public class DeclarationPrinter {
                 printsAsInterface.get(functionType).accept(this, arg);
             } else {
                 if (arg.contains(functionType)) {
-                    throw new GotCyclic(arg.getSeen());
-                }
-
-                if (printedAsDeclaration.contains(functionType)) {
-                    throw new AlreadyPrintedAsDeclaration(functionType);
-                }
-                if (options.aggressivelyDontPrintTheSameThingTwice) {
-                    printedAsDeclaration.add(functionType);
+                    throw new GotCyclic(arg.getSeen(), 5);
                 }
 
                 arg = arg.cons(functionType, true);
@@ -462,18 +445,15 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(UnnamedObjectType objectType, VisitorArg arg) {
+            if (declarationNames.containsKey(objectType)) {
+                write(arg.builder, "typeof " + declarationNames.get(objectType));
+                return null;
+            }
             if (printsAsInterface.containsKey(objectType)) {
                 return printsAsInterface.get(objectType).accept(this, arg);
             } else {
                 if (arg.contains(objectType)) {
-                    throw new GotCyclic(arg.getSeen());
-                }
-
-                if (printedAsDeclaration.contains(objectType)) {
-                    throw new AlreadyPrintedAsDeclaration(objectType);
-                }
-                if (options.aggressivelyDontPrintTheSameThingTwice) {
-                    printedAsDeclaration.add(objectType);
+                    throw new GotCyclic(arg.getSeen(), 6);
                 }
 
                 arg = arg.cons(objectType, false);
@@ -495,7 +475,7 @@ public class DeclarationPrinter {
                 write(builder, "}");
                 String declarationsString = builder.toString();
                 if (declarationsString.contains("\n") || declarationsString.length() > 50) {
-                    throw new GotCyclic(arg.getSeen());
+                    throw new GotCyclic(arg.getSeen(), 7);
                 } else {
                     arg.builder.append(declarationsString);
                 }
@@ -640,7 +620,7 @@ public class DeclarationPrinter {
                     indexType.accept(this, arg);
                     arg.builder.append(">");
                 } else {
-                    throw new GotCyclic(indexType);
+                    throw new GotCyclic(indexType, 8);
                 }
             } else if (indexType instanceof InterfaceDeclarationType || indexType instanceof ClassInstanceType) {
                 arg.builder.append("Array<");
@@ -692,8 +672,8 @@ public class DeclarationPrinter {
                 write(arg.builder, "\n");
                 finishing = true;
             } else {
-                if (classNames.containsKey(classType)) {
-                    write(arg.builder, "typeof " + classNames.get(classType));
+                if (declarationNames.containsKey(classType)) {
+                    write(arg.builder, "typeof " + declarationNames.get(classType));
                 } else {
                     write(arg.builder, classType.getName() + "Constructor");
                     classesToPrint.add(classType);
@@ -705,8 +685,8 @@ public class DeclarationPrinter {
 
         @Override
         public Void visit(ClassInstanceType instanceType, VisitorArg arg) {
-            if (classNames.containsKey(instanceType.getClazz())) {
-                write(arg.builder, classNames.get(instanceType.getClazz()));
+            if (declarationNames.containsKey(instanceType.getClazz())) {
+                write(arg.builder, declarationNames.get(instanceType.getClazz()));
             } else {
                 write(arg.builder, instanceType.getClazz().getName());
                 classesToPrint.add(instanceType.getClazz());
@@ -719,14 +699,18 @@ public class DeclarationPrinter {
         write(arg.builder, " extends ");
         if (classType.getSuperClass() instanceof ClassType) {
             ClassType superClass = (ClassType) classType.getSuperClass();
-            if (classNames.containsKey(superClass)) {
-                write(arg.builder, classNames.get(superClass));
+            if (declarationNames.containsKey(superClass)) {
+                write(arg.builder, declarationNames.get(superClass));
             } else {
                 write(arg.builder, superClass.getName());
                 classesToPrint.add(superClass);
             }
         } else if (classType.getSuperClass() instanceof NamedObjectType) {
-            write(arg.builder, ((NamedObjectType) classType.getSuperClass()).getName());
+            String name = ((NamedObjectType) classType.getSuperClass()).getName();
+            if (name.equals("Array")) {
+                name = "Array<any>";
+            }
+            write(arg.builder, name);
         } else {
             throw new RuntimeException();
         }
