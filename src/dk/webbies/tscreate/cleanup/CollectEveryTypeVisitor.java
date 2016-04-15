@@ -12,8 +12,10 @@ import java.util.*;
 public class CollectEveryTypeVisitor implements DeclarationTypeVisitor<Void> {
     private Set<DeclarationType> everyThing = new HashSet<>();
     private Map<Class<? extends DeclarationType>, Set<DeclarationType>> everythingByType = new HashMap<>();
+    private final Map<String, DeclarationType> declarations;
 
     public CollectEveryTypeVisitor(Map<String, DeclarationType> declarations, boolean dontCollectHeapTypes) {
+        this.declarations = declarations;
         declarations.values().forEach(dec -> dec.accept(this));
         if (dontCollectHeapTypes) {
             HeapTypeCollector heapTypeCollector = new HeapTypeCollector();
@@ -24,6 +26,10 @@ public class CollectEveryTypeVisitor implements DeclarationTypeVisitor<Void> {
                 everythingByType.get(type.getClass()).remove(type);
             });
         }
+    }
+
+    public Map<String, DeclarationType> getDeclarations() {
+        return declarations;
     }
 
     private static final class HeapTypeCollector implements DeclarationTypeVisitor<Void> {
