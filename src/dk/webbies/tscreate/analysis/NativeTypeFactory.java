@@ -137,17 +137,17 @@ public class NativeTypeFactory {
             if (convertedTypeMap.containsKey(t)) {
                 GenericType type = convertedTypeMap.get(t);
                 if (nativeClasses.nameFromType(type) != null) {
-                    obj.setTypeName(nativeClasses.nameFromType(type));
                     if (isBaseType) {
                         obj.setIsBaseType(true);
                     }
+                    obj.setTypeName(nativeClasses.nameFromType(type));
                 }
             } else {
                 if (nativeClasses.nameFromType(t) != null) {
-                    obj.setTypeName(nativeClasses.nameFromType(t));
                     if (isBaseType) {
                         obj.setIsBaseType(true);
                     }
+                    obj.setTypeName(nativeClasses.nameFromType(t));
                 }
             }
 

@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
 import dk.webbies.tscreate.util.Pair;
+import org.apache.commons.collections.FastHashMap;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,11 +40,23 @@ public class ObjectNode extends UnionNodeWithFields {
         }
     }
     public void addField(String fieldName, UnionNode node) {
+        if (this.unionClass != null) {
+            if (this.unionClass.getFeature().objectFields == null) {
+                this.unionClass.getFeature().objectFields = new HashMap<>();
+            }
+            this.unionClass.getFeature().objectFields.put(fieldName, node);
+        }
         this.objectFields.put(fieldName, node);
         super.addField(FIELD_PREFIX + fieldName, node);
     }
 
     public void setTypeName(String typeName) {
+        if (this.unionClass != null) {
+            if (this.unionClass.getFeature().typeNames == null) {
+                this.unionClass.getFeature().typeNames = new HashSet<>();
+            }
+            this.unionClass.getFeature().typeNames.add(new Pair<>(typeName, isTypeNameBaseType));
+        }
         this.typeName = typeName;
     }
 
