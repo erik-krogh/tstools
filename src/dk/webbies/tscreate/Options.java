@@ -40,8 +40,6 @@ public class Options {
     public boolean reduceNothing = false;
 
     public boolean printStringIndexers = false;
-    public boolean aggressivelyDontPrintTheSameThingTwice = false;
-
 
     public boolean onlyEvaluateUnderFunctionArgsAndReturn = false;
     public boolean evaluationSkipExcessProperties = true;  // TODO: Look at this again later.
