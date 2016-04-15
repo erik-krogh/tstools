@@ -54,7 +54,7 @@ public class RedundantInterfaceCleaner {
         Multimap<DeclarationType, DeclarationType> allReplacements = ArrayListMultimap.create();
 
         while (progress) {
-            CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration, true);
+            CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration, false);
             System.out.println("Removing redundant types (" + counter++ + ")   decs:(" + collector.getEveryThing().size() + ")");
 
             progress = false;
