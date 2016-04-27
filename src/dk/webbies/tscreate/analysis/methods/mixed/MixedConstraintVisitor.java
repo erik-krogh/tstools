@@ -21,6 +21,7 @@ import static dk.webbies.tscreate.analysis.ResolveEnvironmentVisitor.getIdentifi
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
+@SuppressWarnings("Duplicates")
 public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, StatementTransverse<UnionNode> {
     protected final Snap.Obj closure;
     protected final UnionFindSolver solver;
