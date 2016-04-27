@@ -83,16 +83,11 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
     }
 
-    public static void compareMethods(List<BenchMark> benchMarks, long timeout) throws IOException {
-        List<Options.StaticAnalysisMethod> methods = Arrays.asList(Options.StaticAnalysisMethod.values());
-        compareMethods(benchMarks, methods, timeout);
-    }
-
-    public static void compareMethods(List<BenchMark> benchMarks, Options.StaticAnalysisMethod[] methods, long timeout) throws IOException {
-        compareMethods(benchMarks, Arrays.asList(methods), timeout);
-    }
-
     public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout) throws IOException {
+        compareMethods(benchMarks, methods, timeout, false);
+    }
+
+    public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout, boolean skipGeneratingDeclarations) throws IOException {
         Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
         int maxMethodLength = methods.stream().map(method -> method.prettyString.length()).max(Integer::compare).get();
         int decimals = 4;
@@ -109,7 +104,12 @@ public class CompareMethods {
                 }
                 benchMark.options.staticMethod = method;
                 println("With method: " + method.prettyString);
-                Score score = Main.runAnalysisWithTimeout(benchMark, timeout);
+                Score score = null;
+                if (skipGeneratingDeclarations) {
+                    score = Main.runEvaluation(benchMark);
+                } else {
+                    score = Main.runAnalysisWithTimeout(benchMark, timeout);
+                }
                 if (score == null) {
                     score = new Score(-1, -1, -1);
                 }
@@ -119,6 +119,10 @@ public class CompareMethods {
             printMethods(benchmarkScores, maxMethodLength, decimals);
         }
 
+        printResultingEvaluations(methods, benchmarkScores, maxMethodLength, decimals);
+    }
+
+    private static void printResultingEvaluations(Collection<Options.StaticAnalysisMethod> methods, Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores, int maxMethodLength, int decimals) {
         print("\n\n\n\n\n");
 
         printMethods(benchmarkScores, maxMethodLength, decimals);
@@ -146,9 +150,6 @@ public class CompareMethods {
         printScores(sumScores, maxMethodLength, decimals);
 
 
-
-
-
         Map<Options.StaticAnalysisMethod, Integer> methodCounts = new HashMap<>();
         methods.forEach(method -> methodCounts.put(method, 0));
 
@@ -166,8 +167,6 @@ public class CompareMethods {
         methodCounts.entrySet().stream().sorted((a, b) -> Double.compare(b.getValue(), a.getValue())).forEach(entry -> {
             println(entry.getKey().prettyString + "; " + entry.getValue());
         });
-
-
     }
 
     private static void printMethods(Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores, int maxMethodLength, int decimals) {
