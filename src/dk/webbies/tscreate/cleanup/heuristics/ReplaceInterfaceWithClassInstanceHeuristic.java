@@ -34,6 +34,7 @@ public class ReplaceInterfaceWithClassInstanceHeuristic implements ReplacementHe
 
     @Override
     public Multimap<DeclarationType, DeclarationType> findReplacements(CollectEveryTypeVisitor collected) {
+        collected = new CollectEveryTypeVisitor(collected.getDeclarations(), true); // Hacky, but whatever.
         Map<Class<? extends DeclarationType>, Set<DeclarationType>> byType = collected.getEverythingByType();
 
         List<DeclarationType> classTypes = getClassAndNamedTypes(byType);
