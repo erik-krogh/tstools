@@ -28,7 +28,7 @@ import static java.util.Collections.*;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class TypeFactory {
-    private final Map<UnionClass, DeclarationType> cache = new HashMap<>();
+    private final Map<UnionClass, DeclarationType> cache = new WeakHashMap<>();
     private final NativeClassesMap nativeClasses;
     private final HashSet<String> takenClassNames = new HashSet<>();
     private TypeAnalysis typeAnalysis;

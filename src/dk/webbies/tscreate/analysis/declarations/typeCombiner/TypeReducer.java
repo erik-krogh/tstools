@@ -19,7 +19,7 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClas
  * Created by Erik Krogh Kristensen on 16-10-2015.
  */
 public class TypeReducer {
-    public final HashMap<DeclarationType, List<DeclarationType>> originals = new HashMap<>();
+    public final Map<DeclarationType, List<DeclarationType>> originals = new WeakHashMap<>();
     private final Options options;
     private final Map<Pair<Class<? extends DeclarationType>, Class<? extends DeclarationType>>, SingleTypeReducerInterface> handlers = new HashMap<>();
     private final Map<Class<? extends DeclarationType>, SameTypeMultiReducer> multiHandlers = new HashMap<>();
