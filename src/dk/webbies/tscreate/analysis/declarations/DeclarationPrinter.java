@@ -209,7 +209,7 @@ public class DeclarationPrinter {
             type = printsAsInterface.get(type);
         }
         if (exportNameBlacklist.contains(name) || !validName(name)) {
-            throw new GotCyclic(arg.getSeen().cons(type), 1);
+            throw new GotCyclic(arg.getSeen().cons(type));
         }
 
         if (type instanceof FunctionType && !this.declarationNames.containsKey(type)) {
@@ -218,7 +218,7 @@ public class DeclarationPrinter {
 
         if (type instanceof FunctionType && arg.path.equals(declarationNames.get(type))) {
             if (options.neverPrintModules) {
-                throw new GotCyclic(type, 2);
+                throw new GotCyclic(type);
             }
             arg = arg.cons(type, true);
             FunctionType functionType = (FunctionType) type;
@@ -232,7 +232,7 @@ public class DeclarationPrinter {
             write(arg.builder, ";\n");
         } else if (type instanceof UnnamedObjectType && arg.path.equals(declarationNames.get(type))) {
             if (options.neverPrintModules) {
-                throw new GotCyclic(type, 3);
+                throw new GotCyclic(type);
             }
             arg = arg.cons(type, false);
             UnnamedObjectType module = (UnnamedObjectType) type;
@@ -250,7 +250,7 @@ public class DeclarationPrinter {
             writeln(arg.builder, "}");
         } else if (type instanceof ClassType && arg.path.equals(declarationNames.get(type))) {
             if (options.neverPrintModules) {
-                throw new GotCyclic(type, 4);
+                throw new GotCyclic(type);
             }
             ClassType clazz = (ClassType) type;
             if (printedClasses.contains(clazz)) {
@@ -370,18 +370,15 @@ public class DeclarationPrinter {
     private final class GotCyclic extends RuntimeException {
         final fj.data.List<DeclarationType> types;
         final DeclarationType singleType;
-        final int i;
 
-        private GotCyclic(fj.data.List<DeclarationType> types, int i) {
-            this.i = i;
+        private GotCyclic(fj.data.List<DeclarationType> types) {
             assert !types.isEmpty();
             this.types = types;
             this.singleType = null;
         }
 
-        private GotCyclic(DeclarationType type, int i) {
+        private GotCyclic(DeclarationType type) {
             this.singleType = type;
-            this.i = i;
             this.types = null;
         }
     }
@@ -420,7 +417,7 @@ public class DeclarationPrinter {
                 printsAsInterface.get(functionType).accept(this, arg);
             } else {
                 if (arg.contains(functionType)) {
-                    throw new GotCyclic(arg.getSeen(), 5);
+                    throw new GotCyclic(arg.getSeen());
                 }
 
                 arg = arg.cons(functionType, true);
@@ -453,7 +450,7 @@ public class DeclarationPrinter {
                 return printsAsInterface.get(objectType).accept(this, arg);
             } else {
                 if (arg.contains(objectType)) {
-                    throw new GotCyclic(arg.getSeen(), 6);
+                    throw new GotCyclic(arg.getSeen());
                 }
 
                 arg = arg.cons(objectType, false);
@@ -475,7 +472,7 @@ public class DeclarationPrinter {
                 write(builder, "}");
                 String declarationsString = builder.toString();
                 if (declarationsString.contains("\n") || declarationsString.length() > 50) {
-                    throw new GotCyclic(arg.getSeen(), 7);
+                    throw new GotCyclic(arg.getSeen());
                 } else {
                     arg.builder.append(declarationsString);
                 }
@@ -620,7 +617,7 @@ public class DeclarationPrinter {
                     indexType.accept(this, arg);
                     arg.builder.append(">");
                 } else {
-                    throw new GotCyclic(indexType, 8);
+                    throw new GotCyclic(indexType);
                 }
             } else if (indexType instanceof InterfaceDeclarationType || indexType instanceof ClassInstanceType) {
                 arg.builder.append("Array<");
