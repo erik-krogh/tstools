@@ -521,7 +521,13 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
     @Override
     public Void visit(SymbolType real, Arg arg) {
-        throw new RuntimeException();
+        if (arg.type instanceof SymbolType) {
+            addTruePositive(arg.prefix, depth, "Right symbol type");
+        } else {
+            addFalseNegative(arg.prefix, depth, "Was not a symbol type!");
+        }
+        arg.callback.run();
+        return null;
     }
 
     private void addFalseNegative(String prefix, int depth, String description) {
