@@ -11,7 +11,6 @@ import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
@@ -19,8 +18,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("Duplicates")
 public class MixedContextSensitiveTypeAnalysis extends MixedTypeAnalysis {
 
-    public MixedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
-        super(libraryClasses, options, globalObject, nativeClasses);
+    public MixedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod) {
+        super(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod);
     }
 
     @Override

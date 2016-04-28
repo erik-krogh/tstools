@@ -19,7 +19,7 @@ import java.util.Map;
  */
 public class PureSubsetsContextSensitiveTypeAnalysis extends MixedContextSensitiveTypeAnalysis {
     public PureSubsetsContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses) {
-        super(libraryClasses, options, globalObject, nativeClasses);
+        super(libraryClasses, options, globalObject, nativeClasses, false);
     }
 
     @Override

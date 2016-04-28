@@ -23,7 +23,7 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
     private Snap.Obj globalObject;
 
     public UnionEverythingTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
-        super(libraryClasses, options, globalObject, nativeClasses);
+        super(libraryClasses, options, globalObject, nativeClasses, false);
         this.libraryClasses = libraryClasses;
         this.globalObject = globalObject;
         this.heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this);

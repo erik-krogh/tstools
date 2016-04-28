@@ -32,6 +32,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     protected final PrimitiveNode.Factory primitiveFactory;
     protected HeapValueFactory heapFactory;
     protected NativeTypeFactory nativeTypeFactory;
+    protected final boolean upperBoundMethod; // If true, then behave like normal "upper-bound".
 
     public MixedConstraintVisitor(
             Snap.Obj closure,
@@ -41,7 +42,8 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
             MixedTypeAnalysis typeAnalysis,
-            NativeTypeFactory nativeTypeFactory) {
+            NativeTypeFactory nativeTypeFactory,
+            boolean upperBoundMethod) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -50,6 +52,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
+        this.upperBoundMethod = upperBoundMethod;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
     }
 
@@ -304,7 +307,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
+            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, MixedConstraintVisitor.this.upperBoundMethod).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(new IncludeNode(solver, parameter), result.arguments.get(i), primitiveFactory.nonVoid());
@@ -666,7 +669,14 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                     case "bind": {
 //                        assert MixedConstraintVisitor.this.functionNodes.containsKey(closure);
                         FunctionNode calledFunction = MixedConstraintVisitor.this.functionNodes.get(closure);
-                        solver.union(functionNode.returnNode, new IncludeNode(solver, calledFunction.returnNode));
+
+                        if (MixedConstraintVisitor.this.upperBoundMethod) {
+                            solver.union(new IncludeNode(solver, functionNode.returnNode), calledFunction.returnNode);
+                        } else {
+                            solver.union(functionNode.returnNode, new IncludeNode(solver, calledFunction.returnNode));
+                        }
+
+
                         solver.union(functionNode.thisNode, new IncludeNode(solver, calledFunction.thisNode));
                         for (int i = 0; i < Math.min(functionNode.arguments.size(), calledFunction.arguments.size()); i++) {
                             solver.union(functionNode.arguments.get(i), new IncludeNode(solver, calledFunction.arguments.get(i)));

@@ -22,7 +22,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
 
 
     public UnionEverythingConstraintVisitor(Snap.Obj closure, UnionFindSolver solver, Map<Identifier, UnionNode> identifierMap, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HeapValueFactory heapFactory, MixedTypeAnalysis typeAnalysis, NativeTypeFactory nativeTypeFactory) {
-        super(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, typeAnalysis, nativeTypeFactory);
+        super(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, typeAnalysis, nativeTypeFactory, false);
     }
 
     @Override

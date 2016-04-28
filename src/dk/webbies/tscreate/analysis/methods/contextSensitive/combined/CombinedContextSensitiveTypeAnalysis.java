@@ -6,8 +6,6 @@ import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.TypeFactory;
 import dk.webbies.tscreate.analysis.methods.contextSensitive.mixed.MixedContextSensitiveTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.contextSensitive.pureSubsets.PureSubsetsContextSensitiveTypeAnalysis;
-import dk.webbies.tscreate.analysis.methods.mixed.MixedTypeAnalysis;
-import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.FunctionNode;
 import dk.webbies.tscreate.analysis.unionFind.IncludeNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
@@ -27,8 +25,8 @@ public class CombinedContextSensitiveTypeAnalysis implements TypeAnalysis {
     private final PureSubsetsContextSensitiveTypeAnalysis subset;
     private final TypeFactory typeFactory;
 
-    public CombinedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses) {
-        mixed = new MixedContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses);
+    public CombinedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod) {
+        mixed = new MixedContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod);
         subset = new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses);
 
         typeFactory = new CombinerTypeFactory(globalObject, libraryClasses, options, nativeClasses, this);

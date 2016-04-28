@@ -21,7 +21,7 @@ public class UnionRecursivelyTypeAnalysis extends MixedTypeAnalysis {
     private final Snap.Obj globalObject;
 
     public UnionRecursivelyTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
-        super(libraryClasses, options, globalObject, nativeClasses);
+        super(libraryClasses, options, globalObject, nativeClasses, false);
         this.globalObject = globalObject;
     }
 

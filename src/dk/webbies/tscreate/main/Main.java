@@ -28,6 +28,7 @@ import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,15 +48,14 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         // Benchmarks, where I can run ALL the static analysis methods.
         List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
-        List<Options.StaticAnalysisMethod> methods = asList(COMBINED, COMBINED_CONTEXT_SENSITIVE, MIXED, MIXED_CONTEXT_SENSITIVE, ANDERSON, ANDERSON_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
+        List<Options.StaticAnalysisMethod> allMethods = asList(ANDERSON, MIXED, COMBINED, UPPER, UPPER_LOWER, ANDERSON_CONTEXT_SENSITIVE, MIXED_CONTEXT_SENSITIVE, COMBINED_CONTEXT_SENSITIVE, UPPER_CONTEXT_SENSITIVE, UPPER_LOWER_CONTEXT_SENSITIVE/*, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE*/);
         long start = System.currentTimeMillis();
         try {
 
-            stableBenches.forEach(bench -> bench.options.combineInterfacesAfterAnalysis = false);
-            CompareMethods.compareMethods(stableBenches, methods, 20 * 60 * 1000);
+            allBenchmarks.forEach(bench -> bench.options.combineInterfacesAfterAnalysis = false);
+            CompareMethods.compareMethods(allBenchmarks, allMethods, 20 * 60 * 1000, false);
 
-            stableBenches.forEach(bench -> bench.options.combineInterfacesAfterAnalysis = true);
-            CompareMethods.compareMethods(stableBenches, methods, 20 * 60 * 1000);
+//            runAnalysis(test);
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -69,11 +69,11 @@ public class Main {
     }
 
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
-        String fileSuffix = benchMark.options.staticMethod.fileSuffix;
-        if (benchMark.options.combineInterfacesAfterAnalysis) {
-            fileSuffix = fileSuffix + "_smaller";
+        String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
+
+        if (new File(resultDeclarationFilePath).exists()) {
+//            return new Score(-1, -1, -1);
         }
-        String resultDeclarationFilePath = benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
 
         System.out.println("Analysing " + benchMark.name + " - output: " + resultDeclarationFilePath);
 
@@ -130,10 +130,46 @@ public class Main {
         }
     }
 
+    public static Score runEvaluation(BenchMark benchMark) throws IOException {
+        String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
+
+        if (!new File(resultDeclarationFilePath).exists()) {
+            return new Score(-1, -1, -1);
+        }
+
+        System.out.println("Get evaluation of " + benchMark.name + " - from: " + resultDeclarationFilePath);
+
+        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts(), benchMark.testFiles, benchMark.options.asyncTest), AST);
+
+        HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject, benchMark.options).extract();
+
+        Evaluation evaluation = null;
+        if (benchMark.declarationPath != null) {
+            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.options).evaluate();
+        }
+
+        if (evaluation == null) {
+            throw new RuntimeException();
+        } else {
+            return evaluation.score();
+        }
+    }
+
+    private static String getResultingDeclarationPath(BenchMark benchMark) {
+        String fileSuffix = benchMark.options.staticMethod.fileSuffix;
+        if (benchMark.options.combineInterfacesAfterAnalysis) {
+            fileSuffix = fileSuffix + "_smaller";
+        }
+        return benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
+    }
+
     private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
         switch (benchMark.options.staticMethod) {
             case MIXED:
-                return new MixedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new MixedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, false);
+            case UPPER:
+                return new MixedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, true);
             case ANDERSON:
                 return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case UNIFICATION:
@@ -145,13 +181,19 @@ public class Main {
             case OLD_UNIFICATION:
                 return new OldTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case COMBINED:
-                return new CombinedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new CombinedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, false);
+            case UPPER_LOWER:
+                return new CombinedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, true);
             case MIXED_CONTEXT_SENSITIVE:
-                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, false);
+            case UPPER_CONTEXT_SENSITIVE:
+                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, true);
             case ANDERSON_CONTEXT_SENSITIVE:
                 return new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
             case COMBINED_CONTEXT_SENSITIVE:
-                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);
+                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, false);
+            case UPPER_LOWER_CONTEXT_SENSITIVE:
+                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, true);
             default:
                 throw new RuntimeException("I don't even know this static analysis method. ");
         }
