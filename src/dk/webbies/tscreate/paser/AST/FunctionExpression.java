@@ -1,8 +1,10 @@
 package dk.webbies.tscreate.paser.AST;
 
+import com.google.javascript.jscomp.parsing.parser.trees.Comment;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tscreate.paser.ExpressionVisitor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -14,6 +16,9 @@ public class FunctionExpression extends Expression {
     final BlockStatement body;
     final List<Identifier> arguments;
     public HashMap<String, Identifier> declarations;
+
+    public Comment jsDoc;
+    public List<Comment> nestedDocumentation = new ArrayList<>();
 
     public FunctionExpression(SourceRange location, Identifier name, BlockStatement body, List<Identifier> arguments) {
         super(location);

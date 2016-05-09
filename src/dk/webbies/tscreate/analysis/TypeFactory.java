@@ -7,6 +7,7 @@ import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.singleTypeReducers.FunctionReducer;
 import dk.webbies.tscreate.analysis.declarations.types.*;
+import dk.webbies.tscreate.analysis.jsdoc.JSDocParser;
 import dk.webbies.tscreate.analysis.unionFind.UnionClass;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature;
 import dk.webbies.tscreate.analysis.unionFind.UnionFeature.FunctionFeature;
@@ -77,7 +78,7 @@ public class TypeFactory {
         }
     }
 
-    DeclarationType getType(UnionNode node) {
+    public DeclarationType getType(UnionNode node) {
         return getType(node.getUnionClass());
     }
 
@@ -442,8 +443,41 @@ public class TypeFactory {
     }
 
     public void registerFunction(Snap.Obj closure, List<UnionFeature> features) {
-        List<FunctionFeature> functionFeatures = features.stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
         UnresolvedDeclarationType unresolved = getPureFunction(closure);
+        if (options.useJSDoc && closure.function.astNode != null && closure.function.astNode.jsDoc != null) {
+            FunctionType result = new JSDocParser(globalObject, typeAnalysis, nativeClasses).parseFunctionDoc(closure, closure.function.astNode.jsDoc);
+
+            FunctionType analyzedResult = functionFeatureToDec(closure, features);
+
+            for (int i = 0; i < result.getArguments().size(); i++) {
+                FunctionType.Argument arg = result.getArguments().get(i);
+                if (arg.getType() == null && analyzedResult.getArguments().size() < i) {
+                    arg.setType(analyzedResult.getArguments().get(i).getType());
+                }
+            }
+            if (result.getReturnType() == null) {
+                result.setReturnType(analyzedResult.getReturnType());
+            }
+
+            // TODO: Make sure that if the analysis sees more arguments than the JSDoc, then those are added.
+
+            for (int i = result.getArguments().size(); i < analyzedResult.getArguments().size(); i++) {
+                result.getArguments().add(analyzedResult.getArguments().get(i));
+            }
+
+            result.setArguments(result.getArguments().stream().filter(arg -> arg.getType() != null).collect(Collectors.toList()));
+
+            unresolved.setResolvedType(result);
+
+        } else {
+            FunctionType result = functionFeatureToDec(closure, features);
+
+            unresolved.setResolvedType(result);
+        }
+    }
+
+    private FunctionType functionFeatureToDec(Snap.Obj closure, List<UnionFeature> features) {
+        List<FunctionFeature> functionFeatures = features.stream().map(UnionFeature::getFunctionFeature).filter(Objects::nonNull).collect(Collectors.toList());
 
         DeclarationType returnType = constructCombinationType(functionFeatures, (feature) -> getType(feature.getReturnNode()));
 
@@ -488,8 +522,7 @@ public class TypeFactory {
                 result.minArgs = Math.min(result.minArgs, call.arguments.size());
             }
         }
-
-        unresolved.setResolvedType(result);
+        return result;
     }
 
     private<T> CombinationType constructCombinationType(Collection<T> collection, Function<T, DeclarationType> mapper) {

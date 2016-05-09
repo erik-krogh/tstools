@@ -8,6 +8,7 @@ import com.google.javascript.jscomp.parsing.ParserRunner;
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import com.google.javascript.jscomp.parsing.parser.Parser.Config.Mode;
 import com.google.javascript.jscomp.parsing.parser.SourceFile;
+import com.google.javascript.jscomp.parsing.parser.trees.Comment;
 import com.google.javascript.jscomp.parsing.parser.trees.ProgramTree;
 import com.google.javascript.jscomp.parsing.parser.util.SourcePosition;
 import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
@@ -178,6 +179,9 @@ public class JavaScriptParser {
                 // For each identifier, mark where it was declared.
                 new FindVariableDeclarations(result).visit(result);
 
+                FindJSDocVisitor jsDocVisitor = new FindJSDocVisitor(this.programAST.sourceComments);
+                result.getBody().accept(jsDocVisitor);
+
                 return result;
             }
         }
@@ -308,6 +312,24 @@ public class JavaScriptParser {
                 new FindVariableDeclarations(this.function, newEnv, this.globalEnv).visit(catchStatement);
             }
             return null;
+        }
+    }
+
+    private static final class FindJSDocVisitor implements NodeTransverse<Void> {
+        private List<Comment> comments;
+
+        FindJSDocVisitor(List<Comment> comments) {
+            this.comments = comments.stream().filter(Comment::isJsDoc).collect(Collectors.toList());
+        }
+
+        @Override
+        public Void visit(FunctionExpression function) {
+            List<Comment> docs = comments.stream().filter(comment -> comment.location.end.line == function.location.start.line - 1).collect(Collectors.toList());
+            if (docs.size() == 1) {
+                function.jsDoc = docs.iterator().next();
+            }
+            comments.stream().filter(comment -> comment.location.start.offset > function.location.start.offset && comment.location.end.offset < function.location.end.offset).forEach(function.nestedDocumentation::add);
+            return NodeTransverse.super.visit(function);
         }
     }
 }

@@ -2,6 +2,7 @@ package dk.webbies.tscreate.jsnap.classes;
 
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
+import dk.webbies.tscreate.analysis.jsdoc.JSDocParser;
 import dk.webbies.tscreate.analysis.declarations.types.InterfaceDeclarationType;
 import dk.webbies.tscreate.analysis.unionFind.EmptyNode;
 import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
@@ -52,6 +53,9 @@ public class LibraryClass {
     }
 
     public boolean isUsedAsClass() {
+        if (!isUsedAsClass && options.useJSDoc && getConstructor() != null && getConstructor().function != null && JSDocParser.isClass(getConstructor().function.astNode)) {
+            return this.isUsedAsClass = true;
+        }
         return isUsedAsClass;
     }
 
