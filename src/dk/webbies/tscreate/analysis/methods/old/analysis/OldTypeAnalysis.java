@@ -189,6 +189,11 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
         return heapFactory;
     }
 
+    @Override
+    public UnionFindSolver getSolver() {
+        return solver;
+    }
+
     public static class ProgramPoint {
         private Snap.Obj function;
         private AstNode astNode;

@@ -89,4 +89,9 @@ public class CombinedTypeAnalysis implements TypeAnalysis {
     public HeapValueFactory getHeapFactory() {
         return mixed.getHeapFactory();
     }
+
+    @Override
+    public UnionFindSolver getSolver() {
+        return mixed.solver;
+    }
 }

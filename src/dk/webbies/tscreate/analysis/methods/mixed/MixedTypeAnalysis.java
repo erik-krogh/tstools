@@ -70,6 +70,11 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     }
 
     @Override
+    public UnionFindSolver getSolver() {
+        return solver;
+    }
+
+    @Override
     public Map<Snap.Obj, LibraryClass> getLibraryClasses() {
         return libraryClasses;
     }

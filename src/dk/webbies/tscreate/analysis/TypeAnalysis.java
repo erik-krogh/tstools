@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.unionFind.FunctionNode;
+import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -25,4 +26,6 @@ public interface TypeAnalysis {
     FunctionNode getFunctionNode(Snap.Obj closure);
 
     HeapValueFactory getHeapFactory();
+
+    UnionFindSolver getSolver();
 }
