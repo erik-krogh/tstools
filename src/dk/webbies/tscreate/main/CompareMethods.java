@@ -64,6 +64,8 @@ public class CompareMethods {
 
         blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.D3, Options.StaticAnalysisMethod.UPPER_LOWER_CONTEXT_SENSITIVE));
 
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_UNIFICATION));
