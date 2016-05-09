@@ -92,7 +92,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                 return null;
             } else if (type instanceof ClassType) {
                 ClassType clazz = (ClassType) type;
-                clazz.getConstructorType().setReturnType(new ClassInstanceType(clazz, EMPTY_SET));
+                clazz.getConstructorType().setReturnType(clazz.getEmptyNameInstance());
                 Signature constructor = toSignature(clazz.getConstructorType());
                 t.setDeclaredConstructSignatures(singletonList(constructor));
 
@@ -108,7 +108,7 @@ public class DeclarationTypeToTSTypes implements DeclarationTypeVisitor<Type> {
                 if (superClass != null) {
                     superClass = superClass.resolve();
                     if (superClass instanceof ClassType) {
-                        t.setBaseTypes(singletonList(new ClassInstanceType(superClass, EMPTY_SET).accept(DeclarationTypeToTSTypes.this)));
+                        t.setBaseTypes(singletonList(((ClassType) superClass).getEmptyNameInstance().accept(DeclarationTypeToTSTypes.this)));
                     } else if (superClass instanceof NamedObjectType) {
                         Type superType = nativeClasses.typeFromName(((NamedObjectType) superClass).getName());
                         t.setBaseTypes(singletonList(superType));

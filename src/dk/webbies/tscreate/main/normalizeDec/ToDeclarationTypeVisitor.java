@@ -246,7 +246,7 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
                 returnType = (InterfaceDeclarationType) uncastReturnType;
             }
 
-            interfaceToClassInstanceMap.put(returnType, new ClassInstanceType(clazz, EMPTY_SET));
+            interfaceToClassInstanceMap.put(returnType, clazz.getEmptyNameInstance());
 
             Map<String, DeclarationType> declarations = new HashMap<>();
             if (returnType.object != null) {

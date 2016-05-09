@@ -28,7 +28,7 @@ public class JSNAPUtil {
         if (options.runtime == Options.Runtime.CHROME) {
             return getJsnapRaw("", options, "onlyDom.jsnap", "lib/selenium", dependencies, Collections.EMPTY_LIST, false);
         } else {
-            return getJsnapRaw("", options, "onlyDom.jsnap", "lib/jsnap/node_modules/phantomjs/lib/phantom", dependencies, Collections.EMPTY_LIST, false);
+            return getJsnapRaw("", options, "onlyDom.jsnap", "node_modules/jsnap/node_modules/phantomjs/lib/phantom", dependencies, Collections.EMPTY_LIST, false);
         }
     }
 
@@ -42,7 +42,7 @@ public class JSNAPUtil {
         }
         scriptPath = scriptPath + " " + testFileString.toString();
 
-        String jsnapPath = "lib/jsnap/jsnap.js --callback sendBackToTSCreateServer "; // The callback is defined in driver.html
+        String jsnapPath = "node_modules/jsnap/jsnap.js --callback sendBackToTSCreateServer "; // The callback is defined in driver.html
         if (options.createInstances) {
             jsnapPath += " --createInstances";
             cachePath += ".createdInstances";
@@ -355,7 +355,7 @@ public class JSNAPUtil {
     public static final class RecordedCall {
         public final List<Snap.Value> arguments;
         public final Snap.Value callReturn;
-        public final Snap.Obj callThis;
+        private final Snap.Obj callThis; // I have it, but it is never used
         public final boolean isNew;
         public RecordedCall(List<Snap.Value> arguments, Snap.Value callReturn, Snap.Obj callThis, boolean isNew) {
             this.arguments = arguments;
@@ -395,5 +395,20 @@ public class JSNAPUtil {
             }
         }
         return result;
+    }
+
+    // This assumes that the property actually exists.
+    public static Snap.Value lookupRecursive(Snap.Value value, String name) {
+        if (!(value instanceof Snap.Obj)) {
+            throw new RuntimeException();
+        }
+        Snap.Obj obj = (Snap.Obj) value;
+        if (name.contains(".")) {
+            String[] split = name.split("\\.", 2);
+            assert split.length == 2;
+            return lookupRecursive(obj.getProperty(split[0]).value, split[1]);
+        } else {
+            return obj.getProperty(name).value;
+        }
     }
 }

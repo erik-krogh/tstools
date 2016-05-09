@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static dk.webbies.tscreate.jsnap.JSNAPUtil.lookupRecursive;
 import static dk.webbies.tscreate.jsnap.Snap.Obj;
 import static dk.webbies.tscreate.jsnap.Snap.Value;
 
@@ -76,21 +77,6 @@ public class DeclarationParser {
         closure.function.type = "native";
     }
 
-    // This assumes that the property actually exists.
-    private static Value lookupRecursive(Value value, String name) {
-        if (!(value instanceof Snap.Obj)) {
-            throw new RuntimeException();
-        }
-        Snap.Obj obj = (Obj) value;
-        if (name.contains(".")) {
-            String[] split = name.split("\\.", 2);
-            assert split.length == 2;
-            return lookupRecursive(obj.getProperty(split[0]).value, split[1]);
-        } else {
-            return obj.getProperty(name).value;
-        }
-    }
-
     public static SpecReader getTypeSpecification(Environment env, Collection<String> dependencies, String declarationFilePath) {
         ArrayList<String> specs = new ArrayList<>();
         specs.addAll(dependencies);
@@ -99,14 +85,14 @@ public class DeclarationParser {
     }
 
     public static SpecReader getTypeSpecification(Environment env, Collection<String> declarationFilePaths) {
-        String runString = "lib/ts-type-reader/src/CLI.js --env " + env.cliArgument;
+        String runString = "node_modules/ts-spec-reader/src/CLI.js --env " + env.cliArgument;
         for (String declarationFile : declarationFilePaths) {
             runString += " \"" + declarationFile + "\"";
         }
 
         String cachePath = "declaration-" + env.cliArgument + "-" + runString.hashCode() + ".json";
 
-        List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("lib/ts-type-reader")));
+        List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("node_modules/ts-spec-reader")));
         declarationFilePaths.stream().map(File::new).forEach(toCheckAgainst::add);
 
         String specification;

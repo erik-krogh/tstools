@@ -24,10 +24,6 @@ public class SubsetHeapValueFactory implements HeapValueFactory {
         this.typeAnalysis = typeAnalysis;
         this.primitivesFactory = new SubSetPrimitiveFactory(solver, globalObject);
         this.solver = solver;
-        JSNAPUtil.getAllObjects(globalObject).forEach(obj -> {
-            this.innerFromValue(obj);
-            obj.properties.forEach(this::innerFromProperty);
-        });
     }
 
     public PrimitiveNode.Factory getPrimitivesFactory() {
