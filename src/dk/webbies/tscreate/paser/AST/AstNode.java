@@ -12,16 +12,10 @@ public abstract class AstNode {
         this.location = location;
     }
     public String toString() {
-        AstNode astnode = this;
-        StringBuilder ret = new StringBuilder();
-        SourcePosition start = astnode.location.start;
-        SourcePosition end = astnode.location.end;
+        SourcePosition start = this.location.start;
+        SourcePosition end = this.location.end;
         String contents = start.source.contents;
-
-        for (int i = start.offset; i < end.offset; i++) {
-            ret.append(contents.charAt(i));
-        }
-        return ret.toString();
+        return contents.substring(start.offset, end.offset);
     }
 
 }
