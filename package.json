@@ -1,0 +1,29 @@
+{
+  "name": "tscreate",
+  "version": "0.1.0",
+  "description": "A tool to automatically generate TypeScript declaration files from JavaScript libraries",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "doctrine": "^1.2.1",
+    "doctrine-cli": "^1.0.2",
+    "jsnap": "https://github.com/webbiesdk/jsnap.git",
+    "ts-spec-reader": "https://github.com/cs-au-dk/ts-spec-reader.git"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webbiesdk/TSCreate.git"
+  },
+  "author": "Erik Krogh Kristensen <erik@webbies.dk>",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/webbiesdk/TSCreate/issues"
+  },
+  "homepage": "https://github.com/webbiesdk/TSCreate#readme"
+}
