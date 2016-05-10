@@ -74,7 +74,9 @@ public class Evaluation {
             builder.append("\n");
         }
 
-        builder.append("Score: ").append(score().fMeasure);
+        builder.append("Score: ").append(score().fMeasure).append("\n");
+        builder.append("Precision: ").append(score().precision).append("\n");
+        builder.append("Recall: ").append(score().recall).append("\n");
         return builder.toString();
     }
 
