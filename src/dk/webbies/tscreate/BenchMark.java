@@ -390,7 +390,7 @@ public class BenchMark {
         options.recordCalls = false;
         options.createInstances = false;
 
-        BenchMark bench = new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
+        BenchMark bench = new BenchMark("Test file", "tests/test/test.js", null/*"tests/test/test.d.ts"*/, options, ES5);
 //        bench.dependencies.add(Dependency.underscore);
         return bench;
     });
