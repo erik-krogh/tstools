@@ -314,7 +314,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             new MixedContextSensitiveConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, lowerBoundMethod).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
-                solver.union(new IncludeNode(solver, parameter), result.arguments.get(i), primitiveFactory.nonVoid());
+                solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
             }
             solver.union(result, primitiveFactory.function());
             return result;
