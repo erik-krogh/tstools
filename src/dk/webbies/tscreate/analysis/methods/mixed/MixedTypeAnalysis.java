@@ -35,10 +35,10 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     public final Map<Snap.Obj, FunctionNode> functionNodes;
     protected final List<Snap.Obj> nativeFunctions;
     public boolean analysisFinished = false;
-    private final boolean upperBoundMethod;
+    private final boolean lowerBoundMethod;
 
-    public MixedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod) {
-        this.upperBoundMethod = upperBoundMethod;
+    public MixedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean lowerBoundMethod) {
+        this.lowerBoundMethod = lowerBoundMethod;
         this.solver = new UnionFindSolver(this);
         this.libraryClasses = libraryClasses;
         this.options = options;
@@ -295,7 +295,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     }
 
     public void applyConstraints(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Map<Identifier, UnionNode> identifierMap) {
-        new MixedConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory, this.upperBoundMethod).visit(closure.function.astNode);
+        new MixedConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory, this.lowerBoundMethod).visit(closure.function.astNode);
     }
 
     protected void addCallsToFunction(Snap.Obj closure, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {

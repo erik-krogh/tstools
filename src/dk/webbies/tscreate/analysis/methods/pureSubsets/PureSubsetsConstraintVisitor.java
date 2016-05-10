@@ -564,7 +564,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
             Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, new IncludeNode(solver, pair.right), primitiveFactory.nonVoid()));
 
-            solver.union(functionNode.returnNode, returnNode);
+            solver.union(new IncludeNode(solver, functionNode.returnNode), returnNode);
             solver.union(functionNode.thisNode, thisNode);
         }
 

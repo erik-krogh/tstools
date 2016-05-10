@@ -56,8 +56,8 @@ public class Options {
     public enum StaticAnalysisMethod {
         COMBINED("combined", "combined"),
         MIXED("mixed", "mixed"),
-        UPPER("upper", "upper"),
-        UPPER_CONTEXT_SENSITIVE("upper, cs", "upper_cs"),
+        LOWER("lower", "lower"),
+        LOWER_CONTEXT_SENSITIVE("lower, cs", "lower_cs"),
         UPPER_LOWER("upper_lower", "upper_lower"),
         UPPER_LOWER_CONTEXT_SENSITIVE("upper_lower, cs", "upper_lower_cs"),
         ANDERSON("subsets", "subsets"),

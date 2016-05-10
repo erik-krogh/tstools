@@ -32,7 +32,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     protected final PrimitiveNode.Factory primitiveFactory;
     protected HeapValueFactory heapFactory;
     protected NativeTypeFactory nativeTypeFactory;
-    protected final boolean upperBoundMethod; // If true, then behave like normal "upper-bound".
+    protected final boolean lowerBoundMethod; // If true, then behave like normal "lower-bound".
 
     public MixedConstraintVisitor(
             Snap.Obj closure,
@@ -43,7 +43,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             HeapValueFactory heapFactory,
             MixedTypeAnalysis typeAnalysis,
             NativeTypeFactory nativeTypeFactory,
-            boolean upperBoundMethod) {
+            boolean lowerBoundMethod) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -52,7 +52,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
-        this.upperBoundMethod = upperBoundMethod;
+        this.lowerBoundMethod = lowerBoundMethod;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
     }
 
@@ -77,7 +77,11 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             }
 
             case EQUAL: // = // assignment
-                solver.union(lhs, rhs);
+                if (this.lowerBoundMethod) {
+                    solver.union(new IncludeNode(solver, lhs), rhs);
+                } else {
+                    solver.union(lhs, rhs);
+                }
                 if (typeAnalysis.options.unifyShortCurcuitOrsAtAssignments) {
                     if (op.getRhs() instanceof BinaryExpression && ((BinaryExpression) op.getRhs()).getOperator() == Operator.OR) {
                         BinaryExpression orExp = (BinaryExpression) op.getRhs();
@@ -307,7 +311,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, MixedConstraintVisitor.this.upperBoundMethod).visit(function.getBody());
+            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, MixedConstraintVisitor.this.lowerBoundMethod).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(new IncludeNode(solver, parameter), result.arguments.get(i), primitiveFactory.nonVoid());
@@ -627,7 +631,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @SuppressWarnings("Duplicates")
-    private final class CallGraphResolver implements Runnable {
+    private final class CallGraphResolver implements Runnable { // FIXME: Make sure this works as it is supposed to with upper/lower bounds and includeNodes.
         List<UnionNode> args;
         private final Expression callExpression; // Useful for debugging.
         boolean constructorCalls;
@@ -643,9 +647,14 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             functionNode = FunctionNode.create(args.size(), solver);
             solver.union(function, functionNode);
 
-            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, pair.right, primitiveFactory.nonVoid()));
+            if (MixedConstraintVisitor.this.lowerBoundMethod) {
+                solver.union(functionNode.returnNode, new IncludeNode(solver, returnNode));
+            } else {
+                solver.union(new IncludeNode(solver, functionNode.returnNode), returnNode);
+            }
 
-            solver.union(functionNode.returnNode, returnNode);
+            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(new IncludeNode(solver, pair.left), pair.right, primitiveFactory.nonVoid()));
+
             solver.union(functionNode.thisNode, thisNode);
         }
 
@@ -670,7 +679,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 //                        assert MixedConstraintVisitor.this.functionNodes.containsKey(closure);
                         FunctionNode calledFunction = MixedConstraintVisitor.this.functionNodes.get(closure);
 
-                        if (MixedConstraintVisitor.this.upperBoundMethod) {
+                        if (MixedConstraintVisitor.this.lowerBoundMethod) {
                             solver.union(new IncludeNode(solver, functionNode.returnNode), calledFunction.returnNode);
                         } else {
                             solver.union(functionNode.returnNode, new IncludeNode(solver, calledFunction.returnNode));

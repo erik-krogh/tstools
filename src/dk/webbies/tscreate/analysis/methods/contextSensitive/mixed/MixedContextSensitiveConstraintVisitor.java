@@ -32,6 +32,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
     protected final PrimitiveNode.Factory primitiveFactory;
     protected HeapValueFactory heapFactory;
     protected NativeTypeFactory nativeTypeFactory;
+    private boolean lowerBoundMethod;
 
     public MixedContextSensitiveConstraintVisitor(
             Snap.Obj closure,
@@ -41,7 +42,8 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
             MixedContextSensitiveTypeAnalysis typeAnalysis,
-            NativeTypeFactory nativeTypeFactory) {
+            NativeTypeFactory nativeTypeFactory,
+            boolean lowerBoundMethod) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -50,6 +52,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
+        this.lowerBoundMethod = lowerBoundMethod;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
     }
 
@@ -74,7 +77,11 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             }
 
             case EQUAL: // = // assignment
-                solver.union(lhs, rhs);
+                if (this.lowerBoundMethod) {
+                    solver.union(new IncludeNode(solver, lhs), rhs);
+                } else {
+                    solver.union(lhs, rhs);
+                }
                 if (typeAnalysis.options.unifyShortCurcuitOrsAtAssignments) {
                     if (op.getRhs() instanceof BinaryExpression && ((BinaryExpression) op.getRhs()).getOperator() == Operator.OR) {
                         BinaryExpression orExp = (BinaryExpression) op.getRhs();
@@ -304,7 +311,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new MixedContextSensitiveConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
+            new MixedContextSensitiveConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, lowerBoundMethod).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(new IncludeNode(solver, parameter), result.arguments.get(i), primitiveFactory.nonVoid());
@@ -640,9 +647,14 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             functionNode = FunctionNode.create(args.size(), solver);
             solver.union(function, functionNode);
 
-            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(pair.left, pair.right, primitiveFactory.nonVoid()));
+            if (MixedContextSensitiveConstraintVisitor.this.lowerBoundMethod) {
+                solver.union(functionNode.returnNode, new IncludeNode(solver, returnNode));
+            } else {
+                solver.union(new IncludeNode(solver, functionNode.returnNode), returnNode);
+            }
 
-            solver.union(functionNode.returnNode, returnNode);
+            Util.zip(functionNode.arguments.stream(), args.stream()).forEach(pair -> solver.union(new IncludeNode(solver, pair.left), pair.right, primitiveFactory.nonVoid()));
+
             solver.union(functionNode.thisNode, thisNode);
         }
 
@@ -672,7 +684,13 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
                         }
 
                         FunctionNode calledFunction = MixedContextSensitiveConstraintVisitor.this.functionNodes.get(closure);
-                        solver.union(functionNode.returnNode, new IncludeNode(solver, calledFunction.returnNode));
+
+                        if (MixedContextSensitiveConstraintVisitor.this.lowerBoundMethod) {
+                            solver.union(new IncludeNode(solver, functionNode.returnNode), calledFunction.returnNode);
+                        } else {
+                            solver.union(functionNode.returnNode, new IncludeNode(solver, calledFunction.returnNode));
+                        }
+
                         solver.union(functionNode.thisNode, new IncludeNode(solver, calledFunction.thisNode));
                         for (int i = 0; i < Math.min(functionNode.arguments.size(), calledFunction.arguments.size()); i++) {
                             solver.union(functionNode.arguments.get(i), new IncludeNode(solver, calledFunction.arguments.get(i)));

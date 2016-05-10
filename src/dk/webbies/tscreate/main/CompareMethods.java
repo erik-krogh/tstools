@@ -9,7 +9,6 @@ import dk.webbies.tscreate.util.Pair;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.util.Util.toFixed;
 
@@ -24,7 +23,7 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.MIXED_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.ANDERSON_CONTEXT_SENSITIVE));
-        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.UPPER_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.LOWER_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.jQuery, Options.StaticAnalysisMethod.UPPER_LOWER_CONTEXT_SENSITIVE));
 
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION));
@@ -43,7 +42,7 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.COMBINED_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.ANDERSON_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.MIXED_CONTEXT_SENSITIVE));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UPPER_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.LOWER_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UPPER_LOWER_CONTEXT_SENSITIVE));
 
         blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
@@ -83,7 +82,7 @@ public class CompareMethods {
     static {
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.COMBINED));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UPPER_LOWER));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UPPER));
+        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.LOWER));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.MIXED));
         blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION));
 
