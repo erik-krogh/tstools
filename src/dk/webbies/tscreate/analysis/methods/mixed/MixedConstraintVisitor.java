@@ -218,7 +218,11 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             return new EmptyNode(solver);
         }
         UnionNode exp = aReturn.getExpression().accept(this);
-        solver.union(new IncludeNode(solver, exp), functionNode.returnNode, primitiveFactory.nonVoid());
+        if (this.upperBoundMethod) {
+            solver.union(exp, new IncludeNode(solver, functionNode.returnNode), primitiveFactory.nonVoid());
+        } else {
+            solver.union(new IncludeNode(solver, exp), functionNode.returnNode, primitiveFactory.nonVoid());
+        }
         return null;
     }
 
@@ -630,7 +634,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @SuppressWarnings("Duplicates")
-    private final class CallGraphResolver implements Runnable { // FIXME: Make sure this works as it is supposed to with upper/lower bounds and includeNodes.
+    private final class CallGraphResolver implements Runnable {
         List<UnionNode> args;
         private final Expression callExpression; // Useful for debugging.
         boolean constructorCalls;

@@ -219,7 +219,11 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             return new EmptyNode(solver);
         }
         UnionNode exp = aReturn.getExpression().accept(this);
-        solver.union(new IncludeNode(solver, exp), functionNode.returnNode, primitiveFactory.nonVoid());
+        if (this.upperBoundMethod) {
+            solver.union(exp, new IncludeNode(solver, functionNode.returnNode), primitiveFactory.nonVoid());
+        } else {
+            solver.union(new IncludeNode(solver, exp), functionNode.returnNode, primitiveFactory.nonVoid());
+        }
         return null;
     }
 
