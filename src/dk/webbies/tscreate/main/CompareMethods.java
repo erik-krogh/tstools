@@ -80,14 +80,14 @@ public class CompareMethods {
 
     private static Set<Pair<BenchMark, Options.StaticAnalysisMethod>> blacklistWhenCombining = new HashSet<>();
     static {
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.COMBINED));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UPPER_LOWER));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.LOWER));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.MIXED));
-        blackList.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION));
+        blacklistWhenCombining.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.COMBINED));
+        blacklistWhenCombining.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UPPER_LOWER));
+        blacklistWhenCombining.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UPPER));
+        blacklistWhenCombining.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.MIXED));
+        blacklistWhenCombining.add(new Pair<>(BenchMark.three, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION));
-        blackList.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blacklistWhenCombining.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION));
+        blacklistWhenCombining.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
     }
 
     public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout) throws IOException {

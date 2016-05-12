@@ -17,16 +17,16 @@ import java.util.*;
  */
 @SuppressWarnings("Duplicates")
 public class MixedContextSensitiveTypeAnalysis extends MixedTypeAnalysis {
-    private boolean lowerBoundMethod;
+    private boolean upperBoundMethod;
 
-    public MixedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean lowerBoundMethod) {
-        super(libraryClasses, options, globalObject, nativeClasses, lowerBoundMethod);
-        this.lowerBoundMethod = lowerBoundMethod;
+    public MixedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod) {
+        super(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod);
+        this.upperBoundMethod = upperBoundMethod;
     }
 
     @Override
     public void applyConstraints(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Map<Identifier, UnionNode> identifierMap) {
-        new MixedContextSensitiveConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, nativeTypeFactory, lowerBoundMethod).visit(closure.function.astNode);
+        new MixedContextSensitiveConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, nativeTypeFactory, upperBoundMethod).visit(closure.function.astNode);
     }
 
     @Override

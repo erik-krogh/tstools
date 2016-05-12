@@ -32,7 +32,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
     protected final PrimitiveNode.Factory primitiveFactory;
     protected HeapValueFactory heapFactory;
     protected NativeTypeFactory nativeTypeFactory;
-    private boolean lowerBoundMethod;
+    private boolean upperBoundMethod;
 
     public MixedContextSensitiveConstraintVisitor(
             Snap.Obj closure,
@@ -43,7 +43,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             HeapValueFactory heapFactory,
             MixedContextSensitiveTypeAnalysis typeAnalysis,
             NativeTypeFactory nativeTypeFactory,
-            boolean lowerBoundMethod) {
+            boolean upperBoundMethod) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -52,7 +52,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
-        this.lowerBoundMethod = lowerBoundMethod;
+        this.upperBoundMethod = upperBoundMethod;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
     }
 
@@ -77,7 +77,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             }
 
             case EQUAL: // = // assignment
-                if (this.lowerBoundMethod) {
+                if (this.upperBoundMethod) {
                     solver.union(new IncludeNode(solver, lhs), rhs);
                 } else {
                     solver.union(lhs, rhs);
@@ -311,7 +311,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new MixedContextSensitiveConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, lowerBoundMethod).visit(function.getBody());
+            new MixedContextSensitiveConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, upperBoundMethod).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
@@ -647,7 +647,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
             functionNode = FunctionNode.create(args.size(), solver);
             solver.union(function, functionNode);
 
-            if (MixedContextSensitiveConstraintVisitor.this.lowerBoundMethod) {
+            if (MixedContextSensitiveConstraintVisitor.this.upperBoundMethod) {
                 solver.union(functionNode.returnNode, new IncludeNode(solver, returnNode));
             } else {
                 solver.union(new IncludeNode(solver, functionNode.returnNode), returnNode);
@@ -685,7 +685,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
 
                         FunctionNode calledFunction = MixedContextSensitiveConstraintVisitor.this.functionNodes.get(closure);
 
-                        if (MixedContextSensitiveConstraintVisitor.this.lowerBoundMethod) {
+                        if (MixedContextSensitiveConstraintVisitor.this.upperBoundMethod) {
                             solver.union(new IncludeNode(solver, functionNode.returnNode), calledFunction.returnNode);
                         } else {
                             solver.union(functionNode.returnNode, new IncludeNode(solver, calledFunction.returnNode));

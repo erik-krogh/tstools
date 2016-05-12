@@ -28,8 +28,7 @@ import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -46,16 +45,33 @@ import static java.util.Arrays.asList;
 public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        // TODO: Look at bench, argue why: better score -> better dec. // <- Hamid looking at that
+        // TODO: Sample excess fields, see how many are private variables. // <- Hamid looking at that
+        // TODO: Write section of lower fixpoint != better result.
+
+        // TODO: Think about object access things and lower/upper-bound. Basically, make subsets less upper-bound like.
+
+        // TODO: Få styr på hvad der er LOWER/UPPER
+
+        // TODO: Upper/lower, cut flow.
+
+        // TODO: Lav en analyse metode: No static analysis, der kun tager ting fra dynamisk analyse (såsom calls).
+
+        // TODO: Slå til/fra individuelt lower/upper i function calls.
+        // TODO: Opdel evaluering i aspekter, function-signatures/modul-struktur (statisk/dynamisk analyse)? Lav en evaluering der antager at den anden del er perfekt.
+
         // Benchmarks, where I can run ALL the static analysis methods.
         List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
-        List<Options.StaticAnalysisMethod> allMethods = asList(ANDERSON, MIXED, COMBINED, UPPER, UPPER_LOWER, ANDERSON_CONTEXT_SENSITIVE, MIXED_CONTEXT_SENSITIVE, COMBINED_CONTEXT_SENSITIVE, UPPER_CONTEXT_SENSITIVE, UPPER_LOWER_CONTEXT_SENSITIVE/*, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE*/);
+        List<Options.StaticAnalysisMethod> allMethods = asList(ANDERSON, MIXED, COMBINED, UPPER, UPPER_LOWER);//, ANDERSON_CONTEXT_SENSITIVE, MIXED_CONTEXT_SENSITIVE, COMBINED_CONTEXT_SENSITIVE, LOWER_CONTEXT_SENSITIVE, UPPER_LOWER_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
         long start = System.currentTimeMillis();
         try {
+//            allBenchmarks.remove(sugar);
+//            allBenchmarks.forEach(bench -> bench.options.combineInterfacesAfterAnalysis = false);
+//            CompareMethods.compareMethods(allBenchmarks, Arrays.asList(UPPER_LOWER), 20 * 60 * 1000, false);
 
-            allBenchmarks.forEach(bench -> bench.options.combineInterfacesAfterAnalysis = false);
-            CompareMethods.compareMethods(allBenchmarks, allMethods, 20 * 60 * 1000, false);
+            test.options.staticMethod = UPPER;
+            runAnalysis(test);
 
-//            runAnalysis(test);
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -71,8 +87,8 @@ public class Main {
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
         String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
 
-        if (new File(resultDeclarationFilePath).exists()) {
-//            return new Score(-1, -1, -1);
+        if (readScoreFromDeclaration(resultDeclarationFilePath) != null) {
+            return new Score(-1, -1, -1);
         }
 
         System.out.println("Analysing " + benchMark.name + " - output: " + resultDeclarationFilePath);
@@ -96,7 +112,7 @@ public class Main {
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
@@ -137,6 +153,11 @@ public class Main {
             return new Score(-1, -1, -1);
         }
 
+        Score readFromFile = readScoreFromDeclaration(resultDeclarationFilePath);
+        if (readFromFile != null) {
+            return readFromFile;
+        }
+
         System.out.println("Get evaluation of " + benchMark.name + " - from: " + resultDeclarationFilePath);
 
         FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
@@ -153,6 +174,39 @@ public class Main {
             throw new RuntimeException();
         } else {
             return evaluation.score();
+        }
+    }
+
+    private static Score readScoreFromDeclaration(String filePath) throws FileNotFoundException {
+        if (!new File(filePath).exists()) {
+            return null;
+        }
+        List<String> lines = new BufferedReader(new FileReader(new File(filePath))).lines().collect(Collectors.toList());
+        Collections.reverse(lines);
+
+        Double fMeasure = null;
+        Double precision = null;
+        Double recall = null;
+
+        int counter = 0;
+        for (String line : lines) {
+            if (counter++ > 10) {
+                break;
+            }
+            if (line.startsWith("Score: ")) {
+                fMeasure = Double.parseDouble(line.substring("Score: ".length(), line.length()));
+            }
+            if (line.startsWith("Precision: ")) {
+                precision = Double.parseDouble(line.substring("Precision: ".length(), line.length()));
+            }
+            if (line.startsWith("Recall: ")) {
+                recall = Double.parseDouble(line.substring("Recall: ".length(), line.length()));
+            }
+        }
+        if (fMeasure != null && precision != null && recall != null) {
+            return new Score(fMeasure, precision, recall);
+        } else {
+            return null;
         }
     }
 
@@ -186,7 +240,7 @@ public class Main {
                 return new CombinedTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, true);
             case MIXED_CONTEXT_SENSITIVE:
                 return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, false);
-            case UPPER_CONTEXT_SENSITIVE:
+            case LOWER_CONTEXT_SENSITIVE:
                 return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses, true);
             case ANDERSON_CONTEXT_SENSITIVE:
                 return new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, benchMark.options, globalObject, nativeClasses);

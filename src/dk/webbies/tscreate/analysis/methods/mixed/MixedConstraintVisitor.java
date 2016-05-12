@@ -32,7 +32,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     protected final PrimitiveNode.Factory primitiveFactory;
     protected HeapValueFactory heapFactory;
     protected NativeTypeFactory nativeTypeFactory;
-    protected final boolean lowerBoundMethod; // If true, then behave like normal "lower-bound".
+    protected final boolean upperBoundMethod; // If true, then behave like normal "lower-bound".
 
     public MixedConstraintVisitor(
             Snap.Obj closure,
@@ -43,7 +43,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             HeapValueFactory heapFactory,
             MixedTypeAnalysis typeAnalysis,
             NativeTypeFactory nativeTypeFactory,
-            boolean lowerBoundMethod) {
+            boolean upperBoundMethod) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -52,7 +52,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.functionNodes = functionNodes;
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
-        this.lowerBoundMethod = lowerBoundMethod;
+        this.upperBoundMethod = upperBoundMethod;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
     }
 
@@ -77,14 +77,13 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             }
 
             case EQUAL: // = // assignment
-                if (this.lowerBoundMethod) {
+                if (this.upperBoundMethod) {
                     solver.union(new IncludeNode(solver, lhs), rhs);
                 } else {
                     solver.union(lhs, rhs);
                 }
                 if (typeAnalysis.options.unifyShortCurcuitOrsAtAssignments) {
                     if (op.getRhs() instanceof BinaryExpression && ((BinaryExpression) op.getRhs()).getOperator() == Operator.OR) {
-                        BinaryExpression orExp = (BinaryExpression) op.getRhs();
                         IncludeNode rhsInclude = (IncludeNode) rhs; // I here assume that the result returns an IncludeNode
                         solver.union(rhsInclude.getNodes());
                     }
@@ -311,7 +310,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, MixedConstraintVisitor.this.lowerBoundMethod).visit(function.getBody());
+            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, MixedConstraintVisitor.this.upperBoundMethod).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
@@ -647,7 +646,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             functionNode = FunctionNode.create(args.size(), solver);
             solver.union(function, functionNode);
 
-            if (MixedConstraintVisitor.this.lowerBoundMethod) {
+            if (MixedConstraintVisitor.this.upperBoundMethod) {
                 solver.union(functionNode.returnNode, new IncludeNode(solver, returnNode));
             } else {
                 solver.union(new IncludeNode(solver, functionNode.returnNode), returnNode);
@@ -679,7 +678,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 //                        assert MixedConstraintVisitor.this.functionNodes.containsKey(closure);
                         FunctionNode calledFunction = MixedConstraintVisitor.this.functionNodes.get(closure);
 
-                        if (MixedConstraintVisitor.this.lowerBoundMethod) {
+                        if (MixedConstraintVisitor.this.upperBoundMethod) {
                             solver.union(new IncludeNode(solver, functionNode.returnNode), calledFunction.returnNode);
                         } else {
                             solver.union(functionNode.returnNode, new IncludeNode(solver, calledFunction.returnNode));
