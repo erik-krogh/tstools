@@ -204,11 +204,11 @@ public class BenchMark {
     });
 
     // Kind of a useless benchmark, since the hand-written .d.ts file says that it exposes 0 global variables. (But it does, there is the Sugar object).
-    public static final BenchMark sugar = evaluate(() -> {
+    /*public static final BenchMark sugar = evaluate(() -> {
         Options options = new Options();
         options.recordCalls = false;
         return new BenchMark("Sugar", "tests/sugar/sugar.js", "tests/sugar/sugar.d.ts", options, ES5);
-    });
+    });*/
 
     public static final BenchMark leaflet = evaluate(() -> {
         Options options = new Options();
