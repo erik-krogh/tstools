@@ -459,8 +459,14 @@ public class TypeFactory {
                 result.setReturnType(analyzedResult.getReturnType());
             }
 
-            // TODO: Make sure that if the analysis sees more arguments than the JSDoc, then those are added.
+            // If JSDoc couldn't figure it out, fallback.
+            for (int i = 0; i < Math.min(analyzedResult.getArguments().size(), result.getArguments().size()); i++) {
+                if (result.getArguments().get(i).getType() == null) {
+                    result.getArguments().get(i).setType(analyzedResult.getArguments().get(i).getType());
+                }
+            }
 
+            // Making sure that if the analysis sees more arguments than the JSDoc, then those are added.
             for (int i = result.getArguments().size(); i < analyzedResult.getArguments().size(); i++) {
                 result.getArguments().add(analyzedResult.getArguments().get(i));
             }

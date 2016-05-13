@@ -47,10 +47,11 @@ public class JSDocParser {
                     assert ret == null;
                     ret = toDeclarationType(tag.type, closure);
                     break;
-                case "STATIC":case "CLASS":case "CONSTRUCTOR":
+                case "STATIC":case "CLASS":case "CONSTRUCTOR":case "LICENSE":case "PRIVATE":case "EVENT":case "MEMBEROF":case "PROTECTED":case "CONSTANT":case "EXTENDS":case "EXAMPLE":case "FIRES":case "SEE":case "NAME":case "NAMESPACE":
                     break;
                 default:
-                    throw new RuntimeException("Don't know how to handle: " + tag.title);
+//                    throw new RuntimeException("Don't know how to handle: " + tag.title);
+                    break;
             }
         }
         if (ret == null) {
