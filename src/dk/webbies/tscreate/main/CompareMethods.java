@@ -200,10 +200,14 @@ public class CompareMethods {
         }
 
         print("\n\n\n\n\n");
-        println("\"Scores\" for the different analysis");
+        println("\"Scores\" for the different analysis, " + benchmarkScores.size() + " benchmarks");
 
         methodCounts.entrySet().stream().sorted((a, b) -> Double.compare(b.getValue(), a.getValue())).forEach(entry -> {
-            println(entry.getKey().prettyString + "; " + entry.getValue());
+            String prettyString = entry.getKey().prettyString;
+            while (prettyString.length() < maxMethodLength) {
+                prettyString = prettyString + " ";
+            }
+            println(prettyString + ": " + entry.getValue());
         });
     }
 
