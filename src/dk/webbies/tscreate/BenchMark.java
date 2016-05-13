@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.main.Main.LanguageLevel;
@@ -23,10 +24,24 @@ public class BenchMark {
     public final String name;
     public final String scriptPath;
     public String declarationPath;
-    public final Options options;
+    private Options options;
     public final LanguageLevel languageLevel;
     public final List<Dependency> dependencies = new ArrayList<>();
     public List<String> testFiles = new ArrayList<>();
+    private Supplier<BenchMark> supplier;
+
+    public void resetOptions() {
+        List<BenchMark> allBenches = BenchMark.allBenchmarks;
+        BenchMark.allBenchmarks = new ArrayList<>();
+
+        this.options = supplier.get().options;
+
+        BenchMark.allBenchmarks = allBenches; // Making sure the list of all benchmarks doesn't get extra benchmarks, just because we reset some options.
+    }
+
+    public Options getOptions() {
+        return options;
+    }
 
     public List<String> dependencyScripts() {
         return this.dependencies.stream().map(dependency -> dependency.scriptPath).collect(Collectors.toList());
@@ -45,11 +60,15 @@ public class BenchMark {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-
     }
 
-    public static final List<BenchMark> allBenchmarks = new ArrayList<>();
+    private static BenchMark gen(Supplier<BenchMark> supplier) {
+        BenchMark result = supplier.get();
+        result.supplier = supplier;
+        return result;
+    }
+
+    public static List<BenchMark> allBenchmarks = new ArrayList<>();
 
     private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) {
         BenchMark.allBenchmarks.add(this);
@@ -60,7 +79,7 @@ public class BenchMark {
         this.languageLevel = languageLevel;
     }
 
-    public static final BenchMark underscore = evaluate(() -> {
+    public static final BenchMark underscore = gen(() -> {
         Options options = new Options();
         options.createInstances = true;
         options.createInstancesClassFilter = true;
@@ -80,18 +99,18 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark PIXI = evaluate(() -> {
+    public static final BenchMark PIXI = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
         return new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
     });
 
-    public static final BenchMark FabricJS = evaluate(() -> {
+    public static final BenchMark FabricJS = gen(() -> {
         Options options = new Options();
         return new BenchMark("Fabric.js", "tests/fabric/fabric.js", "tests/fabric/fabricjs.d.ts", options, ES5);
     });
 
-    public static final BenchMark jQuery = evaluate(() -> {
+    public static final BenchMark jQuery = gen(() -> {
         Options options = new Options();
         options.recordCalls = true;
         options.asyncTest = true;
@@ -128,7 +147,7 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark angular = evaluate(() -> {
+    public static final BenchMark angular = gen(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true;
         options.recordCalls = false;
@@ -137,7 +156,7 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark three = evaluate(() -> {
+    public static final BenchMark three = gen(() -> {
         Options options = new Options();
 //        options.debugPrint = true;
         options.maxEvaluationDepth = null;
@@ -204,28 +223,28 @@ public class BenchMark {
     });
 
     // Kind of a useless benchmark, since the hand-written .d.ts file says that it exposes 0 global variables. (But it does, there is the Sugar object).
-    /*public static final BenchMark sugar = evaluate(() -> {
+    /*public static final BenchMark sugar = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
         return new BenchMark("Sugar", "tests/sugar/sugar.js", "tests/sugar/sugar.d.ts", options, ES5);
     });*/
 
-    public static final BenchMark leaflet = evaluate(() -> {
+    public static final BenchMark leaflet = gen(() -> {
         Options options = new Options();
         return new BenchMark("Leaflet", "tests/leaflet/leaflet.js", "tests/leaflet/leaflet.d.ts", options, ES5);
     });
 
-    public static final BenchMark D3 = evaluate(() -> {
+    public static final BenchMark D3 = gen(() -> {
         Options options = new Options();
         return new BenchMark("D3.js", "tests/d3/d3.js", "tests/d3/d3.d.ts", options, ES5);
     });
 
-    public static final BenchMark react = evaluate(() -> {
+    public static final BenchMark react = gen(() -> {
         Options options = new Options();
         return new BenchMark("React", "tests/react/react.js", "tests/react/react.d.ts", options, ES5);
     });
 
-    public static final BenchMark knockout = evaluate(() -> {
+    public static final BenchMark knockout = gen(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true;
         return new BenchMark("Knockout", "tests/knockout/knockout.js", "tests/knockout/knockout.d.ts", options, ES5);
@@ -233,7 +252,7 @@ public class BenchMark {
 
     // The stress test to rule all stress-tests. 10MB of JavaScript, 220000 lines of code.
     // Node goes out of memory when ts-spec-reader attempts to parse the declaration file.
-    /*public static final BenchMark ExtJS = evaluate(() -> {
+    /*public static final BenchMark ExtJS = gen(() -> {
         Options options = new Options();
         // All of these are disabled, because the program is so big, and it is needed, otherwise stuff runs out of memory/time.
         options.createInstances = false;
@@ -243,7 +262,7 @@ public class BenchMark {
         return new BenchMark("Ext JS", "tests/extjs/ext.js", "tests/extjs/ext.d.ts", options, ES5);
     });*/
 
-    /*public static final BenchMark ember = evaluate(() -> { // Somehow the JSnap crashes on this thing now. // TODO: Check out why JSNAP crash on ember.
+    /*public static final BenchMark ember = gen(() -> { // Somehow the JSnap crashes on this thing now. // TODO: Check out why JSNAP crash on ember.
         Options options = new Options();
         options.createInstances = false;
         options.recordCalls = false;
@@ -253,7 +272,7 @@ public class BenchMark {
         return bench;
     });*/
 
-    public static final BenchMark backbone = evaluate(() -> {
+    public static final BenchMark backbone = gen(() -> {
         Options options = new Options();
         BenchMark bench = new BenchMark("Backbone.js", "tests/backbone/backbone.js", "tests/backbone/backbone.d.ts", options, ES5);
         bench.dependencies.add(Dependency.underscore);
@@ -261,7 +280,7 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark materialize = evaluate(() -> {
+    public static final BenchMark materialize = gen(() -> {
         Options options = new Options();
         BenchMark bench = new BenchMark("MaterializeCSS", "tests/materialize/materialize.js", "tests/materialize/materialize.d.ts", options, ES5);
         bench.dependencies.add(Dependency.jQuery);
@@ -270,96 +289,96 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark mooTools = evaluate(() -> {
+    public static final BenchMark mooTools = gen(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true; // Infinite loop otherwise.
         return new BenchMark("MooTools", "tests/mootools/mootools.js", null, options, ES5); // I couldn't actually find a declaration file, posting one could be an option. (When i get rid of the duplicates).
     });
 
-    public static final BenchMark prototype = evaluate(() -> {
+    public static final BenchMark prototype = gen(() -> {
         Options options = new Options();
         options.createInstances = false; // Otherwise, things goes to shit.
         return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5); // TODO: Does a declaration file exist? Can it?
     });
 
-    public static final BenchMark ace = evaluate(() -> {
+    public static final BenchMark ace = gen(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true; // Otherwise prombt appears
         return new BenchMark("Ace", "tests/ace/ace.js", "tests/ace/ace.d.ts", options, ES5);
     });
 
-    public static final BenchMark require = evaluate(() -> {
+    public static final BenchMark require = gen(() -> {
         Options options = new Options();
         options.createInstances = false;
         options.recordCalls = false;
         return new BenchMark("RequireJS", "tests/requireJS/require.js", "tests/requireJS/require.d.ts", options, ES5);
     });
 
-    public static final BenchMark handlebars = evaluate(() -> {
+    public static final BenchMark handlebars = gen(() -> {
         Options options = new Options();
         return new BenchMark("Handlebars.js", "tests/handlebars/handlebars-v4.0.5.js", "tests/handlebars/handlebars.d.ts", options, ES5);
     });
 
-    public static final BenchMark box2d = evaluate(() -> {
+    public static final BenchMark box2d = gen(() -> {
         Options options = new Options();
         return new BenchMark("Box2dWeb", "tests/box2dweb/box2dweb.js", "tests/box2dweb/box2dweb.d.ts", options, ES5);
     });
 
-    public static final BenchMark Q = evaluate(() -> {
+    public static final BenchMark Q = gen(() -> {
         Options options = new Options();
         return new BenchMark("Q", "tests/q/q.js", "tests/q/q.d.ts", options, ES5);
     });
 
-    public static final BenchMark moment = evaluate(() -> {
+    public static final BenchMark moment = gen(() -> {
         Options options = new Options();
         return new BenchMark("Moment.js", "tests/moment/moment.js", "tests/moment/moment.d.ts", options, ES5);
     });
 
-    public static final BenchMark hammer = evaluate(() -> {
+    public static final BenchMark hammer = gen(() -> {
         Options options = new Options();
         BenchMark bench = new BenchMark("Hammer.js", "tests/hammer/hammer.js", "tests/hammer/hammer.d.ts", options, ES5);
         bench.testFiles.add("tests/hammer/myTest.js"); // Kind of cheating.
         return bench;
     });
 
-    public static final BenchMark please = evaluate(() -> {
+    public static final BenchMark please = gen(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("Please.js", "tests/please/please.js", "tests/please/please.d.ts", options, ES5);
         return benchMark;
     });
 
-    public static final BenchMark path = evaluate(() -> {
+    public static final BenchMark path = gen(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("path.js", "tests/path/path.js", "tests/path/path.d.ts", options, ES5);
         return benchMark;
     });
 
-    public static final BenchMark p2 = evaluate(() -> {
+    public static final BenchMark p2 = gen(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("p2.js", "tests/p2/p2.js", "tests/p2/p2.d.ts", options, ES5);
         return benchMark;
     });
 
-    public static final BenchMark mathjax = evaluate(() -> {
+    public static final BenchMark mathjax = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
         BenchMark benchMark = new BenchMark("MathJax.js", "tests/mathjax/mathjax.js", "tests/mathjax/mathjax.d.ts", options, ES5);
         return benchMark;
     });
 
-    public static final BenchMark photoswipe = evaluate(() -> {
+    public static final BenchMark photoswipe = gen(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("Photoswipe", "tests/photoswipe/photoswipe.js", "tests/photoswipe/photoswipe.d.ts", options, ES5);
         return benchMark;
     });
 
-    public static final BenchMark peer = evaluate(() -> {
+    public static final BenchMark peer = gen(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("Peer.js", "tests/peerjs/peer.js", "tests/peerjs/peer.d.ts", options, ES5);
         return benchMark;
     });
 
-    public static final BenchMark async = evaluate(() -> {
+    public static final BenchMark async = gen(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("async", "tests/async/async.js", "tests/async/async.d.ts", options, ES5);
         return benchMark;
@@ -384,7 +403,7 @@ public class BenchMark {
     }
 
 
-    public static final BenchMark test = evaluate(() -> {
+    public static final BenchMark test = gen(() -> {
         Options options = new Options();
 //        options.debugPrint = true;
         options.recordCalls = false;
