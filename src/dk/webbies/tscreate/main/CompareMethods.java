@@ -9,6 +9,8 @@ import dk.webbies.tscreate.util.Pair;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.util.Util.toFixed;
 
@@ -90,59 +92,71 @@ public class CompareMethods {
         blacklistWhenCombining.add(new Pair<>(BenchMark.box2d, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
     }
 
-    public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout) throws IOException {
-        compareMethods(benchMarks, methods, timeout, false);
+    public static final class Config {
+        final Consumer<Options> applier;
+        final String prettyString;
+
+        public Config(Consumer<Options> applier, String prettyString) {
+            this.applier = applier;
+            this.prettyString = prettyString;
+        }
     }
 
-    public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout, boolean skipGeneratingDeclarations) throws IOException {
-        Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores = new HashMap<>();
-        int maxMethodLength = methods.stream().map(method -> method.prettyString.length()).max(Integer::compare).get();
+    public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout) throws IOException {
+        compareConfigs(benchMarks, methods.stream().map(method -> new Config((options) -> options.staticMethod = method, method.prettyString)).collect(Collectors.toList()), timeout);
+    }
+
+    public static void compareConfigs(List<BenchMark> benchMarks, Collection<Config> configs, long timeout) throws IOException {
+        Map<BenchMark, Map<Config, Score>> benchmarkScores = new HashMap<>();
+        int maxMethodLength = configs.stream().map(method -> method.prettyString.length()).max(Integer::compare).get();
         int decimals = 4;
         for (BenchMark benchMark : benchMarks) {
             if (benchMark.declarationPath == null) {
                 continue;
             }
-            Map<Options.StaticAnalysisMethod, Score> scores = new HashMap<>();
+            Map<Config, Score> scores = new HashMap<>();
             benchmarkScores.put(benchMark, scores);
-            for (Options.StaticAnalysisMethod method : methods) {
-                if (blackList.contains(new Pair<>(benchMark, method)) || (benchMark.options.combineInterfacesAfterAnalysis && blacklistWhenCombining.contains(new Pair<>(benchMark, method)))) {
-                    scores.put(method, new Score(-1, -1, -1));
+            for (Config config : configs) {
+                config.applier.accept(benchMark.options);
+                if (blackList.contains(new Pair<>(benchMark, benchMark.options.staticMethod)) || (benchMark.options.combineInterfacesAfterAnalysis && blacklistWhenCombining.contains(new Pair<>(benchMark, benchMark.options.staticMethod)))) {
+                    scores.put(config, new Score(-1, -1, -1));
                     continue;
                 }
-                benchMark.options.staticMethod = method;
-                println("With method: " + method.prettyString);
-                Score score = null;
-                if (skipGeneratingDeclarations) {
-                    score = Main.runEvaluation(benchMark);
-                } else {
+
+                println("With method: " + config.prettyString);
+                Score score = Main.runEvaluation(benchMark);
+                if (score.precision == -1) {
                     score = Main.runAnalysisWithTimeout(benchMark, timeout);
+                    if (score.precision == -1 && score.recall == -1 && score.fMeasure == -1) {
+                        score = Main.runEvaluation(benchMark);
+                    }
                 }
                 if (score == null) {
                     score = new Score(-1, -1, -1);
                 }
-                scores.put(method, score);
+                scores.put(config, score);
             }
 
             printMethods(benchmarkScores, maxMethodLength, decimals);
         }
 
-        printResultingEvaluations(methods, benchmarkScores, maxMethodLength, decimals);
+        printResultingEvaluations(configs, benchmarkScores, maxMethodLength, decimals);
     }
 
-    private static void printResultingEvaluations(Collection<Options.StaticAnalysisMethod> methods, Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores, int maxMethodLength, int decimals) {
+    private static void printResultingEvaluations(Collection<Config> methods, Map<BenchMark, Map<Config, Score>> benchmarkScores, int maxMethodLength, int decimals) {
         print("\n\n\n\n\n");
 
         printMethods(benchmarkScores, maxMethodLength, decimals);
 
-        ArrayListMultimap<Options.StaticAnalysisMethod, Score> scores = ArrayListMultimap.create();
-        for (Map<Options.StaticAnalysisMethod, Score> map : benchmarkScores.values()) {
+        ArrayListMultimap<Config, Score> scores = ArrayListMultimap.create();
+        for (Map<Config, Score> map : benchmarkScores.values()) {
             map.entrySet().stream().forEach(entry -> scores.put(entry.getKey(), entry.getValue()));
         }
 
-        Map<Options.StaticAnalysisMethod, Score> sumScores = new LinkedHashMap<>();
+        Map<Config, Score> sumScores = new LinkedHashMap<>();
 
-        for (Map.Entry<Options.StaticAnalysisMethod, Collection<Score>> entry : scores.asMap().entrySet()) {
-            Options.StaticAnalysisMethod method = entry.getKey();
+        for (Map.Entry<Config, Collection<Score>> entry : scores.asMap().entrySet()) {
+            Config method = entry.getKey();
             Score score = entry.getValue().stream().reduce(new Score(0, 0, 0), (a, b) -> new Score(a.fMeasure + b.fMeasure, a.precision + b.precision, a.recall + b.recall));
             sumScores.put(method, score);
         }
@@ -151,19 +165,19 @@ public class CompareMethods {
 
         println("The methods summed up: ");
         // Ugly, but to keep it sorted.
-        Set<Map.Entry<Options.StaticAnalysisMethod, Score>> sumScoresClone = new HashMap<>(sumScores).entrySet();
+        Set<Map.Entry<Config, Score>> sumScoresClone = new HashMap<>(sumScores).entrySet();
         sumScores.clear();
         sumScoresClone.stream().sorted((a, b) -> Double.compare(a.getValue().fMeasure, b.getValue().fMeasure)).forEach(entry -> sumScores.put(entry.getKey(), entry.getValue()));
         printScores(sumScores, maxMethodLength, decimals);
 
 
-        Map<Options.StaticAnalysisMethod, Integer> methodCounts = new HashMap<>();
+        Map<Config, Integer> methodCounts = new HashMap<>();
         methods.forEach(method -> methodCounts.put(method, 0));
 
-        for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
+        for (Map.Entry<BenchMark, Map<Config, Score>> entry : benchmarkScores.entrySet()) {
             AtomicInteger counter = new AtomicInteger(0);
             entry.getValue().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue().fMeasure, a.getValue().fMeasure)).forEach(scoreEntry -> {
-                Options.StaticAnalysisMethod method = scoreEntry.getKey();
+                Config method = scoreEntry.getKey();
                 methodCounts.put(method, methodCounts.get(method) + counter.incrementAndGet());
             });
         }
@@ -176,15 +190,15 @@ public class CompareMethods {
         });
     }
 
-    private static void printMethods(Map<BenchMark, Map<Options.StaticAnalysisMethod, Score>> benchmarkScores, int maxMethodLength, int decimals) {
-        for (Map.Entry<BenchMark, Map<Options.StaticAnalysisMethod, Score>> entry : benchmarkScores.entrySet()) {
-            Map<Options.StaticAnalysisMethod, Score> dupScores = entry.getValue();
+    private static void printMethods(Map<BenchMark, Map<Config, Score>> benchmarkScores, int maxMethodLength, int decimals) {
+        for (Map.Entry<BenchMark, Map<Config, Score>> entry : benchmarkScores.entrySet()) {
+            Map<Config, Score> dupScores = entry.getValue();
             println("Benchmark: " + entry.getKey().name);
             printScores(dupScores, maxMethodLength, decimals);
         }
     }
 
-    private static void printScores(Map<Options.StaticAnalysisMethod, Score> scores, int maxMethodLength, int decimals) {
+    private static void printScores(Map<Config, Score> scores, int maxMethodLength, int decimals) {
         scores.entrySet().stream().sorted((o1, o2) -> Double.compare(o2.getValue().fMeasure, o1.getValue().fMeasure)).forEach(scoreEntry -> {
             Score score = scoreEntry.getValue();
             String prettyString = scoreEntry.getKey().prettyString;
