@@ -117,8 +117,9 @@ public class CompareMethods {
             Map<Config, Score> scores = new HashMap<>();
             benchmarkScores.put(benchMark, scores);
             for (Config config : configs) {
-                config.applier.accept(benchMark.options);
-                if (blackList.contains(new Pair<>(benchMark, benchMark.options.staticMethod)) || (benchMark.options.combineInterfacesAfterAnalysis && blacklistWhenCombining.contains(new Pair<>(benchMark, benchMark.options.staticMethod)))) {
+                benchMark.resetOptions();
+                config.applier.accept(benchMark.getOptions());
+                if (blackList.contains(new Pair<>(benchMark, benchMark.getOptions().staticMethod)) || (benchMark.getOptions().combineInterfacesAfterAnalysis && blacklistWhenCombining.contains(new Pair<>(benchMark, benchMark.getOptions().staticMethod)))) {
                     scores.put(config, new Score(-1, -1, -1));
                     continue;
                 }
@@ -144,6 +145,10 @@ public class CompareMethods {
     }
 
     private static void printResultingEvaluations(Collection<Config> methods, Map<BenchMark, Map<Config, Score>> benchmarkScores, int maxMethodLength, int decimals) {
+        benchmarkScores = benchmarkScores.entrySet().stream().filter(scores -> {
+            return !scores.getValue().values().stream().anyMatch(score -> score.precision == -1);
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         print("\n\n\n\n\n");
 
         printMethods(benchmarkScores, maxMethodLength, decimals);
@@ -176,10 +181,22 @@ public class CompareMethods {
 
         for (Map.Entry<BenchMark, Map<Config, Score>> entry : benchmarkScores.entrySet()) {
             AtomicInteger counter = new AtomicInteger(0);
-            entry.getValue().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue().fMeasure, a.getValue().fMeasure)).forEach(scoreEntry -> {
+
+            List<Map.Entry<Config, Score>> sortedScores = entry.getValue().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue().fMeasure, a.getValue().fMeasure)).collect(Collectors.toList());
+
+            double prevFMeasure = Double.NaN;
+            for (Map.Entry<Config, Score> scoreEntry : sortedScores) {
                 Config method = scoreEntry.getKey();
-                methodCounts.put(method, methodCounts.get(method) + counter.incrementAndGet());
-            });
+                double currentFMeasure = scoreEntry.getValue().fMeasure;
+                int count;
+                if (!Double.isNaN(prevFMeasure) && prevFMeasure == currentFMeasure) {
+                    count = counter.get();
+                } else {
+                    count = counter.incrementAndGet();
+                }
+                prevFMeasure = currentFMeasure;
+                methodCounts.put(method, methodCounts.get(method) + count);
+            }
         }
 
         print("\n\n\n\n\n");
