@@ -1,14 +1,12 @@
 package dk.webbies.tscreate.evaluation;
 
 import dk.au.cs.casa.typescript.SpecReader;
-import dk.au.cs.casa.typescript.types.InterfaceType;
-import dk.au.cs.casa.typescript.types.SimpleType;
-import dk.au.cs.casa.typescript.types.SimpleTypeKind;
-import dk.au.cs.casa.typescript.types.Type;
+import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.BenchMark;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.util.Pair;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
@@ -48,7 +46,19 @@ public class DeclarationEvaluator {
         myDeclaration.getDeclaredProperties().keySet().retainAll(properties);
 
 
-        this.evaluation = evaluate(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+        switch (options.evaluationMethod) {
+            case EVERYTHING:
+                this.evaluation = evaluate(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+                break;
+            case ONLY_FUNCTIONS:
+                this.evaluation = evaluateStartingFromFunctions(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+                break;
+            case ONLY_HEAP:
+                this.evaluation = evaluate(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+                break;
+            default:
+                throw new RuntimeException();
+        }
     }
 
     public static Evaluation evaluate(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
@@ -60,9 +70,53 @@ public class DeclarationEvaluator {
         };
         Evaluation evaluation = new Evaluation(options.debugPrint);
         queue.add(new EvaluationQueueElement(0, () -> {
-            EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options, !options.onlyEvaluateUnderFunctionArgsAndReturn);
+            EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
             realDeclaration.accept(visitor, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
         }));
+
+        while (!queue.isEmpty()) {
+            EvaluationQueueElement element = queue.poll();
+            element.runnable.run();
+        }
+
+        assert hasRun.get();
+        return evaluation;
+    }
+
+    public static Evaluation evaluateStartingFromFunctions(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
+        PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
+        AtomicBoolean hasRun = new AtomicBoolean(false);
+        WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(0, () -> {
+            assert queue.isEmpty();
+            hasRun.set(true);
+        }), queue);
+
+        Evaluation evaluation = new Evaluation(options.debugPrint);
+
+        SignatureCollector collector = new SignatureCollector();
+        realDeclaration.accept(collector, myDeclaration);
+        Set<Pair<Set<Signature>, Set<Signature>>> functions = collector.getFunctions();
+        Set<Pair<Set<Signature>, Set<Signature>>> constructors = collector.getConstructors();
+
+        for (Pair<Set<Signature>, Set<Signature>> pair : functions) {
+            Runnable callback = whenAllDone.newSubCallback();
+
+            queue.add(new EvaluationQueueElement(0, () -> {
+                EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
+                visitor.evaluateFunctions(new ArrayList<>(pair.left), new ArrayList<>(pair.right), callback, false, "[functions]", false);
+            }));
+        }
+
+        for (Pair<Set<Signature>, Set<Signature>> pair : constructors) {
+            Runnable callback = whenAllDone.newSubCallback();
+
+            queue.add(new EvaluationQueueElement(0, () -> {
+                EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
+                visitor.evaluateFunctions(new ArrayList<>(pair.left), new ArrayList<>(pair.right), callback, false, "[constructor]", true);
+            }));
+        }
+
+        whenAllDone.newSubCallback().run(); // Making sure at least one has run.
 
         while (!queue.isEmpty()) {
             EvaluationQueueElement element = queue.poll();

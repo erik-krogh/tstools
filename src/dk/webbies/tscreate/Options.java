@@ -41,19 +41,39 @@ public class Options {
 
     public boolean printStringIndexers = false;
 
-    public boolean onlyEvaluateUnderFunctionArgsAndReturn = false;
+    public EvaluationMethod evaluationMethod = EvaluationMethod.ONLY_FUNCTIONS;
+
+    public enum EvaluationMethod {
+        ONLY_FUNCTIONS,
+        ONLY_HEAP,
+        EVERYTHING;
+    }
+
+    /*
+    foo(arguments) <- callsite
+
+    function foo(parameters) {
+        return return; <- return
+    }
+     */
+    public boolean disableFlowFromParamsToArgs = false;
+    public boolean disableFlowFromArgsToParams = false;
+    public boolean disableFlowFromReturnToCallsite = false;
+    public boolean disableFlowFromCallsiteToReturn = false;
+
     public boolean evaluationSkipExcessProperties = true;  // TODO: Look at this again later.
 
     public boolean allArgumentsAreOptional = false;
 
     public boolean unifyShortCurcuitOrsAtAssignments = false;
-    public boolean combineInterfacesAfterAnalysis = true;
+    public boolean combineInterfacesAfterAnalysis = false;
 
     public boolean neverPrintModules = false;
     public boolean evaluationAnyAreOK = false; // In the evaluation, any and anything is a true-positive.
     public boolean useJSDoc = false; // TODO: Stuff and things.
 
     public enum StaticAnalysisMethod {
+        NONE("none", "none"),
         COMBINED("combined", "combined"),
         MIXED("mixed", "mixed"),
         UPPER("upper", "upper"),
