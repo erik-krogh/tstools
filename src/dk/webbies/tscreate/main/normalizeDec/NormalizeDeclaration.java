@@ -54,11 +54,11 @@ public class NormalizeDeclaration {
 
         global.setDeclaredProperties(global.getDeclaredProperties().entrySet().stream().filter(entry -> !existingKeys.contains(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.options, benchMark.dependencyScripts(), benchMark.testFiles, benchMark.options.asyncTest), new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, Main.getScript(benchMark)).toTSCreateAST());
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, Main.getScript(benchMark)).toTSCreateAST());
 
-        DeclarationParser.NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), new ClassHierarchyExtractor(globalObject, benchMark.options).extract());
+        DeclarationParser.NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract());
 
-        TypeReducer reducer = new TypeReducer(globalObject, nativeClasses, benchMark.options);
+        TypeReducer reducer = new TypeReducer(globalObject, nativeClasses, benchMark.getOptions());
         ToDeclarationTypeVisitor converter = new ToDeclarationTypeVisitor(typeNames, DeclarationParser.getTypeNamesMap(spec), reducer);
 
         Map<String, DeclarationType> declaration = new HashMap<>();
@@ -100,7 +100,7 @@ public class NormalizeDeclaration {
             return type;
         });
 
-        String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.options).print();
+        String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions()).print();
 //        System.out.println(printedDeclaration);
 
         assert benchMark.declarationPath.endsWith(".d.ts");
