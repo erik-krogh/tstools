@@ -3,6 +3,7 @@ package dk.webbies.tscreate.analysis.methods.mixed;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
+import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -642,12 +643,18 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, UnionNode returnNode, Expression callExpression) {
+            DisableSomeCallFlow disableSomeCallFlow = new DisableSomeCallFlow(args, returnNode).invoke(typeAnalysis, solver);
+            args = disableSomeCallFlow.getArgs();
+            returnNode = disableSomeCallFlow.getReturnNode();
+
+
+            functionNode = FunctionNode.create(args.size(), solver);
+
             solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, getFunctionFields(args.size())));
 
             this.args = args;
             this.callExpression = callExpression;
 
-            functionNode = FunctionNode.create(args.size(), solver);
             solver.union(function, functionNode);
 
             if (MixedConstraintVisitor.this.upperBoundMethod) {
@@ -748,6 +755,51 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         throw new RuntimeException("What?");
                 }
             }
+        }
+
+    }
+
+    public static final class DisableSomeCallFlow {
+        private List<UnionNode> args;
+        private UnionNode returnNode;
+
+        public DisableSomeCallFlow(List<UnionNode> args, UnionNode returnNode) {
+            this.args = args;
+            this.returnNode = returnNode;
+        }
+
+        public List<UnionNode> getArgs() {
+            return args;
+        }
+
+        public UnionNode getReturnNode() {
+            return returnNode;
+        }
+
+        public DisableSomeCallFlow invoke(TypeAnalysis typeAnalysis, UnionFindSolver solver) {
+            if (typeAnalysis.getOptions().disableFlowFromParamsToArgs) {
+                // Only from args to params
+                args = args.stream().map(arg -> new IncludeNode(solver, arg)).collect(Collectors.toList());
+            }
+            if (typeAnalysis.getOptions().disableFlowFromReturnToCallsite) {
+                // Only from callsite to return
+                returnNode = new IncludeNode(solver, returnNode);
+            }
+            if (typeAnalysis.getOptions().disableFlowFromCallsiteToReturn) {
+                // Only from return to callsite
+                UnionNode orgReturn = returnNode;
+                returnNode = new EmptyNode(solver);
+                solver.union(new IncludeNode(solver, returnNode), orgReturn);
+            }
+            if (typeAnalysis.getOptions().disableFlowFromArgsToParams) {
+                // Only from params to args
+                args = args.stream().map(orgArg -> {
+                    UnionNode arg = new EmptyNode(solver);
+                    solver.union(new IncludeNode(solver, arg), orgArg);
+                    return arg;
+                }).collect(Collectors.toList());
+            }
+            return this;
         }
     }
 

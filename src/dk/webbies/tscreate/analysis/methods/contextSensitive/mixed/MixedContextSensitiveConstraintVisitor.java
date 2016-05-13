@@ -3,6 +3,7 @@ package dk.webbies.tscreate.analysis.methods.contextSensitive.mixed;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
+import dk.webbies.tscreate.analysis.methods.mixed.MixedConstraintVisitor;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -643,6 +644,10 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
         private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, UnionNode returnNode, Expression callExpression) {
+            MixedConstraintVisitor.DisableSomeCallFlow disableSomeCallFlow = new MixedConstraintVisitor.DisableSomeCallFlow(args, returnNode).invoke(typeAnalysis, solver);
+            args = disableSomeCallFlow.getArgs();
+            returnNode = disableSomeCallFlow.getReturnNode();
+
             solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, getFunctionFields(args.size())));
 
             this.args = args;

@@ -247,6 +247,10 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
         private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, UnionNode returnNode, Expression callExpression) {
+            MixedConstraintVisitor.DisableSomeCallFlow disableSomeCallFlow = new MixedConstraintVisitor.DisableSomeCallFlow(args, returnNode).invoke(typeAnalysis, solver);
+            args = disableSomeCallFlow.getArgs();
+            returnNode = disableSomeCallFlow.getReturnNode();
+
             solver.runWhenChanged(function, new IncludesWithFieldsResolver(function, getFunctionFields(args.size())));
 
             this.args = args;
