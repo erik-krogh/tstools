@@ -272,7 +272,7 @@ public class DeclarationPrinter {
 
             Predicate<String> notStaticInSuperClass = notStaticInSuperClassTest(clazz.getSuperClass());
             for (Map.Entry<String, DeclarationType> entry : clazz.getStaticFields().entrySet().stream().sorted(Util::compareStringEntry).collect(Collectors.toList())) {
-                if (notStaticInSuperClass.test(entry.getKey())) {
+                if (notStaticInSuperClass.test(entry.getKey()) && !entry.getKey().toLowerCase().equals("constructor")) {
                     printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), "static");
                 }
             }
