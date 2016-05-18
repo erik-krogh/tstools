@@ -4,9 +4,7 @@
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
 /// <reference path="../jquery/jquery.d.ts" />
-/// <reference path="../handlebars/handlebars-1.0.0.d.ts" />
-
-declare var Handlebars: HandlebarsStatic;
+/// <reference path="../handlebars/handlebars.d.ts" />
 
 declare module EmberStates {
 

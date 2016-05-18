@@ -264,7 +264,7 @@ public class BenchMark {
         return new BenchMark("Ext JS", "tests/extjs/ext.js", "tests/extjs/ext.d.ts", options, ES5);
     });*/
 
-    /*public static final BenchMark ember = gen(() -> { // Somehow the JSnap crashes on this thing now. // TODO: Check out why JSNAP crash on ember.
+    public static final BenchMark ember = gen(() -> {
         Options options = new Options();
         options.createInstances = false;
         options.recordCalls = false;
@@ -272,7 +272,7 @@ public class BenchMark {
         BenchMark bench = new BenchMark("Ember.js", "tests/ember/ember.js", "tests/ember/ember.d.ts", options, ES5);
         bench.dependencies.add(Dependency.jQuery);
         return bench;
-    });*/
+    });
 
     public static final BenchMark backbone = gen(() -> {
         Options options = new Options();
@@ -386,7 +386,7 @@ public class BenchMark {
         return benchMark;
     });
 
-    /*public static final BenchMark yui = gen(() -> {
+    public static final BenchMark yui = gen(() -> {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("YUI", "tests/yui/yui.js", "tests/yui/yui.d.ts", options, ES5);
         return benchMark;
@@ -396,7 +396,7 @@ public class BenchMark {
         Options options = new Options();
         BenchMark benchMark = new BenchMark("createjs", "tests/createjs/createjs.js", "tests/createjs/createjs.d.ts", options, ES5);
         return benchMark;
-    });*/
+    });
 
 
 
