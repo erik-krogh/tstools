@@ -268,7 +268,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
             }
         }
 
-        if (closure.getProperty("prototype") != null && !(closure.getProperty("prototype").value instanceof Snap.UndefinedConstant)) {
+        if (closure.getProperty("prototype") != null && closure.getProperty("prototype").value instanceof Snap.Obj) {
             Snap.Obj prototype = (Snap.Obj) closure.getProperty("prototype").value;
             if (libraryClasses.containsKey(prototype)) {
                 LibraryClass libraryClass = libraryClasses.get(prototype);

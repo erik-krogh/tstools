@@ -604,10 +604,10 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         break;
                     case "user":
-                        if (closure.getProperty("prototype").value instanceof Snap.UndefinedConstant) {
+                        if (!(closure.getProperty("prototype").value instanceof Snap.Obj)) {
                             break;
                         }
-                        LibraryClass clazz = typeAnalysis.libraryClasses.get((Snap.Obj) closure.getProperty("prototype").value);
+                        LibraryClass clazz = typeAnalysis.libraryClasses.get(closure.getProperty("prototype").value);
                         if (clazz != null) {
                             if (typeAnalysis.options.classOptions.unionThisFromConstructedObjects) {
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
