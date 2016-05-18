@@ -26,7 +26,7 @@ public class DeclarationEvaluator {
     public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options) {
         this.global = global;
         this.libraryClasses = libraryClasses;
-        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark).invoke();
+        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark, global, libraryClasses).invoke();
         InterfaceType realDeclaration = parsedDeclaration.getRealDeclaration();
         InterfaceType myDeclaration = parsedDeclaration.getMyDeclaration();
         Set<String> properties = parsedDeclaration.getProperties();
@@ -83,6 +83,18 @@ public class DeclarationEvaluator {
         return evaluation;
     }
 
+    public static final class FunctionToEvaluate {
+        final Set<Signature> myFunc;
+        final Set<Signature> realFunc;
+        final String path;
+
+        public FunctionToEvaluate(Collection<Signature> myFunc, Collection<Signature> realFunc, String path) {
+            this.myFunc = new HashSet<>(myFunc);
+            this.realFunc = new HashSet<>(realFunc);
+            this.path = path;
+        }
+    }
+
     public static Evaluation evaluateStartingFromFunctions(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
         PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
         AtomicBoolean hasRun = new AtomicBoolean(false);
@@ -94,25 +106,25 @@ public class DeclarationEvaluator {
         Evaluation evaluation = new Evaluation(options.debugPrint);
 
         SignatureCollector collector = new SignatureCollector();
-        realDeclaration.accept(collector, myDeclaration);
-        Set<Pair<Set<Signature>, Set<Signature>>> functions = collector.getFunctions();
-        Set<Pair<Set<Signature>, Set<Signature>>> constructors = collector.getConstructors();
+        realDeclaration.accept(collector, new SignatureCollector.Arg(myDeclaration, "window"));
+        Set<FunctionToEvaluate> functions = collector.getFunctions();
+        Set<FunctionToEvaluate> constructors = collector.getConstructors();
 
-        for (Pair<Set<Signature>, Set<Signature>> pair : functions) {
+        for (FunctionToEvaluate toEvaluate : functions) {
             Runnable callback = whenAllDone.newSubCallback();
 
             queue.add(new EvaluationQueueElement(0, () -> {
                 EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
-                visitor.evaluateFunctions(new ArrayList<>(pair.left), new ArrayList<>(pair.right), callback, false, "[functions]", false);
+                visitor.evaluateFunctions(new ArrayList<>(toEvaluate.myFunc), new ArrayList<>(toEvaluate.realFunc), callback, false, toEvaluate.path, false);
             }));
         }
 
-        for (Pair<Set<Signature>, Set<Signature>> pair : constructors) {
+        for (FunctionToEvaluate toEvaluate : constructors) {
             Runnable callback = whenAllDone.newSubCallback();
 
             queue.add(new EvaluationQueueElement(0, () -> {
                 EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
-                visitor.evaluateFunctions(new ArrayList<>(pair.left), new ArrayList<>(pair.right), callback, false, "[constructor]", true);
+                visitor.evaluateFunctions(new ArrayList<>(toEvaluate.myFunc), new ArrayList<>(toEvaluate.realFunc), callback, false, toEvaluate.path, true);
             }));
         }
 
@@ -148,9 +160,11 @@ public class DeclarationEvaluator {
         return evaluation;
     }
 
-    private class ParsedDeclaration {
+    public static class ParsedDeclaration {
         private String resultFilePath;
         private BenchMark benchMark;
+        private final Snap.Obj global;
+        private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
         private AtomicReference<SpecReader> realDeclaration;
         private AtomicReference<SpecReader> myDeclaration;
         private Set<String> properties;
@@ -159,9 +173,11 @@ public class DeclarationEvaluator {
         private NativeClassesMap myNativeClasses;
         private NativeClassesMap emptyNativeClasses;
 
-        public ParsedDeclaration(String resultFilePath, BenchMark benchMark) {
+        public ParsedDeclaration(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
             this.resultFilePath = resultFilePath;
             this.benchMark = benchMark;
+            this.global = global;
+            this.libraryClasses = libraryClasses;
         }
 
         public InterfaceType getRealDeclaration() {
