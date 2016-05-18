@@ -42,6 +42,7 @@ public class Options {
     public boolean printStringIndexers = false;
 
     public EvaluationMethod evaluationMethod = EvaluationMethod.ONLY_FUNCTIONS;
+    public boolean filterResultBasedOnDeclaration = false;
 
     public enum EvaluationMethod {
         ONLY_FUNCTIONS,

@@ -2,6 +2,7 @@ package dk.webbies.tscreate.main;
 
 import com.google.common.collect.ImmutableList;
 import com.google.javascript.jscomp.parsing.parser.Parser;
+import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.webbies.tscreate.BenchMark;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Score;
@@ -51,6 +52,8 @@ public class Main {
         // TODO: Sample excess fields, see how many are private variables. // <- Hamid looking at that
         // TODO: Write section of lower fixpoint != better result.
 
+        // TODO: Hvorfor ser knockout ud af helvede til når jeg kører fjerner redundante interfaces.
+
         // Benchmarks, where I can run ALL the static analysis methods.
         List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
         List<Options.StaticAnalysisMethod> allMethods = asList(NONE, ANDERSON, MIXED, COMBINED, UPPER, UPPER_LOWER);//, ANDERSON_CONTEXT_SENSITIVE, MIXED_CONTEXT_SENSITIVE, COMBINED_CONTEXT_SENSITIVE, LOWER_CONTEXT_SENSITIVE, UPPER_LOWER_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
@@ -58,19 +61,26 @@ public class Main {
 
         long start = System.currentTimeMillis();
         try {
-            allBenchmarks.forEach(bench -> {
-                bench.getOptions().combineInterfacesAfterAnalysis = false;
-                bench.getOptions().evaluationMethod = Options.EvaluationMethod.ONLY_FUNCTIONS;
-            });
 
+//            allBenchmarks.remove(test);
 //            CompareMethods.compareConfigs(stableBenches, genUpperLowerCuts(UPPER_LOWER), 20 * 60 * 1000);
-
 //            CompareMethods.compareConfigs(stableBenches, genUpperLowerCuts(UNIFICATION), 20 * 60 * 1000);
-
             CompareMethods.compareConfigs(allBenchmarks, genUpperLowerCuts(UPPER_LOWER), 20 * 60 * 1000);
-
 //            CompareMethods.compareConfigs(allBenchmarks, genUpperLowerCuts(UNIFICATION), 20 * 60 * 1000);
+//            CompareMethods.compareConfigs(allBenchmarks, genCompareMethods(), 20 * 60 * 1000);
 
+
+//            CompareMethods.compareMethods(asList(test), asList(COMBINED, UPPER), 20 * 60 * 1000);
+
+
+
+//            test.getOptions().staticMethod = MIXED;
+//            runAnalysis(test);
+
+//            test.getOptions().staticMethod = COMBINED;
+//            leaflet.getOptions().combineInterfacesAfterAnalysis = false;
+//            runAnalysis(test);
+//
             /*allBenchmarks.forEach(bench -> {
                 bench.getOptions().combineInterfacesAfterAnalysis = false;
                 bench.getOptions().evaluationMethod = Options.EvaluationMethod.ONLY_FUNCTIONS;
@@ -102,6 +112,28 @@ public class Main {
 
             System.exit(0);
         }
+    }
+
+    private static Collection<CompareMethods.Config> genCompareMethods() {
+        return asList(new CompareMethods.Config((options) -> {
+            options.staticMethod = ANDERSON;
+        }, "lower"),
+        new CompareMethods.Config((options) -> {
+            options.staticMethod = MIXED;
+        }, "mixed"),
+        new CompareMethods.Config((options) -> {
+            options.staticMethod = COMBINED;
+        }, "combined"),
+        new CompareMethods.Config((options) -> {
+            options.staticMethod = UPPER;
+        }, "upper"),
+        new CompareMethods.Config((options) -> {
+            options.staticMethod = UPPER_LOWER;
+        }, "lower_upper"),
+        new CompareMethods.Config((options) -> {
+            options.staticMethod = UPPER_LOWER;
+            options.disableFlowFromCallsiteToReturn = true;
+        }, "lower_upper_cut"));
     }
 
     private static List<CompareMethods.Config> genUpperLowerCuts(Options.StaticAnalysisMethod method) {
@@ -159,6 +191,16 @@ public class Main {
         System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
+
+        if (benchMark.getOptions().filterResultBasedOnDeclaration) { // A little weird, because I'm reusing some code that also parses the resulting declaration. // TODO: Less weird.
+            InterfaceType real = new DeclarationEvaluator.ParsedDeclaration(resultDeclarationFilePath, benchMark, globalObject, libraryClasses).invoke().getRealDeclaration();
+            declaration = declaration.entrySet().stream().filter(entry -> real.getDeclaredProperties().keySet().contains(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, (entry) -> {
+                return entry.getValue().accept(new FilterDeclarationVisitor(), real.getDeclaredProperties().get(entry.getKey()));
+            }));
+            printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions()).print();
+
+            Util.writeFile(resultDeclarationFilePath, printedDeclaration);
+        }
 
         Evaluation evaluation = null;
         String debugString = null;
@@ -283,6 +325,9 @@ public class Main {
         }
         if (options.disableFlowFromReturnToCallsite) {
             fileSuffix += "_noRetCal";
+        }
+        if (options.filterResultBasedOnDeclaration) {
+            fileSuffix += "_filtered";
         }
         return benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
     }
