@@ -128,7 +128,7 @@ public class ClassHierarchyExtractor {
                     clazz.addInstance(obj);
                 }
 
-                if (obj.getProperty("prototype") != null) {
+                if (obj.getProperty("prototype") != null && obj.getProperty("prototype").value instanceof Snap.Obj) {
                     Snap.Obj prototype = (Snap.Obj) obj.getProperty("prototype").value;
                     if (libraryClasses.get(prototype) != null) {
                         libraryClasses.get(prototype).setConstructor(obj);

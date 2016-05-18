@@ -71,7 +71,9 @@ public class BenchMark {
     public static List<BenchMark> allBenchmarks = new ArrayList<>();
 
     private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) {
-        BenchMark.allBenchmarks.add(this);
+        if (!name.equals("Test file")) {
+            BenchMark.allBenchmarks.add(this);
+        }
         this.name = name;
         this.scriptPath = scriptPath;
         this.declarationPath = declarationPath;
@@ -384,6 +386,18 @@ public class BenchMark {
         return benchMark;
     });
 
+    /*public static final BenchMark yui = gen(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("YUI", "tests/yui/yui.js", "tests/yui/yui.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark createjs = gen(() -> {
+        Options options = new Options();
+        BenchMark benchMark = new BenchMark("createjs", "tests/createjs/createjs.js", "tests/createjs/createjs.d.ts", options, ES5);
+        return benchMark;
+    });*/
+
 
 
     // Some i have tried to infer types for.
@@ -409,7 +423,9 @@ public class BenchMark {
         options.recordCalls = false;
         options.createInstances = false;
 
-        BenchMark bench = new BenchMark("Test file", "tests/test/test.js", null/*"tests/test/test.d.ts"*/, options, ES5);
+        BenchMark bench = new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
+        bench.dependencies.add(new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts"));
+        bench.dependencies.add(Dependency.jQuery);
 //        bench.dependencies.add(Dependency.underscore);
         return bench;
     });
