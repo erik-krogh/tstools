@@ -77,16 +77,15 @@ public class LibraryClass {
         return name;
     }
 
+    private static final Set<String> blackListedClassNames = new HashSet<>(Arrays.asList("constructor", "[proto]", "default"));
+
     public static String calculateName(NativeClassesMap natives, Set<String> takenNames, List<String> possibleNames) {
         String name = getNameFromPath(possibleNames.get(0));
         // Finding the longest name, that preferably starts with an upper case.
         for (int i = 1; i < possibleNames.size(); i++) {
             String path = possibleNames.get(i);
             String newName = getNameFromPath(path);
-            if (newName.equals("constructor")) {
-                continue;
-            }
-            if (newName.equals("[proto]")) {
+            if (blackListedClassNames.contains(newName)) {
                 continue;
             }
             if (newName.matches("[0-9]+.{0,}")) { // Starts with number.
