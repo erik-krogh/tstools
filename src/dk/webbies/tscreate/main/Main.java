@@ -1,6 +1,5 @@
 package dk.webbies.tscreate.main;
 
-import com.google.common.collect.ImmutableList;
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.webbies.tscreate.BenchMark;
@@ -55,7 +54,7 @@ public class Main {
         // TODO: Hvorfor ser knockout ud af helvede til når jeg kører fjerner redundante interfaces.
 
         // Benchmarks, where I can run ALL the static analysis methods.
-        List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, Q, please, path, p2, mathjax, materialize, photoswipe, peer);
+        List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, please, path, p2, mathjax, materialize, photoswipe, peer, createjs, yui);
         List<Options.StaticAnalysisMethod> allMethods = asList(NONE, ANDERSON, MIXED, COMBINED, UPPER, UPPER_LOWER);//, ANDERSON_CONTEXT_SENSITIVE, MIXED_CONTEXT_SENSITIVE, COMBINED_CONTEXT_SENSITIVE, LOWER_CONTEXT_SENSITIVE, UPPER_LOWER_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
 
 
@@ -115,57 +114,53 @@ public class Main {
     }
 
     private static Collection<CompareMethods.Config> genCompareMethods() {
-        return asList(new CompareMethods.Config((options) -> {
-            options.staticMethod = ANDERSON;
-        }, "lower"),
-        new CompareMethods.Config((options) -> {
-            options.staticMethod = MIXED;
-        }, "mixed"),
-        new CompareMethods.Config((options) -> {
-            options.staticMethod = COMBINED;
-        }, "combined"),
-        new CompareMethods.Config((options) -> {
-            options.staticMethod = UPPER;
-        }, "upper"),
-        new CompareMethods.Config((options) -> {
-            options.staticMethod = UPPER_LOWER;
-        }, "lower_upper"),
-        new CompareMethods.Config((options) -> {
-            options.staticMethod = UPPER_LOWER;
-            options.disableFlowFromCallsiteToReturn = true;
-        }, "lower_upper_cut"));
+        return asList(new CompareMethods.Config("lower", (options) -> {
+                    options.staticMethod = ANDERSON;
+                }),
+                new CompareMethods.Config("mixed", (options) -> {
+                    options.staticMethod = MIXED;
+                }),
+                new CompareMethods.Config("combined", (options) -> {
+                    options.staticMethod = COMBINED;
+                }),
+                new CompareMethods.Config("upper", (options) -> {
+                    options.staticMethod = UPPER;
+                }),
+                new CompareMethods.Config("lower_upper", (options) -> {
+                    options.staticMethod = UPPER_LOWER;
+                }),
+                new CompareMethods.Config("lower_upper_cut", (options) -> {
+                    options.staticMethod = UPPER_LOWER;
+                    options.disableFlowFromCallsiteToReturn = true;
+                }));
     }
 
     private static List<CompareMethods.Config> genUpperLowerCuts(Options.StaticAnalysisMethod method) {
         return asList(
-                new CompareMethods.Config((options) -> {
+                new CompareMethods.Config("clean", (options) -> {
                     options.staticMethod = method;
-                }, "clean"),
-                new CompareMethods.Config((options) -> {
+                }),
+                new CompareMethods.Config("cut_Param->Arg", (options) -> {
                     options.staticMethod = method;
                     options.disableFlowFromParamsToArgs = true;
-                }, "cut_Param->Arg"),
-                new CompareMethods.Config((options) -> {
+                }),
+                new CompareMethods.Config("cut_Return->Callsite", (options) -> {
                     options.staticMethod = method;
                     options.disableFlowFromReturnToCallsite = true;
-                }, "cut_Return->Callsite"),
-                new CompareMethods.Config((options) -> {
+                }),
+                new CompareMethods.Config("cut_Callsite->Return", (options) -> {
                     options.staticMethod = method;
                     options.disableFlowFromCallsiteToReturn = true;
-                }, "cut_Callsite->Return"),
-                new CompareMethods.Config((options) -> {
+                }),
+                new CompareMethods.Config("cut_Args->Param", (options) -> {
                     options.staticMethod = method;
                     options.disableFlowFromArgsToParams = true;
-                }, "cut_Args->Param")
+                })
         );
     }
 
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
         String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
-
-        if (readScoreFromDeclaration(resultDeclarationFilePath) != null && benchMark != test) {
-            return new Score(-1, -1, -1);
-        }
 
         System.out.println("Analysing " + benchMark.name + " - output: " + resultDeclarationFilePath);
 
@@ -188,7 +183,7 @@ public class Main {
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions()).print();
-        System.out.println(printedDeclaration);
+//        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 

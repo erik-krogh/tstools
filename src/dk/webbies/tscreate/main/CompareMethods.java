@@ -96,14 +96,14 @@ public class CompareMethods {
         final Consumer<Options> applier;
         final String prettyString;
 
-        public Config(Consumer<Options> applier, String prettyString) {
+        public Config(String prettyString, Consumer<Options> applier) {
             this.applier = applier;
             this.prettyString = prettyString;
         }
     }
 
     public static void compareMethods(List<BenchMark> benchMarks, Collection<Options.StaticAnalysisMethod> methods, long timeout) throws IOException {
-        compareConfigs(benchMarks, methods.stream().map(method -> new Config((options) -> options.staticMethod = method, method.prettyString)).collect(Collectors.toList()), timeout);
+        compareConfigs(benchMarks, methods.stream().map(method -> new Config(method.prettyString, (options) -> options.staticMethod = method)).collect(Collectors.toList()), timeout);
     }
 
     public static void compareConfigs(List<BenchMark> benchMarks, Collection<Config> configs, long timeout) throws IOException {
@@ -128,9 +128,6 @@ public class CompareMethods {
                 Score score = Main.runEvaluation(benchMark);
                 if (score.precision == -1) {
                     score = Main.runAnalysisWithTimeout(benchMark, timeout);
-                    if (score.precision == -1 && score.recall == -1 && score.fMeasure == -1) {
-                        score = Main.runEvaluation(benchMark);
-                    }
                 }
                 if (score == null) {
                     score = new Score(-1, -1, -1);
