@@ -5,6 +5,8 @@ import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.InterfaceDeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 
+import java.util.Set;
+
 /**
  * Created by Erik Krogh Kristensen on 16-03-2016.
  */
@@ -40,9 +42,18 @@ public class HeuristicsUtil {
         throw new RuntimeException("What???");
     }
 
-    public static void combine(DeclarationType inter1, DeclarationType inter2, ArrayListMultimap<DeclarationType, DeclarationType> replacements) {
-        replacements.put(inter1, inter2);
-        replacements.put(inter2, inter1);
+    public static void combine(DeclarationType inter1, DeclarationType inter2, ArrayListMultimap<DeclarationType, DeclarationType> replacements, Set<DeclarationType> heap) {
+        if (heap.contains(inter1) && heap.contains(inter2)) {
+            replacements.put(inter1, inter2);
+            replacements.put(inter2, inter1);
+        } else if (heap.contains(inter1)) {
+            replacements.put(inter2, inter1);
+        } else if (heap.contains(inter2)) {
+            replacements.put(inter1, inter2);
+        } else {
+            replacements.put(inter1, inter2);
+            replacements.put(inter2, inter1);
+        }
     }
 
     public static boolean hasFunction(DeclarationType type) {

@@ -41,6 +41,9 @@ public class CombineInterfacesHeuristic implements ReplacementHeuristic{
 
         Map<Class<? extends DeclarationType>, Set<DeclarationType>> byType = collected.getEverythingByType();
 
+        Set<DeclarationType> heap = new HashSet<>(collected.getEveryThing());
+        heap.removeAll(new CollectEveryTypeVisitor(collected.getDeclarations(), true).getEveryThing());
+
         List<DeclarationType> interfaces = Util.concat(byType.get(InterfaceDeclarationType.class), byType.get(UnnamedObjectType.class));
 
         for (int i = 0; i < interfaces.size(); i++) {
@@ -54,9 +57,9 @@ public class CombineInterfacesHeuristic implements ReplacementHeuristic{
                 Score score = similarity.score(true);
                 if (score.precision > 0.7 && score.recall > 0.7) {
                     if (score.fMeasure >= 0.85) {
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (score.precision == 1 || score.recall == 1){
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (!hasObject(one) && !hasObject(two)){
                         continue;
                     } else if (hasDynAccess(one) ^/*XOR*/ hasDynAccess(two) && numberOfFields(one) + numberOfFields(two) <= 5 && score.fMeasure < 0.9) { // If only one has dynamic access, I think they should be quite similar before i merge them.
@@ -66,21 +69,21 @@ public class CombineInterfacesHeuristic implements ReplacementHeuristic{
                     } else if (hasDynAccess(one) && hasDynAccess(two) && Math.min(numberOfFields(one), numberOfFields(two)) <= 2 && score.fMeasure < 0.9) {
                         continue;
                     } else if (hasDynAccess(one) && !hasDynAccess(two) && numberOfFields(one) > numberOfFields(two) && score.recall >= 0.8) {
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (Math.min(numberOfFields(one), numberOfFields(two)) >= 4 && score.fMeasure >= 0.7) {
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (Math.min(numberOfFields(one), numberOfFields(two)) >= 4 && score.recall >= 0.95) {
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (Math.max(numberOfFields(one), numberOfFields(two)) <= 2 && score.fMeasure <= 0.7) { // Only one of the fields are similar.
                         continue;
                     } else if (Math.max(numberOfFields(one), numberOfFields(two)) <= 2 && score.fMeasure >= 0.8) {
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (Math.max(numberOfFields(one), numberOfFields(two)) <= 5 && score.fMeasure <= 0.8) {
                         continue;
                     } else if (hasObject(one) && hasObject(two) && numberOfFields(two) > numberOfFields(one) && score.precision >= 0.8) {
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (hasObject(one) && hasObject(two) && numberOfFields(one) > numberOfFields(two) && score.recall >= 0.8) {
-                        combine(one, two, replacements);
+                        combine(one, two, replacements, heap);
                     } else if (Math.min(numberOfFields(one), numberOfFields(two)) >= 5 && score.fMeasure <= 0.8) {
                         continue;
                     } else {
