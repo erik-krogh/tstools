@@ -326,10 +326,10 @@ public class BenchMark {
         return new BenchMark("Box2dWeb", "tests/box2dweb/box2dweb.js", "tests/box2dweb/box2dweb.d.ts", options, ES5);
     });
 
-    public static final BenchMark Q = gen(() -> {
+    /*public static final BenchMark Q = gen(() -> {
         Options options = new Options();
         return new BenchMark("Q", "tests/q/q.js", "tests/q/q.d.ts", options, ES5);
-    });
+    });*/
 
     public static final BenchMark moment = gen(() -> {
         Options options = new Options();
