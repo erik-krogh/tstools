@@ -1,7 +1,9 @@
 package dk.webbies.tscreate.cleanup;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
@@ -51,7 +53,7 @@ public class RedundantInterfaceCleaner {
         cleanDeclarations();
 //        reducer.clearCache();
 
-        Multimap<DeclarationType, DeclarationType> allReplacements = ArrayListMultimap.create();
+        SetMultimap<DeclarationType, DeclarationType> allReplacements = HashMultimap.create();
 
         while (progress) {
             CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration, false);
