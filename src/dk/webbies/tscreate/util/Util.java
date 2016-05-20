@@ -45,31 +45,6 @@ public class Util {
         return inputGobbler.getResult();
     }
 
-    public static String runNodeScript(String args, String stdin) throws IOException {
-        if (args.endsWith("\"")) args = args.replace("\"", "");
-        Process process = Runtime.getRuntime().exec("node " + args);
-
-        CountDownLatch latch = new CountDownLatch(2);
-        StreamGobbler inputGobbler = new StreamGobbler(process.getInputStream(), latch);
-        StreamGobbler errGobbler = new StreamGobbler(process.getErrorStream(), latch);
-
-        process.getOutputStream().write(stdin.getBytes());
-        process.getOutputStream().close();
-
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (!errGobbler.getResult().isEmpty()) {
-            System.err.println("Error running node script: " + errGobbler.getResult());
-//            throw new RuntimeException("Got an error running a node script: " + errGobbler.getResult());
-        }
-
-        return inputGobbler.getResult();
-    }
-
     public static String removeSuffix(String str, String suffix) {
         assert str.endsWith(suffix);
         return str.substring(0, str.length() - suffix.length());
@@ -93,12 +68,12 @@ public class Util {
         return o1.getKey().compareTo(o2.getKey());
     }
 
-    private static class StreamGobbler extends Thread {
+    public static class StreamGobbler extends Thread {
         BufferedInputStream is;
         private CountDownLatch latch;
         private String result;
 
-        private StreamGobbler(InputStream is, CountDownLatch latch) {
+        public StreamGobbler(InputStream is, CountDownLatch latch) {
             this.is = new BufferedInputStream(is);
             this.latch = latch;
             this.start();

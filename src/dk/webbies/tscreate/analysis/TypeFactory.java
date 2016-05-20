@@ -445,23 +445,17 @@ public class TypeFactory {
     public void registerFunction(Snap.Obj closure, List<UnionFeature> features) {
         UnresolvedDeclarationType unresolved = getPureFunction(closure);
         if (options.useJSDoc && closure.function.astNode != null && closure.function.astNode.jsDoc != null) {
-            FunctionType result = new JSDocParser(globalObject, typeAnalysis, nativeClasses).parseFunctionDoc(closure, closure.function.astNode.jsDoc);
+            FunctionType result = new JSDocParser(globalObject, typeAnalysis, nativeClasses, typeReducer).parseFunctionDoc(closure, closure.function.astNode.jsDoc);
 
             FunctionType analyzedResult = functionFeatureToDec(closure, features);
 
-            for (int i = 0; i < result.getArguments().size(); i++) {
-                FunctionType.Argument arg = result.getArguments().get(i);
-                if (arg.getType() == null && analyzedResult.getArguments().size() < i) {
-                    arg.setType(analyzedResult.getArguments().get(i).getType());
-                }
-            }
-            if (result.getReturnType() == null) {
+            if (isVoidOrNull(result.getReturnType())) {
                 result.setReturnType(analyzedResult.getReturnType());
             }
 
             // If JSDoc couldn't figure it out, fallback.
             for (int i = 0; i < Math.min(analyzedResult.getArguments().size(), result.getArguments().size()); i++) {
-                if (result.getArguments().get(i).getType() == null) {
+                if (isVoidOrNull(result.getArguments().get(i).getType())) {
                     result.getArguments().get(i).setType(analyzedResult.getArguments().get(i).getType());
                 }
             }
@@ -475,11 +469,19 @@ public class TypeFactory {
 
             unresolved.setResolvedType(result);
 
+            if (result.getReturnType() == null || result.getArguments().stream().anyMatch(arg -> arg == null || arg.getType() == null || arg.getName() == null)) {
+                System.out.println();
+            }
+
         } else {
             FunctionType result = functionFeatureToDec(closure, features);
 
             unresolved.setResolvedType(result);
         }
+    }
+
+    private boolean isVoidOrNull(DeclarationType type) {
+        return type == null || type instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType) type).getType() == PrimitiveDeclarationType.Type.VOID;
     }
 
     private FunctionType functionFeatureToDec(Snap.Obj closure, List<UnionFeature> features) {
