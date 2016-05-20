@@ -6840,24 +6840,24 @@ Form.EventObserver = Class.create(Abstract.EventObserver, {
         return m;
     });
 
-    if (window.attachEvent) {
-        function _relatedTarget(event) {
-            var element;
-            switch (event.type) {
-                case 'mouseover':
-                case 'mouseenter':
-                    element = event.fromElement;
-                    break;
-                case 'mouseout':
-                case 'mouseleave':
-                    element = event.toElement;
-                    break;
-                default:
-                    return null;
-            }
-            return Element.extend(element);
+    function _relatedTarget(event) {
+        var element;
+        switch (event.type) {
+            case 'mouseover':
+            case 'mouseenter':
+                element = event.fromElement;
+                break;
+            case 'mouseout':
+            case 'mouseleave':
+                element = event.toElement;
+                break;
+            default:
+                return null;
         }
+        return Element.extend(element);
+    }
 
+    if (window.attachEvent) {
         var additionalMethods = {
             stopPropagation: function() { this.cancelBubble = true },
             preventDefault:  function() { this.returnValue = false },
