@@ -71,7 +71,7 @@ public class Options {
 
     public boolean neverPrintModules = false;
     public boolean evaluationAnyAreOK = false; // In the evaluation, any and anything is a true-positive.
-    public boolean useJSDoc = false; // TODO: Stuff and things.
+    public boolean useJSDoc = false;
 
     public enum StaticAnalysisMethod {
         NONE("none", "none"),

@@ -297,12 +297,6 @@ public class BenchMark {
         return new BenchMark("MooTools", "tests/mootools/mootools.js", null, options, ES5); // I couldn't actually find a declaration file, posting one could be an option. (When i get rid of the duplicates).
     });
 
-    public static final BenchMark prototype = gen(() -> {
-        Options options = new Options();
-        options.createInstances = false; // Otherwise, things goes to shit.
-        return new BenchMark("Prototype", "tests/prototype/prototype.js", null, options, ES5); // TODO: Does a declaration file exist? Can it?
-    });
-
     public static final BenchMark ace = gen(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true; // Otherwise prombt appears

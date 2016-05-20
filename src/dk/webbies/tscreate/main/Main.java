@@ -47,11 +47,7 @@ import static java.util.Arrays.asList;
 public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // TODO: Look at bench, argue why: better score -> better dec. // <- Hamid looking at that
-        // TODO: Sample excess fields, see how many are private variables. // <- Hamid looking at that
         // TODO: Write section of lower fixpoint != better result.
-
-        // TODO: Hvorfor ser knockout ud af helvede til når jeg kører fjerner redundante interfaces.
 
         // Benchmarks, where I can run ALL the static analysis methods.
         List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, please, path, p2, mathjax, materialize, photoswipe, peer, createjs, yui);
@@ -61,12 +57,26 @@ public class Main {
         long start = System.currentTimeMillis();
         try {
 
+//            knockout.getOptions().staticMethod = MIXED;
+//            runAnalysis(knockout);
+
 //            allBenchmarks.remove(test);
 //            CompareMethods.compareConfigs(stableBenches, genUpperLowerCuts(UPPER_LOWER), 20 * 60 * 1000);
 //            CompareMethods.compareConfigs(stableBenches, genUpperLowerCuts(UNIFICATION), 20 * 60 * 1000);
-            CompareMethods.compareConfigs(allBenchmarks, genUpperLowerCuts(UPPER_LOWER), 20 * 60 * 1000);
+//            CompareMethods.compareConfigs(allBenchmarks, genUpperLowerCuts(UPPER_LOWER), 20 * 60 * 1000);
 //            CompareMethods.compareConfigs(allBenchmarks, genUpperLowerCuts(UNIFICATION), 20 * 60 * 1000);
+//            allBenchmarks.remove(ember);
 //            CompareMethods.compareConfigs(allBenchmarks, genCompareMethods(), 20 * 60 * 1000);
+
+            for (BenchMark benchmark : allBenchmarks) {
+                benchmark.getOptions().useJSDoc = true;
+                benchmark.getOptions().staticMethod = ANDERSON;
+                runAnalysis(benchmark);
+            }
+
+
+//            jQuery.getOptions().staticMethod = UPPER_LOWER;
+//            runAnalysis(jQuery);
 
 
 //            CompareMethods.compareMethods(asList(test), asList(COMBINED, UPPER), 20 * 60 * 1000);
@@ -161,6 +171,10 @@ public class Main {
 
     public static Score runAnalysis(BenchMark benchMark) throws IOException {
         String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
+
+        if (new File(resultDeclarationFilePath).exists()) {
+            return null;
+        }
 
         System.out.println("Analysing " + benchMark.name + " - output: " + resultDeclarationFilePath);
 
@@ -323,6 +337,9 @@ public class Main {
         }
         if (options.filterResultBasedOnDeclaration) {
             fileSuffix += "_filtered";
+        }
+        if (options.useJSDoc) {
+            fileSuffix += "_jsDoc";
         }
         return benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
     }
