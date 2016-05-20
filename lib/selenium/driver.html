@@ -30,9 +30,9 @@
                 writable: false,
                 value: function (callback) {
                     var button = document.createElement("button");
-                    button.appendChild(document.createTextNode("CLick me when the script is done"));
+                    button.appendChild(document.createTextNode("Click me when the script is done"));
                     button.style.padding = "20px";
-                    button.style.fontSize = "20px"
+                    button.style.fontSize = "20px";
                     button.addEventListener("click", function ()  {
                         callback();
                     });
@@ -59,8 +59,6 @@
                 var result = "Not found",
                         tmp = [];
                 location.search
-                        //.replace ( "?", "" )
-                        // this is better, there might be a question mark inside
                         .substr(1)
                         .split("&")
                         .forEach(function (item) {
