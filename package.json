@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "doctrine": "^1.2.1",
-    "doctrine-cli": "^1.0.2",
+    "doctrine-cli": "^1.0.4",
     "jsnap": "https://github.com/webbiesdk/jsnap.git",
     "ts-spec-reader": "https://github.com/cs-au-dk/ts-spec-reader.git"
   },
