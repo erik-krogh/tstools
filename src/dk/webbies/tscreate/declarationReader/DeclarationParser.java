@@ -347,6 +347,9 @@ public class DeclarationParser {
                 return baseNameCache.get(name);
             }
             Type type = typeFromName(name);
+            if (type == null) {
+                return Collections.EMPTY_SET;
+            }
             HashSet<String> result = new HashSet<>();
             if (type instanceof GenericType) {
                 type = ((GenericType) type).toInterface();
