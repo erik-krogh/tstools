@@ -1,67 +1,112 @@
-These are some of the main sources of imprecision. 
-Most of it are in the higher-levels, because that is the main contributer to the score that i compute. 
+This is ignoring all the errors that come from bugs in the JavaScript/.d.ts file, this is what an analysis should be able to handle.
 
-box2dweb: 
-	Its leaking "i", "Vector" and "Vector_a2j_Number" to the global scope. (sent a pull-request to fix that). 
-	
-	In the declaration, the Box2D object only has Dynamics, Collision and Common. 
-	But in reality, there also is parseUInt, NVector, inherit, is and generateCallback. 
-	
-	Longer down, there is a b2internal property, which isn't mentioned in the declaration. 
-	
-	The declaration files claims that there is a "Box2D.Collision.b2OBB" class, there isn't. 
-	
-	Box2D.Collision.b2TimeOfImpact, b2Bound, ClipVertex, b2SimplexVertex and a lot of other classes are apparently private. 
-	
+ ***** LIST OF THINGS THAT COULD BE DONE *****
 
-PIXI: 
-	There is a bunch of classes, that simply aresn't on the heap after initialization: https://github.com/pixijs/pixi.js/issues/2312
-	
-	We have .fromFrame and .fromImage on Texture. These are classified as classes, because they are called with "new". 
-	BUT, they return an instance of Textture instance, so the "new" in the source is actually misleading. // TODO: Make a pull-request.  
-	
-	And then a lot of ts-spec-reader issues, that makes it difficult to see what is actually missing. 
-	
-D3: 
-	Mainly the ts-spec-reader bug. 
-	And some imprecisions related to the number of arguments for functions. 
-	
-	.apply is damn hopeless like this: 
-		d3.timer = function() {
-			d3_timer.apply(this, arguments);
-		};
-		function d3_timer(callback, delay, then) {
-		
-	And then a lot either from the ts-spec-reader bug, ot simply imprecisions. 
-	
-	Our analysis cannot infer that a class can be called with anything but "new". 
-	
-Underscore: 
-	Right now, the biggest source in the score is that the declaration states the class shouldn't be instantiated with "new", but just be called. 
-	
-	And all the prototype functions are called with Function.apply, and i've not been able to infer anything useful about them. 
-	
-Three.d.ts
-	Lots of enums, that are just a imaginary-type, and aren't on the heap. 
-	And instances of those, that the analysis wrongly says are numbers. But it cannot do anything else, because it IS a number, there is no enum.
-	
-	There is also a lot of fields that is misses. Tried to look into one of them. 
-	There the fields are missing, because the analysis doesn't infer that the MultiMaterial inherits from Material. 
-	Which isn't suppring considering this comment in the declaration: // MultiMaterial does not inherit the Material class in the original code. However, it should treat as Material class.
-	Basically, the declaration is wrong, MultiMaterial doesn't extend Material, and they know it. 
-	
-	There is also something like THREE.WebGLShader. Which the declaration states is a class (wrong). It really is a function that returns something. 
-	
-	But not all just errors. There is also a lot of times where the analysis simply doesn't have the precision. Which is actually the main thing. 
-	
-Leaflet: 
-	A LOT of private variables/ undocumented variables (no error there). 
-	
-	There is a lot of [what?]. 
-	
-	All the constructor signatures takes 0 arguments, beucase they use function.apply. 
-	
-	got simple type, expected interface RealType: window.L.LatLngBounds.[newSig0].[return]  myType: window.L.Path.[newSig0].[return]
+- JSDoc: Some of the bigger libraries has a lot of JSDoc on the functions.
+    PIXI adds a little challenge, in that the JSDoc often just states that it takes "Point", where it actually takes "PIXI.Point".
+    Looking up using the result of the dynamic analysis seems to work; if a JSDoc just states "Point", there tends to be a variable "Point" in that environment (because browserify).
+    I don't think it is that much cheating to use JSDoc when available, if we state that this tool is designed to produce the best declaration file it can.
 
-	Has a really wierd prototype system, with mixins and options and stuff. So sometimes i miss some properties, even though there are there. 
-	For Path i get it, you can see that Path extends some NewClass, but for Map I don't. Which gives me something like: property missing: doubleClickZoom Path: window.L.Map.[function].[return]
+- instanceof and typeof
+    At the moment these arent used. But something like "if (object instanceof d3_Map) {" is a big hint that the object might be a d3_Map.
+
+- Overloaded native functions, only use the right signature when calling.
+    In the analysis, document.createElement("canvas") currently produces a combination of all the signatures of createElement (HTMLElement and ~100 subclasses).
+    This would help on a lot of function that use some of the fields in the more "exotic" elements. (Example: currently 'document.createElement("canvas").width' has type "any", since it merges all the overloads of createElement, and one of those has "width:any", whereas CanvasElement has "width:number".
+
+- Function.apply / arguments object.
+    The problem is obvious, a function just just applies another function using the arguments is currently inferred to have no arguments.
+    But the implementation is far from trivial, to get something like underscore to work, an entire array abstraction, where some of the methods like "push" are modeled by the analysis is needed.
+    So I don't think this is the way to go.
+    It also happens, rarely (I only know of it in knockout and jQuery) that the following is done: "var valueToWrite = arguments[0];". Accessing a constant value of the arguments object.
+
+- Optional arguments and arguments object.
+    This is far more reasonable, one would have to identify the patterns used. One i came across is "arguments.length ? k : 1".
+
+- Natural-language something.
+    In most cases it is difficult, but an extension of my existing heuristics is feasible.
+    Example: p2.js: p2.AngleLockEquation#constructor. Its first two arguments are bodyA and bodyB, which are supposed to have the type "p2.Body", but in my analysis gets the type "{angle: number}".
+    Here, one could see that the two arguments has "body" in the name, and that the inferred type is a subset of the p2.Body type, and from that give it type "p2.Body".
+
+    (Could also be used to turn of the "this object is actually an instance of this class" heuristic. If e.g. the object is called options, then it is probably not an instance of some class).
+
+- Arrays/Generics:
+    Arrays are not handled very precisely, and this is due to two things:
+    Generics from the .d.ts files are not handled.
+    There is no array abstraction. (So .push() is just another function call)
+    Arrays are handled nicely, when they are found on the heap, or when there is a foo[bar] access into an array. But as an example: PIXI.Container#children is just an array of any, since none of those hints give any other information.
+
+    Arrays could be handled specially, including modelling all the methods push/slice/pop etc.
+
+- Something something class fields.
+    Identifying what "this.field" is, is difficult. And in a lot of cases (in libraries that use classes a lot), a bad signature is caused by the analysis having no idea about what "this.field" is.
+    Currently the analysis separates the "this.field" accesses across functions, and only use them for inferring the types of the fields in the last phase.
+    I'm not sure how, but
+
+- Identify overloaded functions
+    Not sure what could be done here.
+    The result would be that we can infer that a function has multiple overloaded signatures.
+    But sometimes there are some quite specific syntactic patterns, such as: "if(arg2 == null) {arg2 = arg1 || 0 ...}"
+
+- String constants in dynamic accesses.
+    I've only seen this in knockout: "this['getBindingsString'](node, bindingContext);"
+
+
+ ***** IMPRECISIONS *****
+
+String constants in function signatures: (/ overloads in general)
+    In TypeScript, one can specify functions that return a different type, depending upon the value of a string constant passed to the function.
+    TSInfer currently smashes all of these into one big lump, which sometimes doesn't work out to well.
+    As an example, in PIXI.js the CanvasBuffer constructor, "document.createElement('canvas').width" gives type any (which is because there are widths of type any returned from createElement) instead of type number.
+
+    This could in most cases be solved by looking at the value of the string expression which is passed to the function.
+
+.apply is damn hopeless like this:
+    d3.timer = function() {
+        d3_timer.apply(this, arguments);
+    };
+    function d3_timer(callback, delay, then) {
+
+    Same thing goes in Underscore.
+
+    To get this to work, a lot of work is needed.
+
+The analysis never infers that something that looks like a class can be called without the "new" operator.
+    But sometimes, such functions will return something meaningful when called without new (maybe the function in turn calls itself with "new", like Underscore does).
+
+    The easiest way to solve this (that i see), is to during the dynamic analysis also call every function without the "new" operator (currently, everything is called with the "new" operator).
+    In that way, we can see if the result of that call is something "pretty", and in that case infer that the function can also be called without the "new" operator.
+
+Enums: (Happens a lot in Three.d.ts)
+    Practically impossible. Enums are (from what I've seen in JavaScript) number constants, which are used in different places.
+    As i think i explained in the "what is impossible to infer" in the paper, one cannot distinquish between an enum and an object of numbers.
+    One has to do natural-language processing or similar to infer that, I don't see how it could be done in our context.
+
+Overrides:
+    When a class extends another class, if there is some property that exists in both of the classes, I only print the one belonging to the class that is the highest in the class hierarchy.
+    Otherwise the TypeScript compiler would sometimes complain about incompatible overrides.
+    This is however not always good, example: PIXI: "Container.prototype._renderCanvas", where the function-body is empty, since it is meant to be overridden by some subclass. (In that case i still infer something about it, through how it is called).
+    Also happens in p2: p2.Broadphase#getCollisionPairs), and knockout: ko.templateEngine#createJavaScriptEvaluatorBlock
+
+Arrays/Generics:
+    Arrays are not handled very precisely, and this is due to two things:
+    Generics from the .d.ts files are not handled.
+    There is no array abstraction. (So .push() is just another function call)
+
+    Arrays are handled nicely, when they are found on the heap, or when there is a foo[bar] access into an array. But as an example: PIXI.Container#children is just an array of any, since none of those hints give any other information.
+
+Unknown relation between objects.
+    As an example, if one has an argument "options", which is used for:  "this.options = _.extend({root: '/'}, this.options, options);".
+    Then we cannot do anything, since we need to be about-everything-sensitive to infer something useful about that type.
+
+Unknown fields
+    If a field is only set through getters/setters, the analysis has a hard time figuring out the type of that.
+    And as the analysis is currently configured, if the dynamic analysis can't create an instance with the field, the analysis doesn't have any information about that field when analyzing a method.
+
+Arguments not being optional.
+    There are a lot of patterns to this, one of which being "(arguments.length ? k : 1)".
+    One could simply check on how the arguments object is being used, and infer information about optional arguments based on that.
+
+Options objects:
+    A pattern I've noticed across libraries, is that an options object tends to be a plain object, which is called "options".
+    But this is often mistaken af being an instance of some known class, during the heuristics phase.
