@@ -87,17 +87,18 @@ public class BenchMark {
         options.createInstancesClassFilter = true;
         options.asyncTest = false;
         options.recordCalls = true;
+        options.asyncTest = true;
         BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
 
-//        bench.dependencies.add(Dependency.QUnit);
+        bench.dependencies.add(Dependency.QUnit);
 
-        /* bench.testFiles.add("tests/underscore/tests/arrays.js");
+        bench.testFiles.add("tests/underscore/tests/arrays.js");
         bench.testFiles.add("tests/underscore/tests/chaining.js");
         bench.testFiles.add("tests/underscore/tests/collections.js");
 //        bench.testFiles.add("tests/underscore/tests/cross-document.js");
         bench.testFiles.add("tests/underscore/tests/functions.js");
         bench.testFiles.add("tests/underscore/tests/objects.js");
-        bench.testFiles.add("tests/underscore/tests/utility.js"); */
+        bench.testFiles.add("tests/underscore/tests/utility.js");
         return bench;
     });
 
@@ -414,12 +415,12 @@ public class BenchMark {
     public static final BenchMark test = gen(() -> {
         Options options = new Options();
 //        options.debugPrint = true;
-        options.recordCalls = false;
+        options.recordCalls = true;
         options.createInstances = false;
 
         BenchMark bench = new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
-        bench.dependencies.add(new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts"));
-        bench.dependencies.add(Dependency.jQuery);
+//        bench.dependencies.add(new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts"));
+//        bench.dependencies.add(Dependency.jQuery);
 //        bench.dependencies.add(Dependency.underscore);
         return bench;
     });

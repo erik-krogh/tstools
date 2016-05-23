@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.jsnap;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
@@ -8,15 +10,17 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import com.google.javascript.jscomp.parsing.parser.util.SourceRange;
 import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.paser.AST.FunctionExpression;
-import dk.webbies.tscreate.paser.AST.NodeTransverse;
+import dk.webbies.tscreate.paser.AST.*;
 import dk.webbies.tscreate.util.Util;
 import org.apache.http.HttpException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class JSNAPUtil {
 
@@ -121,6 +125,46 @@ public class JSNAPUtil {
         obj.properties.forEach(prop -> result.put(prop.name, prop));
         if (obj.prototype != null && obj != obj.prototype) {
             result.putAll(createPropertyMap(obj.prototype));
+        }
+        return result;
+    }
+
+    public static Map<AstNode, Set<Snap.Obj>> getCallsitesToClosures(Snap.Obj callsitesToClosures, FunctionExpression program) {
+        BiMap<Integer, AstNode> callsites = HashBiMap.create();
+        AtomicInteger callsiteCounter = new AtomicInteger(-1);
+        new NodeTransverse<Void>() {
+            public Void visit(CallExpression callExpression) {
+                callsites.put(callsiteCounter.incrementAndGet(), callExpression);
+                NodeTransverse.super.visit(callExpression);
+                return null;
+            }
+            public Void visit(MethodCallExpression methodCall) {
+                callsites.put(callsiteCounter.incrementAndGet(), methodCall);
+                NodeTransverse.super.visit(methodCall);
+                return null;
+            }
+            public Void visit(NewExpression newExp) {
+                callsites.put(callsiteCounter.incrementAndGet(), newExp);
+                NodeTransverse.super.visit(newExp);
+                return null;
+            }
+        }.visit(program);
+
+        HashMap<AstNode, Set<Snap.Obj>> result = new HashMap<>();
+
+        int totalCallsites = (int) ((Snap.NumberConstant) callsitesToClosures.getProperty("length").value).value;
+
+        for (int i = 0; i < totalCallsites; i++) {
+            Snap.Property prop = callsitesToClosures.getProperty(i + "");
+            if (prop != null && prop.value instanceof Snap.Obj) {
+                Set<Snap.Obj> set = new HashSet<>();
+                result.put(callsites.get(i), set);
+                Snap.Obj array = (Snap.Obj) prop.value;
+                int length = (int) ((Snap.NumberConstant) array.getProperty("length").value).value;
+                for (int j = 0; j < length; j++) {
+                    set.add((Snap.Obj)array.getProperty(j + "").value);
+                }
+            }
         }
         return result;
     }
