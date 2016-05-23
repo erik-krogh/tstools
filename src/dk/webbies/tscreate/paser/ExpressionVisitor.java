@@ -47,4 +47,6 @@ public interface ExpressionVisitor<T> {
     T visit(SetterExpression setter);
 
     T visit(ArrayLiteral arrayLiteral);
+
+    T visit(RegExpExpression regExp);
 }

@@ -261,6 +261,11 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
     }
 
     @Override
+    public UnionNode visit(RegExpExpression regExp) {
+        return regExp.toNewExpression().accept(this);
+    }
+
+    @Override
     public UnionNode visit(FunctionExpression function) {
         if (closureMatch(function, this.closure)) {
             // It is the function we are currently analyzing, special treatment.

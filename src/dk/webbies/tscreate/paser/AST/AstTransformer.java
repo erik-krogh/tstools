@@ -65,8 +65,7 @@ public class AstTransformer {
                     } else if (value.startsWith("0x")) {
                         return new NumberLiteral(loc, Long.parseLong(value.toLowerCase().substring(2, value.length()), 16));
                     } else if (value.startsWith("/")) {
-                        String regExp = value.substring(1, value.length() - 1);
-                        return new NewExpression(loc, new Identifier(loc, "RegExp"), Arrays.asList(new StringLiteral(loc, regExp)));
+                        return new RegExpExpression(loc, value);
                     } else if (value.substring(0, 1).matches("[0-9]")) {
                         return new NumberLiteral(loc, Double.valueOf(value));
                     } else {
