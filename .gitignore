@@ -8,3 +8,4 @@ tests/**/*.normalized.d.ts
 tests/**/*.jsnap
 lib/jsnap
 lib/ts-type-reader
+synopsis/
