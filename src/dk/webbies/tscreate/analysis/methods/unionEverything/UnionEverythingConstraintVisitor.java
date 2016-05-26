@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
 
 
-    public UnionEverythingConstraintVisitor(Snap.Obj closure, UnionFindSolver solver, Map<Identifier, UnionNode> identifierMap, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HeapValueFactory heapFactory, MixedTypeAnalysis typeAnalysis, NativeTypeFactory nativeTypeFactory) {
-        super(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, typeAnalysis, nativeTypeFactory, false);
+    public UnionEverythingConstraintVisitor(Snap.Obj closure, UnionFindSolver solver, Map<Identifier, UnionNode> identifierMap, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HeapValueFactory heapFactory, MixedTypeAnalysis typeAnalysis, NativeTypeFactory nativeTypeFactory, Map<AstNode, Set<Snap.Obj>> callsites) {
+        super(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, typeAnalysis, nativeTypeFactory, false, callsites);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new UnionEverythingConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
+            new UnionEverythingConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, callsites).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
@@ -192,7 +192,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap);
+            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
             for (Snap.Obj closure : functionClosures) {
                 if (closure.function.type.equals("bind")) {
                     closure = closure.function.target;
@@ -277,7 +277,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap);
+            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
 
             for (Snap.Obj closure : functions) {
                 switch (closure.function.type) {

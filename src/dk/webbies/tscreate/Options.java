@@ -43,6 +43,7 @@ public class Options {
 
     public EvaluationMethod evaluationMethod = EvaluationMethod.ONLY_FUNCTIONS;
     public boolean filterResultBasedOnDeclaration = false;
+    public boolean useCallsiteInformation = false; // During the dynamic analysis, at every callsite it is recorded which function was actually called. If this is true, that information is used to resolve the callgraph, and the callsites where something has been observed.
 
     public enum EvaluationMethod {
         ONLY_FUNCTIONS,
@@ -62,7 +63,7 @@ public class Options {
     public boolean disableFlowFromReturnToCallsite = false;
     public boolean disableFlowFromCallsiteToReturn = false;
 
-    public boolean evaluationSkipExcessProperties = true;  // TODO: Look at this again later.
+    public boolean evaluationSkipExcessProperties = false;  // TODO: Look at this again later.
 
     public boolean allArgumentsAreOptional = false;
 
@@ -98,7 +99,7 @@ public class Options {
         }
     }
 
-    public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.MIXED;
+    public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.COMBINED;
 
     public enum Runtime {
         PHANTOM,

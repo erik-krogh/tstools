@@ -9,6 +9,7 @@ import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.paser.AST.AstNode;
 import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.util.*;
@@ -20,14 +21,14 @@ import java.util.*;
 public class UnionRecursivelyTypeAnalysis extends MixedTypeAnalysis {
     private final Snap.Obj globalObject;
 
-    public UnionRecursivelyTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
-        super(libraryClasses, options, globalObject, nativeClasses, false);
+    public UnionRecursivelyTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
+        super(libraryClasses, options, globalObject, nativeClasses, false, callsites);
         this.globalObject = globalObject;
     }
 
     @Override
     public void applyConstraints(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Map<Identifier, UnionNode> identifierMap) {
-        new UnionRecursivelyConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this.nativeTypeFactory, this).visit(closure.function.astNode);
+        new UnionRecursivelyConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this.nativeTypeFactory, this, callsites).visit(closure.function.astNode);
     }
 
     @Override

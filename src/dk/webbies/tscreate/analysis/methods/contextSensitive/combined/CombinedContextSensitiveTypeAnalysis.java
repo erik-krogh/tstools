@@ -12,9 +12,11 @@ import dk.webbies.tscreate.analysis.unionFind.UnionFindSolver;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.paser.AST.AstNode;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by erik1 on 24-02-2016.
@@ -25,9 +27,9 @@ public class CombinedContextSensitiveTypeAnalysis implements TypeAnalysis {
     private final PureSubsetsContextSensitiveTypeAnalysis subset;
     private final TypeFactory typeFactory;
 
-    public CombinedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod) {
-        mixed = new MixedContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod);
-        subset = new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses);
+    public CombinedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
+        mixed = new MixedContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod, callsites);
+        subset = new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, callsites);
 
         typeFactory = new CombinerTypeFactory(globalObject, libraryClasses, options, nativeClasses, this);
         mixed.typeFactory = typeFactory;
@@ -94,5 +96,10 @@ public class CombinedContextSensitiveTypeAnalysis implements TypeAnalysis {
     @Override
     public UnionFindSolver getSolver() {
         return mixed.solver;
+    }
+
+    @Override
+    public Snap.Obj getGlobalObject() {
+        return mixed.getGlobalObject();
     }
 }

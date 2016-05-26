@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
     private UnionRecursivelyTypeAnalysis typeAnalysis;
 
-    public UnionRecursivelyConstraintVisitor(Snap.Obj closure, UnionFindSolver solver, Map<Identifier, UnionNode> identifierMap, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HeapValueFactory heapFactory, NativeTypeFactory nativeTypeFactory, UnionRecursivelyTypeAnalysis typeAnalysis) {
-        super(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, typeAnalysis, nativeTypeFactory, false);
+    public UnionRecursivelyConstraintVisitor(Snap.Obj closure, UnionFindSolver solver, Map<Identifier, UnionNode> identifierMap, FunctionNode functionNode, Map<Snap.Obj, FunctionNode> functionNodes, HeapValueFactory heapFactory, NativeTypeFactory nativeTypeFactory, UnionRecursivelyTypeAnalysis typeAnalysis, Map<AstNode, Set<Snap.Obj>> callsites) {
+        super(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, typeAnalysis, nativeTypeFactory, false, callsites);
         this.typeAnalysis = typeAnalysis;
     }
 
@@ -130,7 +130,7 @@ public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new UnionRecursivelyConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, this.nativeTypeFactory, typeAnalysis).visit(function.getBody());
+            new UnionRecursivelyConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, this.nativeTypeFactory, typeAnalysis, callsites).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
@@ -192,7 +192,7 @@ public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap);
+            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
             for (Snap.Obj closure : functionClosures) {
                 if (closure.function.type.equals("bind")) {
                     closure = closure.function.target;
@@ -277,7 +277,7 @@ public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap);
+            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
 
             for (Snap.Obj closure : functions) {
                 switch (closure.function.type) {

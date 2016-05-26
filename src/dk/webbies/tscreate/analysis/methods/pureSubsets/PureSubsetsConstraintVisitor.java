@@ -33,6 +33,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
     private final PrimitiveNode.Factory primitiveFactory;
     private HeapValueFactory heapFactory;
     private NativeTypeFactory nativeTypeFactory;
+    private final Map<AstNode, Set<Snap.Obj>> callsites;
 
     public PureSubsetsConstraintVisitor(
             Snap.Obj closure,
@@ -42,7 +43,8 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
             Map<Snap.Obj, FunctionNode> functionNodes,
             HeapValueFactory heapFactory,
             TypeAnalysis typeAnalysis,
-            NativeTypeFactory nativeTypeFactory) {
+            NativeTypeFactory nativeTypeFactory,
+            Map<AstNode, Set<Snap.Obj>> callsites) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -52,6 +54,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
         this.typeAnalysis = typeAnalysis;
         this.nativeTypeFactory = nativeTypeFactory;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
+        this.callsites = callsites;
     }
 
     @Override
@@ -263,7 +266,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
     @Override
     public UnionNode visit(RegExpExpression regExp) {
-        return regExp.toNewExpression().accept(this);
+        return new HasPrototypeNode(solver, (Snap.Obj) ((Snap.Obj) typeAnalysis.getGlobalObject().getProperty("RegExp").value).getProperty("prototype").value);
     }
 
     @Override
@@ -294,7 +297,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new PureSubsetsConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory).visit(function.getBody());
+            new PureSubsetsConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, callsites).visit(function.getBody());
             solver.union(result, primitiveFactory.function());
             return result;
         }
@@ -355,11 +358,14 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
     @Override
     public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
-        dynamicAccessExpression.getLookupKey().accept(this);
+        UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
         UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
-        UnionNode returnType = new EmptyNode(solver);
+        UnionNode returnType = primitiveFactory.nonVoid();
 
         solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
+        MixedConstraintVisitor.DynamicAccessResolver dynamicAccessResolver = new MixedConstraintVisitor.DynamicAccessResolver(operand, lookupKey, returnType, typeAnalysis.getGlobalObject(), solver);
+        solver.runWhenChanged(operand, dynamicAccessResolver);
+        solver.runWhenChanged(lookupKey, dynamicAccessResolver);
         return returnType;
     }
 
@@ -502,7 +508,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functionClosures = MixedConstraintVisitor.getFunctionClosures(function, seenHeap);
+            Collection<Snap.Obj> functionClosures = MixedConstraintVisitor.getFunctionClosures(function, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
             for (Snap.Obj closure : functionClosures) {
                 while (closure.function.type.equals("bind")) {
                     closure = closure.function.target;
@@ -592,7 +598,7 @@ public class PureSubsetsConstraintVisitor implements ExpressionVisitor<UnionNode
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functions = MixedConstraintVisitor.getFunctionClosures(functionNode, seenHeap);
+            Collection<Snap.Obj> functions = MixedConstraintVisitor.getFunctionClosures(functionNode, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
 
             for (Snap.Obj closure : functions) {
                 switch (closure.function.type) {

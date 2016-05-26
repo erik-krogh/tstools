@@ -22,8 +22,8 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
     private HashMap<Snap.Obj, LibraryClass> libraryClasses;
     private Snap.Obj globalObject;
 
-    public UnionEverythingTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses) {
-        super(libraryClasses, options, globalObject, nativeClasses, false);
+    public UnionEverythingTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
+        super(libraryClasses, options, globalObject, nativeClasses, false, callsites);
         this.libraryClasses = libraryClasses;
         this.globalObject = globalObject;
         this.heapFactory = new HeapValueNode.Factory(globalObject, solver, libraryClasses, this);
@@ -32,7 +32,7 @@ public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
 
     @Override
     public void applyConstraints(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Map<Identifier, UnionNode> identifierMap) {
-        new UnionEverythingConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory).visit(closure.function.astNode);
+        new UnionEverythingConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory, callsites).visit(closure.function.astNode);
     }
 
     @Override

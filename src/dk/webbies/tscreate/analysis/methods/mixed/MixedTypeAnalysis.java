@@ -36,9 +36,11 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     protected final List<Snap.Obj> nativeFunctions;
     public boolean analysisFinished = false;
     private final boolean upperBoundMethod;
+    protected Map<AstNode, Set<Snap.Obj>> callsites;
 
-    public MixedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod) {
+    public MixedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
         this.upperBoundMethod = upperBoundMethod;
+        this.callsites = callsites;
         this.solver = new UnionFindSolver(this);
         this.libraryClasses = libraryClasses;
         this.options = options;
@@ -75,6 +77,11 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     }
 
     @Override
+    public Snap.Obj getGlobalObject() {
+        return globalObject;
+    }
+
+    @Override
     public Map<Snap.Obj, LibraryClass> getLibraryClasses() {
         return libraryClasses;
     }
@@ -107,7 +114,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
         int counter = 0;
         for (Snap.Obj closure : functionNodes.keySet()) {
-//            System.out.println("Analysis: " + ++counter + "/" + functionNodes.size());
+            System.out.println("Analysis: " + ++counter + "/" + functionNodes.size());
             FunctionNode functionNode = functionNodes.get(closure);
 
             if (options.skipStaticAnalysisWhenPossible) {
@@ -145,7 +152,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
 
         counter = 0;
         for (Map.Entry<Snap.Obj, FunctionNode> entry : functionNodes.entrySet()) {
-//            System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
+            System.out.println("Inference: " + ++counter + "/" + functionNodes.size());
             Snap.Obj closure = entry.getKey();
             FunctionNode functionNode = entry.getValue();
 
@@ -295,7 +302,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     }
 
     public void applyConstraints(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Map<Identifier, UnionNode> identifierMap) {
-        new MixedConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory, this.upperBoundMethod).visit(closure.function.astNode);
+        new MixedConstraintVisitor(closure, solver, identifierMap, functionNode, functionNodes, heapFactory, this, this.nativeTypeFactory, this.upperBoundMethod, callsites).visit(closure.function.astNode);
     }
 
     protected void addCallsToFunction(Snap.Obj closure, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {

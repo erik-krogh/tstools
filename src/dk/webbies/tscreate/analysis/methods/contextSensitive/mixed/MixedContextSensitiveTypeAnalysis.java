@@ -8,6 +8,7 @@ import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser.NativeClassesMap;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.paser.AST.AstNode;
 import dk.webbies.tscreate.paser.AST.Identifier;
 
 import java.util.*;
@@ -19,8 +20,8 @@ import java.util.*;
 public class MixedContextSensitiveTypeAnalysis extends MixedTypeAnalysis {
     private boolean upperBoundMethod;
 
-    public MixedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod) {
-        super(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod);
+    public MixedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
+        super(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod, callsites);
         this.upperBoundMethod = upperBoundMethod;
     }
 
