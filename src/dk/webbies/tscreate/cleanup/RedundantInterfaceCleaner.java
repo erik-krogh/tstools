@@ -97,6 +97,6 @@ public class RedundantInterfaceCleaner {
         options.evaluationSkipExcessProperties = false;
         options.evaluationAnyAreOK = true;
         Set<Type> nativeTypes = nativeClasses.nativeTypes();
-        return DeclarationEvaluator.evaluate(options, truthDeclaration, candidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
+        return DeclarationEvaluator.getEvaluation(options, truthDeclaration, candidateDeclaration, nativeTypes, nativeClasses, nativeClasses, nativeClasses);
     }
 }

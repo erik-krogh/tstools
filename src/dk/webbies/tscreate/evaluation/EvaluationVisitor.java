@@ -85,7 +85,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 callback.run();
                 return;
             }
-        } else if (seen.contains(new Pair<>(realType, myType))) {
+        } else if (seen.contains(new Pair<>(realType, myType)) && !(realType instanceof SimpleType) && !(myType instanceof SimpleType)) {
             callback.run();
             return;
         }
@@ -171,7 +171,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             Type left = typePair.left;
             Type right = typePair.right;
 
-            Evaluation subEvaluation = new Evaluation(options.debugPrint);
+            Evaluation subEvaluation = Evaluation.create(options.debugPrint);
             EvaluationVisitor visitor = new EvaluationVisitor(depth, subEvaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options);
 
             visitor.nextDepth(left, right, () -> {
@@ -273,8 +273,16 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         addTruePositive(arg.prefix, depth, "this was an interface, that is right.");
         InterfaceType my = (InterfaceType) type;
 
-        Set<InterfaceType> realWithBase = DeclarationParser.getWithBaseTypes(real);
-        Set<InterfaceType> myWithBase = DeclarationParser.getWithBaseTypes(my);
+        Collection<InterfaceType> realWithBase;
+        Collection<InterfaceType> myWithBase;
+        if (arg.prefix.endsWith("[constructor].[return]")) {
+            realWithBase = Collections.singletonList(real);
+            myWithBase = Collections.singletonList(my);
+        } else {
+            realWithBase = DeclarationParser.getWithBaseTypes(real);
+            myWithBase = DeclarationParser.getWithBaseTypes(my);
+        }
+
 
         // Properties
         Multimap<String, Type> realProperties = getProperties(realWithBase);
@@ -287,13 +295,13 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(depth, arg.callback), queue);
         for (String property : properties) {
             if (!myProperties.containsKey(property)) {
-                addFalseNegative(arg.prefix, depth + 1, "property missing: " + property);
+                addFalseNegative(arg.prefix + "." + property, depth + 1, "property missing: " + property);
             } else if (!realProperties.containsKey(property)) {
                 if (!options.evaluationSkipExcessProperties) {
-                    addFalsePositive(arg.prefix, depth + 1, "excess property: " + property);
+                    addFalsePositive(arg.prefix + "." + property, depth + 1, "excess property: " + property);
                 }
             } else {
-                addTruePositive(arg.prefix, depth + 1, "property " + property + " was there, which was correct");
+                addTruePositive(arg.prefix + "." + property, depth + 1, "property " + property + " was there, which was correct");
                 Collection<Type> myTypes = myProperties.get(property);
                 Collection<Type> realTypes = realProperties.get(property);
                 Type realType = toPossibleUnion(realTypes);
@@ -334,7 +342,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
     }
 
-    private Type getPossible(Set<InterfaceType> types, Function<InterfaceType, Type> getter) {
+    private Type getPossible(Collection<InterfaceType> types, Function<InterfaceType, Type> getter) {
         for (InterfaceType type : types) {
             if (getter.apply(type) != null) {
                 return getter.apply(type);
@@ -343,7 +351,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return null;
     }
 
-    private List<Signature> getSignatures(Set<InterfaceType> types, Function<InterfaceType, List<Signature>> getter) {
+    private List<Signature> getSignatures(Collection<InterfaceType> types, Function<InterfaceType, List<Signature>> getter) {
         ArrayList<Signature> result = new ArrayList<>();
         for (InterfaceType type : types) {
             List<Signature> signatures = getter.apply(type);
@@ -354,7 +362,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return result;
     }
 
-    private Multimap<String, Type> getProperties(Set<InterfaceType> types) {
+    private Multimap<String, Type> getProperties(Collection<InterfaceType> types) {
         Multimap<String, Type> result = ArrayListMultimap.create();
         for (InterfaceType type : types) {
             for (Map.Entry<String, Type> entry : type.getDeclaredProperties().entrySet()) {
@@ -394,7 +402,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             Signature mySignature = mySignatures.get(0);
 
             if (!skipReturn) {
-                if (!(options.evaluationMethod == Options.EvaluationMethod.ONLY_HEAP && !isConstructor)) {
+                if (!(options.evaluationMethod == Options.EvaluationMethod.ONLY_HEAP)) {
                     nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[return]");
                 }
             }

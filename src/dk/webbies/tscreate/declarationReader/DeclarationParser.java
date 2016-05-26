@@ -23,13 +23,13 @@ import static dk.webbies.tscreate.jsnap.Snap.Value;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static NativeClassesMap parseNatives(Obj global, Environment env, List<String> dependencyDeclarations, HashMap<Obj, LibraryClass> libraryClasses) {
+    public static NativeClassesMap parseNatives(Obj global, Environment env, List<String> dependencyDeclarations, HashMap<Obj, LibraryClass> libraryClasses, Obj emptySnap) {
         SpecReader spec = getTypeSpecification(env, dependencyDeclarations);
 
-        return parseNatives(global, libraryClasses, spec);
+        return parseNatives(global, libraryClasses, spec, emptySnap);
     }
 
-    public static NativeClassesMap parseNatives(Obj global, HashMap<Obj, LibraryClass> libraryClasses, SpecReader spec) {
+    public static NativeClassesMap parseNatives(Obj global, Map<Obj, LibraryClass> libraryClasses, SpecReader spec, Obj emptySnap) {
 
         fixBind(global);
 
@@ -37,14 +37,32 @@ public class DeclarationParser {
 
         Map<Obj, Type> prototypes = new HashMap<>();
         Map<Obj, String> namedObjects = new HashMap<>();
-        Obj globalProto = global;
-        while (globalProto != null) {
-            spec.getGlobal().accept(new MarkNativesVisitor(prototypes, typeNames, namedObjects), globalProto);
-            if (globalProto == globalProto.prototype) {
-                break;
+        {
+            Obj globalProto = global;
+            while (globalProto != null) {
+                spec.getGlobal().accept(new MarkNativesVisitor(prototypes, typeNames, namedObjects), globalProto);
+                if (globalProto == globalProto.prototype) {
+                    break;
+                }
+                globalProto = globalProto.prototype;
             }
-            globalProto = globalProto.prototype;
         }
+
+        /*{
+            Map<Obj, Type> prototypesInEmpty = new HashMap<>();
+            Map<Obj, String> namedObjectsInEmpty = new HashMap<>();
+            Obj globalProto = emptySnap;
+            while (globalProto != null) {
+                spec.getGlobal().accept(new MarkNativesVisitor(prototypesInEmpty, typeNames, namedObjectsInEmpty), globalProto);
+                if (globalProto == globalProto.prototype) {
+                    break;
+                }
+                globalProto = globalProto.prototype;
+            }
+            namedObjects = namedObjects.entrySet().stream().filter(entry -> {
+                return namedObjectsInEmpty.values().contains(entry.getValue());
+            }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }*/
 
         for (Map.Entry<Type, String> entry : typeNames.entrySet()) {
             String name = entry.getValue();

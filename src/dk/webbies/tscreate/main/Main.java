@@ -20,12 +20,14 @@ import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionRecursively.UnionRecursivelyTypeAnalysis;
 import dk.webbies.tscreate.cleanup.RedundantInterfaceCleaner;
+import dk.webbies.tscreate.evaluation.DebugEvaluation;
 import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
 import dk.webbies.tscreate.evaluation.Evaluation;
 import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.paser.AST.AstNode;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
@@ -47,7 +49,15 @@ import static java.util.Arrays.asList;
 public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // TODO: Write section of lower fixpoint != better result.
+        // TODO: Lower fixpoint != better result
+        // TODO: Synopsis.tex, look at the 4 sent by Anders.
+        // TODO: What can i do that TSCheck cannot. List the problems
+        // TODO: The need for updated .d.ts files is huge, libraries are not small 1 man project, but big collabarative project.
+        // TODO: What changes between version, look at a diff at a couple of libraries between the current version, and a version from 1-2 years ago.
+        // TODO: Collateral Evolution
+
+        // TODO: Oracle chooses which of the analysis-methods to use pr. signature. This does not result in significant improvement.
+
 
         // Benchmarks, where I can run ALL the static analysis methods.
         List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars, underscore, please, path, p2, mathjax, materialize, photoswipe, peer, createjs, yui);
@@ -56,60 +66,20 @@ public class Main {
 
         long start = System.currentTimeMillis();
         try {
+            allBenchmarks.remove(PIXI_1_3);
+            allBenchmarks.remove(PIXI_2_2);
 
-//            knockout.getOptions().staticMethod = MIXED;
-//            runAnalysis(knockout);
+//            CompareWithNew.compareWithNew(PIXI);
 
-//            allBenchmarks.remove(test);
-//            CompareMethods.compareConfigs(stableBenches, genUpperLowerCuts(UPPER_LOWER), 20 * 60 * 1000);
-//            CompareMethods.compareConfigs(stableBenches, genUpperLowerCuts(UNIFICATION), 20 * 60 * 1000);
-//            CompareMethods.compareConfigs(allBenchmarks, genUpperLowerCuts(UPPER_LOWER), 20 * 60 * 1000);
-//            CompareMethods.compareConfigs(allBenchmarks, genUpperLowerCuts(UNIFICATION), 20 * 60 * 1000);
-//            allBenchmarks.remove(ember);
+            three.getOptions().staticMethod = MIXED;
+            three.getOptions().combineInterfacesAfterAnalysis = false;
+            three.getOptions().debugPrint = false;
+            three.getOptions().createInstances = false;
+            runAnalysis(three);
+
+//            makeSuperEval(yui);
+
 //            CompareMethods.compareConfigs(allBenchmarks, genCompareMethods(), 20 * 60 * 1000);
-
-            for (BenchMark benchmark : allBenchmarks) {
-                benchmark.getOptions().useJSDoc = true;
-                benchmark.getOptions().staticMethod = ANDERSON;
-                runAnalysis(benchmark);
-            }
-
-
-//            jQuery.getOptions().staticMethod = UPPER_LOWER;
-//            runAnalysis(jQuery);
-
-
-//            CompareMethods.compareMethods(asList(test), asList(COMBINED, UPPER), 20 * 60 * 1000);
-
-
-
-//            test.getOptions().staticMethod = MIXED;
-//            runAnalysis(test);
-
-//            test.getOptions().staticMethod = COMBINED;
-//            leaflet.getOptions().combineInterfacesAfterAnalysis = false;
-//            runAnalysis(test);
-//
-            /*allBenchmarks.forEach(bench -> {
-                bench.getOptions().combineInterfacesAfterAnalysis = false;
-                bench.getOptions().evaluationMethod = Options.EvaluationMethod.ONLY_FUNCTIONS;
-            });
-            CompareMethods.compareMethods(allBenchmarks, allMethods, 20 * 60 * 1000, false);
-
-            allBenchmarks.remove(sugar);
-            allBenchmarks.forEach(bench -> {
-                bench.getOptions().combineInterfacesAfterAnalysis = false;
-                bench.getOptions().evaluationMethod = Options.EvaluationMethod.ONLY_HEAP;
-            });
-            CompareMethods.compareMethods(allBenchmarks, allMethods, 20 * 60 * 1000, false);
-
-            allBenchmarks.remove(sugar);
-            allBenchmarks.forEach(bench -> {
-                bench.getOptions().combineInterfacesAfterAnalysis = false;
-                bench.getOptions().evaluationMethod = Options.EvaluationMethod.EVERYTHING;
-            });
-            CompareMethods.compareMethods(allBenchmarks, allMethods, 20 * 60 * 1000, false);*/
-
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -138,10 +108,6 @@ public class Main {
                 }),
                 new CompareMethods.Config("lower_upper", (options) -> {
                     options.staticMethod = UPPER_LOWER;
-                }),
-                new CompareMethods.Config("lower_upper_cut", (options) -> {
-                    options.staticMethod = UPPER_LOWER;
-                    options.disableFlowFromCallsiteToReturn = true;
                 }));
     }
 
@@ -169,11 +135,45 @@ public class Main {
         );
     }
 
-    public static Score runAnalysis(BenchMark benchMark) throws IOException {
+    public static Score makeSuperEval(BenchMark benchMark) throws IOException {
+        if (benchMark.declarationPath == null) {
+            throw new RuntimeException();
+        }
+
+        Set<String> resultingDeclarationFilePaths = new HashSet<>();
+        for (Options.StaticAnalysisMethod method : Options.StaticAnalysisMethod.values()) {
+            benchMark.getOptions().staticMethod = method;
+
+            String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
+
+            if (new File(resultDeclarationFilePath).exists()) {
+                resultingDeclarationFilePaths.add(resultDeclarationFilePath);
+            }
+        }
+
+        System.out.println("Getting a \"best\" possible evaluation from " + resultingDeclarationFilePaths.size() + " evaluations");
+
+        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
+
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), AST);
+        Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.getOptions(), benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
+
+        HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract();
+
+        Evaluation evaluation = new DeclarationEvaluator(resultingDeclarationFilePaths, benchMark, globalObject, libraryClasses, benchMark.getOptions(), emptySnap).getEvaluation();
+
+        System.out.println(evaluation);
+        System.out.println("best        : " + Util.toFixed(evaluation.score().fMeasure, 4) + " - " + Util.toFixed(evaluation.score().recall, 4) + " - " + Util.toFixed(evaluation.score().precision, 4));
+
+        return null;
+
+    }
+
+    public static Evaluation runAnalysis(BenchMark benchMark) throws IOException {
         String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
 
         if (new File(resultDeclarationFilePath).exists()) {
-            return null;
+//            return null;
         }
 
         System.out.println("Analysing " + benchMark.name + " - output: " + resultDeclarationFilePath);
@@ -183,30 +183,32 @@ public class Main {
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), AST);
         Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.getOptions(), benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
 
-        if (benchMark.getOptions().recordCalls && globalObject.getProperty("__jsnap__callsitesToClosures") != null) {
-            JSNAPUtil.getCallsitesToClosures((Snap.Obj) globalObject.getProperty("__jsnap__callsitesToClosures").value, AST);
+        Map<AstNode, Set<Snap.Obj>> callsites = Collections.EMPTY_MAP;
+        if (benchMark.getOptions().recordCalls && globalObject.getProperty("__jsnap__callsitesToClosures") != null && true /* TODO: OPTION */) {
+            callsites = JSNAPUtil.getCallsitesToClosures((Snap.Obj) globalObject.getProperty("__jsnap__callsitesToClosures").value, AST);
         }
 
         HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract();
 
-        NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses);
+        NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses, emptySnap);
 
-        TypeAnalysis typeAnalysis = createTypeAnalysis(benchMark, globalObject, libraryClasses, nativeClasses);
+        TypeAnalysis typeAnalysis = createTypeAnalysis(benchMark, globalObject, libraryClasses, nativeClasses, callsites);
         typeAnalysis.analyseFunctions();
 
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         if (benchMark.getOptions().combineInterfacesAfterAnalysis) {
+            System.out.println("Cleaning up types");
             new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
         }
 
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions()).print();
-//        System.out.println(printedDeclaration);
+        System.out.println(printedDeclaration);
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
         if (benchMark.getOptions().filterResultBasedOnDeclaration) { // A little weird, because I'm reusing some code that also parses the resulting declaration. // TODO: Less weird.
-            InterfaceType real = new DeclarationEvaluator.ParsedDeclaration(resultDeclarationFilePath, benchMark, globalObject, libraryClasses).invoke().getRealDeclaration();
+            InterfaceType real = new DeclarationEvaluator.ParsedDeclaration(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, emptySnap).invoke().getRealDeclaration();
             declaration = declaration.entrySet().stream().filter(entry -> real.getDeclaredProperties().keySet().contains(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, (entry) -> {
                 return entry.getValue().accept(new FilterDeclarationVisitor(), real.getDeclaredProperties().get(entry.getKey()));
             }));
@@ -216,15 +218,10 @@ public class Main {
         }
 
         Evaluation evaluation = null;
-        String debugString = null;
         if (benchMark.declarationPath != null) {
-            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.getOptions()).evaluate();
+            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.getOptions(), emptySnap).getEvaluation();
 
             System.out.println(evaluation);
-
-            if (benchMark.getOptions().debugPrint) {
-                debugString = evaluation.debugPrint();
-            }
         }
 
         if (benchMark.getOptions().tsCheck) {
@@ -234,46 +231,54 @@ public class Main {
         }
 
         if (evaluation == null) {
-            return new Score(Double.NaN, Double.NaN, Double.NaN);
+            return null;
         } else {
             String evaluationString = "\n\n/*\n" + evaluation.toString() + "\n*/\n";
-            if (debugString != null) {
-                evaluationString = "\n\n/*\n" + debugString + "\n\n*/\n" + evaluationString;
+            if (benchMark.getOptions().debugPrint) {
+                evaluationString = "\n\n/*\n" + ((DebugEvaluation)evaluation).debugPrint() + "\n\n*/\n" + evaluationString;
             }
             Util.writeFile(resultDeclarationFilePath, printedDeclaration + evaluationString);
-            return evaluation.score();
+            return evaluation;
         }
     }
 
-    public static Score runEvaluation(BenchMark benchMark) throws IOException {
+    public static Score getScore(BenchMark benchMark) throws IOException {
         String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
-
-        if (!new File(resultDeclarationFilePath).exists()) {
-            return new Score(-1, -1, -1);
-        }
 
         Score readFromFile = readScoreFromDeclaration(resultDeclarationFilePath);
         if (readFromFile != null) {
             return readFromFile;
         }
 
-        System.out.println("Get evaluation of " + benchMark.name + " - from: " + resultDeclarationFilePath);
-
-        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), AST);
-
-        HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract();
-
-        Evaluation evaluation = null;
-        if (benchMark.declarationPath != null) {
-            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.getOptions()).evaluate();
-        }
+        Evaluation evaluation = getEvaluation(benchMark);
 
         if (evaluation == null) {
             throw new RuntimeException();
         } else {
             return evaluation.score();
         }
+    }
+
+    static Evaluation getEvaluation(BenchMark benchMark) throws IOException {
+        String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
+
+        System.out.println("Get evaluation of " + benchMark.name + " - from: " + resultDeclarationFilePath);
+
+        if (!new File(resultDeclarationFilePath).exists()) {
+            return runAnalysis(benchMark);
+        }
+
+        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), AST);
+        Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.getOptions(), benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
+
+        HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract();
+
+        Evaluation evaluation = null;
+        if (benchMark.declarationPath != null) {
+            evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.getOptions(), emptySnap).getEvaluation();
+        }
+        return evaluation;
     }
 
     private static Score readScoreFromDeclaration(String filePath) throws FileNotFoundException {
@@ -348,38 +353,38 @@ public class Main {
         return benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
     }
 
-    private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
+    private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
         switch (benchMark.getOptions().staticMethod) {
             case MIXED:
-                return new MixedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false);
+                return new MixedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false, callsites);
             case UPPER:
-                return new MixedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true);
+                return new MixedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true, callsites);
             case ANDERSON:
-                return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses);
+                return new PureSubsetsTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, callsites);
             case UNIFICATION:
-                return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses);
+                return new UnionEverythingTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, callsites);
             case UNIFICATION_CONTEXT_SENSITIVE:
-                return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses);
+                return new UnionRecursivelyTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, callsites);
             case OLD_UNIFICATION_CONTEXT_SENSITIVE:
                 return new OldTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses);
             case OLD_UNIFICATION:
                 return new OldTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses);
             case COMBINED:
-                return new CombinedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false);
+                return new CombinedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false, callsites);
             case UPPER_LOWER:
-                return new CombinedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true);
+                return new CombinedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true, callsites);
             case MIXED_CONTEXT_SENSITIVE:
-                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false);
+                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false, callsites);
             case LOWER_CONTEXT_SENSITIVE:
-                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true);
+                return new MixedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true, callsites);
             case ANDERSON_CONTEXT_SENSITIVE:
-                return new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses);
+                return new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, callsites);
             case COMBINED_CONTEXT_SENSITIVE:
-                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false);
+                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false, callsites);
             case UPPER_LOWER_CONTEXT_SENSITIVE:
-                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true);
+                return new CombinedContextSensitiveTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, true, callsites);
             case NONE:
-                return new NoTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false);
+                return new NoTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false, callsites);
             default:
                 throw new RuntimeException("I don't even know this static analysis method. ");
         }
@@ -404,7 +409,7 @@ public class Main {
     private static void benchAll() throws IOException {
         double combinedScore = 0;
         for (BenchMark benchmark : allBenchmarks) {
-            double score = runAnalysis(benchmark).fMeasure;
+            double score = runAnalysis(benchmark).score().fMeasure;
             if (!Double.isNaN(score)) {
                 combinedScore += score;
             }
@@ -474,7 +479,7 @@ public class Main {
         AtomicReference<Score> result = new AtomicReference<>(null);
         Thread benchThread = new Thread(() -> {
             try {
-                result.set(runAnalysis(benchMark));
+                result.set(runAnalysis(benchMark).score());
             } catch (IOException e) {
                 e.printStackTrace();
                 System.exit(1);

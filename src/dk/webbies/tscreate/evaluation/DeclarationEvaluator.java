@@ -1,12 +1,13 @@
 package dk.webbies.tscreate.evaluation;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import dk.au.cs.casa.typescript.SpecReader;
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.BenchMark;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
-import dk.webbies.tscreate.util.Pair;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
@@ -21,12 +22,12 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 public class DeclarationEvaluator {
     private final Evaluation evaluation;
     private Snap.Obj global;
-    private HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    private Map<Snap.Obj, LibraryClass> libraryClasses;
 
-    public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options) {
+    public DeclarationEvaluator(String resultFilePath, BenchMark benchMark, Snap.Obj global, Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj emptySnap) {
         this.global = global;
         this.libraryClasses = libraryClasses;
-        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark, global, libraryClasses).invoke();
+        ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark, global, libraryClasses, emptySnap).invoke();
         InterfaceType realDeclaration = parsedDeclaration.getRealDeclaration();
         InterfaceType myDeclaration = parsedDeclaration.getMyDeclaration();
         Set<String> properties = parsedDeclaration.getProperties();
@@ -48,27 +49,70 @@ public class DeclarationEvaluator {
 
         switch (options.evaluationMethod) {
             case EVERYTHING:
-                this.evaluation = evaluate(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+                this.evaluation = getEvaluation(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
                 break;
             case ONLY_FUNCTIONS:
                 this.evaluation = evaluateStartingFromFunctions(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
                 break;
             case ONLY_HEAP:
-                this.evaluation = evaluate(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+                this.evaluation = getEvaluation(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
                 break;
             default:
                 throw new RuntimeException();
         }
     }
 
-    public static Evaluation evaluate(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
+    public DeclarationEvaluator(Collection<String> resultFilePaths, BenchMark benchMark, Snap.Obj globalObject, Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj emptySnap) {
+        assert options.evaluationMethod == Options.EvaluationMethod.ONLY_FUNCTIONS;
+        this.global = globalObject;
+        this.libraryClasses = libraryClasses;
+
+        Multimap<String, Evaluation> evaluations = ArrayListMultimap.create();
+
+        for (String resultFilePath : resultFilePaths) {
+            ParsedDeclaration parsedDeclaration = new ParsedDeclaration(resultFilePath, benchMark, global, libraryClasses, emptySnap).invoke();
+            InterfaceType realDeclaration = parsedDeclaration.getRealDeclaration();
+            InterfaceType myDeclaration = parsedDeclaration.getMyDeclaration();
+            Set<String> properties = parsedDeclaration.getProperties();
+            Set<Type> nativeTypesInReal = parsedDeclaration.getNativeTypesInReal();
+
+            // Globally variables of type "any", are really just modules, that contain nothing but interfaces (in other words, they don't exist. )
+            Iterator<Type> realGlobalIterator = realDeclaration.getDeclaredProperties().values().iterator();
+            while (realGlobalIterator.hasNext()) {
+                Type next = realGlobalIterator.next();
+                if (next instanceof SimpleType && ((SimpleType) next).getKind() == SimpleTypeKind.Any) {
+                    realGlobalIterator.remove();
+                }
+            }
+
+
+            realDeclaration.getDeclaredProperties().keySet().retainAll(properties);
+            myDeclaration.getDeclaredProperties().keySet().retainAll(properties);
+
+            Map<String, Evaluation> functionEvaluations = getFunctionEvaluations(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+
+            functionEvaluations.entrySet().stream().forEach(entry -> evaluations.put(entry.getKey(), entry.getValue()));
+        }
+
+        Evaluation evaluation = Evaluation.create(options.debugPrint);
+
+        for (Map.Entry<String, Collection<Evaluation>> entry : evaluations.asMap().entrySet()) {
+            Evaluation functionEval = entry.getValue().stream().max((a, b) -> Double.compare(a.score().fMeasure, b.score().fMeasure)).get();
+            evaluation.add(functionEval);
+        }
+
+        this.evaluation = evaluation;
+
+    }
+
+    public static Evaluation getEvaluation(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
         PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
         AtomicBoolean hasRun = new AtomicBoolean(false);
         Runnable doneCallback = () -> {
             assert queue.isEmpty();
             hasRun.set(true);
         };
-        Evaluation evaluation = new Evaluation(options.debugPrint);
+        Evaluation evaluation = Evaluation.create(options.debugPrint);
         queue.add(new EvaluationQueueElement(0, () -> {
             EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
             realDeclaration.accept(visitor, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
@@ -96,6 +140,16 @@ public class DeclarationEvaluator {
     }
 
     public static Evaluation evaluateStartingFromFunctions(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
+        Map<String, Evaluation> evaluations = getFunctionEvaluations(options, realDeclaration, myDeclaration, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses);
+
+        Evaluation evaluation = Evaluation.create(options.debugPrint);
+
+        evaluations.values().forEach(evaluation::add);
+
+        return evaluation;
+    }
+
+    private static Map<String, Evaluation> getFunctionEvaluations(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
         PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
         AtomicBoolean hasRun = new AtomicBoolean(false);
         WhenAllDone whenAllDone = new WhenAllDone(new EvaluationQueueElement(0, () -> {
@@ -103,17 +157,21 @@ public class DeclarationEvaluator {
             hasRun.set(true);
         }), queue);
 
-        Evaluation evaluation = new Evaluation(options.debugPrint);
 
         SignatureCollector collector = new SignatureCollector();
         realDeclaration.accept(collector, new SignatureCollector.Arg(myDeclaration, "window"));
         Set<FunctionToEvaluate> functions = collector.getFunctions();
         Set<FunctionToEvaluate> constructors = collector.getConstructors();
 
+        Map<String, Evaluation> evaluations = new HashMap<>();
+
         for (FunctionToEvaluate toEvaluate : functions) {
             Runnable callback = whenAllDone.newSubCallback();
 
             queue.add(new EvaluationQueueElement(0, () -> {
+                Evaluation evaluation = Evaluation.create(options.debugPrint);
+                assert !evaluations.containsKey(toEvaluate.path);
+                evaluations.put(toEvaluate.path, evaluation);
                 EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
                 visitor.evaluateFunctions(new ArrayList<>(toEvaluate.myFunc), new ArrayList<>(toEvaluate.realFunc), callback, false, toEvaluate.path, false);
             }));
@@ -123,6 +181,9 @@ public class DeclarationEvaluator {
             Runnable callback = whenAllDone.newSubCallback();
 
             queue.add(new EvaluationQueueElement(0, () -> {
+                Evaluation evaluation = Evaluation.create(options.debugPrint);
+                assert !evaluations.containsKey(toEvaluate.path);
+                evaluations.put(toEvaluate.path, evaluation);
                 EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
                 visitor.evaluateFunctions(new ArrayList<>(toEvaluate.myFunc), new ArrayList<>(toEvaluate.realFunc), callback, false, toEvaluate.path, true);
             }));
@@ -136,7 +197,7 @@ public class DeclarationEvaluator {
         }
 
         assert hasRun.get();
-        return evaluation;
+        return evaluations;
     }
 
 
@@ -156,15 +217,16 @@ public class DeclarationEvaluator {
     }
 
 
-    public Evaluation evaluate() {
+    public Evaluation getEvaluation() {
         return evaluation;
     }
 
     public static class ParsedDeclaration {
+        private final Snap.Obj emptySnap;
         private String resultFilePath;
         private BenchMark benchMark;
         private final Snap.Obj global;
-        private final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+        private final Map<Snap.Obj, LibraryClass> libraryClasses;
         private AtomicReference<SpecReader> realDeclaration;
         private AtomicReference<SpecReader> myDeclaration;
         private Set<String> properties;
@@ -173,11 +235,12 @@ public class DeclarationEvaluator {
         private NativeClassesMap myNativeClasses;
         private NativeClassesMap emptyNativeClasses;
 
-        public ParsedDeclaration(String resultFilePath, BenchMark benchMark, Snap.Obj global, HashMap<Snap.Obj, LibraryClass> libraryClasses) {
+        public ParsedDeclaration(String resultFilePath, BenchMark benchMark, Snap.Obj global, Map<Snap.Obj, LibraryClass> libraryClasses, Snap.Obj emptySnap) {
             this.resultFilePath = resultFilePath;
             this.benchMark = benchMark;
             this.global = global;
             this.libraryClasses = libraryClasses;
+            this.emptySnap = emptySnap;
         }
 
         public InterfaceType getRealDeclaration() {
@@ -236,9 +299,9 @@ public class DeclarationEvaluator {
             Set<String> existingProperties = ((InterfaceType)emptyDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
             properties.removeAll(existingProperties);
 
-            realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get());
-            this.emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get());
-            myNativeClasses = parseNatives(global, libraryClasses, myDeclaration.get());
+            realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get(), emptySnap);
+            this.emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get(), emptySnap);
+            myNativeClasses = parseNatives(global, libraryClasses, myDeclaration.get(),  emptySnap);
 
 
             nativeTypesInReal = new HashSet<>();

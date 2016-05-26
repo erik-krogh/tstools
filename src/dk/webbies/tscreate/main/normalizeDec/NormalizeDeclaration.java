@@ -16,6 +16,7 @@ import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
 import dk.webbies.tscreate.main.Main;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
@@ -54,9 +55,11 @@ public class NormalizeDeclaration {
 
         global.setDeclaredProperties(global.getDeclaredProperties().entrySet().stream().filter(entry -> !existingKeys.contains(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
-        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, Main.getScript(benchMark)).toTSCreateAST());
+        FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, Main.getScript(benchMark)).toTSCreateAST();
+        Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), AST);
+        Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.getOptions(), benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
 
-        DeclarationParser.NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract());
+        DeclarationParser.NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract(), emptySnap);
 
         TypeReducer reducer = new TypeReducer(globalObject, nativeClasses, benchMark.getOptions());
         ToDeclarationTypeVisitor converter = new ToDeclarationTypeVisitor(typeNames, DeclarationParser.getTypeNamesMap(spec), reducer);

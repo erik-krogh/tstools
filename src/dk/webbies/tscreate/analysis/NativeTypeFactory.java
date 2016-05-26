@@ -194,7 +194,7 @@ public class NativeTypeFactory {
             switch (t.getKind()) {
                 case Any: return Arrays.asList(primitiveFactory.any());
                 case Boolean: return Arrays.asList(primitiveFactory.bool());
-                case Enum: throw new UnsupportedOperationException();
+                case Enum: return Arrays.asList(primitiveFactory.number()); // TODO: Enums?
                 case Number: return Arrays.asList(primitiveFactory.number());
                 case String: return Arrays.asList(primitiveFactory.string());
                 case Undefined: return Arrays.asList(primitiveFactory.undefined());

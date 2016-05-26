@@ -125,13 +125,7 @@ public class CompareMethods {
                 }
 
                 println("With method: " + config.prettyString);
-                Score score = Main.runEvaluation(benchMark);
-                if (score.precision == -1) {
-                    score = Main.runAnalysisWithTimeout(benchMark, timeout);
-                }
-                if (score == null) {
-                    score = new Score(-1, -1, -1);
-                }
+                Score score = Main.getScore(benchMark);
                 scores.put(config, score);
             }
 
