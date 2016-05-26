@@ -2,6 +2,7 @@ package dk.webbies.tscreate.evaluation;
 
 import dk.webbies.tscreate.Score;
 import dk.webbies.tscreate.util.Util;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.*;
 import java.util.function.Function;
@@ -9,55 +10,18 @@ import java.util.function.Function;
 /**
  * Created by Erik Krogh Kristensen on 14-12-2015.
  */
-public class Evaluation {
+public abstract class Evaluation<T> {
     int maxDepth = -1;
-    Map<Integer, Object> falseNegatives = new HashMap<>();
-    Map<Integer, Object> falsePositives = new HashMap<>();
-    Map<Integer, Object> truePositive = new HashMap<>();
 
-    private final boolean debug;
+    Map<Integer, T> falseNegatives = new HashMap<>();
+    Map<Integer, T> falsePositives = new HashMap<>();
+    Map<Integer, T> truePositive = new HashMap<>();
 
-    public Evaluation(boolean debugPrint) {
-        this.debug = debugPrint;
-    }
+    public abstract void addFalseNegative(int depth, String description, String typePath);
 
-    private void add(int depth, Map<Integer, Object> map, String description, String typePath) {
-        if (debug) {
-            description += " Path: " + typePath;
-        } else {
-            description = null;
-        }
-        add(depth, map, description);
-    }
+    public abstract void addFalsePositive(int depth, String description, String typePath);
 
-    private void add(int depth, Map<Integer, Object> map, String description) {
-        maxDepth = Math.max(depth, maxDepth);
-        if (map.containsKey(depth)) {
-            if (debug) {
-                ((List<String>)map.get(depth)).add(description);
-            } else {
-                map.put(depth, ((Integer) map.get(depth) + 1));
-            }
-        } else {
-            if (debug) {
-                map.put(depth, new ArrayList<>(Arrays.asList(description)));
-            } else {
-                map.put(depth, 1);
-            }
-        }
-    }
-
-    public void addFalseNegative(int depth, String description, String typePath) {
-        add(depth, falseNegatives, description, typePath);
-    }
-
-    public void addFalsePositive(int depth, String description, String typePath) {
-        add(depth, falsePositives, description, typePath);
-    }
-
-    public void addTruePositive(int depth, String description, String typePath) {
-        add(depth, truePositive, description, typePath);
-    }
+    public abstract void addTruePositive(int depth, String description, String typePath);
 
     public String print() {
         StringBuilder builder = new StringBuilder();
@@ -85,25 +49,7 @@ public class Evaluation {
         return print();
     }
 
-    private int IFound(int depth) {
-        return get(depth, this.truePositive) + get(depth, this.falsePositives);
-    }
-
-    private int thereIs(int depth) {
-        return get(depth, this.truePositive) + get(depth, this.falseNegatives);
-    }
-
-    private int get(int depth, Map<Integer, Object> map) {
-        if (map.containsKey(depth)) {
-            if (debug) {
-                return ((List<String>)map.get(depth)).size();
-            } else {
-                return (Integer) map.get(depth);
-            }
-        } else {
-            return 0;
-        }
-    }
+    abstract int get(int depth, Map<Integer, T> map);
 
     double precision(int depth) {
         double fp = get(depth, this.falsePositives);
@@ -146,7 +92,7 @@ public class Evaluation {
         return new Score(fMeasure, precision, recall);
     }
 
-    private double score(Function<Integer, Double> function, boolean makeMax1) {
+    protected double score(Function<Integer, Double> function, boolean makeMax1) {
         double result = 0;
         double measure = 1;
         int startDepth = 1;
@@ -165,51 +111,19 @@ public class Evaluation {
         return result;
     }
 
-    public void add(Evaluation evaluation) {
-        this.maxDepth = Math.max(this.maxDepth, evaluation.maxDepth);
-        addAll(evaluation.falseNegatives, this.falseNegatives);
-        addAll(evaluation.falsePositives, this.falsePositives);
-        addAll(evaluation.truePositive, this.truePositive);
-    }
+    public abstract void add(Evaluation evaluation);
 
-    private void addAll(Map<Integer, Object> from, Map<Integer, Object> to) {
-        from.forEach((depth, list) -> {
-            if (debug) {
-                ((List<String>)list).forEach(description -> {
-                    add(depth, to, description);
-                });
-            } else {
-                for (Map.Entry<Integer, Object> entry : from.entrySet()) {
-                    Integer entryDepth = entry.getKey();
-                    Integer count = (Integer) entry.getValue();
-                    if (to.containsKey(entryDepth)) {
-                        to.put(entryDepth, ((Integer)to.get(entryDepth)) + count);
-                    } else {
-                        to.put(entryDepth, count);
-                    }
-                }
+    public abstract int getTruePositives(int depth);
 
-            }
-        });
-    }
+    abstract int IFound(int depth);
 
-    public int getTruePositives(int depth) {
-        return get(depth, this.truePositive);
-    }
+    abstract int thereIs(int depth);
 
-    public String debugPrint() {
-        assert this.debug;
-        StringBuilder builder = new StringBuilder();
-        HashMap<Integer, Object> falses = new HashMap<>();
-        addAll(this.falseNegatives, falses);
-        addAll(this.falsePositives, falses);
-        ArrayList<Integer> keys = new ArrayList<>(falses.keySet());
-        Collections.sort(keys);
-        for (Integer key : keys) {
-            builder.append("\n\n\n").append("Depth: ").append(key).append("\n");
-            List<String> list = (List<String>) falses.get(key);
-            list.forEach((string) -> builder.append(string).append("\n"));
+    public static Evaluation create(boolean debugPrint) {
+        if (debugPrint) {
+            return new DebugEvaluation();
+        } else {
+            return new FastEvaluation();
         }
-        return builder.toString();
     }
 }
