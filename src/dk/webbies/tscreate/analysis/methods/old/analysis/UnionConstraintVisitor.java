@@ -4,6 +4,7 @@ import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
+import dk.webbies.tscreate.analysis.methods.mixed.MixedConstraintVisitor;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -284,7 +285,7 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(RegExpExpression regExp) {
-        return regExp.toNewExpression().accept(this);
+        return new HasPrototypeNode(solver, (Snap.Obj) ((Snap.Obj) typeAnalysis.getGlobalObject().getProperty("RegExp").value).getProperty("prototype").value);
     }
 
     @Override
@@ -383,12 +384,15 @@ public class UnionConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
         UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
         UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
-        UnionNode returnType = new EmptyNode(solver);
+        UnionNode returnType = primitiveFactory.nonVoid();
 
         solver.union(lookupKey, primitiveFactory.stringOrNumber());
         DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(solver, returnType, lookupKey);
         solver.union(operand, dynamicAccessNode);
         solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
+        MixedConstraintVisitor.DynamicAccessResolver dynamicAccessResolver = new MixedConstraintVisitor.DynamicAccessResolver(operand, lookupKey, returnType, typeAnalysis.globalObject, solver);
+        solver.runWhenChanged(operand, dynamicAccessResolver);
+        solver.runWhenChanged(lookupKey, dynamicAccessResolver);
         return returnType;
     }
 

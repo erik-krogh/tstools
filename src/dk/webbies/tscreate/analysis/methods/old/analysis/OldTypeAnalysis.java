@@ -194,6 +194,11 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
         return solver;
     }
 
+    @Override
+    public Snap.Obj getGlobalObject() {
+        return globalObject;
+    }
+
     public static class ProgramPoint {
         private Snap.Obj function;
         private AstNode astNode;

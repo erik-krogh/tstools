@@ -10,14 +10,10 @@ import java.util.Arrays;
  */
 public class RegExpExpression extends Expression {
     private final String value;
-    private final NewExpression newExp;
 
     public RegExpExpression(SourceRange loc, String value) {
         super(loc);
         this.value = value;
-
-        String regExp = value.substring(1, value.length() - 1);
-        this.newExp = new NewExpression(location, new Identifier(location, "RegExp"), Arrays.asList(new StringLiteral(location, regExp)));
     }
 
     public String getValue() {
@@ -27,9 +23,5 @@ public class RegExpExpression extends Expression {
     @Override
     public <T> T accept(ExpressionVisitor<T> visitor) {
         return visitor.visit(this);
-    }
-
-    public NewExpression toNewExpression() {
-        return this.newExp;
     }
 }

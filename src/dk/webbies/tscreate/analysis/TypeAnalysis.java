@@ -28,4 +28,6 @@ public interface TypeAnalysis {
     HeapValueFactory getHeapFactory();
 
     UnionFindSolver getSolver();
+
+    Snap.Obj getGlobalObject();
 }

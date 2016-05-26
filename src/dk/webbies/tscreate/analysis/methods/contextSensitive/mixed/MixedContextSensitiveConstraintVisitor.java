@@ -290,7 +290,7 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
 
     @Override
     public UnionNode visit(RegExpExpression regExp) {
-        return regExp.toNewExpression().accept(this);
+        return new HasPrototypeNode(solver, (Snap.Obj) ((Snap.Obj) typeAnalysis.getGlobalObject().getProperty("RegExp").value).getProperty("prototype").value);
     }
 
     @Override
@@ -389,12 +389,15 @@ public class MixedContextSensitiveConstraintVisitor implements ExpressionVisitor
     public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
         UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
         UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
-        UnionNode returnType = new EmptyNode(solver);
+        UnionNode returnType = primitiveFactory.nonVoid();
 
         solver.union(lookupKey, primitiveFactory.stringOrNumber());
         DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(solver, returnType, lookupKey);
         solver.union(operand, dynamicAccessNode);
         solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
+        MixedConstraintVisitor.DynamicAccessResolver dynamicAccessResolver = new MixedConstraintVisitor.DynamicAccessResolver(operand, lookupKey, returnType, typeAnalysis.getGlobalObject(), solver);
+        solver.runWhenChanged(operand, dynamicAccessResolver);
+        solver.runWhenChanged(lookupKey, dynamicAccessResolver);
         return returnType;
     }
 

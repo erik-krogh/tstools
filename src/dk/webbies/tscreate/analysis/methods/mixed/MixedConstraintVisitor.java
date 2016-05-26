@@ -1,9 +1,11 @@
 package dk.webbies.tscreate.analysis.methods.mixed;
 
 import dk.au.cs.casa.typescript.types.Signature;
+import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
+import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -31,6 +33,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     protected final Map<Snap.Obj, FunctionNode> functionNodes;
     protected MixedTypeAnalysis typeAnalysis;
     protected final PrimitiveNode.Factory primitiveFactory;
+    protected Map<AstNode, Set<Snap.Obj>> callsites;
     protected HeapValueFactory heapFactory;
     protected NativeTypeFactory nativeTypeFactory;
     protected final boolean upperBoundMethod; // If true, then behave like normal "lower-bound".
@@ -44,7 +47,8 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             HeapValueFactory heapFactory,
             MixedTypeAnalysis typeAnalysis,
             NativeTypeFactory nativeTypeFactory,
-            boolean upperBoundMethod) {
+            boolean upperBoundMethod, Map<AstNode,
+            Set<Snap.Obj>> callsites) {
         this.closure = closure;
         this.solver = solver;
         this.heapFactory = heapFactory;
@@ -55,6 +59,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         this.nativeTypeFactory = nativeTypeFactory;
         this.upperBoundMethod = upperBoundMethod;
         this.primitiveFactory = heapFactory.getPrimitivesFactory();
+        this.callsites = callsites;
     }
 
     @Override
@@ -289,7 +294,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(RegExpExpression regExp) {
-        return regExp.toNewExpression().accept(this);
+        return new HasPrototypeNode(solver, (Snap.Obj) ((Snap.Obj) typeAnalysis.getGlobalObject().getProperty("RegExp").value).getProperty("prototype").value);
     }
 
     @Override
@@ -320,7 +325,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(function.getName().accept(this), result);
                 function.getName().accept(this);
             }
-            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, MixedConstraintVisitor.this.upperBoundMethod).visit(function.getBody());
+            new MixedConstraintVisitor(this.closure, this.solver, this.identifierMap, result, this.functionNodes, heapFactory, typeAnalysis, this.nativeTypeFactory, MixedConstraintVisitor.this.upperBoundMethod, callsites).visit(function.getBody());
             for (int i = 0; i < function.getArguments().size(); i++) {
                 UnionNode parameter = function.getArguments().get(i).accept(this);
                 solver.union(parameter, result.arguments.get(i), primitiveFactory.nonVoid());
@@ -388,13 +393,64 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
         UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
         UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
-        UnionNode returnType = new EmptyNode(solver);
+        UnionNode returnType = primitiveFactory.nonVoid();
 
         solver.union(lookupKey, primitiveFactory.stringOrNumber());
         DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(solver, returnType, lookupKey);
         solver.union(operand, dynamicAccessNode);
         solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
+        DynamicAccessResolver dynamicAccessResolver = new DynamicAccessResolver(operand, lookupKey, returnType, typeAnalysis.getGlobalObject(), solver);
+        solver.runWhenChanged(operand, dynamicAccessResolver);
+        solver.runWhenChanged(lookupKey, dynamicAccessResolver);
         return returnType;
+    }
+
+    public static final class DynamicAccessResolver implements Runnable {
+        private final UnionNode operand;
+        private final UnionNode lookupKey;
+        private final UnionNode returnType;
+        private Snap.Obj arrayProto;
+        private UnionFindSolver solver;
+
+        public DynamicAccessResolver(UnionNode operand, UnionNode lookupKey, UnionNode returnType, Snap.Obj globalObject, UnionFindSolver solver) {
+            this.operand = operand;
+            this.lookupKey = lookupKey;
+            this.returnType = returnType;
+            this.arrayProto = (Snap.Obj) ((Snap.Obj) globalObject.getProperty("Array").value).getProperty("prototype").value;
+            this.solver = solver;
+        }
+
+        private boolean isArrayAccess = false;
+
+        @Override
+        public void run() {
+            boolean run = false;
+            if (isArrayAccess) {
+                run = true;
+            } else {
+                boolean hasArray = UnionFeature.getReachable(operand.getFeature()).stream().anyMatch(feature -> feature.getPrototypes().contains(arrayProto));
+                boolean looksUpNumber = UnionFeature.getReachable(lookupKey.getFeature()).stream().anyMatch(feature -> feature.getPrimitives().contains(PrimitiveDeclarationType.Type.NUMBER));
+                if (looksUpNumber || hasArray) {
+                    isArrayAccess = true;
+                    run = true;
+                }
+            }
+            if (run) {
+                List<UnionNode> newIncludes = new ArrayList<>();
+                UnionFeature.getReachable(operand.getFeature()).forEach(feature -> {
+                    feature.getObjectFields().forEach((fieldName, fieldType) -> {
+                        if (Util.isInteger(fieldName)) {
+                            if (!returnType.getUnionClass().includes.contains(fieldType)) {
+                                newIncludes.add(fieldType);
+                            }
+                        }
+                    });
+                });
+                if (!newIncludes.isEmpty()) {
+                    solver.union(returnType, new IncludeNode(solver, newIncludes));
+                }
+            }
+        }
     }
 
     @Override
@@ -592,7 +648,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap);
+            Collection<Snap.Obj> functionClosures = getFunctionClosures(function, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
             for (Snap.Obj closure : functionClosures) {
                 if (closure.function.type.equals("bind")) {
                     closure = closure.function.target;
@@ -642,7 +698,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     @SuppressWarnings("Duplicates")
     private final class CallGraphResolver implements Runnable {
         List<UnionNode> args;
-        private final Expression callExpression; // Useful for debugging.
+        private final Expression callExpression;
         boolean constructorCalls;
         private HashSet<Snap.Obj> seenHeap = new HashSet<>();
         private final FunctionNode functionNode;
@@ -685,7 +741,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
         @Override
         public void run() {
-            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap);
+            Collection<Snap.Obj> functions = getFunctionClosures(functionNode, seenHeap, callExpression, callsites, typeAnalysis.getOptions());
 
             for (Snap.Obj closure : functions) {
                 switch (closure.function.type) {
@@ -822,7 +878,17 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return result;
     }
 
-    public static Collection<Snap.Obj> getFunctionClosures(UnionNode function, Set<Snap.Obj> seenHeap) {
+    public static Collection<Snap.Obj> getFunctionClosures(UnionNode function, Set<Snap.Obj> seenHeap, Expression callExpression, Map<AstNode, Set<Snap.Obj>> callsites, Options options) {
+        if (options.useCallsiteInformation && callExpression != null && callsites.containsKey(callExpression)) {
+            if (seenHeap.isEmpty()) {
+                Set<Snap.Obj> closures = callsites.get(callExpression);
+                seenHeap.addAll(closures);
+                return closures;
+            } else {
+                return Collections.EMPTY_SET;
+            }
+        }
+
         Set<Snap.Obj> result = new HashSet<>();
         for (UnionFeature feature : UnionFeature.getReachable(function.getFeature())) {
             if (feature.getFunctionFeature() != null) {
