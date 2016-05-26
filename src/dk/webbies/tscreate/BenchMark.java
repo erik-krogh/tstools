@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import static dk.webbies.tscreate.main.Main.LanguageLevel;
 import static dk.webbies.tscreate.main.Main.LanguageLevel.ES5;
 import static dk.webbies.tscreate.main.Main.LanguageLevel.ES6;
-import static dk.webbies.tscreate.util.Util.evaluate;
 
 /**
  * Created by Erik Krogh Kristensen on 18-11-2015.
@@ -23,12 +22,14 @@ import static dk.webbies.tscreate.util.Util.evaluate;
 public class BenchMark {
     public final String name;
     public final String scriptPath;
+    public BenchMark newScript = null;
     public String declarationPath;
     private Options options;
     public final LanguageLevel languageLevel;
     public final List<Dependency> dependencies = new ArrayList<>();
     public List<String> testFiles = new ArrayList<>();
     private Supplier<BenchMark> supplier;
+
 
     public void resetOptions() {
         List<BenchMark> allBenches = BenchMark.allBenchmarks;
@@ -102,10 +103,31 @@ public class BenchMark {
         return bench;
     });
 
+    public static final BenchMark PIXI_1_3 = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = false;
+        return new BenchMark("Pixi.js (1.3)", "tests/pixi13/pixi.js", "tests/pixi13/pixi.d.ts", options, ES5);
+    });
+
+    public static final BenchMark PIXI_2_2 = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = false;
+        return new BenchMark("Pixi.js (2.2)", "tests/pixi22/pixi.js", "tests/pixi22/pixi.d.ts", options, ES5);
+    });
+
+    public static final BenchMark PIXI_4_0 = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = false;
+        BenchMark bench = new BenchMark("Pixi.js (4.0 (dev))", "tests/pixi40/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
+        return bench;
+    });
+
     public static final BenchMark PIXI = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
-        return new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
+        BenchMark bench = new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
+        bench.newScript = BenchMark.PIXI_4_0;
+        return bench;
     });
 
     public static final BenchMark FabricJS = gen(() -> {
@@ -416,9 +438,10 @@ public class BenchMark {
         Options options = new Options();
 //        options.debugPrint = true;
         options.recordCalls = true;
-        options.createInstances = false;
+        options.createInstances = true;
 
         BenchMark bench = new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
+        bench.dependencies.add(new Dependency("tests/test/empty.js", "tests/test/dependency.d.ts"));
 //        bench.dependencies.add(new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts"));
 //        bench.dependencies.add(Dependency.jQuery);
 //        bench.dependencies.add(Dependency.underscore);
