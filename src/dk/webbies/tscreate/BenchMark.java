@@ -135,6 +135,13 @@ public class BenchMark {
         return new BenchMark("Fabric.js", "tests/fabric/fabric.js", "tests/fabric/fabricjs.d.ts", options, ES5);
     });
 
+    public static final BenchMark FabricJSOld = gen(() -> {
+        Options options = new Options();
+        BenchMark bench = new BenchMark("Fabric.js", "tests/fabricold/fabric.js", "tests/fabricold/fabric.d.ts", options, ES5);
+        bench.newScript = FabricJS;
+        return bench;
+    });
+
     public static final BenchMark jQuery = gen(() -> {
         Options options = new Options();
         options.recordCalls = true;
@@ -169,6 +176,15 @@ public class BenchMark {
 //        bench.testFiles.add("tests/jquery/tests/tween.js");
 //        bench.testFiles.add("tests/jquery/tests/wrap.js");
 
+        return bench;
+    });
+
+    public static final BenchMark jQuery17 = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = true;
+        options.asyncTest = true;
+        BenchMark bench = new BenchMark("jQuery", "tests/jquery17/jquery.js", "tests/jquery17/jquery.d.ts", options, ES5);
+        bench.newScript = jQuery;
         return bench;
     });
 
