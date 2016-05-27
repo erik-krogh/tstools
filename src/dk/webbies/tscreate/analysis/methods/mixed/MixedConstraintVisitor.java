@@ -440,7 +440,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 UnionFeature.getReachable(operand.getFeature()).forEach(feature -> {
                     feature.getObjectFields().forEach((fieldName, fieldType) -> {
                         if (Util.isInteger(fieldName)) {
-                            if (!returnType.getUnionClass().includes.contains(fieldType)) {
+                            if (returnType.getUnionClass().includes == null || !returnType.getUnionClass().includes.contains(fieldType)) {
                                 newIncludes.add(fieldType);
                             }
                         }
