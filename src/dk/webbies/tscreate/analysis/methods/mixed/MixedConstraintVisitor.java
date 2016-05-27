@@ -602,15 +602,17 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
             prototypes.removeAll(seenPrototypes);
             seenPrototypes.addAll(prototypes);
-            for (Snap.Obj prototype : new HashSet<>(prototypes)) {
+            for (Snap.Obj prototype : prototypes) {
                 UnionNode propertyNode = lookupProperty(prototype, member.getProperty());
-                solver.union(memberNode, propertyNode);
+                if (propertyNode != null) {
+                    solver.union(memberNode, propertyNode);
+                }
             }
         }
 
         private UnionNode lookupProperty(Snap.Value value, String name) {
             if (value == null || !(value instanceof Snap.Obj)) {
-                return new EmptyNode(solver);
+                return null;
             }
             Snap.Obj obj = (Snap.Obj) value;
             Snap.Property property = obj.getProperty(name);
@@ -621,7 +623,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             if (obj != obj.prototype) {
                 return lookupProperty(obj.prototype, name);
             } else {
-                return new EmptyNode(solver);
+                return null;
             }
         }
     }
