@@ -22,7 +22,6 @@ import static dk.webbies.tscreate.main.Main.LanguageLevel.ES6;
 public class BenchMark {
     public final String name;
     public final String scriptPath;
-    public BenchMark newScript = null;
     public String declarationPath;
     private Options options;
     public final LanguageLevel languageLevel;
@@ -126,7 +125,6 @@ public class BenchMark {
         Options options = new Options();
         options.recordCalls = false;
         BenchMark bench = new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
-        bench.newScript = BenchMark.PIXI_4_0;
         return bench;
     });
 
@@ -138,7 +136,6 @@ public class BenchMark {
     public static final BenchMark FabricJSOld = gen(() -> {
         Options options = new Options();
         BenchMark bench = new BenchMark("Fabric.js", "tests/fabricold/fabric.js", "tests/fabricold/fabric.d.ts", options, ES5);
-        bench.newScript = FabricJS;
         return bench;
     });
 
@@ -184,7 +181,6 @@ public class BenchMark {
         options.recordCalls = true;
         options.asyncTest = true;
         BenchMark bench = new BenchMark("jQuery", "tests/jquery17/jquery.js", "tests/jquery17/jquery.d.ts", options, ES5);
-        bench.newScript = jQuery;
         return bench;
     });
 
@@ -349,9 +345,39 @@ public class BenchMark {
         return new BenchMark("RequireJS", "tests/requireJS/require.js", "tests/requireJS/require.d.ts", options, ES5);
     });
 
-    public static final BenchMark handlebars = gen(() -> {
+    public static final BenchMark handlebars10 = gen(() -> {
         Options options = new Options();
-        return new BenchMark("Handlebars.js", "tests/handlebars/handlebars-v4.0.5.js", "tests/handlebars/handlebars.d.ts", options, ES5);
+        return new BenchMark("Handlebars.js", "tests/handlebars/version10/handlebars.js", null, options, ES5);
+    });
+
+    public static final BenchMark handlebars11 = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("Handlebars.js", "tests/handlebars/version11/handlebars.js", "tests/handlebars/version11/handlebars.d.ts", options, ES5);
+    });
+
+    public static final BenchMark handlebars12 = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("Handlebars.js", "tests/handlebars/version12/handlebars.js", null, options, ES5);
+    });
+
+    public static final BenchMark handlebars13 = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("Handlebars.js", "tests/handlebars/version13/handlebars.js", null, options, ES5);
+    });
+
+    public static final BenchMark handlebars20 = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("Handlebars.js", "tests/handlebars/version20/handlebars.js", null, options, ES5);
+    });
+
+    public static final BenchMark handlebars30 = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("Handlebars.js", "tests/handlebars/version30/handlebars.js", "tests/handlebars/version30/handlebars.d.ts", options, ES5);
+    });
+
+    public static final BenchMark handlebars4 = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("Handlebars.js", "tests/handlebars/handlebars-v4.0.5.js", null, options, ES5);
     });
 
     public static final BenchMark box2d = gen(() -> {
