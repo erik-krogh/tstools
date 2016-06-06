@@ -92,6 +92,54 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
     }
 
     @Override
+    public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
+        UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
+        UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
+        UnionNode returnType = primitiveFactory.nonVoid();
+
+        solver.union(lookupKey, primitiveFactory.stringOrNumber());
+        DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(solver, returnType, lookupKey);
+        solver.union(operand, dynamicAccessNode);
+        solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
+        DynamicAccessResolver dynamicAccessResolver = new DynamicAccessResolver(operand, lookupKey, returnType, solver);
+        solver.runWhenChanged(operand, dynamicAccessResolver);
+        solver.runWhenChanged(lookupKey, dynamicAccessResolver);
+        return returnType;
+    }
+
+    public static final class DynamicAccessResolver implements Runnable {
+        private final UnionNode operand;
+        private final UnionNode lookupKey;
+        private final UnionNode returnType;
+        private UnionFindSolver solver;
+
+        public DynamicAccessResolver(UnionNode operand, UnionNode lookupKey, UnionNode returnType, UnionFindSolver solver) {
+            this.operand = operand;
+            this.lookupKey = lookupKey;
+            this.returnType = returnType;
+            this.solver = solver;
+        }
+
+        @Override
+        public void run() {
+            // I simply refuse to unify every string-property of any object. It absolutely destroys the analysis.
+            List<UnionNode> newIncludes = new ArrayList<>();
+            UnionFeature.getReachable(operand.getFeature()).forEach(feature -> {
+                feature.getObjectFields().forEach((fieldName, fieldType) -> {
+                    if (Util.isInteger(fieldName)) {
+                        if (returnType.getUnionClass().includes == null || !returnType.getUnionClass().includes.contains(fieldType)) {
+                            newIncludes.add(fieldType);
+                        }
+                    }
+                });
+            });
+            if (!newIncludes.isEmpty()) {
+                solver.union(returnType, newIncludes);
+            }
+        }
+    }
+
+    @Override
     public UnionNode visit(Return aReturn) {
         if (aReturn.getExpression() instanceof UnaryExpression && ((UnaryExpression) aReturn.getExpression()).getOperator() == Operator.VOID) {
             // This is a return;

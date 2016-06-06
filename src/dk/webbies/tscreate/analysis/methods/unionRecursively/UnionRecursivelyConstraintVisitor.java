@@ -3,6 +3,7 @@ package dk.webbies.tscreate.analysis.methods.unionRecursively;
 import dk.webbies.tscreate.analysis.HeapValueFactory;
 import dk.webbies.tscreate.analysis.NativeTypeFactory;
 import dk.webbies.tscreate.analysis.methods.mixed.MixedConstraintVisitor;
+import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingConstraintVisitor;
 import dk.webbies.tscreate.analysis.unionFind.*;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
@@ -100,6 +101,23 @@ public class UnionRecursivelyConstraintVisitor extends MixedConstraintVisitor {
         }
         solver.union(aReturn.getExpression().accept(this), functionNode.returnNode, primitiveFactory.nonVoid());
         return null;
+    }
+
+
+    @Override
+    public UnionNode visit(DynamicAccessExpression dynamicAccessExpression) {
+        UnionNode lookupKey = dynamicAccessExpression.getLookupKey().accept(this);
+        UnionNode operand = dynamicAccessExpression.getOperand().accept(this);
+        UnionNode returnType = primitiveFactory.nonVoid();
+
+        solver.union(lookupKey, primitiveFactory.stringOrNumber());
+        DynamicAccessNode dynamicAccessNode = new DynamicAccessNode(solver, returnType, lookupKey);
+        solver.union(operand, dynamicAccessNode);
+        solver.runWhenChanged(operand, new IncludesWithFieldsResolver(operand, DynamicAccessNode.LOOKUP_EXP_KEY, DynamicAccessNode.RETURN_TYPE_KEY));
+        UnionEverythingConstraintVisitor.DynamicAccessResolver dynamicAccessResolver = new UnionEverythingConstraintVisitor.DynamicAccessResolver(operand, lookupKey, returnType, solver);
+        solver.runWhenChanged(operand, dynamicAccessResolver);
+        solver.runWhenChanged(lookupKey, dynamicAccessResolver);
+        return returnType;
     }
 
     @Override
