@@ -407,15 +407,15 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 }
             }
 
+            if (realSignature.getParameters().size() > mySignature.getParameters().size()) {
+                addFalseNegative(prefix + ".[" + description + "]", depth + 1, "to few arguments for function");
+            } else if (mySignature.getParameters().size() > realSignature.getParameters().size()) {
+                addFalsePositive(prefix + ".[" + description + "]", depth + 1, "to many arguments for function");
+            }
+
             if (options.evaluationMethod != Options.EvaluationMethod.ONLY_HEAP) {
-                for (int i = 0; i < Math.max(realSignature.getParameters().size(), mySignature.getParameters().size()); i++) {
-                    if (i >= realSignature.getParameters().size()) {
-                        addFalsePositive(prefix + ".[" + description + "]", depth + 1, "to many arguments for function");
-                    } else if (i >= mySignature.getParameters().size()) {
-                        addFalseNegative(prefix + ".[" + description + "]", depth + 1, "to few arguments for function");
-                    } else {
-                        nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[arg" + i + "]");
-                    }
+                for (int i = 0; i < Math.min(realSignature.getParameters().size(), mySignature.getParameters().size()); i++) {
+                    nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[arg" + i + "]");
                 }
             }
 
@@ -427,7 +427,11 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             realUnion.setElements(realSignatures.stream().map(sig -> {
                 InterfaceType inter = new InterfaceType();
                 inter.setDeclaredProperties(Collections.EMPTY_MAP);
-                inter.setDeclaredCallSignatures(Arrays.asList(sig));
+                if (isConstructor) {
+                    inter.setDeclaredConstructSignatures(Arrays.asList(sig));
+                } else {
+                    inter.setDeclaredCallSignatures(Arrays.asList(sig));
+                }
                 return inter;
             }).collect(Collectors.toList()));
 
@@ -436,7 +440,11 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             myUnion.setElements(mySignatures.stream().map(sig -> {
                 InterfaceType inter = new InterfaceType();
                 inter.setDeclaredProperties(Collections.EMPTY_MAP);
-                inter.setDeclaredCallSignatures(Arrays.asList(sig));
+                if (isConstructor) {
+                    inter.setDeclaredConstructSignatures(Arrays.asList(sig));
+                } else {
+                    inter.setDeclaredCallSignatures(Arrays.asList(sig));
+                }
                 return inter;
             }).collect(Collectors.toList()));
 
