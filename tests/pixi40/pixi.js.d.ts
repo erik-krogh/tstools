@@ -930,7 +930,7 @@ declare module PIXI {
         unload(): void;
 
     }
-    export abstract class ObjectRenderer extends WebGLManager {
+    export class ObjectRenderer extends WebGLManager {
 
         constructor(renderer: WebGLRenderer);
 
