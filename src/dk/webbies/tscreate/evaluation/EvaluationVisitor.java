@@ -70,7 +70,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
     }
 
     private static int runCounter = 0;
-    private void nextDepth(Type realType, Type myType, Runnable callback, String prefix) {
+    private void nextDepth(Type realType, Type myType, Runnable callback, String prefix, int extraDepth) {
         String myTypeName = myNativeClasses.nameFromType(myType);
         String realTypeName = realNativeClasses.nameFromType(realType);
         if (myTypeName != null && realTypeName != null && myTypeName.equals(realTypeName) && emptyNativeClasses.typeFromName(myTypeName) != null) {
@@ -79,21 +79,20 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             return;
         }
 
-
-        if (options.maxEvaluationDepth != null) {
-            if (depth > options.maxEvaluationDepth) {
+        Runnable runNextDepth = () -> {
+            if (options.maxEvaluationDepth != null) {
+                if (depth > options.maxEvaluationDepth) {
+                    callback.run();
+                    return;
+                }
+            } else if (seen.contains(new Pair<>(realType, myType)) && !(realType instanceof SimpleType) && !(myType instanceof SimpleType)) {
                 callback.run();
                 return;
             }
-        } else if (seen.contains(new Pair<>(realType, myType)) && !(realType instanceof SimpleType) && !(myType instanceof SimpleType)) {
-            callback.run();
-            return;
-        }
-        if (options.maxEvaluationDepth == null) {
-            seen.add(new Pair<>(realType, myType));
-        }
+            if (options.maxEvaluationDepth == null) {
+                seen.add(new Pair<>(realType, myType));
+            }
 
-        Runnable runNextDepth = () -> {
             if (realType instanceof UnionType && myType instanceof UnionType) {
                 ArrayList<Pair<Type, Type>> typePairs = new ArrayList<>();
 
@@ -107,24 +106,24 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 findBest(typePairs, (evaluation) -> {
                     EvaluationVisitor.this.evaluation.add(evaluation);
                     callback.run();
-                }, prefix);
+                }, prefix, extraDepth);
             } else if (myType instanceof UnionType) {
                 findBest(((UnionType) myType).getElements().stream().map(elem -> new Pair<>(realType, elem)).collect(Collectors.toList()),
                         (evaluation) -> {
                             EvaluationVisitor.this.evaluation.add(evaluation);
                             callback.run();
-                        }, prefix);
+                        }, prefix, extraDepth);
             } else if (realType instanceof UnionType) {
                 findBest(((UnionType) realType).getElements().stream().map(elem -> new Pair<>(elem, myType)).collect(Collectors.toList()),
                         (evaluation) -> {
                             EvaluationVisitor.this.evaluation.add(evaluation);
                             callback.run();
-                        }, prefix);
+                        }, prefix, extraDepth);
             } else {
-                analyzeNextDepth(realType, myType, callback, prefix);
+                analyzeNextDepth(realType, myType, callback, prefix, extraDepth);
             }
         };
-        queue.add(new EvaluationQueueElement(depth, runNextDepth));
+        queue.add(new EvaluationQueueElement(depth + extraDepth, runNextDepth));
     }
 
 
@@ -163,7 +162,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         return result;
     }
 
-    private void findBest(Collection<Pair<Type, Type>> typePairs, Consumer<Evaluation> callback, String prefix) {
+    private void findBest(Collection<Pair<Type, Type>> typePairs, Consumer<Evaluation> callback, String prefix, int extraDepth) {
         AtomicInteger downCounter = new AtomicInteger(typePairs.size());
         List<Evaluation> evaluations = new ArrayList<>();
 
@@ -195,12 +194,12 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                     });
                     callback.accept(bestEvaluation);
                 }
-            }, prefix);
+            }, prefix, extraDepth);
         }
 
     }
 
-    private void analyzeNextDepth(Type realType, Type myType, Runnable callback, String prefix) {
+    private void analyzeNextDepth(Type realType, Type myType, Runnable callback, String prefix, int extraDepth) {
         assert !(realType instanceof UnionType);
         assert !(myType instanceof UnionType);
 
@@ -219,7 +218,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
         }
 
 
-        EvaluationVisitor visitor = new EvaluationVisitor(depth + 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options);
+        EvaluationVisitor visitor = new EvaluationVisitor(depth + extraDepth, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options);
         realType.accept(visitor, new Arg(myType, callback, prefix));
     }
 
@@ -306,7 +305,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 Collection<Type> realTypes = realProperties.get(property);
                 Type realType = toPossibleUnion(realTypes);
                 Type myType = toPossibleUnion(myTypes);
-                nextDepth(realType, myType, whenAllDone.newSubCallback(), arg.prefix + "." + property);
+                nextDepth(realType, myType, whenAllDone.newSubCallback(), arg.prefix + "." + property, 1);
             }
         }
 
@@ -403,7 +402,11 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
             if (!skipReturn) {
                 if (!(options.evaluationMethod == Options.EvaluationMethod.ONLY_HEAP)) {
-                    nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[return]");
+                    int extraDepth = 1;
+                    if (!isConstructor && options.evaluationPushFunctionReturnsDown) {
+                        extraDepth = 1000;
+                    }
+                    nextDepth(realSignature.getResolvedReturnType(), mySignature.getResolvedReturnType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[return]", extraDepth);
                 }
             }
 
@@ -413,9 +416,13 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
                 addFalsePositive(prefix + ".[" + description + "]", depth + 1, "to many arguments for function");
             }
 
-            if (options.evaluationMethod != Options.EvaluationMethod.ONLY_HEAP) {
+            if (options.evaluationMethod != Options.EvaluationMethod.ONLY_HEAP && options.evaluateArguments) {
                 for (int i = 0; i < Math.min(realSignature.getParameters().size(), mySignature.getParameters().size()); i++) {
-                    nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[arg" + i + "]");
+                    int extraDepth = 1;
+                    if (options.evaluationPushFunctionReturnsDown) {
+                        extraDepth = 1000;
+                    }
+                    nextDepth(realSignature.getParameters().get(i).getType(), mySignature.getParameters().get(i).getType(), whenAllDone.newSubCallback(), prefix + ".[" + description + "].[arg" + i + "]", extraDepth);
                 }
             }
 
@@ -449,7 +456,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             }).collect(Collectors.toList()));
 
             EvaluationVisitor visitor = new EvaluationVisitor(depth - 1, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, seen, options);
-            visitor.nextDepth(realUnion, myUnion, callback, prefix);
+            visitor.nextDepth(realUnion, myUnion, callback, prefix, 1);
         }
     }
 
@@ -463,7 +470,7 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
             callback.run();
         } else if (myType != null /* && realString != null */) {
             addTruePositive(prefix, depth, "this was an indexer, that was right");
-            nextDepth(realType, myType, callback, prefix + ".[indexer]");
+            nextDepth(realType, myType, callback, prefix + ".[indexer]", 1);
         } else {
             callback.run();
         }

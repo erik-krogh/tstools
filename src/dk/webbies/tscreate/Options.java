@@ -41,7 +41,7 @@ public class Options {
 
     public boolean printStringIndexers = false;
 
-    public EvaluationMethod evaluationMethod = EvaluationMethod.ONLY_FUNCTIONS;
+    public EvaluationMethod evaluationMethod = EvaluationMethod.EVERYTHING;
     public boolean filterResultBasedOnDeclaration = false;
     public boolean useCallsiteInformation = false; // During the dynamic analysis, at every callsite it is recorded which function was actually called. If this is true, that information is used to resolve the callgraph, and the callsites where something has been observed.
 
@@ -72,7 +72,9 @@ public class Options {
 
     public boolean neverPrintModules = false;
     public boolean evaluationAnyAreOK = false; // In the evaluation, any and anything is a true-positive.
-    public boolean useJSDoc = false;
+    public boolean useJSDoc = true;
+    public boolean evaluationPushFunctionReturnsDown = true; // If set to true, for a function return/arguments the depth is set to depth + 1000. This makes sure that classes and the like are evaluated first, not whatever functions returns instances of them.
+    public boolean evaluateArguments = true; // if false, arguments are skipped in the evaluation.
 
     public enum StaticAnalysisMethod {
         NONE("none", "none"),
