@@ -117,7 +117,7 @@ public class BenchMark {
     public static final BenchMark PIXI_4_0 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
-        BenchMark bench = new BenchMark("Pixi.js (4.0 (dev))", "tests/pixi40/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
+        BenchMark bench = new BenchMark("Pixi.js (4.0 (dev))", "tests/pixi40/pixi.js", "tests/pixi40/pixi.js.d.ts", options, ES5);
         return bench;
     });
 
@@ -347,12 +347,12 @@ public class BenchMark {
 
     public static final BenchMark handlebars10 = gen(() -> {
         Options options = new Options();
-        return new BenchMark("Handlebars.js", "tests/handlebars/version10/handlebars.js", null, options, ES5);
+        return new BenchMark("Handlebars.js", "tests/handlebars/version10/handlebars.js", "tests/handlebars/version10/handlebars.d.ts", options, ES5);
     });
 
     public static final BenchMark handlebars11 = gen(() -> {
         Options options = new Options();
-        return new BenchMark("Handlebars.js", "tests/handlebars/version11/handlebars.js", "tests/handlebars/version11/handlebars.d.ts", options, ES5);
+        return new BenchMark("Handlebars.js", "tests/handlebars/version11/handlebars.js", null, options, ES5);
     });
 
     public static final BenchMark handlebars12 = gen(() -> {
