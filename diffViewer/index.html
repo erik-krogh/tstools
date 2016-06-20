@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0">
+    <title>Diff viewer for TSInfer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/0.0.1/prism.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-3.0.0.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/0.0.1/prism.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.5.1/components/prism-typescript.min.js"></script>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-materialize/0.1.8/angular-materialize.min.js"></script>
+
+    <!-- App -->
+    <script type="text/javascript" src="app.js"></script>
+</head>
+<body ng-app="materializeApp" ng-controller="BodyController">
+<main>
+    <div class="section" id="index-banner">
+        <div class="container">
+            <div class="row">
+                <div class="col s12">
+                    <h1 class="header center-on-small-only" style="color:white;margin-bottom: 0px;">TSDiff viewer</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container" ng-if="diff">
+        <div class="row">
+            <h4 class="header" style="cursor:pointer" ng-click="show.old = !show.old">
+                <span ng-if="show.old"><i class="material-icons">block</i></span>
+                <span ng-if="!show.old"><i class="material-icons">open_with</i></span>
+                    Old declaration</h4>
+            <div ng-if="show.old">
+                <pre nag-prism source="{{diff.oldDeclaration}}" class="language-typescript"></pre>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+            <h4 class="header" style="cursor:pointer" ng-click="show.new = !show.new">
+                <span ng-if="show.old"><i class="material-icons">block</i></span>
+                <span ng-if="!show.old"><i class="material-icons">open_with</i></span>
+                New declaration</h4>
+            <div ng-if="show.new">
+                <pre nag-prism source="{{diff.newDeclaration}}" class="language-typescript"></pre>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+
+        <h3 class="header">Changes: </h3>
+        <div ng-repeat="statement in diff.statements" ng-controller="StatementController">
+            <div class="divider"></div>
+
+            <h5 class="header" style="cursor:pointer;" ng-click="show.all = !show.all"><span ng-if="show.all"><i class="material-icons">block</i></span>
+                <span ng-if="!show.all"><i class="material-icons">open_with</i></span>
+                {{$index + 1}}: {{getStatementTitle(statement)}}
+            </h5>
+            <div ng-if="show.all">
+                <div ng-repeat="sample in getCodeSamples(statement)">
+                    <p>{{sample.description}}</p>
+                    <span ng-if="sample.code">
+                        <pre nag-prism source="{{sample.code}}" class="language-typescript"></pre>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+</body>
+</html>
