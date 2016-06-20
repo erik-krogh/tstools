@@ -47,7 +47,9 @@ public class ClassType extends DeclarationType{
 
     // Typecasting this, because it is unresolvedType for a while.
     public FunctionType getConstructorType() {
-        return (FunctionType) constructorType.resolve();
+        FunctionType result = (FunctionType) constructorType.resolve();
+        result.setReturnType(PrimitiveDeclarationType.Void(Collections.EMPTY_SET));
+        return result;
     }
 
     public Map<String, DeclarationType> getPrototypeFields() {
