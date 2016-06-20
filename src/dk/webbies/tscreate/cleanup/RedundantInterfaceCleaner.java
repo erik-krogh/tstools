@@ -45,7 +45,7 @@ public class RedundantInterfaceCleaner {
     }
 
     // FIXME: Other heuristic, that specifically looks at the similarity of types inside union-types.
-    public void clean() {
+    public void runHeuristics() {
         boolean progress = true;
         int counter = 0;
 
@@ -81,7 +81,7 @@ public class RedundantInterfaceCleaner {
         }
     }
 
-    private void cleanDeclarations() {
+    public void cleanDeclarations() {
         CollectEveryTypeVisitor collector = new CollectEveryTypeVisitor(declaration, false);
         new InplaceDeclarationReplacer(ArrayListMultimap.create(), collector, reducer, declaration).cleanStuff();
     }
