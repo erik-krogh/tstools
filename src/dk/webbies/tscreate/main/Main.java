@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.main;
 
+import com.google.gson.JsonObject;
 import com.google.javascript.jscomp.parsing.parser.Parser;
 import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.webbies.tscreate.BenchMark;
@@ -27,6 +28,8 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.main.patch.PatchFile;
+import dk.webbies.tscreate.main.patch.PatchFileFactory;
 import dk.webbies.tscreate.paser.AST.AstNode;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
@@ -64,7 +67,15 @@ public class Main {
         long start = System.currentTimeMillis();
         try {
 
+//            runAnalysis(handlebars4);
 
+            PatchFile patchFile = PatchFileFactory.fromEvaluation(jQuery17, jQuery);
+
+            String printed = patchFile.toJSON().toString();
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter(new File("diffViewer/diff.json")));
+            writer.write(printed);
+            writer.close();
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -227,7 +238,7 @@ public class Main {
         return createDeclaration(benchMark, AST, globalObject, emptySnap, libraryClasses, nativeClasses);
     }
 
-    private static Map<String, DeclarationType> createDeclaration(BenchMark benchMark, FunctionExpression AST, Snap.Obj globalObject, Snap.Obj emptySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
+    public static Map<String, DeclarationType> createDeclaration(BenchMark benchMark, FunctionExpression AST, Snap.Obj globalObject, Snap.Obj emptySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
         Map<AstNode, Set<Snap.Obj>> callsites = Collections.EMPTY_MAP;
         if (benchMark.getOptions().recordCalls && globalObject.getProperty("__jsnap__callsitesToClosures") != null && benchMark.getOptions().useCallsiteInformation) {
             callsites = JSNAPUtil.getCallsitesToClosures((Snap.Obj) globalObject.getProperty("__jsnap__callsitesToClosures").value, AST);
@@ -239,9 +250,16 @@ public class Main {
         Map<String, DeclarationType> declaration = new DeclarationBuilder(emptySnap, globalObject, typeAnalysis.getTypeFactory()).buildDeclaration();
 
         if (benchMark.getOptions().combineInterfacesAfterAnalysis) {
+            System.out.println("Comnbining types");
+            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).runHeuristics();
+        } else {
             System.out.println("Cleaning up types");
-            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).clean();
+            new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).cleanDeclarations();
         }
+
+        typeAnalysis.getTypeFactory().typeReducer.originals.clear();
+        typeAnalysis.getTypeFactory().typeReducer.combinationTypeCache.clear();
+
         return declaration;
     }
 
