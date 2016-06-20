@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.evaluation;
 
 import dk.webbies.tscreate.Score;
+import dk.webbies.tscreate.evaluation.descriptions.Description;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.*;
@@ -25,15 +26,15 @@ public class FastEvaluation extends Evaluation<Integer> {
         }
     }
 
-    public void addFalseNegative(int depth, String description, String typePath) {
+    public void addFalseNegative(int depth, Description description, String typePath) {
         add(depth, falseNegatives);
     }
 
-    public void addFalsePositive(int depth, String description, String typePath) {
+    public void addFalsePositive(int depth, Description description, String typePath) {
         add(depth, falsePositives);
     }
 
-    public void addTruePositive(int depth, String description, String typePath) {
+    public void addTruePositive(int depth, Description description, String typePath) {
         add(depth, truePositive);
     }
 

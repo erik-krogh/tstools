@@ -112,9 +112,12 @@ public class DeclarationEvaluator {
             assert queue.isEmpty();
             hasRun.set(true);
         };
+
+        Set<Type> classInstanceTypes = ClassFinder.getClassInstanceTypes(myDeclaration, realDeclaration);
+
         Evaluation evaluation = Evaluation.create(options.debugPrint);
         queue.add(new EvaluationQueueElement(0, () -> {
-            EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
+            EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options, classInstanceTypes);
             realDeclaration.accept(visitor, new EvaluationVisitor.Arg(myDeclaration, doneCallback, "window"));
         }));
 
@@ -165,6 +168,8 @@ public class DeclarationEvaluator {
 
         Map<String, Evaluation> evaluations = new HashMap<>();
 
+        Set<Type> classInstanceTypes = ClassFinder.getClassInstanceTypes(myDeclaration, realDeclaration);
+
         for (FunctionToEvaluate toEvaluate : functions) {
             Runnable callback = whenAllDone.newSubCallback();
 
@@ -172,7 +177,7 @@ public class DeclarationEvaluator {
                 Evaluation evaluation = Evaluation.create(options.debugPrint);
                 assert !evaluations.containsKey(toEvaluate.path);
                 evaluations.put(toEvaluate.path, evaluation);
-                EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
+                EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options, classInstanceTypes);
                 visitor.evaluateFunctions(new ArrayList<>(toEvaluate.myFunc), new ArrayList<>(toEvaluate.realFunc), callback, false, toEvaluate.path, false);
             }));
         }
@@ -184,7 +189,7 @@ public class DeclarationEvaluator {
                 Evaluation evaluation = Evaluation.create(options.debugPrint);
                 assert !evaluations.containsKey(toEvaluate.path);
                 evaluations.put(toEvaluate.path, evaluation);
-                EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options);
+                EvaluationVisitor visitor = new EvaluationVisitor(0, evaluation, queue, nativeTypesInReal, realNativeClasses, myNativeClasses, emptyNativeClasses, new HashSet<>(), options, classInstanceTypes);
                 visitor.evaluateFunctions(new ArrayList<>(toEvaluate.myFunc), new ArrayList<>(toEvaluate.realFunc), callback, false, toEvaluate.path, true);
             }));
         }
@@ -313,6 +318,101 @@ public class DeclarationEvaluator {
 
 
             return this;
+        }
+    }
+
+    private static final class ClassFinder implements TypeVisitor<Void> {
+        Set<Type> seen = new HashSet<>();
+        Set<Type> classTypes = new HashSet<>();
+        Set<Type> classInstanceTypes = new HashSet<>();
+
+        public static Set<Type> getClassInstanceTypes(Type... roots) {
+            ClassFinder visitor = new ClassFinder();
+            for (Type root : roots) {
+                root.accept(visitor);
+            }
+
+            return visitor.classInstanceTypes;
+        }
+
+        @Override
+        public Void visit(AnonymousType t) {
+            return null;
+        }
+
+        @Override
+        public Void visit(ClassType t) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Void visit(GenericType t) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            return t.toInterface().accept(this);
+        }
+
+        @Override
+        public Void visit(InterfaceType t) {
+            if (seen.contains(t)) {
+                return null;
+            }
+            seen.add(t);
+            t.getDeclaredProperties().values().forEach(type -> type.accept(this));
+            Util.concat(t.getDeclaredCallSignatures(), t.getDeclaredConstructSignatures()).forEach(sig -> {
+                sig.getResolvedReturnType().accept(this);
+                sig.getParameters().forEach(par -> par.getType().accept(this));
+            });
+
+            if (t.getDeclaredConstructSignatures() != null && !t.getDeclaredConstructSignatures().isEmpty()) {
+                classTypes.add(t);
+                t.getDeclaredConstructSignatures().stream().map(Signature::getResolvedReturnType).forEach(classInstanceTypes::add);
+            }
+
+            return null;
+        }
+
+        @Override
+        public Void visit(ReferenceType t) {
+            return t.getTarget().accept(this);
+        }
+
+        @Override
+        public Void visit(SimpleType t) {
+            return null;
+        }
+
+        @Override
+        public Void visit(TupleType t) {
+            t.getElementTypes().forEach(type -> type.accept(this));
+            return null;
+        }
+
+        @Override
+        public Void visit(UnionType t) {
+            t.getElements().forEach(type -> type.accept(this));
+            return null;
+        }
+
+        @Override
+        public Void visit(UnresolvedType t) {
+            throw new RuntimeException();
+        }
+
+        @Override
+        public Void visit(TypeParameterType t) {
+            t.getConstraint().accept(this);
+            if (t.getTarget() != null) {
+                t.getTarget().accept(this);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visit(SymbolType t) {
+            throw new RuntimeException();
         }
     }
 }

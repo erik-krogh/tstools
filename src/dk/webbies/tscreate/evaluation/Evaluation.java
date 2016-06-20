@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.evaluation;
 
 import dk.webbies.tscreate.Score;
+import dk.webbies.tscreate.evaluation.descriptions.Description;
 import dk.webbies.tscreate.util.Util;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -17,11 +18,11 @@ public abstract class Evaluation<T> {
     Map<Integer, T> falsePositives = new HashMap<>();
     Map<Integer, T> truePositive = new HashMap<>();
 
-    public abstract void addFalseNegative(int depth, String description, String typePath);
+    public abstract void addFalseNegative(int depth, Description description, String typePath);
 
-    public abstract void addFalsePositive(int depth, String description, String typePath);
+    public abstract void addFalsePositive(int depth, Description description, String typePath);
 
-    public abstract void addTruePositive(int depth, String description, String typePath);
+    public abstract void addTruePositive(int depth, Description description, String typePath);
 
     public String print() {
         StringBuilder builder = new StringBuilder();

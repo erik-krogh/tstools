@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.evaluation;
 
+import dk.webbies.tscreate.evaluation.descriptions.Description;
+
 import java.util.*;
 
 import static dk.webbies.tscreate.evaluation.DebugEvaluation.EvaluationType.*;
@@ -12,7 +14,7 @@ public class DebugEvaluation extends Evaluation<List<DebugEvaluation.EvaluationS
         
     }
 
-    private void add(int depth, Map<Integer, List<EvaluationStatement>> map, String description, String typePath, EvaluationType type) {
+    private void add(int depth, Map<Integer, List<EvaluationStatement>> map, Description description, String typePath, EvaluationType type) {
         EvaluationStatement statement = new EvaluationStatement(description, typePath, type, depth);
         add(depth, map, statement);
     }
@@ -26,15 +28,15 @@ public class DebugEvaluation extends Evaluation<List<DebugEvaluation.EvaluationS
         }
     }
 
-    public void addFalseNegative(int depth, String description, String typePath) {
+    public void addFalseNegative(int depth, Description description, String typePath) {
         add(depth, falseNegatives, description, typePath, FALSE_NEGATIVE);
     }
 
-    public void addFalsePositive(int depth, String description, String typePath) {
+    public void addFalsePositive(int depth, Description description, String typePath) {
         add(depth, falsePositives, description, typePath, FALSE_POSITIVE);
     }
 
-    public void addTruePositive(int depth, String description, String typePath) {
+    public void addTruePositive(int depth, Description description, String typePath) {
         add(depth, truePositive, description, typePath, TRUE_POSITIVE);
     }
 
@@ -103,12 +105,12 @@ public class DebugEvaluation extends Evaluation<List<DebugEvaluation.EvaluationS
     }
 
     public static final class EvaluationStatement {
-        public final String description;
+        public final Description description;
         public final String typePath;
         public final EvaluationType type;
         public final int depth;
 
-        public EvaluationStatement(String description, String typePath, EvaluationType type, int depth) {
+        public EvaluationStatement(Description description, String typePath, EvaluationType type, int depth) {
             this.description = description;
             this.typePath = typePath;
             this.type = type;
