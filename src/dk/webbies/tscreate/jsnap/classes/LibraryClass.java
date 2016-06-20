@@ -244,5 +244,9 @@ public class LibraryClass {
     public Set<Expression> getUniqueConstructionSite() {
         return uniqueConstructionSites;
     }
+
+    public List<String> getPathsSeen() {
+        return pathsSeen;
+    }
 }
 
