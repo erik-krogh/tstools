@@ -9,3 +9,5 @@ tests/**/*.jsnap
 lib/jsnap
 lib/ts-type-reader
 synopsis/
+**/tmp.html
+libs/
