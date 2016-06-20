@@ -469,10 +469,6 @@ public class TypeFactory {
 
             unresolved.setResolvedType(result);
 
-            if (result.getReturnType() == null || result.getArguments().stream().anyMatch(arg -> arg == null || arg.getType() == null || arg.getName() == null)) {
-                System.out.println();
-            }
-
         } else {
             FunctionType result = functionFeatureToDec(closure, features);
 
@@ -481,6 +477,9 @@ public class TypeFactory {
     }
 
     private boolean isVoidOrNull(DeclarationType type) {
+        if (type instanceof UnionDeclarationType) {
+            return ((UnionDeclarationType) type).getTypes().stream().allMatch(this::isVoidOrNull);
+        }
         return type == null || type instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType) type).getType() == PrimitiveDeclarationType.Type.VOID;
     }
 
