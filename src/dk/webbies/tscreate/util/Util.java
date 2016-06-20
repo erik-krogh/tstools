@@ -13,7 +13,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -48,6 +50,11 @@ public class Util {
     public static String removeSuffix(String str, String suffix) {
         assert str.endsWith(suffix);
         return str.substring(0, str.length() - suffix.length());
+    }
+
+    public static String removePrefix(String str, String prefix) {
+        assert str.startsWith(prefix);
+        return str.substring(prefix.length(), str.length());
     }
 
     public static String listToString(List<String> list) {
@@ -304,12 +311,17 @@ public class Util {
         return result;
     }
 
+    public static <T> List<T> intersection(Collection<T> one, Collection<T> two) {
+        return intersection(new HashSet<T>(one), new HashSet<T>(two));
+    }
+
     public static <T> T evaluate(Supplier<T> supplier) {
         return supplier.get();
     }
 
+    public static Predicate<String> isInteger = Pattern.compile("[0-9]+").asPredicate();
     public static boolean isInteger(String str) {
-        return str.matches("[0-9]+");
+        return isInteger.test(str);
     }
 
     public static String tsCheck(String jsFile, String declaration) throws IOException {
