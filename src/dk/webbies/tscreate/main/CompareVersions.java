@@ -2,6 +2,7 @@ package dk.webbies.tscreate.main;
 
 import dk.au.cs.casa.typescript.types.*;
 import dk.webbies.tscreate.BenchMark;
+import dk.webbies.tscreate.util.LookupType;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.evaluation.DebugEvaluation;
 
@@ -29,7 +30,7 @@ public class CompareVersions {
         return Double.compare(a.depth, b.depth);
     };
 
-    static List<DebugEvaluation.EvaluationStatement> compareWithNew(BenchMark oldVersion, BenchMark newScript, boolean filterFromOld) throws IOException {
+    public static List<DebugEvaluation.EvaluationStatement> compareWithNew(BenchMark oldVersion, BenchMark newScript, boolean filterFromOld) throws IOException {
         if (!oldVersion.getOptions().debugPrint) {
             throw new RuntimeException("Cannot do this without debugprint");
         }
@@ -63,7 +64,7 @@ public class CompareVersions {
                 String[] split = path.split("\\.");
                 path = path.substring(0, path.length() - split[split.length - 1].length() - 1);
 
-                return global.accept(new LookupTypeVisitor(path));
+                return global.accept(new LookupType(path)) != null;
             }).collect(Collectors.toSet());
         }
 
@@ -236,132 +237,5 @@ public class CompareVersions {
         Set<DebugEvaluation.EvaluationStatement> comparedHandwritten = new HashSet<>(compareHandWritten(newBench, oldBench));
 
         return comparedGenerated.stream().filter(stmt -> !comparedHandwritten.contains(stmt)).collect(Collectors.toList());
-    }
-
-    private static class LookupTypeVisitor implements TypeVisitor<Boolean> {
-        private String path;
-
-        public LookupTypeVisitor(String path) {
-            this.path = path;
-        }
-
-        public String firstPart() {
-            return path.split("\\.")[0];
-        }
-
-        public String rest() {
-            if (!path.contains(".")) {
-                return "";
-            }
-            return path.substring(firstPart().length() + 1, path.length());
-        }
-
-        private boolean next(Type type) {
-            if (rest().isEmpty()) {
-                return true;
-            }
-            return type.accept(new LookupTypeVisitor(rest()));
-        }
-
-        @Override
-        public Boolean visit(AnonymousType t) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public Boolean visit(ClassType t) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public Boolean visit(GenericType t) {
-            return t.toInterface().accept(this);
-        }
-
-        @Override
-        public Boolean visit(InterfaceType t) {
-            String first = firstPart();
-            if (t.getBaseTypes() != null) {
-                boolean foundInBase = t.getBaseTypes().stream().map(base -> base.accept(this)).reduce(Boolean.FALSE, Boolean::logicalOr);
-                if (foundInBase) {
-                    return true;
-                }
-            }
-            if (first.contains("[")) {
-                List<Signature> signatures;
-                if (first.equals("[constructor]")) {
-                    signatures = t.getDeclaredConstructSignatures();
-                } else {
-                    signatures = t.getDeclaredCallSignatures();
-                }
-                if (signatures == null) {
-                    return false;
-                } else {
-                    LookupTypeVisitor restVisitor = new LookupTypeVisitor(rest());
-                    return signatures.stream().map(restVisitor::visitSignature).reduce(Boolean.FALSE, Boolean::logicalOr);
-                }
-            } else {
-                if (t.getDeclaredProperties() != null && t.getDeclaredProperties().get(first) != null) {
-                    return next(t.getDeclaredProperties().get(first));
-                }
-            }
-            return false;
-        }
-
-        private Boolean visitSignature(Signature sig) {
-            String first = firstPart();
-            if (first.startsWith("[arg")) {
-                int argNumber = Integer.parseInt(first.substring("[arg".length(), first.length() - 1));
-                if (sig.getParameters() == null) {
-                    return false;
-                }
-                if (sig.getParameters().size() <= argNumber) {
-                    return false;
-                } else {
-                    return next(sig.getParameters().get(argNumber).getType());
-                }
-            } else {
-                if (sig.getResolvedReturnType() == null) {
-                    return false;
-                }
-                return next(sig.getResolvedReturnType());
-            }
-        }
-
-
-        @Override
-        public Boolean visit(ReferenceType t) {
-            return t.getTarget().accept(this);
-        }
-
-        @Override
-        public Boolean visit(SimpleType t) {
-            return false;
-        }
-
-        @Override
-        public Boolean visit(TupleType t) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public Boolean visit(UnionType t) {
-            return t.getElements().stream().map(this::next).reduce(Boolean.TRUE, Boolean::logicalOr);
-        }
-
-        @Override
-        public Boolean visit(UnresolvedType t) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public Boolean visit(TypeParameterType t) {
-            throw new RuntimeException();
-        }
-
-        @Override
-        public Boolean visit(SymbolType t) {
-            throw new RuntimeException();
-        }
     }
 }
