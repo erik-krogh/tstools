@@ -4,20 +4,29 @@ import com.google.gson.JsonObject;
 import dk.webbies.tscreate.util.JSONBuilder;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
  * Created by erik1 on 10-06-2016.
  */
 public class PatchFile {
-    private List<PatchStatement> statements;
+    private final List<PatchStatement> statements;
     private final PatchFileFactory.BenchmarkInformation oldInfo;
     private final PatchFileFactory.BenchmarkInformation newInfo;
 
     public PatchFile(List<PatchStatement> statements, PatchFileFactory.BenchmarkInformation oldInfo, PatchFileFactory.BenchmarkInformation newInfo) {
-        this.statements = statements;
+        this.statements = statements.stream().filter(Objects::nonNull).collect(Collectors.toList());
         this.oldInfo = oldInfo;
         this.newInfo = newInfo;
+    }
+
+    public PatchFileFactory.BenchmarkInformation getOldInfo() {
+        return oldInfo;
+    }
+
+    public PatchFileFactory.BenchmarkInformation getNewInfo() {
+        return newInfo;
     }
 
     public List<PatchStatement> getStatements() {
@@ -47,6 +56,7 @@ public class PatchFile {
                 .add("oldName", oldInfo.benchMark.name)
                 .add("oldDeclaration", oldInfo.printedDeclaration)
                 .add("newDeclaration", newInfo.printedDeclaration)
+                .add("newDecAvailable", newInfo.benchMark.declarationPath != null)
                 .build();
     }
 }
