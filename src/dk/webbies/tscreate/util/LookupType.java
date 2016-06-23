@@ -53,7 +53,7 @@ public class LookupType implements TypeVisitor<Type> {
     public Type visit(InterfaceType t) {
         String first = firstPart();
         if (t.getBaseTypes() != null) {
-            List<Type> foundInBase = t.getBaseTypes().stream().map(base -> base.accept(this)).filter(Objects::nonNull).collect(Collectors.toList());
+            List<Type> foundInBase = t.getBaseTypes().stream().map(base -> base.accept(this)).filter(Objects::nonNull).distinct().collect(Collectors.toList());
             if (foundInBase.size() == 1) {
                 return foundInBase.iterator().next();
             }
@@ -69,7 +69,7 @@ public class LookupType implements TypeVisitor<Type> {
                 return null;
             } else {
                 LookupType restVisitor = new LookupType(rest());
-                List<Type> result = signatures.stream().map(restVisitor::visitSignature).filter(Objects::nonNull).collect(Collectors.toList());
+                List<Type> result = signatures.stream().map(restVisitor::visitSignature).filter(Objects::nonNull).distinct().collect(Collectors.toList());
                 if (result.size() == 1) {
                     return result.iterator().next();
                 }
@@ -120,7 +120,7 @@ public class LookupType implements TypeVisitor<Type> {
 
     @Override
     public Type visit(UnionType t) {
-        List<Type> result = t.getElements().stream().map(this::next).collect(Collectors.toList());
+        List<Type> result = t.getElements().stream().map(this::next).distinct().collect(Collectors.toList());
         if (result.size() == 1) {
             return result.iterator().next();
         } else {
