@@ -42,7 +42,7 @@ public class Options {
     public boolean printStringIndexers = false;
 
     public EvaluationMethod evaluationMethod = EvaluationMethod.EVERYTHING;
-    public boolean filterResultBasedOnDeclaration = false;
+    public boolean filterPatchBasedOnOldDeclaration = true;
     public boolean useCallsiteInformation = false; // During the dynamic analysis, at every callsite it is recorded which function was actually called. If this is true, that information is used to resolve the callgraph, and the callsites where something has been observed.
 
     public enum EvaluationMethod {
