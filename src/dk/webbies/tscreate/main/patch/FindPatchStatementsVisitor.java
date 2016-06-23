@@ -23,11 +23,8 @@ import static java.util.Collections.EMPTY_SET;
  * Created by erik1 on 14-06-2016.
  */
 public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArgument<Void, FindPatchStatementsVisitor.Argument> {
-
-
-
-    static List<PatchStatement> generateStatements(UnnamedObjectType oldType, UnnamedObjectType newType, Options options, Type handWrittenType, DeclarationParser.NativeClassesMap nativeClasses) {
-        FindPatchStatementsVisitor visitor = new FindPatchStatementsVisitor(nativeClasses, options, handWrittenType);
+    static List<PatchStatement> generateStatements(UnnamedObjectType oldType, UnnamedObjectType newType, Options options, Type oldHandWritten, Type newHandWritten, DeclarationParser.NativeClassesMap nativeClasses) {
+        FindPatchStatementsVisitor visitor = new FindPatchStatementsVisitor(nativeClasses, options, oldHandWritten, newHandWritten);
         visitor.queue.add(new QueueElement(oldType, new Argument("window", 0, fj.data.List.cons(newType, fj.data.List.nil()), newType)));
 
         runQueue(visitor);
@@ -55,12 +52,14 @@ public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArg
     private final List<PatchStatement> foundStatements = new ArrayList<>();
     private final Options options;
     private final Type oldHandWrittenType;
+    private final Type newHandWrittenType;
     private final DeclarationParser.NativeClassesMap nativeClasses;
 
-    private FindPatchStatementsVisitor(DeclarationParser.NativeClassesMap nativeClasses, Options options, Type handWrittenType) {
+    private FindPatchStatementsVisitor(DeclarationParser.NativeClassesMap nativeClasses, Options options, Type oldHandWritten, Type newHandWritten) {
         this.nativeClasses = nativeClasses;
         this.options = options;
-        this.oldHandWrittenType = handWrittenType;
+        this.oldHandWrittenType = oldHandWritten;
+        this.newHandWrittenType = newHandWritten;
     }
 
 
@@ -79,7 +78,7 @@ public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArg
             List<FunctionType.Argument> oldArgs = oldType.getArguments();
             List<FunctionType.Argument> newArgs = newType.getArguments();
             if (oldArgs.size() != newArgs.size()) {
-                foundStatements.add(new ChangedNumberOfArgumentsStatement(argument.path, oldType, newType, oldArgs.size(), newArgs.size()));
+                foundStatements.add(new ChangedNumberOfArgumentsStatement(argument.path, oldType, newType, argument.getPrevType(1), oldArgs.size(), newArgs.size()));
             } else {
                 for (int i = 0; i < Math.min(oldArgs.size(), newArgs.size()); i++) {
                     DeclarationType oldArg = oldArgs.get(i).getType();
@@ -179,11 +178,11 @@ public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArg
             }
 
             if (oldType.getFunction() != null) {
-                queue.add(new QueueElement(oldType.getFunction(), argument.next(".[function]", newType.getFunction(), 1)));
+                queue.add(new QueueElement(oldType.getFunction(), argument.nextKeepSubType("", newType.getFunction(), 0)));
             }
 
             if (oldType.getObject() != null) {
-                queue.add(new QueueElement(oldType.getObject(), argument.nextNoSubtype("", newType.getObject(), 0)));
+                queue.add(new QueueElement(oldType.getObject(), argument.nextKeepSubType("", newType.getObject(), 0)));
             }
         } else {
             changedType(oldType, argument);
@@ -233,17 +232,17 @@ public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArg
         if (argument.newType instanceof ClassType) {
             ClassType newType = (ClassType) argument.newType;
 
-            queue.add(new QueueElement(oldType.getConstructorType(), argument.next(".[constructor]", newType.getConstructorType(), 1)));
+            queue.add(new QueueElement(oldType.getConstructorType(), argument.nextKeepSubType(".[constructor]", newType.getConstructorType(), 1)));
 
             UnnamedObjectType oldStatic = new UnnamedObjectType(filterStaticFields(oldType.getStaticFields(), oldType.getSuperClass()), EMPTY_SET);
             UnnamedObjectType newStatic = new UnnamedObjectType(filterStaticFields(newType.getStaticFields(), newType.getSuperClass()), EMPTY_SET);
 
-            queue.add(new QueueElement(oldStatic, argument.nextNoSubtype("", newStatic, 0)));
+            queue.add(new QueueElement(oldStatic, argument.nextKeepSubType("", newStatic, 0)));
 
             UnnamedObjectType oldFields = new UnnamedObjectType(filterPrototypeFields(oldType.getPrototypeFields(), oldType.getSuperClass()), EMPTY_SET);
             UnnamedObjectType newFields = new UnnamedObjectType(filterPrototypeFields(newType.getPrototypeFields(), newType.getSuperClass()), EMPTY_SET);
 
-            queue.add(new QueueElement(oldFields, argument.next(".[constructor].[return]", newFields, 2)));
+            queue.add(new QueueElement(oldFields, argument.nextKeepSubType(".[constructor].[return]", newFields, 2)));
 
         } else {
             changedType(oldType, argument);
@@ -273,7 +272,17 @@ public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArg
     public Void visit(ClassInstanceType oldType, Argument argument) {
         if (argument.newType instanceof ClassInstanceType) {
             ClassInstanceType newType = (ClassInstanceType) argument.newType;
-            List<String> sharedPaths = Util.intersection(oldType.getClazz().getLibraryClass().getPathsSeen(), newType.getClazz().getLibraryClass().getPathsSeen());
+            List<String> oldSeen = new ArrayList<>(oldType.getClazz().getLibraryClass().getPathsSeen());
+            List<String> newSeen = new ArrayList<>(newType.getClazz().getLibraryClass().getPathsSeen());
+
+            if (oldSeen.stream().anyMatch(path -> !path.startsWith("[ENV]")) && newSeen.stream().anyMatch(path -> !path.startsWith("[ENV]"))) {
+                oldSeen = oldSeen.stream().filter(path -> !path.startsWith("[ENV]")).collect(Collectors.toList());
+                newSeen = newSeen.stream().filter(path -> !path.startsWith("[ENV]")).collect(Collectors.toList());
+            }
+
+            // TODO: Try to see how many exists where the first path disagrees.
+
+            List<String> sharedPaths = Util.intersection(oldSeen, newSeen);
             if (sharedPaths.isEmpty()) {
                 changedType(oldType, argument);
                 return null;
@@ -310,7 +319,7 @@ public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArg
             return new Argument(path + extraPath, depth + extraDepth, prevTypes.cons(newSubType), newSubType);
         }
 
-        public Argument nextNoSubtype(String extraPath, DeclarationType nextType, int extraDepth) {
+        public Argument nextKeepSubType(String extraPath, DeclarationType nextType, int extraDepth) {
             return new Argument(path + extraPath, depth + extraDepth, prevTypes, nextType);
         }
     }
