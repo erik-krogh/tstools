@@ -1,8 +1,10 @@
 package dk.webbies.tscreate.main.patch;
 
 import com.google.gson.JsonObject;
-import dk.au.cs.casa.typescript.types.InterfaceType;
+import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.types.*;
+import dk.webbies.tscreate.util.LookupType;
+import dk.webbies.tscreate.util.Util;
 
 /**
  * Created by erik1 on 09-06-2016.
@@ -28,6 +30,8 @@ public interface PatchStatement {
             return "array-type";
         } else if (type instanceof InterfaceDeclarationType) {
             return "interface";
+        } else if (type instanceof PrimitiveDeclarationType) {
+            return "primitive (/unknown)";
         } else {
             throw new RuntimeException("Did not know: " + type.getClass().getSimpleName());
         }
@@ -44,5 +48,8 @@ public interface PatchStatement {
 
     JsonObject toJSONObject(PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo);
 
+    public static Type findInHandWritten(String typePath, PatchFileFactory.BenchmarkInformation information) {
+        return information.handwritten.accept(new LookupType(Util.removePrefix(typePath, "window.")));
+    }
 
 }
