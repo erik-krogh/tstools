@@ -49,6 +49,9 @@ public interface PatchStatement {
     JsonObject toJSONObject(PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo);
 
     public static Type findInHandWritten(String typePath, PatchFileFactory.BenchmarkInformation information) {
+        if (typePath.equals("window")) {
+            return information.handwritten;
+        }
         return information.handwritten.accept(new LookupType(Util.removePrefix(typePath, "window.")));
     }
 
