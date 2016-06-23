@@ -21,6 +21,10 @@ public class AddedPropertyStatement implements PatchStatement {
         this.containerType = containerType.resolve();
     }
 
+    public String getPropertyName() {
+        return propertyName;
+    }
+
     @Override
     public String print(PatchFileFactory.BenchmarkInformation oldInfo, PatchFileFactory.BenchmarkInformation newInfo) {
         StringBuilder builder = new StringBuilder();
@@ -57,9 +61,11 @@ public class AddedPropertyStatement implements PatchStatement {
                 .add("type", "addedProperty")
                 .add("typePath", typePath)
                 .add("key", propertyName)
+                .add("isInOldDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, oldInfo) != null)
+                .add("isInNewDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, newInfo) != null)
                 .add("newType", typeString)
                 .add("isAny", PatchFileFactory.isAny(propertyType) || PatchFileFactory.isVoid(propertyType))
-                .add("isClass", containerType instanceof ClassType)
+                .add("isClass", containerType instanceof ClassType && !typePath.endsWith("[constructor].[return]"))
                 .add("containerType", newInfo.printer.printType(containerType, null))
                 .add("containerDescription", describe(containerType, newInfo))
                 .build();

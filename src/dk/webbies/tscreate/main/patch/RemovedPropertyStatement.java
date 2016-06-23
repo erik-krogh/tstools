@@ -46,9 +46,15 @@ public class RemovedPropertyStatement implements PatchStatement {
                 .add("type", "removedProperty")
                 .add("typePath", typePath)
                 .add("key", propertyName)
-                .add("isClass", containerType instanceof ClassType)
+                .add("isInOldDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, oldInfo) != null)
+                .add("isInNewDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, newInfo) != null)
+                .add("isClass", containerType instanceof ClassType && !typePath.endsWith("[constructor].[return]"))
                 .add("containerType", newInfo.printer.printType(containerType, null))
                 .add("containerDescription", describe(containerType, newInfo))
                 .build();
+    }
+
+    public String getPropertyName() {
+        return propertyName;
     }
 }
