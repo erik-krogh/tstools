@@ -78,7 +78,7 @@ public class CompareVersions {
     }
 
     public static List<DebugEvaluation.EvaluationStatement> compareHandWritten(BenchMark oldBench, BenchMark newBench) throws IOException {
-        return ((DebugEvaluation)Main.getEvaluation(oldBench, newBench.declarationPath)).getAllStatements().stream().filter(stmt -> stmt.type != TRUE_POSITIVE).collect(Collectors.toList());
+        return ((DebugEvaluation)Main.getEvaluation(oldBench, newBench.declarationPath)).getAllStatements().stream().filter(stmt -> stmt.type != TRUE_POSITIVE).sorted(sortStmts).collect(Collectors.toList());
     }
 
     public static Set<DebugEvaluation.EvaluationStatement> compareTheTwo(BenchMark benchMark, BenchMark newScript) throws IOException {
