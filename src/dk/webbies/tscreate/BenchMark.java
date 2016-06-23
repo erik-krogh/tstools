@@ -133,9 +133,9 @@ public class BenchMark {
         return new BenchMark("Fabric.js", "tests/fabric/fabric.js", "tests/fabric/fabricjs.d.ts", options, ES5);
     });
 
-    public static final BenchMark FabricJSOld = gen(() -> {
+    public static final BenchMark FabricJS14 = gen(() -> {
         Options options = new Options();
-        BenchMark bench = new BenchMark("Fabric.js", "tests/fabricold/fabric.js", "tests/fabricold/fabric.d.ts", options, ES5);
+        BenchMark bench = new BenchMark("Fabric.js", "tests/fabric/version14/fabric.js", "tests/fabric/version14/fabric.d.ts", options, ES5);
         return bench;
     });
 
@@ -395,10 +395,19 @@ public class BenchMark {
         return new BenchMark("Moment.js", "tests/moment/moment.js", "tests/moment/moment.d.ts", options, ES5);
     });
 
+    public static final BenchMark hammer1 = gen(() -> {
+        Options options = new Options();
+        BenchMark bench = new BenchMark("Hammer.js", "tests/hammer/version113/hammer.js", "tests/hammer/version113/hammerjs-1.1.3.d.ts", options, ES5);
+        bench.dependencies.add(Dependency.jQuery);
+//        bench.testFiles.add("tests/hammer/myTest.js"); // Kind of cheating.
+        return bench;
+    });
+
     public static final BenchMark hammer = gen(() -> {
         Options options = new Options();
         BenchMark bench = new BenchMark("Hammer.js", "tests/hammer/hammer.js", "tests/hammer/hammer.d.ts", options, ES5);
-        bench.testFiles.add("tests/hammer/myTest.js"); // Kind of cheating.
+        bench.dependencies.add(Dependency.jQuery);
+//        bench.testFiles.add("tests/hammer/myTest.js"); // Kind of cheating.
         return bench;
     });
 
