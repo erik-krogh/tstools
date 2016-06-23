@@ -319,7 +319,7 @@ public class Util {
         return supplier.get();
     }
 
-    public static Predicate<String> isInteger = Pattern.compile("[0-9]+").asPredicate();
+    public static Predicate<String> isInteger = Pattern.compile("^\\d+$").asPredicate();
     public static boolean isInteger(String str) {
         return isInteger.test(str);
     }
