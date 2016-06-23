@@ -347,6 +347,8 @@ public class DeclarationPrinter {
                 } else {
                     printObjectTypeBig(new TypeVisitor(), arg, (UnnamedObjectType) type);
                 }
+            } else if (type instanceof InterfaceDeclarationType) {
+                printInterface(builder, type, new HashSet<>());
             } else {
                 type.accept(new TypeVisitor(), arg);
             }
