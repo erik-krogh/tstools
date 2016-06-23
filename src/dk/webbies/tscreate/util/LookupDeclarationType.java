@@ -2,6 +2,7 @@ package dk.webbies.tscreate.util;
 
 import dk.webbies.tscreate.analysis.declarations.types.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -12,7 +13,9 @@ import java.util.stream.Collectors;
 public class LookupDeclarationType implements DeclarationTypeVisitor<DeclarationType> {
     private String path;
 
-    private LookupDeclarationType(String path) {
+    private static final boolean returnAnyOnNotFound = true; 
+    
+    public LookupDeclarationType(String path) {
         this.path = path;
     }
 
@@ -33,11 +36,19 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
     String firstPart() {
         return firstPart(this.path);
     }
+    
+    private DeclarationType noneFound() {
+        if (returnAnyOnNotFound) {
+            return PrimitiveDeclarationType.Any(Collections.EMPTY_SET);
+        } else {
+            throw new RuntimeException();
+        }
+    }
 
     @Override
     public DeclarationType visit(FunctionType functionType) {
         if (!this.path.startsWith("[function]")) {
-            throw new RuntimeException();
+            return noneFound();
         }
         if (this.path.equals("[function]")) {
             return functionType;
@@ -46,7 +57,7 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
         if (path.startsWith("[arg")) {
             int argIndex = Integer.parseInt(Util.removePrefix(path, "[arg").substring(0, Util.removePrefix(path, "[arg").indexOf("]")));
             if (functionType.getArguments().size() <= argIndex) {
-                throw new RuntimeException();
+                return noneFound();
             }
             FunctionType.Argument subType = functionType.getArguments().get(argIndex);
             String subPath = rest(rest());
@@ -54,12 +65,12 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
         } else if (path.startsWith("[return]")){
             return new LookupDeclarationType(rest(rest())).find(functionType.getReturnType());
         }
-        throw new RuntimeException();
+        return noneFound();
     }
 
     @Override
     public DeclarationType visit(PrimitiveDeclarationType primitive) {
-        throw new RuntimeException();
+        return noneFound();
     }
 
     @Override
@@ -70,7 +81,7 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
 
     private DeclarationType recurse(DeclarationType subType) {
         if (subType == null) {
-            return null;
+            return noneFound();
         }
         return new LookupDeclarationType(rest()).find(subType);
     }
@@ -88,14 +99,29 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
 
     @Override
     public DeclarationType visit(InterfaceDeclarationType interfaceType) {
-        throw new RuntimeException();
+        if (path.startsWith("[function]")) {
+            if (interfaceType.getFunction() == null) {
+                return noneFound();
+            }
+            return interfaceType.getFunction().accept(this);
+        } else if (path.startsWith("[indexer]")) {
+            if (interfaceType.getDynamicAccess() == null) {
+                return noneFound();
+            }
+            return recurse(interfaceType.getDynamicAccess().getReturnType());
+        } else {
+            if (interfaceType.getObject() == null) {
+                return noneFound();
+            }
+            return interfaceType.getObject().accept(this);
+        }
     }
 
     @Override
     public DeclarationType visit(UnionDeclarationType union) {
         List<DeclarationType> results = union.getTypes().stream().map(type -> type.accept(this)).filter(Objects::nonNull).collect(Collectors.toList());
         if (results.isEmpty()) {
-            return null;
+            return noneFound();
         }
         if (results.size() != 1) {
             return null;
@@ -123,7 +149,7 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
             String arg = firstPart(rest());
             int argIndex = Integer.parseInt(Util.removeSuffix(Util.removePrefix(arg, "[arg"), "]"));
             if (classType.getConstructorType().getArguments().size() <= argIndex) {
-                throw new RuntimeException();
+                return noneFound();
             }
             FunctionType.Argument subType = classType.getConstructorType().getArguments().get(argIndex);
             String subPath = rest(rest());
