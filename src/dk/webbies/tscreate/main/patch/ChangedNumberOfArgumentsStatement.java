@@ -13,13 +13,15 @@ public class ChangedNumberOfArgumentsStatement implements PatchStatement {
     private final String typePath;
     private final DeclarationType oldFunction;
     private final DeclarationType newFunction;
+    private final DeclarationType containerType;
     private final int oldArgCount;
     private final int newArgCount;
 
-    public ChangedNumberOfArgumentsStatement(String typePath, DeclarationType oldFunction, DeclarationType newFunction, int oldArgCount, int newArgCount) {
+    public ChangedNumberOfArgumentsStatement(String typePath, DeclarationType oldFunction, DeclarationType newFunction, DeclarationType containerType, int oldArgCount, int newArgCount) {
         this.typePath = typePath;
         this.oldFunction = oldFunction.resolve();
         this.newFunction = newFunction.resolve();
+        this.containerType = containerType.resolve();
         this.oldArgCount = oldArgCount;
         this.newArgCount = newArgCount;
     }
@@ -59,12 +61,14 @@ public class ChangedNumberOfArgumentsStatement implements PatchStatement {
         return JSONBuilder.createObject()
                 .add("type", "changedArgCount")
                 .add("typePath", typePath)
-                .add("isClass", newFunction instanceof ClassType)
+                .add("isClass", containerType instanceof ClassType && !typePath.endsWith("[constructor].[return]"))
                 .add("newType", newInfo.printer.printType(newFunction, typePath))
                 .add("newTypeDescription", describe(newFunction, newInfo))
                 .add("oldType", oldInfo.printer.printType(oldFunction, typePath))
                 .add("oldArgCount", oldArgCount)
                 .add("newArgCount", newArgCount)
+                .add("containerType", newInfo.printer.printType(containerType, null))
+                .add("containerDescription", describe(containerType, newInfo))
                 .build();
     }
 
