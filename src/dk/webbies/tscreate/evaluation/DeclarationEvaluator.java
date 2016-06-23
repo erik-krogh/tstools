@@ -49,13 +49,13 @@ public class DeclarationEvaluator {
 
         switch (options.evaluationMethod) {
             case EVERYTHING:
-                this.evaluation = getEvaluation(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+                this.evaluation = getEvaluation(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses(), false);
                 break;
             case ONLY_FUNCTIONS:
                 this.evaluation = evaluateStartingFromFunctions(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
                 break;
             case ONLY_HEAP:
-                this.evaluation = getEvaluation(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses());
+                this.evaluation = getEvaluation(options, realDeclaration, myDeclaration, nativeTypesInReal, parsedDeclaration.getRealNativeClasses(), parsedDeclaration.getMyNativeClasses(), parsedDeclaration.getEmptyNativeClasses(), false);
                 break;
             default:
                 throw new RuntimeException();
@@ -105,7 +105,7 @@ public class DeclarationEvaluator {
 
     }
 
-    public static Evaluation getEvaluation(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses) {
+    public static Evaluation getEvaluation(Options options, Type realDeclaration, Type myDeclaration, Set<Type> nativeTypesInReal, NativeClassesMap realNativeClasses, NativeClassesMap myNativeClasses, NativeClassesMap emptyNativeClasses, boolean skipClassCheck) {
         PriorityQueue<EvaluationQueueElement> queue = new PriorityQueue<>();
         AtomicBoolean hasRun = new AtomicBoolean(false);
         Runnable doneCallback = () -> {
@@ -113,7 +113,7 @@ public class DeclarationEvaluator {
             hasRun.set(true);
         };
 
-        Set<Type> classInstanceTypes = ClassFinder.getClassInstanceTypes(myDeclaration, realDeclaration);
+        Set<Type> classInstanceTypes = skipClassCheck ? new HashSet<>() : ClassFinder.getClassInstanceTypes(myDeclaration, realDeclaration);
 
         Evaluation evaluation = Evaluation.create(options.debugPrint);
         queue.add(new EvaluationQueueElement(0, () -> {
