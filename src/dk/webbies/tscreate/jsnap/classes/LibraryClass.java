@@ -106,7 +106,7 @@ public class LibraryClass {
             }
         }
 
-        if (name.matches("[0-9]+.{0,}") || name.equals("[proto]") || name.equals("constructor")) {
+        if (name.matches("[0-9]+.{0,}") || name.equals("[proto]") || name.equals("constructor") || name.equals("default")) {
             name = "interface_" + InterfaceDeclarationType.interfaceCounter++;
         }
         if (name.contains("-")) {
