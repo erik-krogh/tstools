@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -107,8 +108,9 @@ public class DeclarationPrinter {
         }
     }
 
+    private static final Predicate<String> validNameRegexp = Pattern.compile("[a-zA-Z_$][0-9a-zA-Z_$]*").asPredicate();
     private boolean validName(String str) {
-        return str.matches("[a-zA-Z_$][0-9a-zA-Z_$]*") && !keyWords.contains(str);
+        return validNameRegexp.test(str) && !keyWords.contains(str);
     }
 
     private Set<InterfaceDeclarationType> printedInterfaces = new HashSet<>();
@@ -551,7 +553,6 @@ public class DeclarationPrinter {
         }
 
 
-
         @Override
         public Void visit(PrimitiveDeclarationType primitive, VisitorArg arg) {
             write(arg.builder, primitive.getPrettyString());
@@ -645,9 +646,9 @@ public class DeclarationPrinter {
         public Void visit(NamedObjectType named, VisitorArg arg) {
             String name = named.getName();
             switch (name) {
-                case "String" :
-                case "Boolean" :
-                case "Number" :
+                case "String":
+                case "Boolean":
+                case "Number":
                     new NamedObjectType(name.toLowerCase(), false).accept(this, arg);
                     break;
                 case "Array":
@@ -694,7 +695,7 @@ public class DeclarationPrinter {
                     arg.builder.append(prim.getPrettyString());
                     arg.builder.append("[]");
                 }
-            } else if (indexType instanceof UnionDeclarationType){
+            } else if (indexType instanceof UnionDeclarationType) {
                 arg.builder.append("Array<any>");
             } else if (indexType instanceof NamedObjectType) {
                 if (arg.contains(indexType)) {
@@ -821,7 +822,6 @@ public class DeclarationPrinter {
         Set<String> fieldsInSuper = ClassType.getFieldsInclSuper(superClass, nativeClasses);
         return (name) -> !fieldsInSuper.contains(name);
     }
-
 
 
     // Functional set things
