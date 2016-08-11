@@ -151,7 +151,7 @@ public class AstTransformer {
                     }
                 } else if (untypedProp instanceof GetAccessorTree) {
                     if (environment.ESversion < 6) {
-                        throw new RuntimeException();
+                        throw new RuntimeException(loc.toString());
                     }
                     GetAccessorTree prop = (GetAccessorTree) untypedProp;
                     Token name = prop.propertyName;
