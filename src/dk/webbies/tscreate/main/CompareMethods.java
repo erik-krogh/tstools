@@ -32,9 +32,17 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.OLD_UNIFICATION));
         blackList.add(new Pair<>(BenchMark.PIXI, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
 
-        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
-        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
-        blackList.add(new Pair<>(BenchMark.FabricJS, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.FabricJS14, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS14, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS14, Options.StaticAnalysisMethod.UNIFICATION));
+
+        blackList.add(new Pair<>(BenchMark.FabricJS15, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS15, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS15, Options.StaticAnalysisMethod.UNIFICATION));
+
+        blackList.add(new Pair<>(BenchMark.FabricJS16, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS16, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.FabricJS16, Options.StaticAnalysisMethod.UNIFICATION));
 
         blackList.add(new Pair<>(BenchMark.angular, Options.StaticAnalysisMethod.OLD_UNIFICATION));
 

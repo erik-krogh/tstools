@@ -7,6 +7,7 @@ import dk.webbies.tscreate.paser.ExpressionVisitor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Erik Krogh Kristensen on 01-09-2015.
@@ -15,10 +16,10 @@ public class FunctionExpression extends Expression {
     public Identifier name;
     final BlockStatement body;
     final List<Identifier> arguments;
-    public HashMap<String, Identifier> declarations;
+    public Map<String, Identifier> declarations;
 
     public Comment jsDoc;
-    public List<Comment> nestedDocumentation = new ArrayList<>();
+    public Map<String, Comment> memberJsDocs = new HashMap<>();
 
     public FunctionExpression(SourceRange location, Identifier name, BlockStatement body, List<Identifier> arguments) {
         super(location);

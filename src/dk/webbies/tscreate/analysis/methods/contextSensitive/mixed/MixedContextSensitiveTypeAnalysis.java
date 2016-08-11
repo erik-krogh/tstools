@@ -20,7 +20,7 @@ import java.util.*;
 public class MixedContextSensitiveTypeAnalysis extends MixedTypeAnalysis {
     private boolean upperBoundMethod;
 
-    public MixedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
+    public MixedContextSensitiveTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
         super(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod, callsites);
         this.upperBoundMethod = upperBoundMethod;
     }

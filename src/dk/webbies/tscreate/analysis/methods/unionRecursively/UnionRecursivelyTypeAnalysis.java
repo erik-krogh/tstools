@@ -21,7 +21,7 @@ import java.util.*;
 public class UnionRecursivelyTypeAnalysis extends MixedTypeAnalysis {
     private final Snap.Obj globalObject;
 
-    public UnionRecursivelyTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
+    public UnionRecursivelyTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
         super(libraryClasses, options, globalObject, nativeClasses, false, callsites);
         this.globalObject = globalObject;
     }

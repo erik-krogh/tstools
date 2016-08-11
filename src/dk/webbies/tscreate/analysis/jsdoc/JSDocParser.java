@@ -1,6 +1,7 @@
 package dk.webbies.tscreate.analysis.jsdoc;
 
 import com.google.gson.Gson;
+import com.google.javascript.jscomp.newtypes.Declaration;
 import com.google.javascript.jscomp.parsing.parser.trees.Comment;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
@@ -50,8 +51,11 @@ public class JSDocParser {
             switch (tag.title.toUpperCase()) {
                 case "PARAM":
                     String argName = tag.name;
-                    if (argName == null) {
+                    if (argName == null) { // TODO: If argName contains ".", then collect into object.
                         argName = "arg" + argCounter++;
+                    }
+                    if (argName.contains(".")) {
+                        argName = argName.replace(".", "");
                     }
                     arguments.add(new FunctionType.Argument(argName, toDeclarationType(tag.type, closure)));
                     break;
@@ -72,7 +76,33 @@ public class JSDocParser {
             ret = PrimitiveDeclarationType.Void(EMPTY_SET);
         }
 
-        return new FunctionType(ret, arguments, EMPTY_SET);
+        return new FunctionType(closure.function.astNode, ret, arguments, EMPTY_SET);
+    }
+
+    public DeclarationType parseMemberDoc(Snap.Obj closure, Comment comment) {
+        DeclarationType ret = null;
+
+        List<Tag> tags = parseComment(comment.value);
+        for (Tag tag : tags) {
+            switch (tag.title.toUpperCase()) {
+                case "MEMBER":case "TYPE":
+                    assert ret == null;
+                    ret = toDeclarationType(tag.type, closure);
+                    break;
+                case "METHOD":
+                    ret = new FunctionType(PrimitiveDeclarationType.Void(Collections.EMPTY_SET), Collections.EMPTY_LIST, Collections.EMPTY_SET, Collections.EMPTY_LIST);
+                    break;
+                case "PRIVATE":case "DEFAULT":case "SEE":case "READONLY":case "MEMBEROF":case "LINK":case "EXAMPLE":
+                    break;
+                case "PARAM":
+                    ret = parseFunctionDoc(closure, comment);
+                    break;
+                default:
+                    break;
+
+            }
+        }
+        return ret;
     }
 
     public static boolean isClass(FunctionExpression functionExpression) {
@@ -87,7 +117,7 @@ public class JSDocParser {
 
     private DeclarationType toDeclarationType(Type type, Snap.Obj closure) {
         if (type == null || type.type == null) {
-            return null;
+            return PrimitiveDeclarationType.Void(Collections.EMPTY_SET);
         }
         switch (type.type) {
             case "NameExpression":
@@ -115,7 +145,7 @@ public class JSDocParser {
                         return new NamedObjectType("Array", false);
                     case "functon":
                     case "function":
-                        return new FunctionType(PrimitiveDeclarationType.Void(EMPTY_SET), EMPTY_LIST, EMPTY_SET);
+                        return new FunctionType(null, PrimitiveDeclarationType.Void(EMPTY_SET), EMPTY_LIST, EMPTY_SET);
                     case "object":
                         return new NamedObjectType("Object", false);
                     case "domelement":
@@ -126,8 +156,8 @@ public class JSDocParser {
                 System.err.println("Don't know how to handle the name: " + type.name);
                 return PrimitiveDeclarationType.Void(EMPTY_SET);
             case "TypeApplication":
-                if (type.expression.type.equals("NameExpression") && type.expression.name.toLowerCase().equals("array")) {
-                    return new NamedObjectType("Array", false, toDeclarationType(type.expression, closure));
+                if (type.expression.type.equals("NameExpression") && type.expression.name.toLowerCase().equals("array") && type.applications != null && !type.applications.isEmpty()) {
+                    return new NamedObjectType("Array", false, toDeclarationType(type.applications.iterator().next(), closure));
                 }
                 if (type.expression.type.equals("NameExpression")) {
                     return new NamedObjectType(type.expression.name, false);
@@ -154,7 +184,7 @@ public class JSDocParser {
                 if (returnType == null) {
                     returnType = PrimitiveDeclarationType.Void(EMPTY_SET);
                 }
-                return new FunctionType(returnType, args, EMPTY_SET);
+                return new FunctionType(null, returnType, args, EMPTY_SET);
             case "RecordType":
                 Map<String, DeclarationType> fields = type.fields.stream().map(field -> new Pair<>(field.key, toDeclarationType(field.value, closure))).collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
                 return new UnnamedObjectType(fields, EMPTY_SET);
@@ -166,14 +196,14 @@ public class JSDocParser {
 
     }
 
-    private DeclarationType fromHeapValue(String type, Snap.Obj closure) {
-        if (type == null) {
+    private DeclarationType fromHeapValue(String path, Snap.Obj closure) {
+        if (path == null) {
             return null;
         }
         Snap.Obj env = closure.env;
         while (env != null) {
             try {
-                Snap.Value value = JSNAPUtil.lookupRecursive(env, type);
+                Snap.Value value = JSNAPUtil.lookupRecursive(env, path);
                 if (value instanceof Snap.Obj && ((Snap.Obj) value).function != null) {
                     Snap.Obj obj = (Snap.Obj) value;
                     return typeAnalysis.getTypeFactory().getType(new HasPrototypeNode(typeAnalysis.getSolver(), (Snap.Obj) obj.getProperty("prototype").value));
@@ -231,7 +261,7 @@ public class JSDocParser {
             new Util.StreamGobbler(process.getErrorStream(), new CountDownLatch(1));
         }
 
-        String parseComment(String doc) throws IOException {
+        synchronized String parseComment(String doc) throws IOException {
             process.getOutputStream().write(doc.getBytes());
             process.getOutputStream().write(0);
             process.getOutputStream().flush();

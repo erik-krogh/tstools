@@ -135,7 +135,11 @@ public class LookupType implements TypeVisitor<Type> {
 
     @Override
     public Type visit(TypeParameterType t) {
-        throw new RuntimeException();
+        if (t.getTarget() == null) {
+            return null;
+        } else {
+            return t.getTarget().accept(this);
+        }
     }
 
     @Override

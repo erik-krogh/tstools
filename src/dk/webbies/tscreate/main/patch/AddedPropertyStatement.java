@@ -57,12 +57,10 @@ public class AddedPropertyStatement implements PatchStatement {
             typeString = newInfo.printer.printType(propertyType, typePath + "." + propertyName);
         }
 
-        return JSONBuilder.createObject()
+        return PatchStatement.build(typePath + "." + propertyName, newInfo, oldInfo)
                 .add("type", "addedProperty")
                 .add("typePath", typePath)
                 .add("key", propertyName)
-                .add("isInOldDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, oldInfo) != null)
-                .add("isInNewDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, newInfo) != null)
                 .add("newType", typeString)
                 .add("isAny", PatchFileFactory.isAny(propertyType) || PatchFileFactory.isVoid(propertyType))
                 .add("isClass", containerType instanceof ClassType && !typePath.endsWith("[constructor].[return]"))

@@ -1,8 +1,6 @@
 package dk.webbies.tscreate.main;
 
-import com.google.gson.JsonObject;
 import com.google.javascript.jscomp.parsing.parser.Parser;
-import dk.au.cs.casa.typescript.types.InterfaceType;
 import dk.webbies.tscreate.BenchMark;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.Score;
@@ -10,6 +8,7 @@ import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
+import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.analysis.methods.NoTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.combined.CombinedTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.contextSensitive.combined.CombinedContextSensitiveTypeAnalysis;
@@ -28,8 +27,7 @@ import dk.webbies.tscreate.jsnap.JSNAPUtil;
 import dk.webbies.tscreate.jsnap.Snap;
 import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
 import dk.webbies.tscreate.jsnap.classes.LibraryClass;
-import dk.webbies.tscreate.main.patch.PatchFile;
-import dk.webbies.tscreate.main.patch.PatchFileFactory;
+import dk.webbies.tscreate.main.patch.*;
 import dk.webbies.tscreate.paser.AST.AstNode;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.paser.JavaScriptParser;
@@ -43,6 +41,7 @@ import java.util.stream.Collectors;
 import static dk.webbies.tscreate.BenchMark.*;
 import static dk.webbies.tscreate.Options.StaticAnalysisMethod.*;
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
+import static dk.webbies.tscreate.util.Util.concat;
 import static dk.webbies.tscreate.util.Util.toFixed;
 import static java.util.Arrays.asList;
 
@@ -60,22 +59,99 @@ public class Main {
         // TODO: Collateral Evolution
 
         // Benchmarks, where I can run ALL the static analysis methods.
-        List<BenchMark> stableBenches = asList(async, require, knockout, backbone, hammer, moment, handlebars30, underscore, please, path, p2, mathjax, materialize, photoswipe, peer, createjs, yui);
+        List<BenchMark> stableBenches = asList(async142, require, knockout, backbone, hammer, moment, handlebars30, underscore, please, path, p2, mathjax, materialize, photoswipe, peer, createjs, yui);
         List<Options.StaticAnalysisMethod> allMethods = asList(NONE, ANDERSON, MIXED, COMBINED, UPPER, UPPER_LOWER);//, ANDERSON_CONTEXT_SENSITIVE, MIXED_CONTEXT_SENSITIVE, COMBINED_CONTEXT_SENSITIVE, LOWER_CONTEXT_SENSITIVE, UPPER_LOWER_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
 
 
         long start = System.currentTimeMillis();
         try {
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(backbone, backbone133);
+                savePatchFile(patchFile, "diffViewer/backbone-10-13.json");
+            }
 
-//            runAnalysis(handlebars4);
+            {
+                PatchFile patchFile = PatchFileFactory.fromImplementation(async142, async201);
+                savePatchFile(patchFile, "diffViewer/async-1-2.json");
+            }
 
-            PatchFile patchFile = PatchFileFactory.fromEvaluation(jQuery17, jQuery);
+            {
+                PatchFile patchFile = PatchFileFactory.fromImplementation(ember20, ember27);
+                savePatchFile(patchFile, "diffViewer/ember-20-27.json");
+            }
 
-            String printed = patchFile.toJSON().toString();
+            {
+                PatchFile patchFile = PatchFileFactory.fromImplementation(handlebars30, handlebars4);
+                savePatchFile(patchFile, "diffViewer/handlebars-3-4.json");
+            }
 
-            BufferedWriter writer = new BufferedWriter(new FileWriter(new File("diffViewer/diff.json")));
-            writer.write(printed);
-            writer.close();
+            {
+                PatchFile patchFile = PatchFileFactory.fromImplementation(PIXI, PIXI_4_0);
+                savePatchFile(patchFile, "diffViewer/pixi-3-4.json");
+            }
+
+            {
+                PatchFile patchFile = PatchFileFactory.fromImplementation(ember1, ember20);
+                savePatchFile(patchFile, "diffViewer/ember-1-2.json");
+            }*/
+
+            {
+                PatchFile patchFile = PatchFileFactory.fromImplementation(moment, moment_214);
+                savePatchFile(patchFile, "diffViewer/moment-to-214.json");
+            }
+
+//            runAnalysis(ember27);
+
+//            PatchFile patchFromImplementation = PatchFileFactory.fromImplementation(PIXI, PIXI_4_0);
+
+            /*PatchFile patchFromHandwritten = PatchFileFactory.fromHandwritten(PIXI, PIXI_4_0);
+
+            savePatchFile(patchFromImplementation, "diffViewer/ember/diff.json");
+
+
+
+            int adds = 0;
+            int addsInOld = 0;
+            int addsInNew = 0;
+
+            int removals = 0;
+            int removalsInOld = 0;
+            int removalsInNew = 0;
+
+            for (PatchStatement stmt : patchFromImplementation.getStatements()) {
+                if (stmt instanceof AddedPropertyStatement) {
+                    AddedPropertyStatement addedProp = (AddedPropertyStatement) stmt;
+                    boolean inOld = PatchStatement.findInHandWritten(addedProp.getTypePath() + "." + addedProp.getPropertyName(), patchFromImplementation.getOldInfo()) != null;
+                    boolean inOldContainer = PatchStatement.findInHandWritten(addedProp.getTypePath(), patchFromImplementation.getOldInfo()) != null;
+                    boolean inNew = PatchStatement.findInHandWritten(addedProp.getTypePath() + "." + addedProp.getPropertyName(), patchFromImplementation.getNewInfo()) != null;
+                    boolean inNewContainer = PatchStatement.findInHandWritten(addedProp.getTypePath(), patchFromImplementation.getNewInfo()) != null;
+
+                    if (!inOldContainer || !inNewContainer) {
+                        continue;
+                    }
+
+                    adds++;
+                    addsInOld += inOld ? 1 : 0;
+                    addsInNew += inNew ? 1 : 0;
+                } else if (stmt instanceof RemovedPropertyStatement) {
+                    RemovedPropertyStatement removedProp = (RemovedPropertyStatement) stmt;
+                    boolean inOld = PatchStatement.findInHandWritten(removedProp.getTypePath() + "." + removedProp.getPropertyName(), patchFromImplementation.getOldInfo()) != null;
+                    boolean inOldContainer = PatchStatement.findInHandWritten(removedProp.getTypePath(), patchFromImplementation.getOldInfo()) != null;
+                    boolean inNew = PatchStatement.findInHandWritten(removedProp.getTypePath() + "." + removedProp.getPropertyName(), patchFromImplementation.getNewInfo()) != null;
+                    boolean inNewContainer = PatchStatement.findInHandWritten(removedProp.getTypePath(), patchFromImplementation.getNewInfo()) != null;
+
+                    if (!inOldContainer || !inNewContainer) {
+                        continue;
+                    }
+
+                    removals++;
+                    removalsInOld += inOld ? 1 : 0;
+                    removalsInNew += inNew ? 1 : 0;
+                }
+            }
+
+            System.out.println();*/
+
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -89,46 +165,12 @@ public class Main {
         }
     }
 
-    private static Collection<CompareMethods.Config> genCompareMethods() {
-        return asList(new CompareMethods.Config("lower", (options) -> {
-                    options.staticMethod = ANDERSON;
-                }),
-                new CompareMethods.Config("mixed", (options) -> {
-                    options.staticMethod = MIXED;
-                }),
-                new CompareMethods.Config("combined", (options) -> {
-                    options.staticMethod = COMBINED;
-                }),
-                new CompareMethods.Config("upper", (options) -> {
-                    options.staticMethod = UPPER;
-                }),
-                new CompareMethods.Config("lower_upper", (options) -> {
-                    options.staticMethod = UPPER_LOWER;
-                }));
-    }
+    public static void savePatchFile(PatchFile patchFile, String path) throws IOException {
+        String printed = patchFile.toJSON().toString();
 
-    private static List<CompareMethods.Config> genUpperLowerCuts(Options.StaticAnalysisMethod method) {
-        return asList(
-                new CompareMethods.Config("clean", (options) -> {
-                    options.staticMethod = method;
-                }),
-                new CompareMethods.Config("cut_Param->Arg", (options) -> {
-                    options.staticMethod = method;
-                    options.disableFlowFromParamsToArgs = true;
-                }),
-                new CompareMethods.Config("cut_Return->Callsite", (options) -> {
-                    options.staticMethod = method;
-                    options.disableFlowFromReturnToCallsite = true;
-                }),
-                new CompareMethods.Config("cut_Callsite->Return", (options) -> {
-                    options.staticMethod = method;
-                    options.disableFlowFromCallsiteToReturn = true;
-                }),
-                new CompareMethods.Config("cut_Args->Param", (options) -> {
-                    options.staticMethod = method;
-                    options.disableFlowFromArgsToParams = true;
-                })
-        );
+        BufferedWriter writer = new BufferedWriter(new FileWriter(new File(path)));
+        writer.write(printed);
+        writer.close();
     }
 
     public static Score makeSuperEval(BenchMark benchMark) throws IOException {
@@ -186,16 +228,6 @@ public class Main {
 
         Util.writeFile(resultDeclarationFilePath, printedDeclaration);
 
-        if (benchMark.getOptions().filterResultBasedOnDeclaration) { // A little weird, because I'm reusing some code that also parses the resulting declaration. // TODO: Less weird.
-            InterfaceType real = new DeclarationEvaluator.ParsedDeclaration(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, emptySnap).invoke().getRealDeclaration();
-            declaration = declaration.entrySet().stream().filter(entry -> real.getDeclaredProperties().keySet().contains(entry.getKey())).collect(Collectors.toMap(Map.Entry::getKey, (entry) -> {
-                return entry.getValue().accept(new FilterDeclarationVisitor(), real.getDeclaredProperties().get(entry.getKey()));
-            }));
-            printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions()).print();
-
-            Util.writeFile(resultDeclarationFilePath, printedDeclaration);
-        }
-
         Evaluation evaluation = null;
         if (benchMark.declarationPath != null) {
             evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.getOptions(), emptySnap).getEvaluation();
@@ -231,14 +263,14 @@ public class Main {
         Snap.Obj globalObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), AST);
         Snap.Obj emptySnap = JSNAPUtil.getEmptyJSnap(benchMark.getOptions(), benchMark.dependencyScripts(), AST); // Not empty, just the one without the library we are analyzing.
 
-        HashMap<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract();
+        Map<Snap.Obj, LibraryClass> libraryClasses = new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract();
 
         NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), libraryClasses, emptySnap);
 
         return createDeclaration(benchMark, AST, globalObject, emptySnap, libraryClasses, nativeClasses);
     }
 
-    public static Map<String, DeclarationType> createDeclaration(BenchMark benchMark, FunctionExpression AST, Snap.Obj globalObject, Snap.Obj emptySnap, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
+    public static Map<String, DeclarationType> createDeclaration(BenchMark benchMark, FunctionExpression AST, Snap.Obj globalObject, Snap.Obj emptySnap, Map<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
         Map<AstNode, Set<Snap.Obj>> callsites = Collections.EMPTY_MAP;
         if (benchMark.getOptions().recordCalls && globalObject.getProperty("__jsnap__callsitesToClosures") != null && benchMark.getOptions().useCallsiteInformation) {
             callsites = JSNAPUtil.getCallsitesToClosures((Snap.Obj) globalObject.getProperty("__jsnap__callsitesToClosures").value, AST);
@@ -364,16 +396,13 @@ public class Main {
         if (options.disableFlowFromReturnToCallsite) {
             fileSuffix += "_noRetCal";
         }
-        if (options.filterResultBasedOnDeclaration) {
-            fileSuffix += "_filtered";
-        }
         if (options.useJSDoc) {
             fileSuffix += "_jsDoc";
         }
         return benchMark.scriptPath + "." + fileSuffix + ".gen.d.ts";
     }
 
-    private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
+    private static TypeAnalysis createTypeAnalysis(BenchMark benchMark, Snap.Obj globalObject, Map<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
         switch (benchMark.getOptions().staticMethod) {
             case MIXED:
                 return new MixedTypeAnalysis(libraryClasses, benchMark.getOptions(), globalObject, nativeClasses, false, callsites);

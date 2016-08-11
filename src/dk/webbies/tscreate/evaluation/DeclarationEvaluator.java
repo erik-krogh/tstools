@@ -232,8 +232,8 @@ public class DeclarationEvaluator {
         private BenchMark benchMark;
         private final Snap.Obj global;
         private final Map<Snap.Obj, LibraryClass> libraryClasses;
-        private AtomicReference<SpecReader> realDeclaration;
-        private AtomicReference<SpecReader> myDeclaration;
+        private SpecReader realDeclaration;
+        private SpecReader myDeclaration;
         private Set<String> properties;
         private Set<Type> nativeTypesInReal;
         private NativeClassesMap realNativeClasses;
@@ -249,11 +249,11 @@ public class DeclarationEvaluator {
         }
 
         public InterfaceType getRealDeclaration() {
-            return (InterfaceType) realDeclaration.get().getGlobal();
+            return (InterfaceType) realDeclaration.getGlobal();
         }
 
         public InterfaceType getMyDeclaration() {
-            return (InterfaceType) myDeclaration.get().getGlobal();
+            return (InterfaceType) myDeclaration.getGlobal();
         }
 
         public Set<String> getProperties() {
@@ -279,14 +279,12 @@ public class DeclarationEvaluator {
         public ParsedDeclaration invoke() {
             Environment env = benchMark.languageLevel.environment;
             List<String> dependencies = benchMark.dependencyDeclarations();
-            realDeclaration = new AtomicReference<>();
-            myDeclaration = new AtomicReference<>();
             AtomicReference<SpecReader> emptyDeclaration = new AtomicReference<>();
             try {
                 Util.runAll(() -> {
-                    realDeclaration.set(getTypeSpecification(env, dependencies, benchMark.declarationPath));
+                    realDeclaration = getTypeSpecification(env, dependencies, benchMark.declarationPath);
                 }, () -> {
-                    myDeclaration.set(getTypeSpecification(env, dependencies, resultFilePath));
+                    myDeclaration = getTypeSpecification(env, dependencies, resultFilePath);
                 }, () -> {
                     emptyDeclaration.set(getTypeSpecification(env, dependencies));
                 });
@@ -296,17 +294,17 @@ public class DeclarationEvaluator {
 
             properties = new HashSet<>();
 
-            Set<String> realProperties = ((InterfaceType)realDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
-            Set<String> myProperties = ((InterfaceType)myDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
+            Set<String> realProperties = ((InterfaceType)realDeclaration.getGlobal()).getDeclaredProperties().keySet();
+            Set<String> myProperties = ((InterfaceType)myDeclaration.getGlobal()).getDeclaredProperties().keySet();
             properties.addAll(realProperties);
             properties.addAll(myProperties);
 
             Set<String> existingProperties = ((InterfaceType)emptyDeclaration.get().getGlobal()).getDeclaredProperties().keySet();
             properties.removeAll(existingProperties);
 
-            realNativeClasses = parseNatives(global, libraryClasses, realDeclaration.get(), emptySnap);
+            realNativeClasses = parseNatives(global, libraryClasses, realDeclaration, emptySnap);
             this.emptyNativeClasses = parseNatives(global, libraryClasses, emptyDeclaration.get(), emptySnap);
-            myNativeClasses = parseNatives(global, libraryClasses, myDeclaration.get(),  emptySnap);
+            myNativeClasses = parseNatives(global, libraryClasses, myDeclaration,  emptySnap);
 
 
             nativeTypesInReal = new HashSet<>();
@@ -412,7 +410,7 @@ public class DeclarationEvaluator {
 
         @Override
         public Void visit(SymbolType t) {
-            throw new RuntimeException();
+            return null;
         }
     }
 }

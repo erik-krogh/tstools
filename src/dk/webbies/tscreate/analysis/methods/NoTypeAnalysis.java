@@ -15,7 +15,7 @@ import java.util.*;
  * Created by erik1 on 12-05-2016.
  */
 public class NoTypeAnalysis extends MixedTypeAnalysis {
-    public NoTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
+    public NoTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
         super(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod, callsites);
     }
 

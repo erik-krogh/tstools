@@ -23,7 +23,7 @@ import static dk.webbies.tscreate.jsnap.Snap.Value;
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class DeclarationParser {
-    public static NativeClassesMap parseNatives(Obj global, Environment env, List<String> dependencyDeclarations, HashMap<Obj, LibraryClass> libraryClasses, Obj emptySnap) {
+    public static NativeClassesMap parseNatives(Obj global, Environment env, List<String> dependencyDeclarations, Map<Obj, LibraryClass> libraryClasses, Obj emptySnap) {
         SpecReader spec = getTypeSpecification(env, dependencyDeclarations);
 
         return parseNatives(global, libraryClasses, spec, emptySnap);

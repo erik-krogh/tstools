@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("Duplicates")
 public class MixedTypeAnalysis implements TypeAnalysis {
-    public final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    public final Map<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
     public HeapValueFactory heapFactory;
     public final UnionFindSolver solver;
@@ -38,7 +38,7 @@ public class MixedTypeAnalysis implements TypeAnalysis {
     private final boolean upperBoundMethod;
     protected Map<AstNode, Set<Snap.Obj>> callsites;
 
-    public MixedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
+    public MixedTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
         this.upperBoundMethod = upperBoundMethod;
         this.callsites = callsites;
         this.solver = new UnionFindSolver(this);
@@ -96,8 +96,8 @@ public class MixedTypeAnalysis implements TypeAnalysis {
         return options;
     }
 
-    private static Map<Snap.Obj, LibraryClass> createPrototypeFunctionMap(HashMap<Snap.Obj, LibraryClass> libraryClasses) {
-        HashMap<Snap.Obj, LibraryClass> result = new HashMap<>();
+    private static Map<Snap.Obj, LibraryClass> createPrototypeFunctionMap(Map<Snap.Obj, LibraryClass> libraryClasses) {
+        Map<Snap.Obj, LibraryClass> result = new HashMap<>();
         for (LibraryClass libraryClass : libraryClasses.values()) {
             for (Snap.Property prop : libraryClass.prototype.getPropertyMap().values()) {
                 if (!prop.name.equals("constructor") && prop.value instanceof Snap.Obj && ((Snap.Obj) prop.value).function != null) {

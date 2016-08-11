@@ -11,3 +11,4 @@ lib/ts-type-reader
 synopsis/
 **/tmp.html
 libs/
+diffViewer/*.json

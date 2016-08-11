@@ -26,7 +26,7 @@ public class CombinedTypeAnalysis implements TypeAnalysis {
     private final PureSubsetsTypeAnalysis subset;
     private final TypeFactory typeFactory;
 
-    public CombinedTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
+    public CombinedTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
         mixed = new MixedTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod, callsites);
         subset = new PureSubsetsTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, callsites);
 

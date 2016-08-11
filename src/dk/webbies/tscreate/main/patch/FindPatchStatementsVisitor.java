@@ -107,7 +107,7 @@ public class FindPatchStatementsVisitor implements DeclarationTypeVisitorWithArg
         }
 
         // If any of them are any (or NON_VOID), lookup in the old handwritten declaration file. It it states something specific, skip this one.
-        if (isAny(newType) || isAny(oldType)) {
+        if ((isAny(newType) || isAny(oldType)) && oldHandWrittenType != null) {
             Type handwrittenType = oldHandWrittenType.accept(new LookupType(Util.removePrefix(argument.path, "window.")));
             if (handwrittenType instanceof SimpleType) {
                 SimpleType simple = (SimpleType) handwrittenType;

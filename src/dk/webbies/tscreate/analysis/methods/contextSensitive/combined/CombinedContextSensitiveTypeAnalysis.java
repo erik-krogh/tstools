@@ -27,7 +27,7 @@ public class CombinedContextSensitiveTypeAnalysis implements TypeAnalysis {
     private final PureSubsetsContextSensitiveTypeAnalysis subset;
     private final TypeFactory typeFactory;
 
-    public CombinedContextSensitiveTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
+    public CombinedContextSensitiveTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, boolean upperBoundMethod, Map<AstNode, Set<Snap.Obj>> callsites) {
         mixed = new MixedContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, upperBoundMethod, callsites);
         subset = new PureSubsetsContextSensitiveTypeAnalysis(libraryClasses, options, globalObject, nativeClasses, callsites);
 

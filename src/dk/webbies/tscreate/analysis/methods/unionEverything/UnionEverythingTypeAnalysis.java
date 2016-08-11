@@ -19,10 +19,10 @@ import java.util.*;
 @SuppressWarnings("Duplicates")
 public class UnionEverythingTypeAnalysis extends MixedTypeAnalysis {
 
-    private HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    private Map<Snap.Obj, LibraryClass> libraryClasses;
     private Snap.Obj globalObject;
 
-    public UnionEverythingTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
+    public UnionEverythingTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, NativeClassesMap nativeClasses, Map<AstNode, Set<Snap.Obj>> callsites) {
         super(libraryClasses, options, globalObject, nativeClasses, false, callsites);
         this.libraryClasses = libraryClasses;
         this.globalObject = globalObject;

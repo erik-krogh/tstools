@@ -39,17 +39,7 @@ public class PatchFileFactory {
         BenchmarkInformation newInfo = getInfo(newBench);
 
         List<PatchStatement> patchStatements = FindPatchStatementsVisitor.generateStatements(oldInfo.globalObject, newInfo.globalObject, newBench.getOptions(), oldInfo.handwritten, newInfo.handwritten, newInfo.nativeClasses);
-
-        if (oldBench.getOptions().filterPatchBasedOnOldDeclaration) {
-            patchStatements = patchStatements.stream().filter(stmt -> {
-                //noinspection SimplifiableIfStatement
-                if (stmt.getTypePath().equals("window")) {
-                    return true;
-                }
-                return oldInfo.handwritten.accept(new LookupType(Util.removePrefix(stmt.getTypePath(), "window."))) != null;
-            }).collect(Collectors.toList());
-        }
-
+        // For braekPoint: Break on NullPointerException.
         return new PatchFile(patchStatements, oldInfo, newInfo);
     }
 
@@ -171,6 +161,7 @@ public class PatchFileFactory {
                 case SHOULD_BE_CONSTRUCTOR:
                 case WRONG_NATIVE_TYPE:
                 case EXCESS_INDEXER:
+                case MISSING_INDEXER:
                     DeclarationType newType = lookUpNew(typePath);
                     DeclarationType oldType = lookUpOld(typePath);
 

@@ -58,7 +58,7 @@ public class ChangedNumberOfArgumentsStatement implements PatchStatement {
 
     @Override
     public JsonObject toJSONObject(PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo) {
-        return JSONBuilder.createObject()
+        return PatchStatement.build(typePath, newInfo, oldInfo)
                 .add("type", "changedArgCount")
                 .add("typePath", typePath)
                 .add("isClass", containerType instanceof ClassType && !typePath.endsWith("[constructor].[return]"))

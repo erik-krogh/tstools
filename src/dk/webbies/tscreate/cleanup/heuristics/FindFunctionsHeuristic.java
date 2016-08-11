@@ -92,7 +92,7 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic {
 
     private FunctionType getFunctionFromApplyProp(UnnamedObjectType object, FunctionType fieldType) {
         DeclarationType returnType = fieldType.getReturnType();
-        FunctionType result = new FunctionType(returnType, Collections.EMPTY_LIST, object.getNames());
+        FunctionType result = new FunctionType(null, returnType, Collections.EMPTY_LIST, object.getNames());
         this.reducer.originals.put(result, Collections.singletonList(object));
         return result;
     }
@@ -129,7 +129,7 @@ public class FindFunctionsHeuristic implements ReplacementHeuristic {
         for (int i = 1; i < callArguments.size(); i++) {
             arguments.add(callArguments.get(i));
         }
-        FunctionType result = new FunctionType(returnType, arguments, object.getNames());
+        FunctionType result = new FunctionType(null, returnType, arguments, object.getNames());
         this.reducer.originals.put(result, Collections.singletonList(object));
         return result;
     }

@@ -1,10 +1,13 @@
 package dk.webbies.tscreate.analysis.declarations;
 
+import com.google.javascript.jscomp.parsing.parser.trees.Comment;
 import dk.au.cs.casa.typescript.types.GenericType;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.declarationReader.DeclarationParser;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
+import dk.webbies.tscreate.util.Tuple3;
 import dk.webbies.tscreate.util.Util;
 import fj.F;
 import fj.pre.Ord;
@@ -285,6 +288,13 @@ public class DeclarationPrinter {
         }
         write(builder, " {\n");
         ident++;
+
+        if (!clazz.getConstructorType().getAstNodes().isEmpty()) {
+            FunctionExpression func = clazz.getConstructorType().getAstNodes().iterator().next();
+            if (func.jsDoc != null) {
+                printJSDoc(func.jsDoc.value, arg);
+            }
+        }
         ident(builder);
         write(builder, "constructor (");
         printArguments(arg, clazz.getConstructorType().getArguments(), clazz.getConstructorType().minArgs);
@@ -297,10 +307,16 @@ public class DeclarationPrinter {
             }
         }
 
+        Map<String, String> memberDocs = new HashMap<>();
+        if (clazz.getConstructorType().getAstNodes().size() == 1) {
+            FunctionExpression func = clazz.getConstructorType().getAstNodes().iterator().next();
+            func.memberJsDocs.entrySet().forEach(entry -> memberDocs.put(entry.getKey(), entry.getValue().value));
+        }
+
         Predicate<String> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
         for (Map.Entry<String, DeclarationType> entry : clazz.getPrototypeFields().entrySet().stream().sorted(Util::compareStringEntry).collect(Collectors.toList())) {
             if (notInSuperClass.test(entry.getKey())) {
-                this.printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor());
+                printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), null, memberDocs.get(entry.getKey()));
             }
         }
 
@@ -312,15 +328,20 @@ public class DeclarationPrinter {
         return printType(type, 0, typePath);
     }
 
-    public String printType(DeclarationType type, int identationLevel, String typePath) {
+    Map<Tuple3<DeclarationType, Integer, String>, String> printedTypeCache = new HashMap<>();
+    public String printType(DeclarationType type, int indentationLevel, String typePath) {
         try {
+            Tuple3<DeclarationType, Integer, String> cacheKey = new Tuple3<>(type, indentationLevel, typePath);
+            if (printedTypeCache.containsKey(cacheKey)) {
+                return printedTypeCache.get(cacheKey);
+            }
             if (typePath != null && !typePath.isEmpty()) {
                 assert typePath.startsWith("window.");
                 typePath = Util.removePrefix(typePath, "window.");
             }
 
             type = type.resolve();
-            ident += identationLevel;
+            ident += indentationLevel;
             finishing = false;
             StringBuilder builder = new StringBuilder();
 
@@ -355,9 +376,11 @@ public class DeclarationPrinter {
                 type.accept(new TypeVisitor(), arg);
             }
 
-            ident -= identationLevel;
+            ident -= indentationLevel;
 
-            return builder.toString();
+            String result = builder.toString();
+            printedTypeCache.put(cacheKey, result);
+            return result;
         } catch (GotCyclic e) {
             return "any"; // Happens in some corner-cases with array-indexers. Where the printer just prints "any", but the type is actually something complicated.
         }
@@ -461,6 +484,21 @@ public class DeclarationPrinter {
     }
 
     private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor, String prefix) {
+        if (type instanceof FunctionType && ((FunctionType)type).getAstNodes().size() == 1) {
+            FunctionExpression function = ((FunctionType) type).getAstNodes().iterator().next();
+            if (function.jsDoc != null) {
+                String jsdoc = function.jsDoc.value;
+                printObjectField(arg, name, type, visitor, prefix, jsdoc);
+                return;
+            }
+        }
+        printObjectField(arg, name, type, visitor, prefix, null);
+    }
+
+    private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor, String prefix, String jsDoc) {
+        if (jsDoc != null) {
+            printJSDoc(jsDoc, arg);
+        }
         ident(arg.builder);
         if (prefix != null) {
             write(arg.builder, prefix);
@@ -470,6 +508,18 @@ public class DeclarationPrinter {
         write(arg.builder, ": ");
         type.accept(visitor, arg);
         write(arg.builder, ";\n");
+    }
+
+    private void printJSDoc(String comment, VisitorArg arg) {
+        String[] lines = comment.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            line = line.trim();
+            if (i != 0) {
+                line = " " + line;
+            }
+            writeln(arg.builder, line);
+        }
     }
 
     private void printFunction(TypeVisitor visitor, VisitorArg arg, FunctionType functionType, boolean insideInterface) {
@@ -583,7 +633,9 @@ public class DeclarationPrinter {
         public Void visit(InterfaceDeclarationType interfaceType, VisitorArg arg) {
             if (finishing) {
                 finishing = false;
-                writeln(arg.builder, "// Seen as: " + interfaceType.getNames().stream().sorted().collect(Collectors.joining(", ")));
+                if (!interfaceType.getNames().isEmpty()) {
+                    writeln(arg.builder, "// Seen as: " + interfaceType.getNames().stream().sorted().collect(Collectors.joining(", ")));
+                }
                 writeln(arg.builder, "interface " + interfaceType.name + " {");
                 ident++;
                 if (interfaceType.getFunction() != null) {
@@ -719,9 +771,8 @@ public class DeclarationPrinter {
                     throw new GotCyclic(indexType);
                 }
             } else if (indexType instanceof InterfaceDeclarationType || indexType instanceof ClassInstanceType) {
-                arg.builder.append("Array<");
                 indexType.accept(this, arg);
-                arg.builder.append(">");
+                arg.builder.append("[]");
             } else if (indexType instanceof ClassType) {
                 // This doesn't make sense.
                 arg.builder.append("any[]");
@@ -735,6 +786,12 @@ public class DeclarationPrinter {
             if (finishing) {
                 finishing = false;
                 // First an constructor interface.
+                if (!classType.getConstructorType().getAstNodes().isEmpty()) {
+                    FunctionExpression func = classType.getConstructorType().getAstNodes().iterator().next();
+                    if (func.jsDoc != null) {
+                        printJSDoc(func.jsDoc.value, arg);
+                    }
+                }
                 writeln(arg.builder, "interface " + classType.getName() + "Constructor {");
                 ident++;
                 ident(arg.builder);
@@ -756,11 +813,16 @@ public class DeclarationPrinter {
                 }
                 write(arg.builder, " {\n");
 
+                Map<String, String> memberDocs = new HashMap<>();
+                if (classType.getConstructorType().getAstNodes().size() == 1) {
+                    FunctionExpression func = classType.getConstructorType().getAstNodes().iterator().next();
+                    func.memberJsDocs.entrySet().forEach(entry -> memberDocs.put(entry.getKey(), entry.getValue().value));
+                }
 
                 ident++;
                 Predicate<String> notInSuperClassTest = notInSuperClassTest(classType.getSuperClass());
                 classType.getPrototypeFields().entrySet().stream().sorted(Util::compareStringEntry).filter((entry) -> notInSuperClassTest.test(entry.getKey())).forEach((entry) -> {
-                    printObjectField(arg, entry.getKey(), entry.getValue(), this);
+                    printObjectField(arg, entry.getKey(), entry.getValue(), this, null, memberDocs.get(entry.getKey()));
                 });
 
                 ident--;

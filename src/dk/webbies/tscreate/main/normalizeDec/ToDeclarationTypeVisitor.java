@@ -188,7 +188,7 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
             arguments.add(new FunctionType.Argument(parameter.getName(), parameter.getType().accept(ToDeclarationTypeVisitor.this)));
         }
 
-        FunctionType result = new FunctionType(signature.getResolvedReturnType().accept(ToDeclarationTypeVisitor.this), arguments, EMPTY_SET);
+        FunctionType result = new FunctionType(null, signature.getResolvedReturnType().accept(ToDeclarationTypeVisitor.this), arguments, EMPTY_SET);
         result.minArgs = signature.getMinArgumentCount();
         return result;
     }
@@ -227,7 +227,7 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
             return result;
         } else {
             String name = new InterfaceDeclarationType(null, Collections.EMPTY_SET).name;
-            dk.webbies.tscreate.analysis.declarations.types.ClassType clazz = new dk.webbies.tscreate.analysis.declarations.types.ClassType(name, new FunctionType(PrimitiveDeclarationType.Void(EMPTY_SET), new ArrayList<>(), EMPTY_SET), new HashMap<>(), new HashMap<>(), null);
+            dk.webbies.tscreate.analysis.declarations.types.ClassType clazz = new dk.webbies.tscreate.analysis.declarations.types.ClassType(name, new FunctionType(null, PrimitiveDeclarationType.Void(EMPTY_SET), new ArrayList<>(), EMPTY_SET), new HashMap<>(), new HashMap<>(), null);
 
             cache.put(t, clazz);
 
@@ -240,7 +240,7 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
 
             DeclarationType uncastReturnType = constructorFunction.getReturnType().resolve();
             InterfaceDeclarationType returnType;
-            if (uncastReturnType instanceof PrimitiveDeclarationType /* Happens if litteraly empty */|| uncastReturnType instanceof dk.webbies.tscreate.analysis.declarations.types.ClassType /*Not sure when this happens */) {
+            if (uncastReturnType instanceof PrimitiveDeclarationType /* Happens if literally empty */|| uncastReturnType instanceof dk.webbies.tscreate.analysis.declarations.types.ClassType /*Not sure when this happens */) {
                 returnType = new InterfaceDeclarationType(null, EMPTY_SET);
             } else {
                 returnType = (InterfaceDeclarationType) uncastReturnType;

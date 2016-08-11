@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("Duplicates")
 public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysis {
-    final HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    final Map<Snap.Obj, LibraryClass> libraryClasses;
     final Snap.Obj globalObject;
     final Options options;
 
@@ -34,7 +34,7 @@ public class OldTypeAnalysis implements dk.webbies.tscreate.analysis.TypeAnalysi
     private final NativeTypeFactory nativeTypeFactory;
     private DeclarationParser.NativeClassesMap nativeClasses;
 
-    public OldTypeAnalysis(HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses) {
+    public OldTypeAnalysis(Map<Snap.Obj, LibraryClass> libraryClasses, Options options, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses) {
         this.nativeClasses = nativeClasses;
         this.libraryClasses = libraryClasses;
         this.options = options;

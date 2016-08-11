@@ -2,6 +2,7 @@ package dk.webbies.tscreate.analysis;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.javascript.jscomp.parsing.parser.trees.Comment;
 import dk.au.cs.casa.typescript.types.Signature;
 import dk.webbies.tscreate.Options;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
@@ -22,6 +23,7 @@ import dk.webbies.tscreate.util.Util;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.*;
 
@@ -33,12 +35,12 @@ public class TypeFactory {
     private final NativeClassesMap nativeClasses;
     private final HashSet<String> takenClassNames = new HashSet<>();
     private TypeAnalysis typeAnalysis;
-    private HashMap<Snap.Obj, LibraryClass> libraryClasses;
+    private Map<Snap.Obj, LibraryClass> libraryClasses;
     private Options options;
     public final TypeReducer typeReducer;
     private final Snap.Obj globalObject;
 
-    public TypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
+    public TypeFactory(Snap.Obj globalObject, Map<Snap.Obj, LibraryClass> libraryClasses, Options options, NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
         this.libraryClasses = libraryClasses;
         this.options = options;
         this.nativeClasses = nativeClasses;
@@ -195,7 +197,7 @@ public class TypeFactory {
     // Primitives are handled by the PrimitiveDeclarationType, and filtering them out here allows for "spurious" prototypes (see PrimitiveDeclarationType.STRING_OR_NUMBER
     private static DeclarationType filterPrimitives(NamedObjectType named) {
         switch (named.getName()) {
-            case "Function": return new FunctionType(PrimitiveDeclarationType.Void(EMPTY_SET), EMPTY_LIST, named.getNames());
+            case "Function": return new FunctionType(null, PrimitiveDeclarationType.Void(EMPTY_SET), EMPTY_LIST, named.getNames());
             case "Number":
             case "Boolean":
             case "String":
@@ -282,7 +284,7 @@ public class TypeFactory {
 
                 Map<String, DeclarationType> staticFields = new HashMap<>();
                 for (Map.Entry<String, Snap.Property> entry : constructor.getPropertyMap().entrySet()) {
-                    if (Arrays.asList("prototype", "caller", "length", "name", "arguments").stream().noneMatch(str -> str.equals(entry.getKey()))) {
+                    if (Stream.of("prototype", "caller", "length", "name", "arguments").noneMatch(str -> str.equals(entry.getKey()))) {
                         staticFields.put(entry.getKey(), getHeapPropType(entry.getValue()));
                     }
                 }
@@ -364,6 +366,21 @@ public class TypeFactory {
                 fieldTypes.put(name, getType(nodes));
             }
         }
+
+        if (options.useJSDoc) {
+            Map<String, Comment> memberJSDocs = libraryClass.getConstructor().function.astNode.memberJsDocs;
+            JSDocParser parser = new JSDocParser(globalObject, typeAnalysis, nativeClasses, typeReducer);
+            for (Map.Entry<String, Comment> entry : memberJSDocs.entrySet()) {
+                String property = entry.getKey();
+                Comment comment = entry.getValue();
+                DeclarationType type = parser.parseMemberDoc(libraryClass.getConstructor(), comment);
+                if (type != null && !(type instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType)type).getType() == PrimitiveDeclarationType.Type.VOID)) {
+                    fieldTypes.put(property, type);
+                }
+            }
+
+        }
+
         return fieldTypes;
     }
 
@@ -420,7 +437,7 @@ public class TypeFactory {
                 return new FunctionType.Argument(FunctionReducer.getBestArgumentName(arg.getFeature().getNames()), type);
             }).collect(Collectors.toList());
 
-            return singletonList(new FunctionType(returnType, arguments, feature.getNames()));
+            return singletonList(new FunctionType(null, returnType, arguments, feature.getNames()));
         }
     }
 
@@ -429,7 +446,7 @@ public class TypeFactory {
             return getPureFunction(closure);
         }
         if (closure.function.callSignatures.isEmpty()) {
-            return new FunctionType(PrimitiveDeclarationType.Void(EMPTY_SET), new ArrayList<>(), feature.getNames());
+            return new FunctionType(closure.function.astNode, PrimitiveDeclarationType.Void(EMPTY_SET), new ArrayList<>(), feature.getNames());
         }
         throw new RuntimeException("Should have gotten the types of all functions by now. Callsigs: " + closure.function.callSignatures.size());
     }
@@ -521,7 +538,7 @@ public class TypeFactory {
             return new FunctionType.Argument(name, constructCombinationType(arguments, this::getType));
         }).collect(Collectors.toList());
 
-        FunctionType result = new FunctionType(returnType, argumentsTypes, features.stream().map(UnionFeature::getNames).reduce(new HashSet<>(), Util::reduceSet));
+        FunctionType result = new FunctionType(closure.function.astNode, returnType, argumentsTypes, features.stream().map(UnionFeature::getNames).reduce(new HashSet<>(), Util::reduceSet));
 
         if (closure.recordedCalls != null) {
             result.minArgs = Integer.MAX_VALUE;

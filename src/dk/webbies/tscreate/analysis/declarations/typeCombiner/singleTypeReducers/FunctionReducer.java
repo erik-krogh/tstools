@@ -6,6 +6,7 @@ import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
 import dk.webbies.tscreate.analysis.declarations.typeCombiner.TypeReducer;
 import dk.webbies.tscreate.analysis.declarations.types.PrimitiveDeclarationType;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
 import dk.webbies.tscreate.util.Util;
 
 import java.util.ArrayList;
@@ -89,7 +90,10 @@ public class FunctionReducer extends SameTypeReducer<FunctionType> {
             arguments.add(arg);
         }
 
-        FunctionType result = new FunctionType(returnType, arguments, Util.concatSet(one.getNames(), two.getNames()));
+        List<FunctionExpression> astNodes = new ArrayList<>();
+        astNodes.addAll(one.getAstNodes());
+        astNodes.addAll(two.getAstNodes());
+        FunctionType result = new FunctionType(returnType, arguments, Util.concatSet(one.getNames(), two.getNames()), astNodes);
 
         result.minArgs = Math.min(one.minArgs, two.minArgs);
 

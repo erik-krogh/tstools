@@ -37,7 +37,7 @@ public class ChangedTypeStatement implements PatchStatement {
 
     @Override
     public JsonObject toJSONObject(PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo) {
-        return JSONBuilder.createObject()
+        return PatchStatement.build(typePath, newInfo, oldInfo)
                 .add("type", "changedType")
                 .add("typePath", typePath)
                 .add("newType", newInfo.printer.printType(newType, typePath))

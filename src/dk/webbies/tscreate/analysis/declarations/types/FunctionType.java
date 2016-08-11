@@ -1,20 +1,38 @@
 package dk.webbies.tscreate.analysis.declarations.types;
 
-import java.util.List;
-import java.util.Set;
+import dk.webbies.tscreate.paser.AST.FunctionExpression;
+
+import java.util.*;
 
 /**
  * Created by Erik Krogh Kristensen on 02-09-2015.
  */
 public class FunctionType extends DeclarationType {
+    private Set<FunctionExpression> astNodes;
     private DeclarationType returnType;
     private List<Argument> arguments;
     public int minArgs = Integer.MAX_VALUE;
 
-    public FunctionType(DeclarationType returnType, List<Argument> arguments, Set<String> names) {
+    public FunctionType(FunctionExpression astNode, DeclarationType returnType, List<Argument> arguments, Set<String> names) {
         super(names);
+        if (astNode != null) {
+            this.astNodes = new HashSet<>(Collections.singletonList(astNode));
+        } else {
+            this.astNodes = Collections.EMPTY_SET;
+        }
         this.returnType = returnType;
         this.arguments = arguments;
+    }
+
+    public FunctionType(DeclarationType returnType, List<Argument> arguments, Set<String> names, List<FunctionExpression> astNodes) {
+        super(names);
+        this.astNodes = new HashSet<>(astNodes);
+        this.returnType = returnType;
+        this.arguments = arguments;
+    }
+
+    public Collection<FunctionExpression> getAstNodes() {
+        return astNodes;
     }
 
     public DeclarationType getReturnType() {

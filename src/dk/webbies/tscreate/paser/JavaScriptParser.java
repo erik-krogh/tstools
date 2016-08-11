@@ -316,7 +316,7 @@ public class JavaScriptParser {
     }
 
     private static final class FindJSDocVisitor implements NodeTransverse<Void> {
-        private List<Comment> comments;
+        private final List<Comment> comments;
 
         FindJSDocVisitor(List<Comment> comments) {
             this.comments = comments.stream().filter(Comment::isJsDoc).collect(Collectors.toList());
@@ -328,8 +328,55 @@ public class JavaScriptParser {
             if (docs.size() == 1) {
                 function.jsDoc = docs.iterator().next();
             }
-            comments.stream().filter(comment -> comment.location.start.offset > function.location.start.offset && comment.location.end.offset < function.location.end.offset).forEach(function.nestedDocumentation::add);
+            List<Comment> nestedComments = comments.stream().filter(comment -> comment.location.start.offset > function.location.start.offset && comment.location.end.offset < function.location.end.offset).collect(Collectors.toList());
+            new FindMemberJSDocVisitor(function, nestedComments).visit(function);
             return NodeTransverse.super.visit(function);
+        }
+    }
+
+    private static final class FindMemberJSDocVisitor implements NodeTransverse<Void> {
+        private final FunctionExpression currentFunction;
+        private final List<Comment> comments;
+
+        private FindMemberJSDocVisitor(FunctionExpression currentFunction, List<Comment> comments) {
+            this.currentFunction = currentFunction;
+            this.comments = comments;
+        }
+
+        @Override
+        public Void visit(FunctionExpression function) {
+            if (function == currentFunction) {
+                return NodeTransverse.super.visit(function);
+            } else {
+                return null; // No further.
+            }
+        }
+
+        @Override
+        public Void visit(BinaryExpression expression) {
+            if (expression.getOperator() != Operator.EQUAL) {
+                return NodeTransverse.super.visit(expression);
+            }
+            if (!(expression.getLhs() instanceof MemberExpression)) {
+                return NodeTransverse.super.visit(expression);
+            }
+
+            MemberExpression lhs = (MemberExpression) expression.getLhs();
+
+            if (!(lhs.getExpression() instanceof ThisExpression)) {
+                return NodeTransverse.super.visit(expression);
+            }
+
+            int line = expression.location.start.line;
+
+            List<Comment> memberComments = comments.stream().filter(comment -> comment.location.end.line == line - 1).collect(Collectors.toList());
+            if (memberComments.size() == 1) {
+                String name = lhs.getProperty();
+                assert !currentFunction.memberJsDocs.containsKey(name);
+                currentFunction.memberJsDocs.put(name, memberComments.iterator().next());
+            }
+
+            return NodeTransverse.super.visit(expression);
         }
     }
 }

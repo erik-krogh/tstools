@@ -19,7 +19,7 @@ import java.util.Map;
  * A weird class, that makes sure that both the result of the Mixed analysis and the Subset analysis is sent to a single typeFactory.
  */
 public class CombinerTypeFactory extends TypeFactory {
-    public CombinerTypeFactory(Snap.Obj globalObject, HashMap<Snap.Obj, LibraryClass> libraryClasses, Options options, DeclarationParser.NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
+    public CombinerTypeFactory(Snap.Obj globalObject, Map<Snap.Obj, LibraryClass> libraryClasses, Options options, DeclarationParser.NativeClassesMap nativeClasses, TypeAnalysis typeAnalysis) {
         super(globalObject, libraryClasses, options, nativeClasses, typeAnalysis);
     }
 

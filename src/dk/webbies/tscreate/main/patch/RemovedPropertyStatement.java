@@ -42,12 +42,10 @@ public class RemovedPropertyStatement implements PatchStatement {
 
     @Override
     public JsonObject toJSONObject(PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo) {
-        return JSONBuilder.createObject()
+        return PatchStatement.build(typePath + "." + propertyName, newInfo, oldInfo)
                 .add("type", "removedProperty")
                 .add("typePath", typePath)
                 .add("key", propertyName)
-                .add("isInOldDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, oldInfo) != null)
-                .add("isInNewDec", PatchStatement.findInHandWritten(typePath + "." + propertyName, newInfo) != null)
                 .add("isClass", containerType instanceof ClassType && !typePath.endsWith("[constructor].[return]"))
                 .add("containerType", newInfo.printer.printType(containerType, null))
                 .add("containerDescription", describe(containerType, newInfo))
