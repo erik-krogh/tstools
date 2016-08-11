@@ -319,7 +319,11 @@ public class JavaScriptParser {
         private final List<Comment> comments;
 
         FindJSDocVisitor(List<Comment> comments) {
-            this.comments = comments.stream().filter(Comment::isJsDoc).collect(Collectors.toList());
+            this.comments = comments.stream().filter(this::isJSDoc).collect(Collectors.toList());
+        }
+
+        private boolean isJSDoc(Comment comment) {
+            return comment.isJsDoc() || (comment.value.startsWith("/*") && comment.value.contains("@"));
         }
 
         @Override
