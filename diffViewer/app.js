@@ -15,12 +15,54 @@ var app = angular.module('materializeApp', ['ui.materialize'])
         $scope.show = {
             new: false,
             old: false
+        };
+
+        $scope.filterOn = {
+            old: true,
+            new: false
+        };
+
+        $scope.getFilteredStatements = function () {
+            var result = $scope.diff.statements.slice();
+
+            if ($scope.filterOn.old) {
+                result = result.filter(function (stmt) {
+                    if (stmt.type == "removedProperty" || stmt.type == "addedProperty") {
+                        if (!stmt.isInOldDecContainer) {
+                            return false;
+                        }
+                    } else {
+                        if (!stmt.isInOldDec) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
+
+            if ($scope.filterOn.new) {
+                result = result.filter(function (stmt) {
+                    if (stmt.type == "removedProperty") {
+                        if (!stmt.isInNewDec && stmt.isInNewDecContainer) {
+                            return false;
+                        }
+                    }
+                    if (stmt.type == "addedProperty" && stmt.isInNewDec) {
+                        return false;
+                    }
+
+                    return true;
+                });
+            }
+            console.log("Removed: " + ($scope.diff.statements.length - result.length));
+            return result;
         }
 
     }]).controller('StatementController', ["$scope", "$http", function ($scope, $http) {
 
         $scope.show = {
-            all: false
+            all: false,
+            anything: true
         };
 
         var statementTypes = {
@@ -36,11 +78,11 @@ var app = angular.module('materializeApp', ['ui.materialize'])
                         }, {
                             description: "To: ",
                             code: statement.newType
-                        },
+                        }/*,
                         {
                             description: "In container: ",
                             code: statement.containerType
-                        }
+                        }*/
                     ]
                 }
             },
@@ -54,6 +96,33 @@ var app = angular.module('materializeApp', ['ui.materialize'])
                 },
                 getCodeSamples: function (statement) {
                     var result = [];
+                    if (statement.isInOldDec) {
+                        result.push({
+                            description: "Was already in the old declaration"
+                        });
+                    } else if (!statement.isInOldDecContainer) {
+                        result.push({
+                            description: "The container couldn't be found in the old declaration"
+                        });
+                    }
+
+                    if ($scope.diff.newDecAvailable) {
+                        if (statement.isInNewDec) {
+                            result.push({
+                                description: "Has been added in the new declaration"
+                            });
+                        } else {
+                            result.push({
+                                description: "Was not found in the new declaration"
+                            });
+                            if (!statement.isInNewDecContainer) {
+                                result.push({
+                                    description: "But neither was the container"
+                                })
+                            }
+                        }
+                    }
+
                     if (statement.isAny) {
                         result.push({
                             description: "A type could not be inferred"
@@ -64,10 +133,10 @@ var app = angular.module('materializeApp', ['ui.materialize'])
                             code: statement.newType
                         })
                     }
-                    result.push({
+                    /*result.push({
                         description: "In container: ",
                         code: statement.containerType
-                    });
+                    });*/
                     return result;
                 }
             },
@@ -80,10 +149,39 @@ var app = angular.module('materializeApp', ['ui.materialize'])
                     }
                 },
                 getCodeSamples: function (statement) {
-                    return [{
+                    var result = [];
+                    if (!statement.isInOldDec) {
+                        result.push({
+                            description: "Was already missing in the old declaration"
+                        });
+                        if (!statement.isInOldDecContainer) {
+                            result.push({
+                                description: "But the container was also missing in the old declaration"
+                            });
+                        }
+                    }
+                    if ($scope.diff.newDecAvailable) {
+                        if (statement.isInNewDec) {
+                            result.push({
+                                description: "Is still implemented in the new declaration"
+                            })
+                        } else {
+                            result.push({
+                                description: "Has been removed from the new declaration"
+                            });
+                            if (!statement.isInNewDecContainer) {
+                                result.push({
+                                    description: "Or the container was simply missing, couldn't find it in the new declaration  "
+                                })
+                            }
+                        }
+                    }
+
+                    /*result.push({
                         description: "New container type: ",
                         code: statement.containerType
-                    }]
+                    });*/
+                    return result;
                 }
             },
             changedArgCount: {
@@ -102,7 +200,10 @@ var app = angular.module('materializeApp', ['ui.materialize'])
                         }, {
                             description: "New function: ",
                             code: statement.newType
-                        }]
+                        }/*, {
+                            description: "New container type: ",
+                            code: statement.containerType
+                        }*/]
                 }
             }
         };
@@ -112,7 +213,23 @@ var app = angular.module('materializeApp', ['ui.materialize'])
         };
 
         $scope.getCodeSamples = function (statement) {
-            return statementTypes[statement.type].getCodeSamples(statement);
+            var samples = statementTypes[statement.type].getCodeSamples(statement);
+
+            function addIfPresent(string, description) {
+                if (string) {
+                    samples.push({
+                        description: description,
+                        code: string
+                    })
+                }
+            }
+
+            addIfPresent(statement.newJSDoc, "JSDoc for new function: " + statement.newInclosingFunctionPath);
+            addIfPresent(statement.oldJSDoc, "JSDoc for old function: " + statement.oldInclosingFunctionPath);
+            addIfPresent(statement.newFunction, "New function source: " + statement.newInclosingFunctionPath);
+            addIfPresent(statement.oldFunction, "Old function source: " + statement.oldInclosingFunctionPath);
+
+            return samples;
         };
 
     }]);

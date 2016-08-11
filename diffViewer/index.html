@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0">
-    <title>Diff viewer for TSInfer</title>
+    <title>Diff viewer for TSEvolve</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/0.0.1/prism.min.css">
     <link rel="stylesheet" href="style.css">
@@ -27,7 +27,7 @@
         <div class="container">
             <div class="row">
                 <div class="col s12">
-                    <h1 class="header center-on-small-only" style="color:white;margin-bottom: 0px;">TSDiff viewer</h1>
+                    <h1 class="header center-on-small-only" style="color:white;margin-bottom: 0px;">TSEvolve</h1>
                 </div>
             </div>
         </div>
@@ -35,6 +35,18 @@
 
 
     <div class="container" ng-if="diff">
+        <div class="row" style="margin-top: 10px;">
+            <span style="margin-right: 15px;">
+                <input type="checkbox" id="toggleFilterOnOld" ng-model="filterOn.old"/>
+                <label for="toggleFilterOnOld">Filter out undocumented features</label>
+            </span>
+            <span ng-if="diff.newDecAvailable">
+                <input type="checkbox" id="toggleFilterOnNew" ng-model="filterOn.new"/>
+                <label for="toggleFilterOnNew">Filter based on new dec</label>
+            </span>
+        </div>
+
+
         <div class="row">
             <h4 class="header" style="cursor:pointer" ng-click="show.old = !show.old">
                 <span ng-if="show.old"><i class="material-icons">block</i></span>
@@ -61,22 +73,27 @@
 
 
         <h3 class="header">Changes: </h3>
-        <div ng-repeat="statement in diff.statements" ng-controller="StatementController">
-            <div class="divider"></div>
+        <div ng-repeat="statement in getFilteredStatements()" ng-controller="StatementController">
+            <div ng-if="show.anything">
+                <div class="divider"></div>
 
-            <h5 class="header" style="cursor:pointer;" ng-click="show.all = !show.all"><span ng-if="show.all"><i class="material-icons">block</i></span>
-                <span ng-if="!show.all"><i class="material-icons">open_with</i></span>
-                {{$index + 1}}: {{getStatementTitle(statement)}}
-            </h5>
-            <div ng-if="show.all">
-                <div ng-repeat="sample in getCodeSamples(statement)">
-                    <p>{{sample.description}}</p>
-                    <span ng-if="sample.code">
-                        <pre nag-prism source="{{sample.code}}" class="language-typescript"></pre>
+                <h5 class="header">
+                    <span  ng-click="show.all = !show.all" style="cursor:pointer;">
+                        <span ng-if="show.all"><i class="material-icons">block</i></span>
+                        <span ng-if="!show.all"><i class="material-icons">open_with</i></span>
                     </span>
+                    {{$index + 1}}: {{getStatementTitle(statement)}}
+                    <span ng-click="show.anything = false"><i class="material-icons">delete</i></span>
+                </h5>
+                <div ng-if="show.all">
+                    <div ng-repeat="sample in getCodeSamples(statement)">
+                        <p>{{sample.description}}</p>
+                        <span ng-if="sample.code">
+                            <pre nag-prism source="{{sample.code}}" class="language-typescript"></pre>
+                        </span>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 </main>
