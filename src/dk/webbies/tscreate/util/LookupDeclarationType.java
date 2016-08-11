@@ -1,7 +1,9 @@
 package dk.webbies.tscreate.util;
 
 import dk.webbies.tscreate.analysis.declarations.types.*;
+import fj.data.Array;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -10,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * Created by erik1 on 20-06-2016.
  */
-public class LookupDeclarationType implements DeclarationTypeVisitor<DeclarationType> {
+public class LookupDeclarationType implements DeclarationTypeVisitor<fj.data.List<DeclarationType>> {
     private String path;
 
     private static final boolean returnAnyOnNotFound = true; 
@@ -20,10 +22,32 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
     }
 
     public DeclarationType find(DeclarationType type) {
-        if (path.isEmpty()) {
-            return type;
+        fj.data.List<DeclarationType> list = findRecursive(type);
+        if (list.isEmpty()) {
+            throw new RuntimeException();
         }
-        return type.accept(this);
+        return list.head();
+    }
+
+    private fj.data.List<DeclarationType> findRecursive(DeclarationType type) {
+        if (path.isEmpty()) {
+            return nil().cons(type);
+        }
+        fj.data.List<DeclarationType> list = type.accept(this);
+        if (list == null) {
+            list = nil().cons((DeclarationType)null);
+        }
+        return list.cons(type);
+    }
+
+    public List<DeclarationType> findList(DeclarationType type) {
+        fj.data.List<DeclarationType> functionalResult = findRecursive(type).reverse();
+        ArrayList<DeclarationType> result = new ArrayList<>();
+        while (!functionalResult.isEmpty()) {
+            result.add(functionalResult.head());
+            functionalResult = functionalResult.tail();
+        }
+        return result;
     }
 
     String firstPart(String path) {
@@ -37,21 +61,25 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
         return firstPart(this.path);
     }
     
-    private DeclarationType noneFound() {
+    private fj.data.List<DeclarationType> noneFound() {
         if (returnAnyOnNotFound) {
-            return PrimitiveDeclarationType.Any(Collections.EMPTY_SET);
+            return nil().cons(PrimitiveDeclarationType.Any(Collections.EMPTY_SET));
         } else {
             throw new RuntimeException();
         }
     }
 
+    private fj.data.List<DeclarationType> nil() {
+        return fj.data.List.nil();
+    }
+
     @Override
-    public DeclarationType visit(FunctionType functionType) {
+    public fj.data.List<DeclarationType> visit(FunctionType functionType) {
         if (!this.path.startsWith("[function]")) {
             return noneFound();
         }
         if (this.path.equals("[function]")) {
-            return functionType;
+            return nil().cons(functionType);
         }
         String path = Util.removePrefix(this.path, "[function].");
         if (path.startsWith("[arg")) {
@@ -61,29 +89,29 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
             }
             FunctionType.Argument subType = functionType.getArguments().get(argIndex);
             String subPath = rest(rest());
-            return new LookupDeclarationType(subPath).find(subType.getType());
+            return new LookupDeclarationType(subPath).findRecursive(subType.getType());
         } else if (path.startsWith("[return]")){
-            return new LookupDeclarationType(rest(rest())).find(functionType.getReturnType());
+            return new LookupDeclarationType(rest(rest())).findRecursive(functionType.getReturnType());
         }
         return noneFound();
     }
 
     @Override
-    public DeclarationType visit(PrimitiveDeclarationType primitive) {
+    public fj.data.List<DeclarationType> visit(PrimitiveDeclarationType primitive) {
         return noneFound();
     }
 
     @Override
-    public DeclarationType visit(UnnamedObjectType objectType) {
+    public fj.data.List<DeclarationType> visit(UnnamedObjectType objectType) {
         DeclarationType subType = objectType.getDeclarations().get(firstPart());
         return recurse(subType);
     }
 
-    private DeclarationType recurse(DeclarationType subType) {
+    private fj.data.List<DeclarationType> recurse(DeclarationType subType) {
         if (subType == null) {
             return noneFound();
         }
-        return new LookupDeclarationType(rest()).find(subType);
+        return new LookupDeclarationType(rest()).findRecursive(subType);
     }
 
     private String rest(String path) {
@@ -98,12 +126,12 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
     }
 
     @Override
-    public DeclarationType visit(InterfaceDeclarationType interfaceType) {
+    public fj.data.List<DeclarationType> visit(InterfaceDeclarationType interfaceType) {
         if (path.startsWith("[function]")) {
             if (interfaceType.getFunction() == null) {
                 return noneFound();
             }
-            return interfaceType.getFunction().accept(this);
+            return findRecursive(interfaceType.getFunction());
         } else if (path.startsWith("[indexer]")) {
             if (interfaceType.getDynamicAccess() == null) {
                 return noneFound();
@@ -113,13 +141,13 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
             if (interfaceType.getObject() == null) {
                 return noneFound();
             }
-            return interfaceType.getObject().accept(this);
+            return findRecursive(interfaceType.getObject());
         }
     }
 
     @Override
-    public DeclarationType visit(UnionDeclarationType union) {
-        List<DeclarationType> results = union.getTypes().stream().map(type -> type.accept(this)).filter(Objects::nonNull).collect(Collectors.toList());
+    public fj.data.List<DeclarationType> visit(UnionDeclarationType union) {
+        List<fj.data.List<DeclarationType>> results = union.getTypes().stream().map(this::findRecursive).filter(Objects::nonNull).collect(Collectors.toList());
         if (results.isEmpty()) {
             return noneFound();
         }
@@ -130,20 +158,20 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
     }
 
     @Override
-    public DeclarationType visit(NamedObjectType namedObjectType) {
+    public fj.data.List<DeclarationType> visit(NamedObjectType namedObjectType) {
         return null;
     }
 
     @Override
-    public DeclarationType visit(ClassType classType) {
+    public fj.data.List<DeclarationType> visit(ClassType classType) {
         if (path.equals("[constructor].[return]")) {
-            return classType.getEmptyNameInstance();
+            return nil().cons(classType.getEmptyNameInstance());
         }
         if (path.startsWith("[constructor].[return].")) {
-            return classType.getEmptyNameInstance().accept(new LookupDeclarationType(Util.removePrefix(path, "[constructor].[return].")));
+            return new LookupDeclarationType(Util.removePrefix(path, "[constructor].[return].")).findRecursive(classType.getEmptyNameInstance());
         }
         if (path.equals("[constructor]")) {
-            return classType;
+            return nil().cons(classType);
         }
         if (path.startsWith("[constructor].[arg")) {
             String arg = firstPart(rest());
@@ -153,7 +181,7 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
             }
             FunctionType.Argument subType = classType.getConstructorType().getArguments().get(argIndex);
             String subPath = rest(rest());
-            return new LookupDeclarationType(subPath).find(subType.getType());
+            return new LookupDeclarationType(subPath).findRecursive(subType.getType());
         }
         if (!classType.getStaticFields().containsKey(firstPart())) {
             return null;
@@ -162,7 +190,7 @@ public class LookupDeclarationType implements DeclarationTypeVisitor<Declaration
     }
 
     @Override
-    public DeclarationType visit(ClassInstanceType instanceType) {
+    public fj.data.List<DeclarationType> visit(ClassInstanceType instanceType) {
         DeclarationType subType = instanceType.getClazz().getPrototypeFields().get(firstPart());
         return recurse(subType);
     }
