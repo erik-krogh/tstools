@@ -316,7 +316,12 @@ public class DeclarationPrinter {
         Predicate<String> notInSuperClass = notInSuperClassTest(clazz.getSuperClass());
         for (Map.Entry<String, DeclarationType> entry : clazz.getPrototypeFields().entrySet().stream().sorted(Util::compareStringEntry).collect(Collectors.toList())) {
             if (notInSuperClass.test(entry.getKey())) {
-                printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), null, memberDocs.get(entry.getKey()));
+                String memberDoc = memberDocs.get(entry.getKey());
+                if (memberDoc != null) {
+                    printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor(), null, memberDoc);
+                } else {
+                    printObjectField(arg, entry.getKey(), entry.getValue(), new TypeVisitor());
+                }
             }
         }
 
