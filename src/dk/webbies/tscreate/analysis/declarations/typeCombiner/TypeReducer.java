@@ -152,7 +152,19 @@ public class TypeReducer {
 
     public DeclarationType combineTypes(Collection<DeclarationType> typeCollection, boolean avoidUnresolved) {
         // Copy, because i modify the list.
-        List<DeclarationType> types = new ArrayList<>(typeCollection);
+        Set<String> voidNames = new HashSet<>();
+        List<DeclarationType> types = new ArrayList<>();
+        for (DeclarationType type : typeCollection) {
+            if (type instanceof PrimitiveDeclarationType && ((PrimitiveDeclarationType) type).getType() == PrimitiveDeclarationType.Type.VOID) { // Huge optimization in some cases.
+                voidNames.addAll(type.getNames());
+            } else {
+                types.add(type);
+            }
+        }
+        if (!voidNames.isEmpty()) {
+            types.add(PrimitiveDeclarationType.Void(voidNames));
+        }
+
 
         // In 3 steps
         // - first see if a whole group of the same type can be reduced (Named-type, looking at you).
