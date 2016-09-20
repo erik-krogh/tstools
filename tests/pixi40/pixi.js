@@ -1,2295 +1,11 @@
 /*!
  * pixi.js - v4.0.0
- * Compiled Wed Aug 24 2016 13:18:58 GMT+0100 (BST)
+ * Compiled Wed Aug 24 2016 10:46:16 GMT-0400 (EDT)
  *
  * pixi.js is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.PIXI = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-    var EMPTY_ARRAY_BUFFER = new ArrayBuffer(0);
-
-    /**
-     * Helper class to create a webGL buffer
-     *
-     * @class
-     * @memberof PIXI.glCore
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     * @param type {gl.ARRAY_BUFFER | gl.ELEMENT_ARRAY_BUFFER} @mat
-     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
-     * @param drawType {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
-     */
-    var Buffer = function(gl, type, data, drawType)
-    {
-
-        /**
-         * The current WebGL rendering context
-         *
-         * @member {WebGLRenderingContext}
-         */
-        this.gl = gl;
-
-        /**
-         * The WebGL buffer, created upon instantiation
-         *
-         * @member {WebGLBuffer}
-         */
-        this.buffer = gl.createBuffer();
-
-        /**
-         * The type of the buffer
-         *
-         * @member {gl.ARRAY_BUFFER|gl.ELEMENT_ARRAY_BUFFER}
-         */
-        this.type = type || gl.ARRAY_BUFFER;
-
-        /**
-         * The draw type of the buffer
-         *
-         * @member {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
-         */
-        this.drawType = drawType || gl.STATIC_DRAW;
-
-        /**
-         * The data in the buffer, as a typed array
-         *
-         * @member {ArrayBuffer| SharedArrayBuffer|ArrayBufferView}
-         */
-        this.data = EMPTY_ARRAY_BUFFER;
-
-        if(data)
-        {
-            this.upload(data);
-        }
-    };
-
-    /**
-     * Uploads the buffer to the GPU
-     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data to upload
-     * @param offset {Number} if only a subset of the data should be uploaded, this is the amount of data to subtract
-     * @param dontBind {Boolean} whether to bind the buffer before uploading it
-     */
-    Buffer.prototype.upload = function(data, offset, dontBind)
-    {
-        // todo - needed?
-        if(!dontBind) this.bind();
-
-        var gl = this.gl;
-
-        data = data || this.data;
-        offset = offset || 0;
-
-        if(this.data.byteLength >= data.byteLength)
-        {
-            gl.bufferSubData(this.type, offset, data);
-        }
-        else
-        {
-            gl.bufferData(this.type, data, this.drawType);
-        }
-
-        this.data = data;
-    };
-    /**
-     * Binds the buffer
-     *
-     */
-    Buffer.prototype.bind = function()
-    {
-        var gl = this.gl;
-        gl.bindBuffer(this.type, this.buffer);
-    };
-
-    Buffer.createVertexBuffer = function(gl, data, drawType)
-    {
-        return new Buffer(gl, gl.ARRAY_BUFFER, data, drawType);
-    };
-
-    Buffer.createIndexBuffer = function(gl, data, drawType)
-    {
-        return new Buffer(gl, gl.ELEMENT_ARRAY_BUFFER, data, drawType);
-    };
-
-    Buffer.create = function(gl, type, data, drawType)
-    {
-        return new Buffer(gl, type, data, drawType);
-    };
-
-    /**
-     * Destroys the buffer
-     *
-     */
-    Buffer.prototype.destroy = function(){
-        this.gl.deleteBuffer(this.buffer);
-    };
-
-    module.exports = Buffer;
-
-},{}],2:[function(require,module,exports){
-
-    var Texture = require('./GLTexture');
-
-    /**
-     * Helper class to create a webGL Framebuffer
-     *
-     * @class
-     * @memberof PIXI.glCore
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     * @param width {Number} the width of the drawing area of the frame buffer
-     * @param height {Number} the height of the drawing area of the frame buffer
-     */
-    var Framebuffer = function(gl, width, height)
-    {
-        /**
-         * The current WebGL rendering context
-         *
-         * @member {WebGLRenderingContext}
-         */
-        this.gl = gl;
-
-        /**
-         * The frame buffer
-         *
-         * @member {WebGLFramebuffer}
-         */
-        this.framebuffer = gl.createFramebuffer();
-
-        /**
-         * The stencil buffer
-         *
-         * @member {WebGLRenderbuffer}
-         */
-        this.stencil = null;
-
-        /**
-         * The stencil buffer
-         *
-         * @member {PIXI.glCore.GLTexture}
-         */
-        this.texture = null;
-
-        /**
-         * The width of the drawing area of the buffer
-         *
-         * @member {Number}
-         */
-        this.width = width || 100;
-        /**
-         * The height of the drawing area of the buffer
-         *
-         * @member {Number}
-         */
-        this.height = height || 100;
-    };
-
-    /**
-     * Adds a texture to the frame buffer
-     * @param texture {PIXI.glCore.GLTexture}
-     */
-    Framebuffer.prototype.enableTexture = function(texture)
-    {
-        var gl = this.gl;
-
-        this.texture = texture || new Texture(gl);
-
-        this.texture.bind();
-
-        //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,  this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-
-        this.bind();
-
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture.texture, 0);
-    };
-
-    /**
-     * Initialises the stencil buffer
-     */
-    Framebuffer.prototype.enableStencil = function()
-    {
-        if(this.stencil)return;
-
-        var gl = this.gl;
-
-        this.stencil = gl.createRenderbuffer();
-
-        gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
-
-        // TODO.. this is depth AND stencil?
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.stencil);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL,  this.width  , this.height );
-    };
-
-    /**
-     * Erases the drawing area and fills it with a colour
-     * @param  r {Number} the red value of the clearing colour
-     * @param  g {Number} the green value of the clearing colour
-     * @param  b {Number} the blue value of the clearing colour
-     * @param  a {Number} the alpha value of the clearing colour
-     */
-    Framebuffer.prototype.clear = function( r, g, b, a )
-    {
-        this.bind();
-
-        var gl = this.gl;
-
-        gl.clearColor(r, g, b, a);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-    };
-
-    /**
-     * Binds the frame buffer to the WebGL context
-     */
-    Framebuffer.prototype.bind = function()
-    {
-        var gl = this.gl;
-
-        if(this.texture)
-        {
-            this.texture.unbind();
-        }
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer );
-    };
-
-    /**
-     * Unbinds the frame buffer to the WebGL context
-     */
-    Framebuffer.prototype.unbind = function()
-    {
-        var gl = this.gl;
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null );
-    };
-    /**
-     * Resizes the drawing area of the buffer to the given width and height
-     * @param  width  {Number} the new width
-     * @param  height {Number} the new height
-     */
-    Framebuffer.prototype.resize = function(width, height)
-    {
-        var gl = this.gl;
-
-        this.width = width;
-        this.height = height;
-
-        if ( this.texture )
-        {
-            this.texture.uploadData(null, width, height);
-        }
-
-        if ( this.stencil )
-        {
-            // update the stencil buffer width and height
-            gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
-            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, width, height);
-        }
-    };
-
-    /**
-     * Destroys this buffer
-     */
-    Framebuffer.prototype.destroy = function()
-    {
-        var gl = this.gl;
-
-        //TODO
-        if(this.texture)
-        {
-            this.texture.destroy();
-        }
-
-        gl.deleteFramebuffer(this.framebuffer);
-
-        this.gl = null;
-
-        this.stencil = null;
-        this.texture = null;
-    };
-
-    /**
-     * Creates a frame buffer with a texture containing the given data
-     * @static
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     * @param width {Number} the width of the drawing area of the frame buffer
-     * @param height {Number} the height of the drawing area of the frame buffer
-     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
-     */
-    Framebuffer.createRGBA = function(gl, width, height, data)
-    {
-        var texture = Texture.fromData(gl, null, width, height);
-        texture.enableNearestScaling();
-        texture.enableWrapClamp();
-
-        //now create the framebuffer object and attach the texture to it.
-        var fbo = new Framebuffer(gl, width, height);
-        fbo.enableTexture(texture);
-
-        fbo.unbind();
-
-        return fbo;
-    };
-
-    /**
-     * Creates a frame buffer with a texture containing the given data
-     * @static
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     * @param width {Number} the width of the drawing area of the frame buffer
-     * @param height {Number} the height of the drawing area of the frame buffer
-     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
-     */
-    Framebuffer.createFloat32 = function(gl, width, height, data)
-    {
-        // create a new texture..
-        var texture = new Texture.fromData(gl, data, width, height);
-        texture.enableNearestScaling();
-        texture.enableWrapClamp();
-
-        //now create the framebuffer object and attach the texture to it.
-        var fbo = new Framebuffer(gl, width, height);
-        fbo.enableTexture(texture);
-
-        fbo.unbind();
-
-        return fbo;
-    };
-
-    module.exports = Framebuffer;
-
-},{"./GLTexture":4}],3:[function(require,module,exports){
-
-    var compileProgram = require('./shader/compileProgram'),
-        extractAttributes = require('./shader/extractAttributes'),
-        extractUniforms = require('./shader/extractUniforms'),
-        generateUniformAccessObject = require('./shader/generateUniformAccessObject');
-
-    /**
-     * Helper class to create a webGL Shader
-     *
-     * @class
-     * @memberof PIXI.glCore
-     * @param gl {WebGLRenderingContext}
-     * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
-     * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
-     */
-    var Shader = function(gl, vertexSrc, fragmentSrc)
-    {
-        /**
-         * The current WebGL rendering context
-         *
-         * @member {WebGLRenderingContext}
-         */
-        this.gl = gl;
-
-        /**
-         * The shader program
-         *
-         * @member {WebGLProgram}
-         */
-        // First compile the program..
-        this.program = compileProgram(gl, vertexSrc, fragmentSrc);
-
-
-        /**
-         * The attributes of the shader as an object containing the following properties
-         * {
-	 * 	type,
-	 * 	size,
-	 * 	location,
-	 * 	pointer
-	 * }
-         * @member {Object}
-         */
-        // next extract the attributes
-        this.attributes = extractAttributes(gl, this.program);
-
-        var uniformData = extractUniforms(gl, this.program);
-
-        /**
-         * The uniforms of the shader as an object containing the following properties
-         * {
-	 * 	gl,
-	 * 	data
-	 * }
-         * @member {Object}
-         */
-        this.uniforms = generateUniformAccessObject( gl, uniformData );
-    };
-    /**
-     * Uses this shader
-     */
-    Shader.prototype.bind = function()
-    {
-        this.gl.useProgram(this.program);
-    };
-
-    /**
-     * Destroys this shader
-     * TODO
-     */
-    Shader.prototype.destroy = function()
-    {
-        // var gl = this.gl;
-    };
-
-    module.exports = Shader;
-
-},{"./shader/compileProgram":9,"./shader/extractAttributes":11,"./shader/extractUniforms":12,"./shader/generateUniformAccessObject":13}],4:[function(require,module,exports){
-
-    /**
-     * Helper class to create a WebGL Texture
-     *
-     * @class
-     * @memberof PIXI.glCore
-     * @param gl {WebGLRenderingContext} The current WebGL context
-     * @param width {number} the width of the texture
-     * @param height {number} the height of the texture
-     * @param format {number} the pixel format of the texture. defaults to gl.RGBA
-     * @param type {number} the gl type of the texture. defaults to gl.UNSIGNED_BYTE
-     */
-    var Texture = function(gl, width, height, format, type)
-    {
-        /**
-         * The current WebGL rendering context
-         *
-         * @member {WebGLRenderingContext}
-         */
-        this.gl = gl;
-
-
-        /**
-         * The WebGL texture
-         *
-         * @member {WebGLTexture}
-         */
-        this.texture = gl.createTexture();
-
-        /**
-         * If mipmapping was used for this texture, enable and disable with enableMipmap()
-         *
-         * @member {Boolean}
-         */
-        // some settings..
-        this.mipmap = false;
-
-
-        /**
-         * Set to true to enable pre-multiplied alpha
-         *
-         * @member {Boolean}
-         */
-        this.premultiplyAlpha = false;
-
-        /**
-         * The width of texture
-         *
-         * @member {Number}
-         */
-        this.width = width || -1;
-        /**
-         * The height of texture
-         *
-         * @member {Number}
-         */
-        this.height = height || -1;
-
-        /**
-         * The pixel format of the texture. defaults to gl.RGBA
-         *
-         * @member {Number}
-         */
-        this.format = format || gl.RGBA;
-
-        /**
-         * The gl type of the texture. defaults to gl.UNSIGNED_BYTE
-         *
-         * @member {Number}
-         */
-        this.type = type || gl.UNSIGNED_BYTE;
-
-
-    };
-
-    /**
-     * Uploads this texture to the GPU
-     * @param source {HTMLImageElement|ImageData|HTMLVideoElement} the source image of the texture
-     */
-    Texture.prototype.upload = function(source)
-    {
-        this.bind();
-
-        var gl = this.gl;
-
-
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
-
-        var newWidth = source.videoWidth || source.width;
-        var newHeight = source.videoHeight || source.height;
-
-        if(newHeight !== this.height || newWidth !== this.width)
-        {
-            gl.texImage2D(gl.TEXTURE_2D, 0, this.format, this.format, this.type, source);
-        }
-        else
-        {
-            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, this.format, this.type, source);
-        }
-
-        // if the source is a video, we need to use the videoWidth / videoHeight properties as width / height will be incorrect.
-        this.width = newWidth;
-        this.height = newHeight;
-
-    };
-
-    var FLOATING_POINT_AVAILABLE = false;
-
-    /**
-     * Use a data source and uploads this texture to the GPU
-     * @param data {TypedArray} the data to upload to the texture
-     * @param width {number} the new width of the texture
-     * @param height {number} the new height of the texture
-     */
-    Texture.prototype.uploadData = function(data, width, height)
-    {
-        this.bind();
-
-        var gl = this.gl;
-
-
-        if(data instanceof Float32Array)
-        {
-            if(!FLOATING_POINT_AVAILABLE)
-            {
-                var ext = gl.getExtension("OES_texture_float");
-
-                if(ext)
-                {
-                    FLOATING_POINT_AVAILABLE = true;
-                }
-                else
-                {
-                    throw new Error('floating point textures not available');
-                }
-            }
-
-            this.type = gl.FLOAT;
-        }
-        else
-        {
-            // TODO support for other types
-            this.type = gl.UNSIGNED_BYTE;
-        }
-
-        // what type of data?
-        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
-
-
-        if(width !== this.width || height !== this.height)
-        {
-            gl.texImage2D(gl.TEXTURE_2D, 0, this.format,  width, height, 0, this.format, this.type, data || null);
-        }
-        else
-        {
-            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, this.format, this.type, data || null);
-        }
-
-        this.width = width;
-        this.height = height;
-
-
-//	texSubImage2D
-    };
-
-    /**
-     * Binds the texture
-     * @param  location
-     */
-    Texture.prototype.bind = function(location)
-    {
-        var gl = this.gl;
-
-        if(location !== undefined)
-        {
-            gl.activeTexture(gl.TEXTURE0 + location);
-        }
-
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
-    };
-
-    /**
-     * Unbinds the texture
-     */
-    Texture.prototype.unbind = function()
-    {
-        var gl = this.gl;
-        gl.bindTexture(gl.TEXTURE_2D, null);
-    };
-
-    /**
-     * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
-     */
-    Texture.prototype.minFilter = function( linear )
-    {
-        var gl = this.gl;
-
-        this.bind();
-
-        if(this.mipmap)
-        {
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST);
-        }
-        else
-        {
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR : gl.NEAREST);
-        }
-    };
-
-    /**
-     * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
-     */
-    Texture.prototype.magFilter = function( linear )
-    {
-        var gl = this.gl;
-
-        this.bind();
-
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, linear ? gl.LINEAR : gl.NEAREST);
-    };
-
-    /**
-     * Enables mipmapping
-     */
-    Texture.prototype.enableMipmap = function()
-    {
-        var gl = this.gl;
-
-        this.bind();
-
-        this.mipmap = true;
-
-        gl.generateMipmap(gl.TEXTURE_2D);
-    };
-
-    /**
-     * Enables linear filtering
-     */
-    Texture.prototype.enableLinearScaling = function()
-    {
-        this.minFilter(true);
-        this.magFilter(true);
-    };
-
-    /**
-     * Enables nearest neighbour interpolation
-     */
-    Texture.prototype.enableNearestScaling = function()
-    {
-        this.minFilter(false);
-        this.magFilter(false);
-    };
-
-    /**
-     * Enables clamping on the texture so WebGL will not repeat it
-     */
-    Texture.prototype.enableWrapClamp = function()
-    {
-        var gl = this.gl;
-
-        this.bind();
-
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    };
-
-    /**
-     * Enable tiling on the texture
-     */
-    Texture.prototype.enableWrapRepeat = function()
-    {
-        var gl = this.gl;
-
-        this.bind();
-
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    };
-
-    Texture.prototype.enableWrapMirrorRepeat = function()
-    {
-        var gl = this.gl;
-
-        this.bind();
-
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
-    };
-
-
-    /**
-     * Destroys this texture
-     */
-    Texture.prototype.destroy = function()
-    {
-        var gl = this.gl;
-        //TODO
-        gl.deleteTexture(this.texture);
-    };
-
-    /**
-     * @static
-     * @param gl {WebGLRenderingContext} The current WebGL context
-     * @param source {HTMLImageElement|ImageData} the source image of the texture
-     * @param premultiplyAlpha {Boolean} If we want to use pre-multiplied alpha
-     */
-    Texture.fromSource = function(gl, source, premultiplyAlpha)
-    {
-        var texture = new Texture(gl);
-        texture.premultiplyAlpha = premultiplyAlpha || false;
-        texture.upload(source);
-
-        return texture;
-    };
-
-    /**
-     * @static
-     * @param gl {WebGLRenderingContext} The current WebGL context
-     * @param data {TypedArray} the data to upload to the texture
-     * @param width {number} the new width of the texture
-     * @param height {number} the new height of the texture
-     */
-    Texture.fromData = function(gl, data, width, height)
-    {
-        //console.log(data, width, height);
-        var texture = new Texture(gl);
-        texture.uploadData(data, width, height);
-
-        return texture;
-    };
-
-
-    module.exports = Texture;
-
-},{}],5:[function(require,module,exports){
-
-// state object//
-    var setVertexAttribArrays = require( './setVertexAttribArrays' );
-
-    /**
-     * Helper class to work with WebGL VertexArrayObjects (vaos)
-     * Only works if WebGL extensions are enabled (they usually are)
-     *
-     * @class
-     * @memberof PIXI.glCore
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     */
-    function VertexArrayObject(gl, state)
-    {
-        this.nativeVaoExtension = null;
-
-        if(!VertexArrayObject.FORCE_NATIVE)
-        {
-            this.nativeVaoExtension = gl.getExtension('OES_vertex_array_object') ||
-                gl.getExtension('MOZ_OES_vertex_array_object') ||
-                gl.getExtension('WEBKIT_OES_vertex_array_object');
-        }
-
-        this.nativeState = state;
-
-        if(this.nativeVaoExtension)
-        {
-            this.nativeVao = this.nativeVaoExtension.createVertexArrayOES();
-
-            var maxAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
-
-            // VAO - overwrite the state..
-            this.nativeState = {
-                tempAttribState: new Array(maxAttribs),
-                attribState: new Array(maxAttribs)
-            };
-        }
-
-        /**
-         * The current WebGL rendering context
-         *
-         * @member {WebGLRenderingContext}
-         */
-        this.gl = gl;
-
-        /**
-         * An array of attributes
-         *
-         * @member {Array}
-         */
-        this.attributes = [];
-
-        /**
-         * @member {PIXI.glCore.GLBuffer}
-         */
-        this.indexBuffer = null;
-
-        /**
-         * A boolean flag
-         *
-         * @member {Boolean}
-         */
-        this.dirty = false;
-    }
-
-    VertexArrayObject.prototype.constructor = VertexArrayObject;
-    module.exports = VertexArrayObject;
-
-    /**
-     * Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
-     * If you find on older devices that things have gone a bit weird then set this to true.
-     */
-    /**
-     * Lets the VAO know if you should use the WebGL extension or the native methods.
-     * Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
-     * If you find on older devices that things have gone a bit weird then set this to true.
-     * @static
-     * @property {Boolean} FORCE_NATIVE
-     */
-    VertexArrayObject.FORCE_NATIVE = false;
-
-    /**
-     * Binds the buffer
-     */
-    VertexArrayObject.prototype.bind = function()
-    {
-        if(this.nativeVao)
-        {
-            this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
-
-            if(this.dirty)
-            {
-                this.dirty = false;
-                this.activate();
-            }
-        }
-        else
-        {
-
-            this.activate();
-        }
-
-        return this;
-    };
-
-    /**
-     * Unbinds the buffer
-     */
-    VertexArrayObject.prototype.unbind = function()
-    {
-        if(this.nativeVao)
-        {
-            this.nativeVaoExtension.bindVertexArrayOES(null);
-        }
-
-        return this;
-    };
-
-    /**
-     * Uses this vao
-     */
-    VertexArrayObject.prototype.activate = function()
-    {
-
-        var gl = this.gl;
-        var lastBuffer = null;
-
-        for (var i = 0; i < this.attributes.length; i++)
-        {
-            var attrib = this.attributes[i];
-
-            if(lastBuffer !== attrib.buffer)
-            {
-                attrib.buffer.bind();
-                lastBuffer = attrib.buffer;
-            }
-
-            //attrib.attribute.pointer(attrib.type, attrib.normalized, attrib.stride, attrib.start);
-            gl.vertexAttribPointer(attrib.attribute.location,
-                attrib.attribute.size, attrib.type || gl.FLOAT,
-                attrib.normalized || false,
-                attrib.stride || 0,
-                attrib.start || 0);
-
-
-        }
-
-        setVertexAttribArrays(gl, this.attributes, this.nativeState);
-
-        this.indexBuffer.bind();
-
-        return this;
-    };
-
-    /**
-     *
-     * @param buffer     {PIXI.gl.GLBuffer}
-     * @param attribute  {*}
-     * @param type       {String}
-     * @param normalized {Boolean}
-     * @param stride     {Number}
-     * @param start      {Number}
-     */
-    VertexArrayObject.prototype.addAttribute = function(buffer, attribute, type, normalized, stride, start)
-    {
-        this.attributes.push({
-            buffer:     buffer,
-            attribute:  attribute,
-
-            location:   attribute.location,
-            type:       type || this.gl.FLOAT,
-            normalized: normalized || false,
-            stride:     stride || 0,
-            start:      start || 0
-        });
-
-        this.dirty = true;
-
-        return this;
-    };
-
-    /**
-     *
-     * @param buffer   {PIXI.gl.GLBuffer}
-     */
-    VertexArrayObject.prototype.addIndex = function(buffer/*, options*/)
-    {
-        this.indexBuffer = buffer;
-
-        this.dirty = true;
-
-        return this;
-    };
-
-    /**
-     * Unbinds this vao and disables it
-     */
-    VertexArrayObject.prototype.clear = function()
-    {
-        // var gl = this.gl;
-
-        // TODO - should this function unbind after clear?
-        // for now, no but lets see what happens in the real world!
-        if(this.nativeVao)
-        {
-            this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
-        }
-
-        this.attributes.length = 0;
-        this.indexBuffer = null;
-
-        return this;
-    };
-
-    /**
-     * @param type  {Number}
-     * @param size  {Number}
-     * @param start {Number}
-     */
-    VertexArrayObject.prototype.draw = function(type, size, start)
-    {
-        var gl = this.gl;
-        gl.drawElements(type, size, gl.UNSIGNED_SHORT, start || 0);
-
-        return this;
-    };
-
-    /**
-     * Destroy this vao
-     */
-    VertexArrayObject.prototype.destroy = function()
-    {
-        // lose references
-        this.gl = null;
-        this.indexBuffer = null;
-        this.attributes = null;
-        this.nativeState = null;
-
-        if(this.nativeVao)
-        {
-            this.nativeVaoExtension.deleteVertexArrayOES(this.nativeVao);
-        }
-
-        this.nativeVaoExtension = null;
-        this.nativeVao = null;
-    };
-
-},{"./setVertexAttribArrays":8}],6:[function(require,module,exports){
-
-    /**
-     * Helper class to create a webGL Context
-     *
-     * @class
-     * @memberof PIXI.glCore
-     * @param canvas {HTMLCanvasElement} the canvas element that we will get the context from
-     * @param options {Object} An options object that gets passed in to the canvas element containing the context attributes,
-     *                         see https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement/getContext for the options available
-     * @return {WebGLRenderingContext} the WebGL context
-     */
-    var createContext = function(canvas, options)
-    {
-        var gl = canvas.getContext('webgl', options) ||
-            canvas.getContext('experimental-webgl', options);
-
-        if (!gl)
-        {
-            // fail, not able to get a context
-            throw new Error('This browser does not support webGL. Try using the canvas renderer');
-        }
-
-        return gl;
-    };
-
-    module.exports = createContext;
-
-},{}],7:[function(require,module,exports){
-    var gl = {
-        createContext:          require('./createContext'),
-        setVertexAttribArrays:  require('./setVertexAttribArrays'),
-        GLBuffer:               require('./GLBuffer'),
-        GLFramebuffer:          require('./GLFramebuffer'),
-        GLShader:               require('./GLShader'),
-        GLTexture:              require('./GLTexture'),
-        VertexArrayObject:      require('./VertexArrayObject'),
-        shader:                 require('./shader')
-    };
-
-// Export for Node-compatible environments
-    if (typeof module !== 'undefined' && module.exports)
-    {
-        // Export the module
-        module.exports = gl;
-    }
-
-// Add to the browser window pixi.gl
-    if (typeof window !== 'undefined')
-    {
-        // add the window object
-        window.PIXI = window.PIXI || {};
-        window.PIXI.glCore = gl;
-    }
-
-},{"./GLBuffer":1,"./GLFramebuffer":2,"./GLShader":3,"./GLTexture":4,"./VertexArrayObject":5,"./createContext":6,"./setVertexAttribArrays":8,"./shader":14}],8:[function(require,module,exports){
-// var GL_MAP = {};
-
-    /**
-     * @param gl {WebGLRenderingContext} The current WebGL context
-     * @param attribs {*}
-     * @param state {*}
-     */
-    var setVertexAttribArrays = function (gl, attribs, state)
-    {
-        var i;
-        if(state)
-        {
-            var tempAttribState = state.tempAttribState,
-                attribState = state.attribState;
-
-            for (i = 0; i < tempAttribState.length; i++)
-            {
-                tempAttribState[i] = false;
-            }
-
-            // set the new attribs
-            for (i = 0; i < attribs.length; i++)
-            {
-                tempAttribState[attribs[i].attribute.location] = true;
-            }
-
-            for (i = 0; i < attribState.length; i++)
-            {
-                if (attribState[i] !== tempAttribState[i])
-                {
-                    attribState[i] = tempAttribState[i];
-
-                    if (state.attribState[i])
-                    {
-                        gl.enableVertexAttribArray(i);
-                    }
-                    else
-                    {
-                        gl.disableVertexAttribArray(i);
-                    }
-                }
-            }
-
-        }
-        else
-        {
-            for (i = 0; i < attribs.length; i++)
-            {
-                var attrib = attribs[i];
-                gl.enableVertexAttribArray(attrib.attribute.location);
-            }
-        }
-    };
-
-    module.exports = setVertexAttribArrays;
-
-},{}],9:[function(require,module,exports){
-
-    /**
-     * @class
-     * @memberof PIXI.glCore.shader
-     * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
-     * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
-     * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
-     * @return {WebGLProgram} the shader program
-     */
-    var compileProgram = function(gl, vertexSrc, fragmentSrc)
-    {
-        var glVertShader = compileShader(gl, gl.VERTEX_SHADER, vertexSrc);
-        var glFragShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
-
-        var program = gl.createProgram();
-
-        gl.attachShader(program, glVertShader);
-        gl.attachShader(program, glFragShader);
-        gl.linkProgram(program);
-
-        // if linking fails, then log and cleanup
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS))
-        {
-            console.error('Pixi.js Error: Could not initialize shader.');
-            console.error('gl.VALIDATE_STATUS', gl.getProgramParameter(program, gl.VALIDATE_STATUS));
-            console.error('gl.getError()', gl.getError());
-
-            // if there is a program info log, log it
-            if (gl.getProgramInfoLog(program) !== '')
-            {
-                console.warn('Pixi.js Warning: gl.getProgramInfoLog()', gl.getProgramInfoLog(program));
-            }
-
-            gl.deleteProgram(program);
-            program = null;
-        }
-
-        // clean up some shaders
-        gl.deleteShader(glVertShader);
-        gl.deleteShader(glFragShader);
-
-        return program;
-    };
-
-    /**
-     * @private
-     * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
-     * @param type {Number} the type, can be either VERTEX_SHADER or FRAGMENT_SHADER
-     * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
-     * @return {WebGLShader} the shader
-     */
-    var compileShader = function (gl, type, src)
-    {
-        var shader = gl.createShader(type);
-
-        gl.shaderSource(shader, src);
-        gl.compileShader(shader);
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
-        {
-            console.log(gl.getShaderInfoLog(shader));
-            return null;
-        }
-
-        return shader;
-    };
-
-    module.exports = compileProgram;
-
-},{}],10:[function(require,module,exports){
-    /**
-     * @class
-     * @memberof PIXI.glCore.shader
-     * @param type {String} Type of value
-     * @param size {Number}
-     */
-    var defaultValue = function(type, size)
-    {
-        switch (type)
-        {
-            case 'float':
-                return 0;
-
-            case 'vec2':
-                return new Float32Array(2 * size);
-
-            case 'vec3':
-                return new Float32Array(3 * size);
-
-            case 'vec4':
-                return new Float32Array(4 * size);
-
-            case 'int':
-            case 'sampler2D':
-                return 0;
-
-            case 'ivec2':
-                return new Int32Array(2 * size);
-
-            case 'ivec3':
-                return new Int32Array(3 * size);
-
-            case 'ivec4':
-                return new Int32Array(4 * size);
-
-            case 'bool':
-                return false;
-
-            case 'bvec2':
-
-                return booleanArray( 2 * size);
-
-            case 'bvec3':
-                return booleanArray(3 * size);
-
-            case 'bvec4':
-                return booleanArray(4 * size);
-
-            case 'mat2':
-                return new Float32Array([1, 0,
-                    0, 1]);
-
-            case 'mat3':
-                return new Float32Array([1, 0, 0,
-                    0, 1, 0,
-                    0, 0, 1]);
-
-            case 'mat4':
-                return new Float32Array([1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, 1, 0,
-                    0, 0, 0, 1]);
-        }
-    };
-
-    var booleanArray = function(size)
-    {
-        var array = new Array(size);
-
-        for (var i = 0; i < array.length; i++)
-        {
-            array[i] = false;
-        }
-
-        return array;
-    };
-
-    module.exports = defaultValue;
-
-},{}],11:[function(require,module,exports){
-
-    var mapType = require('./mapType');
-    var mapSize = require('./mapSize');
-
-    /**
-     * Extracts the attributes
-     * @class
-     * @memberof PIXI.glCore.shader
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     * @param program {WebGLProgram} The shader program to get the attributes from
-     * @return attributes {Object}
-     */
-    var extractAttributes = function(gl, program)
-    {
-        var attributes = {};
-
-        var totalAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
-
-        for (var i = 0; i < totalAttributes; i++)
-        {
-            var attribData = gl.getActiveAttrib(program, i);
-            var type = mapType(gl, attribData.type);
-
-            attributes[attribData.name] = {
-                type:type,
-                size:mapSize(type),
-                location:gl.getAttribLocation(program, attribData.name),
-                //TODO - make an attribute object
-                pointer: pointer
-            };
-        }
-
-        return attributes;
-    };
-
-    var pointer = function(type, normalized, stride, start){
-        // console.log(this.location)
-        gl.vertexAttribPointer(this.location,this.size, type || gl.FLOAT, normalized || false, stride || 0, start || 0);
-    };
-
-    module.exports = extractAttributes;
-
-},{"./mapSize":15,"./mapType":16}],12:[function(require,module,exports){
-    var mapType = require('./mapType');
-    var defaultValue = require('./defaultValue');
-
-    /**
-     * Extracts the uniforms
-     * @class
-     * @memberof PIXI.glCore.shader
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     * @param program {WebGLProgram} The shader program to get the uniforms from
-     * @return uniforms {Object}
-     */
-    var extractUniforms = function(gl, program)
-    {
-        var uniforms = {};
-
-        var totalUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-
-        for (var i = 0; i < totalUniforms; i++)
-        {
-            var uniformData = gl.getActiveUniform(program, i);
-            var name = uniformData.name.replace(/\[.*?\]/, "");
-            var type = mapType(gl, uniformData.type );
-
-            uniforms[name] = {
-                type:type,
-                size:uniformData.size,
-                location:gl.getUniformLocation(program, name),
-                value:defaultValue(type, uniformData.size)
-            };
-        }
-
-        return uniforms;
-    };
-
-    module.exports = extractUniforms;
-
-},{"./defaultValue":10,"./mapType":16}],13:[function(require,module,exports){
-    /**
-     * Extracts the attributes
-     * @class
-     * @memberof PIXI.glCore.shader
-     * @param gl {WebGLRenderingContext} The current WebGL rendering context
-     * @param uniforms {Array} @mat ?
-     * @return attributes {Object}
-     */
-    var generateUniformAccessObject = function(gl, uniformData)
-    {
-        // this is the object we will be sending back.
-        // an object hierachy will be created for structs
-        var uniforms = {data:{}};
-
-        uniforms.gl = gl;
-
-        var uniformKeys= Object.keys(uniformData);
-
-        for (var i = 0; i < uniformKeys.length; i++)
-        {
-            var fullName = uniformKeys[i];
-
-            var nameTokens = fullName.split('.');
-            var name = nameTokens[nameTokens.length - 1];
-
-            var uniformGroup = getUniformGroup(nameTokens, uniforms);
-
-            var uniform =  uniformData[fullName];
-            uniformGroup.data[name] = uniform;
-
-            uniformGroup.gl = gl;
-
-            Object.defineProperty(uniformGroup, name, {
-                get: generateGetter(name),
-                set: generateSetter(name, uniform)
-            });
-        }
-
-        return uniforms;
-    };
-
-    var generateGetter = function(name)
-    {
-        var template = getterTemplate.replace('%%', name);
-        return new Function(template); // jshint ignore:line
-    };
-
-    var generateSetter = function(name, uniform)
-    {
-        var template = setterTemplate.replace(/%%/g, name);
-        var setTemplate;
-
-        if(uniform.size === 1)
-        {
-            setTemplate = GLSL_TO_SINGLE_SETTERS[uniform.type];
-        }
-        else
-        {
-            setTemplate = GLSL_TO_ARRAY_SETTERS[uniform.type];
-        }
-
-        if(setTemplate)
-        {
-            template += "\nthis.gl." + setTemplate + ";";
-        }
-
-        return new Function('value', template); // jshint ignore:line
-    };
-
-    var getUniformGroup = function(nameTokens, uniform)
-    {
-        var cur = uniform;
-
-        for (var i = 0; i < nameTokens.length - 1; i++)
-        {
-            var o = cur[nameTokens[i]] || {data:{}};
-            cur[nameTokens[i]] = o;
-            cur = o;
-        }
-
-        return cur;
-    };
-
-    var getterTemplate = [
-        'return this.data.%%.value;',
-    ].join('\n');
-
-    var setterTemplate = [
-        'this.data.%%.value = value;',
-        'var location = this.data.%%.location;'
-    ].join('\n');
-
-
-    var GLSL_TO_SINGLE_SETTERS = {
-
-        'float':    'uniform1f(location, value)',
-
-        'vec2':     'uniform2f(location, value[0], value[1])',
-        'vec3':     'uniform3f(location, value[0], value[1], value[2])',
-        'vec4':     'uniform4f(location, value[0], value[1], value[2], value[3])',
-
-        'int':      'uniform1i(location, value)',
-        'ivec2':    'uniform2i(location, value[0], value[1])',
-        'ivec3':    'uniform3i(location, value[0], value[1], value[2])',
-        'ivec4':    'uniform4i(location, value[0], value[1], value[2], value[3])',
-
-        'bool':     'uniform1i(location, value)',
-        'bvec2':    'uniform2i(location, value[0], value[1])',
-        'bvec3':    'uniform3i(location, value[0], value[1], value[2])',
-        'bvec4':    'uniform4i(location, value[0], value[1], value[2], value[3])',
-
-        'mat2':     'uniformMatrix2fv(location, false, value)',
-        'mat3':     'uniformMatrix3fv(location, false, value)',
-        'mat4':     'uniformMatrix4fv(location, false, value)',
-
-        'sampler2D':'uniform1i(location, value)'
-    };
-
-    var GLSL_TO_ARRAY_SETTERS = {
-
-        'float':    'uniform1fv(location, value)',
-
-        'vec2':     'uniform2fv(location, value)',
-        'vec3':     'uniform3fv(location, value)',
-        'vec4':     'uniform4fv(location, value)',
-
-        'int':      'uniform1iv(location, value)',
-        'ivec2':    'uniform2iv(location, value)',
-        'ivec3':    'uniform3iv(location, value)',
-        'ivec4':    'uniform4iv(location, value)',
-
-        'bool':     'uniform1iv(location, value)',
-        'bvec2':    'uniform2iv(location, value)',
-        'bvec3':    'uniform3iv(location, value)',
-        'bvec4':    'uniform4iv(location, value)',
-
-        'sampler2D':'uniform1iv(location, value)'
-    };
-
-    module.exports = generateUniformAccessObject;
-
-},{}],14:[function(require,module,exports){
-    module.exports = {
-        compileProgram: require('./compileProgram'),
-        defaultValue: require('./defaultValue'),
-        extractAttributes: require('./extractAttributes'),
-        extractUniforms: require('./extractUniforms'),
-        generateUniformAccessObject: require('./generateUniformAccessObject'),
-        mapSize: require('./mapSize'),
-        mapType: require('./mapType')
-    };
-},{"./compileProgram":9,"./defaultValue":10,"./extractAttributes":11,"./extractUniforms":12,"./generateUniformAccessObject":13,"./mapSize":15,"./mapType":16}],15:[function(require,module,exports){
-    /**
-     * @class
-     * @memberof PIXI.glCore.shader
-     * @param type {String}
-     * @return {Number}
-     */
-    var mapSize = function(type)
-    {
-        return GLSL_TO_SIZE[type];
-    };
-
-
-    var GLSL_TO_SIZE = {
-        'float':    1,
-        'vec2':     2,
-        'vec3':     3,
-        'vec4':     4,
-
-        'int':      1,
-        'ivec2':    2,
-        'ivec3':    3,
-        'ivec4':    4,
-
-        'bool':     1,
-        'bvec2':    2,
-        'bvec3':    3,
-        'bvec4':    4,
-
-        'mat2':     4,
-        'mat3':     9,
-        'mat4':     16,
-
-        'sampler2D':  1
-    };
-
-    module.exports = mapSize;
-
-},{}],16:[function(require,module,exports){
-
-
-    var mapSize = function(gl, type)
-    {
-        if(!GL_TABLE)
-        {
-            var typeNames = Object.keys(GL_TO_GLSL_TYPES);
-
-            GL_TABLE = {};
-
-            for(var i = 0; i < typeNames.length; ++i)
-            {
-                var tn = typeNames[i];
-                GL_TABLE[ gl[tn] ] = GL_TO_GLSL_TYPES[tn];
-            }
-        }
-
-        return GL_TABLE[type];
-    };
-
-    var GL_TABLE = null;
-
-    var GL_TO_GLSL_TYPES = {
-        'FLOAT':       'float',
-        'FLOAT_VEC2':  'vec2',
-        'FLOAT_VEC3':  'vec3',
-        'FLOAT_VEC4':  'vec4',
-
-        'INT':         'int',
-        'INT_VEC2':    'ivec2',
-        'INT_VEC3':    'ivec3',
-        'INT_VEC4':    'ivec4',
-
-        'BOOL':        'bool',
-        'BOOL_VEC2':   'bvec2',
-        'BOOL_VEC3':   'bvec3',
-        'BOOL_VEC4':   'bvec4',
-
-        'FLOAT_MAT2':  'mat2',
-        'FLOAT_MAT3':  'mat3',
-        'FLOAT_MAT4':  'mat4',
-
-        'SAMPLER_2D':  'sampler2D'
-    };
-
-    module.exports = mapSize;
-
-},{}],17:[function(require,module,exports){
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = eachLimit;
-
-    var _eachOfLimit = require('./internal/eachOfLimit');
-
-    var _eachOfLimit2 = _interopRequireDefault(_eachOfLimit);
-
-    var _withoutIndex = require('./internal/withoutIndex');
-
-    var _withoutIndex2 = _interopRequireDefault(_withoutIndex);
-
-    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-    /**
-     * The same as [`each`]{@link module:Collections.each} but runs a maximum of `limit` async operations at a time.
-     *
-     * @name eachLimit
-     * @static
-     * @memberOf module:Collections
-     * @method
-     * @see [async.each]{@link module:Collections.each}
-     * @alias forEachLimit
-     * @category Collection
-     * @param {Array|Iterable|Object} coll - A colleciton to iterate over.
-     * @param {number} limit - The maximum number of async operations at a time.
-     * @param {Function} iteratee - A function to apply to each item in `coll`. The
-     * iteratee is passed a `callback(err)` which must be called once it has
-     * completed. If no error has occurred, the `callback` should be run without
-     * arguments or with an explicit `null` argument. The array index is not passed
-     * to the iteratee. Invoked with (item, callback). If you need the index, use
-     * `eachOfLimit`.
-     * @param {Function} [callback] - A callback which is called when all
-     * `iteratee` functions have finished, or an error occurs. Invoked with (err).
-     */
-    function eachLimit(coll, limit, iteratee, callback) {
-        (0, _eachOfLimit2.default)(limit)(coll, (0, _withoutIndex2.default)(iteratee), callback);
-    }
-    module.exports = exports['default'];
-},{"./internal/eachOfLimit":21,"./internal/withoutIndex":28}],18:[function(require,module,exports){
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-
-    var _eachLimit = require('./eachLimit');
-
-    var _eachLimit2 = _interopRequireDefault(_eachLimit);
-
-    var _doLimit = require('./internal/doLimit');
-
-    var _doLimit2 = _interopRequireDefault(_doLimit);
-
-    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-    /**
-     * The same as [`each`]{@link module:Collections.each} but runs only a single async operation at a time.
-     *
-     * @name eachSeries
-     * @static
-     * @memberOf module:Collections
-     * @method
-     * @see [async.each]{@link module:Collections.each}
-     * @alias forEachSeries
-     * @category Collection
-     * @param {Array|Iterable|Object} coll - A collection to iterate over.
-     * @param {Function} iteratee - A function to apply to each
-     * item in `coll`. The iteratee is passed a `callback(err)` which must be called
-     * once it has completed. If no error has occurred, the `callback` should be run
-     * without arguments or with an explicit `null` argument. The array index is
-     * not passed to the iteratee. Invoked with (item, callback). If you need the
-     * index, use `eachOfSeries`.
-     * @param {Function} [callback] - A callback which is called when all
-     * `iteratee` functions have finished, or an error occurs. Invoked with (err).
-     */
-    exports.default = (0, _doLimit2.default)(_eachLimit2.default, 1);
-    module.exports = exports['default'];
-},{"./eachLimit":17,"./internal/doLimit":20}],19:[function(require,module,exports){
-    "use strict";
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = DLL;
-// Simple doubly linked list (https://en.wikipedia.org/wiki/Doubly_linked_list) implementation
-// used for queues. This implementation assumes that the node provided by the user can be modified
-// to adjust the next and last properties. We implement only the minimal functionality
-// for queue support.
-    function DLL() {
-        this.head = this.tail = null;
-        this.length = 0;
-    }
-
-    function setInitial(dll, node) {
-        dll.length = 1;
-        dll.head = dll.tail = node;
-    }
-
-    DLL.prototype.removeLink = function (node) {
-        if (node.prev) node.prev.next = node.next;else this.head = node.next;
-        if (node.next) node.next.prev = node.prev;else this.tail = node.prev;
-
-        node.prev = node.next = null;
-        this.length -= 1;
-        return node;
-    };
-
-    DLL.prototype.empty = DLL;
-
-    DLL.prototype.insertAfter = function (node, newNode) {
-        newNode.prev = node;
-        newNode.next = node.next;
-        if (node.next) node.next.prev = newNode;else this.tail = newNode;
-        node.next = newNode;
-        this.length += 1;
-    };
-
-    DLL.prototype.insertBefore = function (node, newNode) {
-        newNode.prev = node.prev;
-        newNode.next = node;
-        if (node.prev) node.prev.next = newNode;else this.head = newNode;
-        node.prev = newNode;
-        this.length += 1;
-    };
-
-    DLL.prototype.unshift = function (node) {
-        if (this.head) this.insertBefore(this.head, node);else setInitial(this, node);
-    };
-
-    DLL.prototype.push = function (node) {
-        if (this.tail) this.insertAfter(this.tail, node);else setInitial(this, node);
-    };
-
-    DLL.prototype.shift = function () {
-        return this.head && this.removeLink(this.head);
-    };
-
-    DLL.prototype.pop = function () {
-        return this.tail && this.removeLink(this.tail);
-    };
-    module.exports = exports['default'];
-},{}],20:[function(require,module,exports){
-    "use strict";
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = doLimit;
-    function doLimit(fn, limit) {
-        return function (iterable, iteratee, callback) {
-            return fn(iterable, limit, iteratee, callback);
-        };
-    }
-    module.exports = exports['default'];
-},{}],21:[function(require,module,exports){
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = _eachOfLimit;
-
-    var _noop = require('lodash/noop');
-
-    var _noop2 = _interopRequireDefault(_noop);
-
-    var _once = require('./once');
-
-    var _once2 = _interopRequireDefault(_once);
-
-    var _iterator = require('./iterator');
-
-    var _iterator2 = _interopRequireDefault(_iterator);
-
-    var _onlyOnce = require('./onlyOnce');
-
-    var _onlyOnce2 = _interopRequireDefault(_onlyOnce);
-
-    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-    function _eachOfLimit(limit) {
-        return function (obj, iteratee, callback) {
-            callback = (0, _once2.default)(callback || _noop2.default);
-            if (limit <= 0 || !obj) {
-                return callback(null);
-            }
-            var nextElem = (0, _iterator2.default)(obj);
-            var done = false;
-            var running = 0;
-
-            function iterateeCallback(err) {
-                running -= 1;
-                if (err) {
-                    done = true;
-                    callback(err);
-                } else if (done && running <= 0) {
-                    return callback(null);
-                } else {
-                    replenish();
-                }
-            }
-
-            function replenish() {
-                while (running < limit && !done) {
-                    var elem = nextElem();
-                    if (elem === null) {
-                        done = true;
-                        if (running <= 0) {
-                            callback(null);
-                        }
-                        return;
-                    }
-                    running += 1;
-                    iteratee(elem.value, elem.key, (0, _onlyOnce2.default)(iterateeCallback));
-                }
-            }
-
-            replenish();
-        };
-    }
-    module.exports = exports['default'];
-},{"./iterator":23,"./once":24,"./onlyOnce":25,"lodash/noop":54}],22:[function(require,module,exports){
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-
-    exports.default = function (coll) {
-        return iteratorSymbol && coll[iteratorSymbol] && coll[iteratorSymbol]();
-    };
-
-    var iteratorSymbol = typeof Symbol === 'function' && Symbol.iterator;
-
-    module.exports = exports['default'];
-},{}],23:[function(require,module,exports){
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = iterator;
-
-    var _isArrayLike = require('lodash/isArrayLike');
-
-    var _isArrayLike2 = _interopRequireDefault(_isArrayLike);
-
-    var _getIterator = require('./getIterator');
-
-    var _getIterator2 = _interopRequireDefault(_getIterator);
-
-    var _keys = require('lodash/keys');
-
-    var _keys2 = _interopRequireDefault(_keys);
-
-    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-    function createArrayIterator(coll) {
-        var i = -1;
-        var len = coll.length;
-        return function next() {
-            return ++i < len ? { value: coll[i], key: i } : null;
-        };
-    }
-
-    function createES2015Iterator(iterator) {
-        var i = -1;
-        return function next() {
-            var item = iterator.next();
-            if (item.done) return null;
-            i++;
-            return { value: item.value, key: i };
-        };
-    }
-
-    function createObjectIterator(obj) {
-        var okeys = (0, _keys2.default)(obj);
-        var i = -1;
-        var len = okeys.length;
-        return function next() {
-            var key = okeys[++i];
-            return i < len ? { value: obj[key], key: key } : null;
-        };
-    }
-
-    function iterator(coll) {
-        if ((0, _isArrayLike2.default)(coll)) {
-            return createArrayIterator(coll);
-        }
-
-        var iterator = (0, _getIterator2.default)(coll);
-        return iterator ? createES2015Iterator(iterator) : createObjectIterator(coll);
-    }
-    module.exports = exports['default'];
-},{"./getIterator":22,"lodash/isArrayLike":46,"lodash/keys":53}],24:[function(require,module,exports){
-    "use strict";
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = once;
-    function once(fn) {
-        return function () {
-            if (fn === null) return;
-            var callFn = fn;
-            fn = null;
-            callFn.apply(this, arguments);
-        };
-    }
-    module.exports = exports['default'];
-},{}],25:[function(require,module,exports){
-    "use strict";
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = onlyOnce;
-    function onlyOnce(fn) {
-        return function () {
-            if (fn === null) throw new Error("Callback was already called.");
-            var callFn = fn;
-            fn = null;
-            callFn.apply(this, arguments);
-        };
-    }
-    module.exports = exports['default'];
-},{}],26:[function(require,module,exports){
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = queue;
-
-    var _arrayEach = require('lodash/_arrayEach');
-
-    var _arrayEach2 = _interopRequireDefault(_arrayEach);
-
-    var _isArray = require('lodash/isArray');
-
-    var _isArray2 = _interopRequireDefault(_isArray);
-
-    var _noop = require('lodash/noop');
-
-    var _noop2 = _interopRequireDefault(_noop);
-
-    var _rest = require('lodash/rest');
-
-    var _rest2 = _interopRequireDefault(_rest);
-
-    var _onlyOnce = require('./onlyOnce');
-
-    var _onlyOnce2 = _interopRequireDefault(_onlyOnce);
-
-    var _setImmediate = require('./setImmediate');
-
-    var _setImmediate2 = _interopRequireDefault(_setImmediate);
-
-    var _DoublyLinkedList = require('./DoublyLinkedList');
-
-    var _DoublyLinkedList2 = _interopRequireDefault(_DoublyLinkedList);
-
-    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-    function queue(worker, concurrency, payload) {
-        if (concurrency == null) {
-            concurrency = 1;
-        } else if (concurrency === 0) {
-            throw new Error('Concurrency must not be zero');
-        }
-
-        function _insert(data, insertAtFront, callback) {
-            if (callback != null && typeof callback !== 'function') {
-                throw new Error('task callback must be a function');
-            }
-            q.started = true;
-            if (!(0, _isArray2.default)(data)) {
-                data = [data];
-            }
-            if (data.length === 0 && q.idle()) {
-                // call drain immediately if there are no tasks
-                return (0, _setImmediate2.default)(function () {
-                    q.drain();
-                });
-            }
-            (0, _arrayEach2.default)(data, function (task) {
-                var item = {
-                    data: task,
-                    callback: callback || _noop2.default
-                };
-
-                if (insertAtFront) {
-                    q._tasks.unshift(item);
-                } else {
-                    q._tasks.push(item);
-                }
-            });
-            (0, _setImmediate2.default)(q.process);
-        }
-
-        function _next(tasks) {
-            return (0, _rest2.default)(function (args) {
-                workers -= 1;
-
-                (0, _arrayEach2.default)(tasks, function (task) {
-                    (0, _arrayEach2.default)(workersList, function (worker, index) {
-                        if (worker === task) {
-                            workersList.splice(index, 1);
-                            return false;
-                        }
-                    });
-
-                    task.callback.apply(task, args);
-
-                    if (args[0] != null) {
-                        q.error(args[0], task.data);
-                    }
-                });
-
-                if (workers <= q.concurrency - q.buffer) {
-                    q.unsaturated();
-                }
-
-                if (q.idle()) {
-                    q.drain();
-                }
-                q.process();
-            });
-        }
-
-        var workers = 0;
-        var workersList = [];
-        var q = {
-            _tasks: new _DoublyLinkedList2.default(),
-            concurrency: concurrency,
-            payload: payload,
-            saturated: _noop2.default,
-            unsaturated: _noop2.default,
-            buffer: concurrency / 4,
-            empty: _noop2.default,
-            drain: _noop2.default,
-            error: _noop2.default,
-            started: false,
-            paused: false,
-            push: function (data, callback) {
-                _insert(data, false, callback);
-            },
-            kill: function () {
-                q.drain = _noop2.default;
-                q._tasks.empty();
-            },
-            unshift: function (data, callback) {
-                _insert(data, true, callback);
-            },
-            process: function () {
-                while (!q.paused && workers < q.concurrency && q._tasks.length) {
-                    var tasks = [],
-                        data = [];
-                    var l = q._tasks.length;
-                    if (q.payload) l = Math.min(l, q.payload);
-                    for (var i = 0; i < l; i++) {
-                        var node = q._tasks.shift();
-                        tasks.push(node);
-                        data.push(node.data);
-                    }
-
-                    if (q._tasks.length === 0) {
-                        q.empty();
-                    }
-                    workers += 1;
-                    workersList.push(tasks[0]);
-
-                    if (workers === q.concurrency) {
-                        q.saturated();
-                    }
-
-                    var cb = (0, _onlyOnce2.default)(_next(tasks));
-                    worker(data, cb);
-                }
-            },
-            length: function () {
-                return q._tasks.length;
-            },
-            running: function () {
-                return workers;
-            },
-            workersList: function () {
-                return workersList;
-            },
-            idle: function () {
-                return q._tasks.length + workers === 0;
-            },
-            pause: function () {
-                q.paused = true;
-            },
-            resume: function () {
-                if (q.paused === false) {
-                    return;
-                }
-                q.paused = false;
-                var resumeCount = Math.min(q.concurrency, q._tasks.length);
-                // Need to call q.process once per concurrent
-                // worker to preserve full concurrency after pause
-                for (var w = 1; w <= resumeCount; w++) {
-                    (0, _setImmediate2.default)(q.process);
-                }
-            }
-        };
-        return q;
-    }
-    module.exports = exports['default'];
-},{"./DoublyLinkedList":19,"./onlyOnce":25,"./setImmediate":27,"lodash/_arrayEach":35,"lodash/isArray":45,"lodash/noop":54,"lodash/rest":55}],27:[function(require,module,exports){
-    (function (process){
-        'use strict';
-
-        Object.defineProperty(exports, "__esModule", {
-            value: true
-        });
-        exports.hasNextTick = exports.hasSetImmediate = undefined;
-        exports.fallback = fallback;
-        exports.wrap = wrap;
-
-        var _rest = require('lodash/rest');
-
-        var _rest2 = _interopRequireDefault(_rest);
-
-        function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-        var hasSetImmediate = exports.hasSetImmediate = typeof setImmediate === 'function' && setImmediate;
-        var hasNextTick = exports.hasNextTick = typeof process === 'object' && typeof process.nextTick === 'function';
-
-        function fallback(fn) {
-            setTimeout(fn, 0);
-        }
-
-        function wrap(defer) {
-            return (0, _rest2.default)(function (fn, args) {
-                defer(function () {
-                    fn.apply(null, args);
-                });
-            });
-        }
-
-        var _defer;
-
-        if (hasSetImmediate) {
-            _defer = setImmediate;
-        } else if (hasNextTick) {
-            _defer = process.nextTick;
-        } else {
-            _defer = fallback;
-        }
-
-        exports.default = wrap(_defer);
-    }).call(this,require('_process'))
-
-},{"_process":61,"lodash/rest":55}],28:[function(require,module,exports){
-    "use strict";
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-    exports.default = _withoutIndex;
-    function _withoutIndex(iteratee) {
-        return function (value, index, callback) {
-            return iteratee(value, callback);
-        };
-    }
-    module.exports = exports['default'];
-},{}],29:[function(require,module,exports){
-    'use strict';
-
-    Object.defineProperty(exports, "__esModule", {
-        value: true
-    });
-
-    exports.default = function (worker, concurrency) {
-        return (0, _queue2.default)(function (items, cb) {
-            worker(items[0], cb);
-        }, concurrency, 1);
-    };
-
-    var _queue = require('./internal/queue');
-
-    var _queue2 = _interopRequireDefault(_queue);
-
-    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-    module.exports = exports['default'];
-
-    /**
-     * A queue of tasks for the worker function to complete.
-     * @typedef {Object} QueueObject
-     * @memberOf module:ControlFlow
-     * @property {Function} length - a function returning the number of items
-     * waiting to be processed. Invoke with `queue.length()`.
-     * @property {boolean} started - a boolean indicating whether or not any
-     * items have been pushed and processed by the queue.
-     * @property {Function} running - a function returning the number of items
-     * currently being processed. Invoke with `queue.running()`.
-     * @property {Function} workersList - a function returning the array of items
-     * currently being processed. Invoke with `queue.workersList()`.
-     * @property {Function} idle - a function returning false if there are items
-     * waiting or being processed, or true if not. Invoke with `queue.idle()`.
-     * @property {number} concurrency - an integer for determining how many `worker`
-     * functions should be run in parallel. This property can be changed after a
-     * `queue` is created to alter the concurrency on-the-fly.
-     * @property {Function} push - add a new task to the `queue`. Calls `callback`
-     * once the `worker` has finished processing the task. Instead of a single task,
-     * a `tasks` array can be submitted. The respective callback is used for every
-     * task in the list. Invoke with `queue.push(task, [callback])`,
-     * @property {Function} unshift - add a new task to the front of the `queue`.
-     * Invoke with `queue.unshift(task, [callback])`.
-     * @property {Function} saturated - a callback that is called when the number of
-     * running workers hits the `concurrency` limit, and further tasks will be
-     * queued.
-     * @property {Function} unsaturated - a callback that is called when the number
-     * of running workers is less than the `concurrency` & `buffer` limits, and
-     * further tasks will not be queued.
-     * @property {number} buffer - A minimum threshold buffer in order to say that
-     * the `queue` is `unsaturated`.
-     * @property {Function} empty - a callback that is called when the last item
-     * from the `queue` is given to a `worker`.
-     * @property {Function} drain - a callback that is called when the last item
-     * from the `queue` has returned from the `worker`.
-     * @property {Function} error - a callback that is called when a task errors.
-     * Has the signature `function(error, task)`.
-     * @property {boolean} paused - a boolean for determining whether the queue is
-     * in a paused state.
-     * @property {Function} pause - a function that pauses the processing of tasks
-     * until `resume()` is called. Invoke with `queue.pause()`.
-     * @property {Function} resume - a function that resumes the processing of
-     * queued tasks when the queue is paused. Invoke with `queue.resume()`.
-     * @property {Function} kill - a function that removes the `drain` callback and
-     * empties remaining tasks from the queue forcing it to go idle. Invoke with `queue.kill()`.
-     */
-
-    /**
-     * Creates a `queue` object with the specified `concurrency`. Tasks added to the
-     * `queue` are processed in parallel (up to the `concurrency` limit). If all
-     * `worker`s are in progress, the task is queued until one becomes available.
-     * Once a `worker` completes a `task`, that `task`'s callback is called.
-     *
-     * @name queue
-     * @static
-     * @memberOf module:ControlFlow
-     * @method
-     * @category Control Flow
-     * @param {Function} worker - An asynchronous function for processing a queued
-     * task, which must call its `callback(err)` argument when finished, with an
-     * optional `error` as an argument.  If you want to handle errors from an
-     * individual task, pass a callback to `q.push()`. Invoked with
-     * (task, callback).
-     * @param {number} [concurrency=1] - An `integer` for determining how many
-     * `worker` functions should be run in parallel.  If omitted, the concurrency
-     * defaults to `1`.  If the concurrency is `0`, an error is thrown.
-     * @returns {module:ControlFlow.QueueObject} A queue object to manage the tasks. Callbacks can
-     * attached as certain properties to listen for specific events during the
-     * lifecycle of the queue.
-     * @example
-     *
-     * // create a queue object with concurrency 2
-     * var q = async.queue(function(task, callback) {
- *     console.log('hello ' + task.name);
- *     callback();
- * }, 2);
-     *
-     * // assign a callback
-     * q.drain = function() {
- *     console.log('all items have been processed');
- * };
-     *
-     * // add some items to the queue
-     * q.push({name: 'foo'}, function(err) {
- *     console.log('finished processing foo');
- * });
-     * q.push({name: 'bar'}, function (err) {
- *     console.log('finished processing bar');
- * });
-     *
-     * // add some items to the queue (batch-wise)
-     * q.push([{name: 'baz'},{name: 'bay'},{name: 'bax'}], function(err) {
- *     console.log('finished processing item');
- * });
-     *
-     * // add some items to the front of the queue
-     * q.unshift({name: 'bar'}, function (err) {
- *     console.log('finished processing bar');
- * });
-     */
-},{"./internal/queue":26}],30:[function(require,module,exports){
     /**
      * Bit twiddling hacks for JavaScript.
      *
@@ -2495,7 +211,7 @@
     }
 
 
-},{}],31:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
     'use strict';
 
     module.exports = earcut;
@@ -3141,7 +857,7 @@
         return result;
     };
 
-},{}],32:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
     'use strict';
 
     var has = Object.prototype.hasOwnProperty;
@@ -3432,7 +1148,7 @@
         module.exports = EventEmitter;
     }
 
-},{}],33:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
     /**
      * isMobile.js v0.4.0
      *
@@ -3571,835 +1287,7 @@
 
     })(this);
 
-},{}],34:[function(require,module,exports){
-    /**
-     * A faster alternative to `Function#apply`, this function invokes `func`
-     * with the `this` binding of `thisArg` and the arguments of `args`.
-     *
-     * @private
-     * @param {Function} func The function to invoke.
-     * @param {*} thisArg The `this` binding of `func`.
-     * @param {Array} args The arguments to invoke `func` with.
-     * @returns {*} Returns the result of `func`.
-     */
-    function apply(func, thisArg, args) {
-        switch (args.length) {
-            case 0: return func.call(thisArg);
-            case 1: return func.call(thisArg, args[0]);
-            case 2: return func.call(thisArg, args[0], args[1]);
-            case 3: return func.call(thisArg, args[0], args[1], args[2]);
-        }
-        return func.apply(thisArg, args);
-    }
-
-    module.exports = apply;
-
-},{}],35:[function(require,module,exports){
-    /**
-     * A specialized version of `_.forEach` for arrays without support for
-     * iteratee shorthands.
-     *
-     * @private
-     * @param {Array} [array] The array to iterate over.
-     * @param {Function} iteratee The function invoked per iteration.
-     * @returns {Array} Returns `array`.
-     */
-    function arrayEach(array, iteratee) {
-        var index = -1,
-            length = array ? array.length : 0;
-
-        while (++index < length) {
-            if (iteratee(array[index], index, array) === false) {
-                break;
-            }
-        }
-        return array;
-    }
-
-    module.exports = arrayEach;
-
-},{}],36:[function(require,module,exports){
-    var baseTimes = require('./_baseTimes'),
-        isArguments = require('./isArguments'),
-        isArray = require('./isArray'),
-        isIndex = require('./_isIndex');
-
-    /** Used for built-in method references. */
-    var objectProto = Object.prototype;
-
-    /** Used to check objects for own properties. */
-    var hasOwnProperty = objectProto.hasOwnProperty;
-
-    /**
-     * Creates an array of the enumerable property names of the array-like `value`.
-     *
-     * @private
-     * @param {*} value The value to query.
-     * @param {boolean} inherited Specify returning inherited property names.
-     * @returns {Array} Returns the array of property names.
-     */
-    function arrayLikeKeys(value, inherited) {
-        // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-        // Safari 9 makes `arguments.length` enumerable in strict mode.
-        var result = (isArray(value) || isArguments(value))
-            ? baseTimes(value.length, String)
-            : [];
-
-        var length = result.length,
-            skipIndexes = !!length;
-
-        for (var key in value) {
-            if ((inherited || hasOwnProperty.call(value, key)) &&
-                !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
-                result.push(key);
-            }
-        }
-        return result;
-    }
-
-    module.exports = arrayLikeKeys;
-
-},{"./_baseTimes":39,"./_isIndex":40,"./isArguments":44,"./isArray":45}],37:[function(require,module,exports){
-    var isPrototype = require('./_isPrototype'),
-        nativeKeys = require('./_nativeKeys');
-
-    /** Used for built-in method references. */
-    var objectProto = Object.prototype;
-
-    /** Used to check objects for own properties. */
-    var hasOwnProperty = objectProto.hasOwnProperty;
-
-    /**
-     * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
-     *
-     * @private
-     * @param {Object} object The object to query.
-     * @returns {Array} Returns the array of property names.
-     */
-    function baseKeys(object) {
-        if (!isPrototype(object)) {
-            return nativeKeys(object);
-        }
-        var result = [];
-        for (var key in Object(object)) {
-            if (hasOwnProperty.call(object, key) && key != 'constructor') {
-                result.push(key);
-            }
-        }
-        return result;
-    }
-
-    module.exports = baseKeys;
-
-},{"./_isPrototype":41,"./_nativeKeys":42}],38:[function(require,module,exports){
-    var apply = require('./_apply');
-
-    /* Built-in method references for those with the same name as other `lodash` methods. */
-    var nativeMax = Math.max;
-
-    /**
-     * The base implementation of `_.rest` which doesn't validate or coerce arguments.
-     *
-     * @private
-     * @param {Function} func The function to apply a rest parameter to.
-     * @param {number} [start=func.length-1] The start position of the rest parameter.
-     * @returns {Function} Returns the new function.
-     */
-    function baseRest(func, start) {
-        start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
-        return function() {
-            var args = arguments,
-                index = -1,
-                length = nativeMax(args.length - start, 0),
-                array = Array(length);
-
-            while (++index < length) {
-                array[index] = args[start + index];
-            }
-            index = -1;
-            var otherArgs = Array(start + 1);
-            while (++index < start) {
-                otherArgs[index] = args[index];
-            }
-            otherArgs[start] = array;
-            return apply(func, this, otherArgs);
-        };
-    }
-
-    module.exports = baseRest;
-
-},{"./_apply":34}],39:[function(require,module,exports){
-    /**
-     * The base implementation of `_.times` without support for iteratee shorthands
-     * or max array length checks.
-     *
-     * @private
-     * @param {number} n The number of times to invoke `iteratee`.
-     * @param {Function} iteratee The function invoked per iteration.
-     * @returns {Array} Returns the array of results.
-     */
-    function baseTimes(n, iteratee) {
-        var index = -1,
-            result = Array(n);
-
-        while (++index < n) {
-            result[index] = iteratee(index);
-        }
-        return result;
-    }
-
-    module.exports = baseTimes;
-
-},{}],40:[function(require,module,exports){
-    /** Used as references for various `Number` constants. */
-    var MAX_SAFE_INTEGER = 9007199254740991;
-
-    /** Used to detect unsigned integer values. */
-    var reIsUint = /^(?:0|[1-9]\d*)$/;
-
-    /**
-     * Checks if `value` is a valid array-like index.
-     *
-     * @private
-     * @param {*} value The value to check.
-     * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
-     * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
-     */
-    function isIndex(value, length) {
-        length = length == null ? MAX_SAFE_INTEGER : length;
-        return !!length &&
-            (typeof value == 'number' || reIsUint.test(value)) &&
-            (value > -1 && value % 1 == 0 && value < length);
-    }
-
-    module.exports = isIndex;
-
-},{}],41:[function(require,module,exports){
-    /** Used for built-in method references. */
-    var objectProto = Object.prototype;
-
-    /**
-     * Checks if `value` is likely a prototype object.
-     *
-     * @private
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
-     */
-    function isPrototype(value) {
-        var Ctor = value && value.constructor,
-            proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
-
-        return value === proto;
-    }
-
-    module.exports = isPrototype;
-
-},{}],42:[function(require,module,exports){
-    var overArg = require('./_overArg');
-
-    /* Built-in method references for those with the same name as other `lodash` methods. */
-    var nativeKeys = overArg(Object.keys, Object);
-
-    module.exports = nativeKeys;
-
-},{"./_overArg":43}],43:[function(require,module,exports){
-    /**
-     * Creates a unary function that invokes `func` with its argument transformed.
-     *
-     * @private
-     * @param {Function} func The function to wrap.
-     * @param {Function} transform The argument transform.
-     * @returns {Function} Returns the new function.
-     */
-    function overArg(func, transform) {
-        return function(arg) {
-            return func(transform(arg));
-        };
-    }
-
-    module.exports = overArg;
-
-},{}],44:[function(require,module,exports){
-    var isArrayLikeObject = require('./isArrayLikeObject');
-
-    /** `Object#toString` result references. */
-    var argsTag = '[object Arguments]';
-
-    /** Used for built-in method references. */
-    var objectProto = Object.prototype;
-
-    /** Used to check objects for own properties. */
-    var hasOwnProperty = objectProto.hasOwnProperty;
-
-    /**
-     * Used to resolve the
-     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
-     * of values.
-     */
-    var objectToString = objectProto.toString;
-
-    /** Built-in value references. */
-    var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-
-    /**
-     * Checks if `value` is likely an `arguments` object.
-     *
-     * @static
-     * @memberOf _
-     * @since 0.1.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is an `arguments` object,
-     *  else `false`.
-     * @example
-     *
-     * _.isArguments(function() { return arguments; }());
-     * // => true
-     *
-     * _.isArguments([1, 2, 3]);
-     * // => false
-     */
-    function isArguments(value) {
-        // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-        return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
-            (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-    }
-
-    module.exports = isArguments;
-
-},{"./isArrayLikeObject":47}],45:[function(require,module,exports){
-    /**
-     * Checks if `value` is classified as an `Array` object.
-     *
-     * @static
-     * @memberOf _
-     * @since 0.1.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is an array, else `false`.
-     * @example
-     *
-     * _.isArray([1, 2, 3]);
-     * // => true
-     *
-     * _.isArray(document.body.children);
-     * // => false
-     *
-     * _.isArray('abc');
-     * // => false
-     *
-     * _.isArray(_.noop);
-     * // => false
-     */
-    var isArray = Array.isArray;
-
-    module.exports = isArray;
-
-},{}],46:[function(require,module,exports){
-    var isFunction = require('./isFunction'),
-        isLength = require('./isLength');
-
-    /**
-     * Checks if `value` is array-like. A value is considered array-like if it's
-     * not a function and has a `value.length` that's an integer greater than or
-     * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
-     * @example
-     *
-     * _.isArrayLike([1, 2, 3]);
-     * // => true
-     *
-     * _.isArrayLike(document.body.children);
-     * // => true
-     *
-     * _.isArrayLike('abc');
-     * // => true
-     *
-     * _.isArrayLike(_.noop);
-     * // => false
-     */
-    function isArrayLike(value) {
-        return value != null && isLength(value.length) && !isFunction(value);
-    }
-
-    module.exports = isArrayLike;
-
-},{"./isFunction":48,"./isLength":49}],47:[function(require,module,exports){
-    var isArrayLike = require('./isArrayLike'),
-        isObjectLike = require('./isObjectLike');
-
-    /**
-     * This method is like `_.isArrayLike` except that it also checks if `value`
-     * is an object.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is an array-like object,
-     *  else `false`.
-     * @example
-     *
-     * _.isArrayLikeObject([1, 2, 3]);
-     * // => true
-     *
-     * _.isArrayLikeObject(document.body.children);
-     * // => true
-     *
-     * _.isArrayLikeObject('abc');
-     * // => false
-     *
-     * _.isArrayLikeObject(_.noop);
-     * // => false
-     */
-    function isArrayLikeObject(value) {
-        return isObjectLike(value) && isArrayLike(value);
-    }
-
-    module.exports = isArrayLikeObject;
-
-},{"./isArrayLike":46,"./isObjectLike":51}],48:[function(require,module,exports){
-    var isObject = require('./isObject');
-
-    /** `Object#toString` result references. */
-    var funcTag = '[object Function]',
-        genTag = '[object GeneratorFunction]';
-
-    /** Used for built-in method references. */
-    var objectProto = Object.prototype;
-
-    /**
-     * Used to resolve the
-     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
-     * of values.
-     */
-    var objectToString = objectProto.toString;
-
-    /**
-     * Checks if `value` is classified as a `Function` object.
-     *
-     * @static
-     * @memberOf _
-     * @since 0.1.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is a function, else `false`.
-     * @example
-     *
-     * _.isFunction(_);
-     * // => true
-     *
-     * _.isFunction(/abc/);
-     * // => false
-     */
-    function isFunction(value) {
-        // The use of `Object#toString` avoids issues with the `typeof` operator
-        // in Safari 8-9 which returns 'object' for typed array and other constructors.
-        var tag = isObject(value) ? objectToString.call(value) : '';
-        return tag == funcTag || tag == genTag;
-    }
-
-    module.exports = isFunction;
-
-},{"./isObject":50}],49:[function(require,module,exports){
-    /** Used as references for various `Number` constants. */
-    var MAX_SAFE_INTEGER = 9007199254740991;
-
-    /**
-     * Checks if `value` is a valid array-like length.
-     *
-     * **Note:** This method is loosely based on
-     * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
-     * @example
-     *
-     * _.isLength(3);
-     * // => true
-     *
-     * _.isLength(Number.MIN_VALUE);
-     * // => false
-     *
-     * _.isLength(Infinity);
-     * // => false
-     *
-     * _.isLength('3');
-     * // => false
-     */
-    function isLength(value) {
-        return typeof value == 'number' &&
-            value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-    }
-
-    module.exports = isLength;
-
-},{}],50:[function(require,module,exports){
-    /**
-     * Checks if `value` is the
-     * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
-     * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
-     *
-     * @static
-     * @memberOf _
-     * @since 0.1.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is an object, else `false`.
-     * @example
-     *
-     * _.isObject({});
-     * // => true
-     *
-     * _.isObject([1, 2, 3]);
-     * // => true
-     *
-     * _.isObject(_.noop);
-     * // => true
-     *
-     * _.isObject(null);
-     * // => false
-     */
-    function isObject(value) {
-        var type = typeof value;
-        return !!value && (type == 'object' || type == 'function');
-    }
-
-    module.exports = isObject;
-
-},{}],51:[function(require,module,exports){
-    /**
-     * Checks if `value` is object-like. A value is object-like if it's not `null`
-     * and has a `typeof` result of "object".
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
-     * @example
-     *
-     * _.isObjectLike({});
-     * // => true
-     *
-     * _.isObjectLike([1, 2, 3]);
-     * // => true
-     *
-     * _.isObjectLike(_.noop);
-     * // => false
-     *
-     * _.isObjectLike(null);
-     * // => false
-     */
-    function isObjectLike(value) {
-        return !!value && typeof value == 'object';
-    }
-
-    module.exports = isObjectLike;
-
-},{}],52:[function(require,module,exports){
-    var isObjectLike = require('./isObjectLike');
-
-    /** `Object#toString` result references. */
-    var symbolTag = '[object Symbol]';
-
-    /** Used for built-in method references. */
-    var objectProto = Object.prototype;
-
-    /**
-     * Used to resolve the
-     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
-     * of values.
-     */
-    var objectToString = objectProto.toString;
-
-    /**
-     * Checks if `value` is classified as a `Symbol` primitive or object.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to check.
-     * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
-     * @example
-     *
-     * _.isSymbol(Symbol.iterator);
-     * // => true
-     *
-     * _.isSymbol('abc');
-     * // => false
-     */
-    function isSymbol(value) {
-        return typeof value == 'symbol' ||
-            (isObjectLike(value) && objectToString.call(value) == symbolTag);
-    }
-
-    module.exports = isSymbol;
-
-},{"./isObjectLike":51}],53:[function(require,module,exports){
-    var arrayLikeKeys = require('./_arrayLikeKeys'),
-        baseKeys = require('./_baseKeys'),
-        isArrayLike = require('./isArrayLike');
-
-    /**
-     * Creates an array of the own enumerable property names of `object`.
-     *
-     * **Note:** Non-object values are coerced to objects. See the
-     * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
-     * for more details.
-     *
-     * @static
-     * @since 0.1.0
-     * @memberOf _
-     * @category Object
-     * @param {Object} object The object to query.
-     * @returns {Array} Returns the array of property names.
-     * @example
-     *
-     * function Foo() {
- *   this.a = 1;
- *   this.b = 2;
- * }
-     *
-     * Foo.prototype.c = 3;
-     *
-     * _.keys(new Foo);
-     * // => ['a', 'b'] (iteration order is not guaranteed)
-     *
-     * _.keys('hi');
-     * // => ['0', '1']
-     */
-    function keys(object) {
-        return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
-    }
-
-    module.exports = keys;
-
-},{"./_arrayLikeKeys":36,"./_baseKeys":37,"./isArrayLike":46}],54:[function(require,module,exports){
-    /**
-     * This method returns `undefined`.
-     *
-     * @static
-     * @memberOf _
-     * @since 2.3.0
-     * @category Util
-     * @example
-     *
-     * _.times(2, _.noop);
-     * // => [undefined, undefined]
-     */
-    function noop() {
-        // No operation performed.
-    }
-
-    module.exports = noop;
-
-},{}],55:[function(require,module,exports){
-    var baseRest = require('./_baseRest'),
-        toInteger = require('./toInteger');
-
-    /** Used as the `TypeError` message for "Functions" methods. */
-    var FUNC_ERROR_TEXT = 'Expected a function';
-
-    /**
-     * Creates a function that invokes `func` with the `this` binding of the
-     * created function and arguments from `start` and beyond provided as
-     * an array.
-     *
-     * **Note:** This method is based on the
-     * [rest parameter](https://mdn.io/rest_parameters).
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Function
-     * @param {Function} func The function to apply a rest parameter to.
-     * @param {number} [start=func.length-1] The start position of the rest parameter.
-     * @returns {Function} Returns the new function.
-     * @example
-     *
-     * var say = _.rest(function(what, names) {
- *   return what + ' ' + _.initial(names).join(', ') +
- *     (_.size(names) > 1 ? ', & ' : '') + _.last(names);
- * });
-     *
-     * say('hello', 'fred', 'barney', 'pebbles');
-     * // => 'hello fred, barney, & pebbles'
-     */
-    function rest(func, start) {
-        if (typeof func != 'function') {
-            throw new TypeError(FUNC_ERROR_TEXT);
-        }
-        start = start === undefined ? start : toInteger(start);
-        return baseRest(func, start);
-    }
-
-    module.exports = rest;
-
-},{"./_baseRest":38,"./toInteger":57}],56:[function(require,module,exports){
-    var toNumber = require('./toNumber');
-
-    /** Used as references for various `Number` constants. */
-    var INFINITY = 1 / 0,
-        MAX_INTEGER = 1.7976931348623157e+308;
-
-    /**
-     * Converts `value` to a finite number.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.12.0
-     * @category Lang
-     * @param {*} value The value to convert.
-     * @returns {number} Returns the converted number.
-     * @example
-     *
-     * _.toFinite(3.2);
-     * // => 3.2
-     *
-     * _.toFinite(Number.MIN_VALUE);
-     * // => 5e-324
-     *
-     * _.toFinite(Infinity);
-     * // => 1.7976931348623157e+308
-     *
-     * _.toFinite('3.2');
-     * // => 3.2
-     */
-    function toFinite(value) {
-        if (!value) {
-            return value === 0 ? value : 0;
-        }
-        value = toNumber(value);
-        if (value === INFINITY || value === -INFINITY) {
-            var sign = (value < 0 ? -1 : 1);
-            return sign * MAX_INTEGER;
-        }
-        return value === value ? value : 0;
-    }
-
-    module.exports = toFinite;
-
-},{"./toNumber":58}],57:[function(require,module,exports){
-    var toFinite = require('./toFinite');
-
-    /**
-     * Converts `value` to an integer.
-     *
-     * **Note:** This method is loosely based on
-     * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to convert.
-     * @returns {number} Returns the converted integer.
-     * @example
-     *
-     * _.toInteger(3.2);
-     * // => 3
-     *
-     * _.toInteger(Number.MIN_VALUE);
-     * // => 0
-     *
-     * _.toInteger(Infinity);
-     * // => 1.7976931348623157e+308
-     *
-     * _.toInteger('3.2');
-     * // => 3
-     */
-    function toInteger(value) {
-        var result = toFinite(value),
-            remainder = result % 1;
-
-        return result === result ? (remainder ? result - remainder : result) : 0;
-    }
-
-    module.exports = toInteger;
-
-},{"./toFinite":56}],58:[function(require,module,exports){
-    var isObject = require('./isObject'),
-        isSymbol = require('./isSymbol');
-
-    /** Used as references for various `Number` constants. */
-    var NAN = 0 / 0;
-
-    /** Used to match leading and trailing whitespace. */
-    var reTrim = /^\s+|\s+$/g;
-
-    /** Used to detect bad signed hexadecimal string values. */
-    var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-
-    /** Used to detect binary string values. */
-    var reIsBinary = /^0b[01]+$/i;
-
-    /** Used to detect octal string values. */
-    var reIsOctal = /^0o[0-7]+$/i;
-
-    /** Built-in method references without a dependency on `root`. */
-    var freeParseInt = parseInt;
-
-    /**
-     * Converts `value` to a number.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @category Lang
-     * @param {*} value The value to process.
-     * @returns {number} Returns the number.
-     * @example
-     *
-     * _.toNumber(3.2);
-     * // => 3.2
-     *
-     * _.toNumber(Number.MIN_VALUE);
-     * // => 5e-324
-     *
-     * _.toNumber(Infinity);
-     * // => Infinity
-     *
-     * _.toNumber('3.2');
-     * // => 3.2
-     */
-    function toNumber(value) {
-        if (typeof value == 'number') {
-            return value;
-        }
-        if (isSymbol(value)) {
-            return NAN;
-        }
-        if (isObject(value)) {
-            var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
-            value = isObject(other) ? (other + '') : other;
-        }
-        if (typeof value != 'string') {
-            return value === 0 ? value : +value;
-        }
-        value = value.replace(reTrim, '');
-        var isBinary = reIsBinary.test(value);
-        return (isBinary || reIsOctal.test(value))
-            ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
-            : (reIsBadHex.test(value) ? NAN : +value);
-    }
-
-    module.exports = toNumber;
-
-},{"./isObject":50,"./isSymbol":52}],59:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
     'use strict';
     /* eslint-disable no-unused-vars */
     var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -4484,7 +1372,1572 @@
         return to;
     };
 
-},{}],60:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
+    var EMPTY_ARRAY_BUFFER = new ArrayBuffer(0);
+
+    /**
+     * Helper class to create a webGL buffer
+     *
+     * @class
+     * @memberof pixi.gl
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     * @param type {gl.ARRAY_BUFFER | gl.ELEMENT_ARRAY_BUFFER} @mat
+     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
+     * @param drawType {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
+     */
+    var Buffer = function(gl, type, data, drawType)
+    {
+
+        /**
+         * The current WebGL rendering context
+         *
+         * @member {WebGLRenderingContext}
+         */
+        this.gl = gl;
+
+        /**
+         * The WebGL buffer, created upon instantiation
+         *
+         * @member {WebGLBuffer}
+         */
+        this.buffer = gl.createBuffer();
+
+        /**
+         * The type of the buffer
+         *
+         * @member {gl.ARRAY_BUFFER|gl.ELEMENT_ARRAY_BUFFER}
+         */
+        this.type = type || gl.ARRAY_BUFFER;
+
+        /**
+         * The draw type of the buffer
+         *
+         * @member {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
+         */
+        this.drawType = drawType || gl.STATIC_DRAW;
+
+        /**
+         * The data in the buffer, as a typed array
+         *
+         * @member {ArrayBuffer| SharedArrayBuffer|ArrayBufferView}
+         */
+        this.data = EMPTY_ARRAY_BUFFER;
+
+        if(data)
+        {
+            this.upload(data);
+        }
+    };
+
+    /**
+     * Uploads the buffer to the GPU
+     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data to upload
+     * @param offset {Number} if only a subset of the data should be uploaded, this is the amount of data to subtract
+     * @param dontBind {Boolean} whether to bind the buffer before uploading it
+     */
+    Buffer.prototype.upload = function(data, offset, dontBind)
+    {
+        // todo - needed?
+        if(!dontBind) this.bind();
+
+        var gl = this.gl;
+
+        data = data || this.data;
+        offset = offset || 0;
+
+        if(this.data.byteLength >= data.byteLength)
+        {
+            gl.bufferSubData(this.type, offset, data);
+        }
+        else
+        {
+            gl.bufferData(this.type, data, this.drawType);
+        }
+
+        this.data = data;
+    };
+    /**
+     * Binds the buffer
+     *
+     */
+    Buffer.prototype.bind = function()
+    {
+        var gl = this.gl;
+        gl.bindBuffer(this.type, this.buffer);
+    };
+
+    Buffer.createVertexBuffer = function(gl, data, drawType)
+    {
+        return new Buffer(gl, gl.ARRAY_BUFFER, data, drawType);
+    };
+
+    Buffer.createIndexBuffer = function(gl, data, drawType)
+    {
+        return new Buffer(gl, gl.ELEMENT_ARRAY_BUFFER, data, drawType);
+    };
+
+    Buffer.create = function(gl, type, data, drawType)
+    {
+        return new Buffer(gl, type, drawType);
+    };
+
+    /**
+     * Destroys the buffer
+     *
+     */
+    Buffer.prototype.destroy = function(){
+        this.gl.deleteBuffer(this.buffer);
+    };
+
+    module.exports = Buffer;
+
+},{}],7:[function(require,module,exports){
+
+    var Texture = require('./GLTexture');
+
+    /**
+     * Helper class to create a webGL Framebuffer
+     *
+     * @class
+     * @memberof pixi.gl
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     * @param width {Number} the width of the drawing area of the frame buffer
+     * @param height {Number} the height of the drawing area of the frame buffer
+     */
+    var Framebuffer = function(gl, width, height)
+    {
+        /**
+         * The current WebGL rendering context
+         *
+         * @member {WebGLRenderingContext}
+         */
+        this.gl = gl;
+
+        /**
+         * The frame buffer
+         *
+         * @member {WebGLFramebuffer}
+         */
+        this.framebuffer = gl.createFramebuffer();
+
+        /**
+         * The stencil buffer
+         *
+         * @member {WebGLRenderbuffer}
+         */
+        this.stencil = null;
+
+        /**
+         * The stencil buffer
+         *
+         * @member {GLTexture}
+         */
+        this.texture = null;
+
+        /**
+         * The width of the drawing area of the buffer
+         *
+         * @member {Number}
+         */
+        this.width = width || 100;
+        /**
+         * The height of the drawing area of the buffer
+         *
+         * @member {Number}
+         */
+        this.height = height || 100;
+    };
+
+    /**
+     * Adds a texture to the frame buffer
+     * @param texture {GLTexture}
+     */
+    Framebuffer.prototype.enableTexture = function(texture)
+    {
+        var gl = this.gl;
+
+        this.texture = texture || new Texture(gl);
+
+        this.texture.bind();
+
+        //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,  this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+        this.bind();
+
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture.texture, 0);
+    };
+
+    /**
+     * Initialises the stencil buffer
+     */
+    Framebuffer.prototype.enableStencil = function()
+    {
+        if(this.stencil)return;
+
+        var gl = this.gl;
+
+        this.stencil = gl.createRenderbuffer();
+
+        gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
+
+        // TODO.. this is depth AND stencil?
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.stencil);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL,  this.width  , this.height );
+    };
+
+    /**
+     * Erases the drawing area and fills it with a colour
+     * @param  r {Number} the red value of the clearing colour
+     * @param  g {Number} the green value of the clearing colour
+     * @param  b {Number} the blue value of the clearing colour
+     * @param  a {Number} the alpha value of the clearing colour
+     */
+    Framebuffer.prototype.clear = function( r, g, b, a )
+    {
+        this.bind();
+
+        var gl = this.gl;
+
+        gl.clearColor(r, g, b, a);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    };
+
+    /**
+     * Binds the frame buffer to the WebGL context
+     */
+    Framebuffer.prototype.bind = function()
+    {
+        var gl = this.gl;
+
+        if(this.texture)
+        {
+            this.texture.unbind();
+        }
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer );
+    };
+
+    /**
+     * Unbinds the frame buffer to the WebGL context
+     */
+    Framebuffer.prototype.unbind = function()
+    {
+        var gl = this.gl;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null );
+    };
+    /**
+     * Resizes the drawing area of the buffer to the given width and height
+     * @param  width  {Number} the new width
+     * @param  height {Number} the new height
+     */
+    Framebuffer.prototype.resize = function(width, height)
+    {
+        var gl = this.gl;
+
+        this.width = width;
+        this.height = height;
+
+        if ( this.texture )
+        {
+            this.texture.uploadData(null, width, height);
+        }
+
+        if ( this.stencil )
+        {
+            // update the stencil buffer width and height
+            gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, width, height);
+        }
+    };
+
+    /**
+     * Destroys this buffer
+     */
+    Framebuffer.prototype.destroy = function()
+    {
+        var gl = this.gl;
+
+        //TODO
+        if(this.texture)
+        {
+            this.texture.destroy();
+        }
+
+        gl.deleteFramebuffer(this.framebuffer);
+
+        this.gl = null;
+
+        this.stencil = null;
+        this.texture = null;
+    };
+
+    /**
+     * Creates a frame buffer with a texture containing the given data
+     * @static
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     * @param width {Number} the width of the drawing area of the frame buffer
+     * @param height {Number} the height of the drawing area of the frame buffer
+     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
+     */
+    Framebuffer.createRGBA = function(gl, width, height/*, data*/)
+    {
+        var texture = Texture.fromData(gl, null, width, height);
+        texture.enableNearestScaling();
+        texture.enableWrapClamp();
+
+        //now create the framebuffer object and attach the texture to it.
+        var fbo = new Framebuffer(gl, width, height);
+        fbo.enableTexture(texture);
+
+        fbo.unbind();
+
+        return fbo;
+    };
+
+    /**
+     * Creates a frame buffer with a texture containing the given data
+     * @static
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     * @param width {Number} the width of the drawing area of the frame buffer
+     * @param height {Number} the height of the drawing area of the frame buffer
+     * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
+     */
+    Framebuffer.createFloat32 = function(gl, width, height, data)
+    {
+        // create a new texture..
+        var texture = new Texture.fromData(gl, data, width, height);
+        texture.enableNearestScaling();
+        texture.enableWrapClamp();
+
+        //now create the framebuffer object and attach the texture to it.
+        var fbo = new Framebuffer(gl, width, height);
+        fbo.enableTexture(texture);
+
+        fbo.unbind();
+
+        return fbo;
+    };
+
+    module.exports = Framebuffer;
+
+},{"./GLTexture":9}],8:[function(require,module,exports){
+
+    var compileProgram = require('./shader/compileProgram'),
+        extractAttributes = require('./shader/extractAttributes'),
+        extractUniforms = require('./shader/extractUniforms'),
+        generateUniformAccessObject = require('./shader/generateUniformAccessObject');
+
+    /**
+     * Helper class to create a webGL Shader
+     *
+     * @class
+     * @memberof pixi.gl
+     * @param gl {WebGLRenderingContext}
+     * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
+     * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
+     */
+    var Shader = function(gl, vertexSrc, fragmentSrc)
+    {
+        /**
+         * The current WebGL rendering context
+         *
+         * @member {WebGLRenderingContext}
+         */
+        this.gl = gl;
+
+        /**
+         * The shader program
+         *
+         * @member {WebGLProgram}
+         */
+        // First compile the program..
+        this.program = compileProgram(gl, vertexSrc, fragmentSrc);
+
+
+        /**
+         * The attributes of the shader as an object containing the following properties
+         * {
+	 * 	type,
+	 * 	size,
+	 * 	location,
+	 * 	pointer
+	 * }
+         * @member {Object}
+         */
+        // next extract the attributes
+        this.attributes = extractAttributes(gl, this.program);
+
+        var uniformData = extractUniforms(gl, this.program);
+
+        /**
+         * The uniforms of the shader as an object containing the following properties
+         * {
+	 * 	gl,
+	 * 	data
+	 * }
+         * @member {Object}
+         */
+        this.uniforms = generateUniformAccessObject( gl, uniformData );
+    };
+    /**
+     * Uses this shader
+     */
+    Shader.prototype.bind = function()
+    {
+        this.gl.useProgram(this.program);
+    };
+
+    /**
+     * Destroys this shader
+     * TODO
+     */
+    Shader.prototype.destroy = function()
+    {
+        // var gl = this.gl;
+    };
+
+    module.exports = Shader;
+
+},{"./shader/compileProgram":14,"./shader/extractAttributes":16,"./shader/extractUniforms":17,"./shader/generateUniformAccessObject":18}],9:[function(require,module,exports){
+
+    /**
+     * Helper class to create a WebGL Texture
+     *
+     * @class
+     * @memberof pixi.gl
+     * @param gl {WebGLRenderingContext} The current WebGL context
+     * @param width {number} the width of the texture
+     * @param height {number} the height of the texture
+     * @param format {number} the pixel format of the texture. defaults to gl.RGBA
+     * @param type {number} the gl type of the texture. defaults to gl.UNSIGNED_BYTE
+     */
+    var Texture = function(gl, width, height, format, type)
+    {
+        /**
+         * The current WebGL rendering context
+         *
+         * @member {WebGLRenderingContext}
+         */
+        this.gl = gl;
+
+
+        /**
+         * The WebGL texture
+         *
+         * @member {WebGLTexture}
+         */
+        this.texture = gl.createTexture();
+
+        /**
+         * If mipmapping was used for this texture, enable and disable with enableMipmap()
+         *
+         * @member {Boolean}
+         */
+        // some settings..
+        this.mipmap = false;
+
+
+        /**
+         * Set to true to enable pre-multiplied alpha
+         *
+         * @member {Boolean}
+         */
+        this.premultiplyAlpha = false;
+
+        /**
+         * The width of texture
+         *
+         * @member {Number}
+         */
+        this.width = width || 0;
+        /**
+         * The height of texture
+         *
+         * @member {Number}
+         */
+        this.height = height || 0;
+
+        /**
+         * The pixel format of the texture. defaults to gl.RGBA
+         *
+         * @member {Number}
+         */
+        this.format = format || gl.RGBA;
+
+        /**
+         * The gl type of the texture. defaults to gl.UNSIGNED_BYTE
+         *
+         * @member {Number}
+         */
+        this.type = type || gl.UNSIGNED_BYTE;
+
+
+    };
+
+    /**
+     * Uploads this texture to the GPU
+     * @param source {HTMLImageElement|ImageData|HTMLVideoElement} the source image of the texture
+     */
+    Texture.prototype.upload = function(source)
+    {
+        this.bind();
+
+        var gl = this.gl;
+
+        // if the source is a video, we need to use the videoWidth / videoHeight properties as width / height will be incorrect.
+        this.width = source.videoWidth || source.width;
+        this.height = source.videoHeight || source.height;
+
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
+        gl.texImage2D(gl.TEXTURE_2D, 0, this.format, this.format, this.type, source);
+    };
+
+    var FLOATING_POINT_AVAILABLE = false;
+
+    /**
+     * Use a data source and uploads this texture to the GPU
+     * @param data {TypedArray} the data to upload to the texture
+     * @param width {number} the new width of the texture
+     * @param height {number} the new height of the texture
+     */
+    Texture.prototype.uploadData = function(data, width, height)
+    {
+        this.bind();
+
+        var gl = this.gl;
+
+        this.width = width || this.width;
+        this.height = height || this.height;
+
+        if(data instanceof Float32Array)
+        {
+            if(!FLOATING_POINT_AVAILABLE)
+            {
+                var ext = gl.getExtension("OES_texture_float");
+
+                if(ext)
+                {
+                    FLOATING_POINT_AVAILABLE = true;
+                }
+                else
+                {
+                    throw new Error('floating point textures not available');
+                }
+            }
+
+            this.type = gl.FLOAT;
+        }
+        else
+        {
+            // TODO support for other types
+            this.type = gl.UNSIGNED_BYTE;
+        }
+
+
+
+        // what type of data?
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
+        gl.texImage2D(gl.TEXTURE_2D, 0, this.format,  this.width, this.height, 0, this.format, this.type, data || null);
+
+    };
+
+    /**
+     * Binds the texture
+     * @param  location
+     */
+    Texture.prototype.bind = function(location)
+    {
+        var gl = this.gl;
+
+        if(location !== undefined)
+        {
+            gl.activeTexture(gl.TEXTURE0 + location);
+        }
+
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    };
+
+    /**
+     * Unbinds the texture
+     */
+    Texture.prototype.unbind = function()
+    {
+        var gl = this.gl;
+        gl.bindTexture(gl.TEXTURE_2D, null);
+    };
+
+    /**
+     * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
+     */
+    Texture.prototype.minFilter = function( linear )
+    {
+        var gl = this.gl;
+
+        this.bind();
+
+        if(this.mipmap)
+        {
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST);
+        }
+        else
+        {
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR : gl.NEAREST);
+        }
+    };
+
+    /**
+     * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
+     */
+    Texture.prototype.magFilter = function( linear )
+    {
+        var gl = this.gl;
+
+        this.bind();
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, linear ? gl.LINEAR : gl.NEAREST);
+    };
+
+    /**
+     * Enables mipmapping
+     */
+    Texture.prototype.enableMipmap = function()
+    {
+        var gl = this.gl;
+
+        this.bind();
+
+        this.mipmap = true;
+
+        gl.generateMipmap(gl.TEXTURE_2D);
+    };
+
+    /**
+     * Enables linear filtering
+     */
+    Texture.prototype.enableLinearScaling = function()
+    {
+        this.minFilter(true);
+        this.magFilter(true);
+    };
+
+    /**
+     * Enables nearest neighbour interpolation
+     */
+    Texture.prototype.enableNearestScaling = function()
+    {
+        this.minFilter(false);
+        this.magFilter(false);
+    };
+
+    /**
+     * Enables clamping on the texture so WebGL will not repeat it
+     */
+    Texture.prototype.enableWrapClamp = function()
+    {
+        var gl = this.gl;
+
+        this.bind();
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    };
+
+    /**
+     * Enable tiling on the texture
+     */
+    Texture.prototype.enableWrapRepeat = function()
+    {
+        var gl = this.gl;
+
+        this.bind();
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    };
+
+    Texture.prototype.enableWrapMirrorRepeat = function()
+    {
+        var gl = this.gl;
+
+        this.bind();
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+    };
+
+
+    /**
+     * Destroys this texture
+     */
+    Texture.prototype.destroy = function()
+    {
+        var gl = this.gl;
+        //TODO
+        gl.deleteTexture(this.texture);
+    };
+
+    /**
+     * @static
+     * @param gl {WebGLRenderingContext} The current WebGL context
+     * @param source {HTMLImageElement|ImageData} the source image of the texture
+     * @param premultiplyAlpha {Boolean} If we want to use pre-multiplied alpha
+     */
+    Texture.fromSource = function(gl, source, premultiplyAlpha)
+    {
+        var texture = new Texture(gl);
+        texture.premultiplyAlpha = premultiplyAlpha || false;
+        texture.upload(source);
+
+        return texture;
+    };
+
+    /**
+     * @static
+     * @param gl {WebGLRenderingContext} The current WebGL context
+     * @param data {TypedArray} the data to upload to the texture
+     * @param width {number} the new width of the texture
+     * @param height {number} the new height of the texture
+     */
+    Texture.fromData = function(gl, data, width, height)
+    {
+        //console.log(data, width, height);
+        var texture = new Texture(gl);
+        texture.uploadData(data, width, height);
+
+        return texture;
+    };
+
+
+    module.exports = Texture;
+
+},{}],10:[function(require,module,exports){
+
+// state object//
+    var setVertexAttribArrays = require( './setVertexAttribArrays' );
+
+    /**
+     * Helper class to work with WebGL VertexArrayObjects (vaos)
+     * Only works if WebGL extensions are enabled (they usually are)
+     *
+     * @class
+     * @memberof pixi.gl
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     */
+    function VertexArrayObject(gl, state)
+    {
+        this.nativeVaoExtension = null;
+
+        if(!VertexArrayObject.FORCE_NATIVE)
+        {
+            this.nativeVaoExtension = gl.getExtension('OES_vertex_array_object') ||
+                gl.getExtension('MOZ_OES_vertex_array_object') ||
+                gl.getExtension('WEBKIT_OES_vertex_array_object');
+        }
+
+        this.nativeState = state;
+
+        if(this.nativeVaoExtension)
+        {
+            this.nativeVao = this.nativeVaoExtension.createVertexArrayOES();
+
+            var maxAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
+
+            // VAO - overwrite the state..
+            this.nativeState = {
+                tempAttribState: new Array(maxAttribs),
+                attribState: new Array(maxAttribs)
+            };
+        }
+
+        /**
+         * The current WebGL rendering context
+         *
+         * @member {WebGLRenderingContext}
+         */
+        this.gl = gl;
+
+        /**
+         * An array of attributes
+         *
+         * @member {Array}
+         */
+        this.attributes = [];
+
+        /**
+         * @member {Array}
+         */
+        this.indexBuffer = null;
+
+        /**
+         * A boolean flag
+         *
+         * @member {Boolean}
+         */
+        this.dirty = false;
+    }
+
+    VertexArrayObject.prototype.constructor = VertexArrayObject;
+    module.exports = VertexArrayObject;
+
+    /**
+     * Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
+     * If you find on older devices that things have gone a bit weird then set this to true.
+     */
+    /**
+     * Lets the VAO know if you should use the WebGL extension or the native methods.
+     * Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
+     * If you find on older devices that things have gone a bit weird then set this to true.
+     * @static
+     * @property {Boolean} FORCE_NATIVE
+     */
+    VertexArrayObject.FORCE_NATIVE = false;
+
+    /**
+     * Binds the buffer
+     */
+    VertexArrayObject.prototype.bind = function()
+    {
+        if(this.nativeVao)
+        {
+            this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
+
+            if(this.dirty)
+            {
+                this.dirty = false;
+                this.activate();
+            }
+        }
+        else
+        {
+
+            this.activate();
+        }
+
+        return this;
+    };
+
+    /**
+     * Unbinds the buffer
+     */
+    VertexArrayObject.prototype.unbind = function()
+    {
+        if(this.nativeVao)
+        {
+            this.nativeVaoExtension.bindVertexArrayOES(null);
+        }
+
+        return this;
+    };
+
+    /**
+     * Uses this vao
+     */
+    VertexArrayObject.prototype.activate = function()
+    {
+
+        var gl = this.gl;
+        var lastBuffer = null;
+
+        for (var i = 0; i < this.attributes.length; i++)
+        {
+            var attrib = this.attributes[i];
+
+            if(lastBuffer !== attrib.buffer)
+            {
+                attrib.buffer.bind();
+                lastBuffer = attrib.buffer;
+            }
+
+            //attrib.attribute.pointer(attrib.type, attrib.normalized, attrib.stride, attrib.start);
+            gl.vertexAttribPointer(attrib.attribute.location,
+                attrib.attribute.size, attrib.type || gl.FLOAT,
+                attrib.normalized || false,
+                attrib.stride || 0,
+                attrib.start || 0);
+
+
+        }
+
+        setVertexAttribArrays(gl, this.attributes, this.nativeState);
+
+        this.indexBuffer.bind();
+
+        return this;
+    };
+
+    /**
+     *
+     * @param buffer     {WebGLBuffer}
+     * @param attribute  {*}
+     * @param type       {String}
+     * @param normalized {Boolean}
+     * @param stride     {Number}
+     * @param start      {Number}
+     */
+    VertexArrayObject.prototype.addAttribute = function(buffer, attribute, type, normalized, stride, start)
+    {
+        this.attributes.push({
+            buffer:     buffer,
+            attribute:  attribute,
+
+            location:   attribute.location,
+            type:       type || this.gl.FLOAT,
+            normalized: normalized || false,
+            stride:     stride || 0,
+            start:      start || 0
+        });
+
+        this.dirty = true;
+
+        return this;
+    };
+
+    /**
+     *
+     * @param buffer   {WebGLBuffer}
+     * @param options  {Object}
+     */
+    VertexArrayObject.prototype.addIndex = function(buffer/*, options*/)
+    {
+        this.indexBuffer = buffer;
+
+        this.dirty = true;
+
+        return this;
+    };
+
+    /**
+     * Unbinds this vao and disables it
+     */
+    VertexArrayObject.prototype.clear = function()
+    {
+        // var gl = this.gl;
+
+        // TODO - should this function unbind after clear?
+        // for now, no but lets see what happens in the real world!
+        if(this.nativeVao)
+        {
+            this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
+        }
+
+        this.attributes.length = 0;
+        this.indexBuffer = null;
+
+        return this;
+    };
+
+    /**
+     * @param type  {Number}
+     * @param size  {Number}
+     * @param start {Number}
+     */
+    VertexArrayObject.prototype.draw = function(type, size, start)
+    {
+        var gl = this.gl;
+        gl.drawElements(type, size, gl.UNSIGNED_SHORT, start || 0);
+
+        return this;
+    };
+
+    /**
+     * Destroy this vao
+     */
+    VertexArrayObject.prototype.destroy = function()
+    {
+        // lose references
+        this.gl = null;
+        this.indexBuffer = null;
+        this.attributes = null;
+        this.nativeState = null;
+
+        if(this.nativeVao)
+        {
+            this.nativeVaoExtension.deleteVertexArrayOES(this.nativeVao);
+        }
+
+        this.nativeVaoExtension = null;
+        this.nativeVao = null;
+    };
+
+},{"./setVertexAttribArrays":13}],11:[function(require,module,exports){
+
+    /**
+     * Helper class to create a webGL Context
+     *
+     * @class
+     * @memberof pixi.gl
+     * @param canvas {HTMLCanvasElement} the canvas element that we will get the context from
+     * @param options {Object} An options object that gets passed in to the canvas element containing the context attributes,
+     *                         see https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement/getContext for the options available
+     * @return {WebGLRenderingContext} the WebGL context
+     */
+    var createContext = function(canvas, options)
+    {
+        var gl = canvas.getContext('webgl', options) ||
+            canvas.getContext('experimental-webgl', options);
+
+        if (!gl)
+        {
+            // fail, not able to get a context
+            throw new Error('This browser does not support webGL. Try using the canvas renderer');
+        }
+
+        return gl;
+    };
+
+    module.exports = createContext;
+
+},{}],12:[function(require,module,exports){
+    var gl = {
+        createContext:          require('./createContext'),
+        setVertexAttribArrays:  require('./setVertexAttribArrays'),
+        GLBuffer:               require('./GLBuffer'),
+        GLFramebuffer:          require('./GLFramebuffer'),
+        GLShader:               require('./GLShader'),
+        GLTexture:              require('./GLTexture'),
+        VertexArrayObject:      require('./VertexArrayObject'),
+        shader:                 require('./shader')
+    };
+
+// Export for Node-compatible environments
+    if (typeof module !== 'undefined' && module.exports)
+    {
+        // Export the module
+        module.exports = gl;
+    }
+
+// Add to the browser window pixi.gl
+    if (typeof window !== 'undefined')
+    {
+        // add the window object
+        window.pixi = { gl: gl };
+    }
+},{"./GLBuffer":6,"./GLFramebuffer":7,"./GLShader":8,"./GLTexture":9,"./VertexArrayObject":10,"./createContext":11,"./setVertexAttribArrays":13,"./shader":19}],13:[function(require,module,exports){
+// var GL_MAP = {};
+
+    /**
+     * @param gl {WebGLRenderingContext} The current WebGL context
+     * @param attribs {*}
+     * @param state {*}
+     */
+    var setVertexAttribArrays = function (gl, attribs, state)
+    {
+        var i;
+        if(state)
+        {
+            var tempAttribState = state.tempAttribState,
+                attribState = state.attribState;
+
+            for (i = 0; i < tempAttribState.length; i++)
+            {
+                tempAttribState[i] = false;
+            }
+
+            // set the new attribs
+            for (i = 0; i < attribs.length; i++)
+            {
+                tempAttribState[attribs[i].attribute.location] = true;
+            }
+
+            for (i = 0; i < attribState.length; i++)
+            {
+                if (attribState[i] !== tempAttribState[i])
+                {
+                    attribState[i] = tempAttribState[i];
+
+                    if (state.attribState[i])
+                    {
+                        gl.enableVertexAttribArray(i);
+                    }
+                    else
+                    {
+                        gl.disableVertexAttribArray(i);
+                    }
+                }
+            }
+
+        }
+        else
+        {
+            for (i = 0; i < attribs.length; i++)
+            {
+                var attrib = attribs[i];
+                gl.enableVertexAttribArray(attrib.attribute.location);
+            }
+        }
+    };
+
+    module.exports = setVertexAttribArrays;
+
+},{}],14:[function(require,module,exports){
+
+    /**
+     * @class
+     * @memberof pixi.gl.shader
+     * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
+     * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
+     * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
+     * @return {WebGLProgram} the shader program
+     */
+    var compileProgram = function(gl, vertexSrc, fragmentSrc)
+    {
+        var glVertShader = compileShader(gl, gl.VERTEX_SHADER, vertexSrc);
+        var glFragShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
+
+        var program = gl.createProgram();
+
+        gl.attachShader(program, glVertShader);
+        gl.attachShader(program, glFragShader);
+        gl.linkProgram(program);
+
+        // if linking fails, then log and cleanup
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS))
+        {
+            console.error('Pixi.js Error: Could not initialize shader.');
+            console.error('gl.VALIDATE_STATUS', gl.getProgramParameter(program, gl.VALIDATE_STATUS));
+            console.error('gl.getError()', gl.getError());
+
+            // if there is a program info log, log it
+            if (gl.getProgramInfoLog(program) !== '')
+            {
+                console.warn('Pixi.js Warning: gl.getProgramInfoLog()', gl.getProgramInfoLog(program));
+            }
+
+            gl.deleteProgram(program);
+            program = null;
+        }
+
+        // clean up some shaders
+        gl.deleteShader(glVertShader);
+        gl.deleteShader(glFragShader);
+
+        return program;
+    };
+
+    /**
+     * @private
+     * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
+     * @param type {Number} the type, can be either VERTEX_SHADER or FRAGMENT_SHADER
+     * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
+     * @return {WebGLShader} the shader
+     */
+    var compileShader = function (gl, type, src)
+    {
+        var shader = gl.createShader(type);
+
+        gl.shaderSource(shader, src);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+        {
+            console.log(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    };
+
+    module.exports = compileProgram;
+
+},{}],15:[function(require,module,exports){
+    /**
+     * @class
+     * @memberof pixi.gl.shader
+     * @param type {String} Type of value
+     * @param size {Number}
+     */
+    var defaultValue = function(type, size)
+    {
+        switch (type)
+        {
+            case 'float':
+                return 0;
+
+            case 'vec2':
+                return new Float32Array(2 * size);
+
+            case 'vec3':
+                return new Float32Array(3 * size);
+
+            case 'vec4':
+                return new Float32Array(4 * size);
+
+            case 'int':
+            case 'sampler2D':
+                return 0;
+
+            case 'ivec2':
+                return new Int32Array(2 * size);
+
+            case 'ivec3':
+                return new Int32Array(3 * size);
+
+            case 'ivec4':
+                return new Int32Array(4 * size);
+
+            case 'bool':
+                return false;
+
+            case 'bvec2':
+
+                return booleanArray( 2 * size);
+
+            case 'bvec3':
+                return booleanArray(3 * size);
+
+            case 'bvec4':
+                return booleanArray(4 * size);
+
+            case 'mat2':
+                return new Float32Array([1, 0,
+                    0, 1]);
+
+            case 'mat3':
+                return new Float32Array([1, 0, 0,
+                    0, 1, 0,
+                    0, 0, 1]);
+
+            case 'mat4':
+                return new Float32Array([1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, 0,
+                    0, 0, 0, 1]);
+        }
+    };
+
+    var booleanArray = function(size)
+    {
+        var array = new Array(size);
+
+        for (var i = 0; i < array.length; i++)
+        {
+            array[i] = false;
+        }
+
+        return array;
+    };
+
+    module.exports = defaultValue;
+
+},{}],16:[function(require,module,exports){
+
+    var mapType = require('./mapType');
+    var mapSize = require('./mapSize');
+
+    /**
+     * Extracts the attributes
+     * @class
+     * @memberof pixi.gl.shader
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     * @param program {WebGLProgram} The shader program to get the attributes from
+     * @return attributes {Object}
+     */
+    var extractAttributes = function(gl, program)
+    {
+        var attributes = {};
+
+        var totalAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
+
+        for (var i = 0; i < totalAttributes; i++)
+        {
+            var attribData = gl.getActiveAttrib(program, i);
+            var type = mapType(gl, attribData.type);
+
+            attributes[attribData.name] = {
+                type:type,
+                size:mapSize(type),
+                location:gl.getAttribLocation(program, attribData.name),
+                //TODO - make an attribute object
+                pointer: pointer
+            };
+        }
+
+        return attributes;
+    };
+
+    var pointer = function(type, normalized, stride, start){
+        // console.log(this.location)
+        gl.vertexAttribPointer(this.location,this.size, type || gl.FLOAT, normalized || false, stride || 0, start || 0);
+    };
+
+    module.exports = extractAttributes;
+
+},{"./mapSize":20,"./mapType":21}],17:[function(require,module,exports){
+    var mapType = require('./mapType');
+    var defaultValue = require('./defaultValue');
+
+    /**
+     * Extracts the uniforms
+     * @class
+     * @memberof pixi.gl.shader
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     * @param program {WebGLProgram} The shader program to get the uniforms from
+     * @return uniforms {Object}
+     */
+    var extractUniforms = function(gl, program)
+    {
+        var uniforms = {};
+
+        var totalUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+
+        for (var i = 0; i < totalUniforms; i++)
+        {
+            var uniformData = gl.getActiveUniform(program, i);
+            var name = uniformData.name.replace(/\[.*?\]/, "");
+            var type = mapType(gl, uniformData.type );
+
+            uniforms[name] = {
+                type:type,
+                size:uniformData.size,
+                location:gl.getUniformLocation(program, name),
+                value:defaultValue(type, uniformData.size)
+            };
+        }
+
+        return uniforms;
+    };
+
+    module.exports = extractUniforms;
+
+},{"./defaultValue":15,"./mapType":21}],18:[function(require,module,exports){
+    /**
+     * Extracts the attributes
+     * @class
+     * @memberof pixi.gl.shader
+     * @param gl {WebGLRenderingContext} The current WebGL rendering context
+     * @param uniforms {Array} @mat ?
+     * @return attributes {Object}
+     */
+    var generateUniformAccessObject = function(gl, uniformData)
+    {
+        // this is the object we will be sending back.
+        // an object hierachy will be created for structs
+        var uniforms = {data:{}};
+
+        uniforms.gl = gl;
+
+        var uniformKeys= Object.keys(uniformData);
+
+        for (var i = 0; i < uniformKeys.length; i++)
+        {
+            var fullName = uniformKeys[i];
+
+            var nameTokens = fullName.split('.');
+            var name = nameTokens[nameTokens.length - 1];
+
+            var uniformGroup = getUniformGroup(nameTokens, uniforms);
+
+            var uniform =  uniformData[fullName];
+            uniformGroup.data[name] = uniform;
+
+            uniformGroup.gl = gl;
+
+            Object.defineProperty(uniformGroup, name, {
+                get: generateGetter(name),
+                set: generateSetter(name, uniform)
+            });
+        }
+
+        return uniforms;
+    };
+
+    var generateGetter = function(name)
+    {
+        var template = getterTemplate.replace('%%', name);
+        return new Function(template); // jshint ignore:line
+    };
+
+    var generateSetter = function(name, uniform)
+    {
+        var template = setterTemplate.replace(/%%/g, name);
+        var setTemplate;
+
+        if(uniform.size === 1)
+        {
+            setTemplate = GLSL_TO_SINGLE_SETTERS[uniform.type];
+        }
+        else
+        {
+            setTemplate = GLSL_TO_ARRAY_SETTERS[uniform.type];
+        }
+
+        if(setTemplate)
+        {
+            template += "\nthis.gl." + setTemplate + ";";
+        }
+
+        return new Function('value', template); // jshint ignore:line
+    };
+
+    var getUniformGroup = function(nameTokens, uniform)
+    {
+        var cur = uniform;
+
+        for (var i = 0; i < nameTokens.length - 1; i++)
+        {
+            var o = cur[nameTokens[i]] || {data:{}};
+            cur[nameTokens[i]] = o;
+            cur = o;
+        }
+
+        return cur;
+    };
+
+    var getterTemplate = [
+        'return this.data.%%.value;',
+    ].join('\n');
+
+    var setterTemplate = [
+        'this.data.%%.value = value;',
+        'var location = this.data.%%.location;'
+    ].join('\n');
+
+
+    var GLSL_TO_SINGLE_SETTERS = {
+
+        'float':    'uniform1f(location, value)',
+
+        'vec2':     'uniform2f(location, value[0], value[1])',
+        'vec3':     'uniform3f(location, value[0], value[1], value[2])',
+        'vec4':     'uniform4f(location, value[0], value[1], value[2], value[3])',
+
+        'int':      'uniform1i(location, value)',
+        'ivec2':    'uniform2i(location, value[0], value[1])',
+        'ivec3':    'uniform3i(location, value[0], value[1], value[2])',
+        'ivec4':    'uniform4i(location, value[0], value[1], value[2], value[3])',
+
+        'bool':     'uniform1i(location, value)',
+        'bvec2':    'uniform2i(location, value[0], value[1])',
+        'bvec3':    'uniform3i(location, value[0], value[1], value[2])',
+        'bvec4':    'uniform4i(location, value[0], value[1], value[2], value[3])',
+
+        'mat2':     'uniformMatrix2fv(location, false, value)',
+        'mat3':     'uniformMatrix3fv(location, false, value)',
+        'mat4':     'uniformMatrix4fv(location, false, value)',
+
+        'sampler2D':'uniform1i(location, value)'
+    };
+
+    var GLSL_TO_ARRAY_SETTERS = {
+
+        'float':    'uniform1fv(location, value)',
+
+        'vec2':     'uniform2fv(location, value)',
+        'vec3':     'uniform3fv(location, value)',
+        'vec4':     'uniform4fv(location, value)',
+
+        'int':      'uniform1iv(location, value)',
+        'ivec2':    'uniform2iv(location, value)',
+        'ivec3':    'uniform3iv(location, value)',
+        'ivec4':    'uniform4iv(location, value)',
+
+        'bool':     'uniform1iv(location, value)',
+        'bvec2':    'uniform2iv(location, value)',
+        'bvec3':    'uniform3iv(location, value)',
+        'bvec4':    'uniform4iv(location, value)',
+
+        'sampler2D':'uniform1iv(location, value)'
+    };
+
+    module.exports = generateUniformAccessObject;
+
+},{}],19:[function(require,module,exports){
+    module.exports = {
+        compileProgram: require('./compileProgram'),
+        defaultValue: require('./defaultValue'),
+        extractAttributes: require('./extractAttributes'),
+        extractUniforms: require('./extractUniforms'),
+        generateUniformAccessObject: require('./generateUniformAccessObject'),
+        mapSize: require('./mapSize'),
+        mapType: require('./mapType')
+    };
+},{"./compileProgram":14,"./defaultValue":15,"./extractAttributes":16,"./extractUniforms":17,"./generateUniformAccessObject":18,"./mapSize":20,"./mapType":21}],20:[function(require,module,exports){
+    /**
+     * @class
+     * @memberof pixi.gl.shader
+     * @param type {String}
+     * @return {Number}
+     */
+    var mapSize = function(type)
+    {
+        return GLSL_TO_SIZE[type];
+    };
+
+
+    var GLSL_TO_SIZE = {
+        'float':    1,
+        'vec2':     2,
+        'vec3':     3,
+        'vec4':     4,
+
+        'int':      1,
+        'ivec2':    2,
+        'ivec3':    3,
+        'ivec4':    4,
+
+        'bool':     1,
+        'bvec2':    2,
+        'bvec3':    3,
+        'bvec4':    4,
+
+        'mat2':     4,
+        'mat3':     9,
+        'mat4':     16,
+
+        'sampler2D':  1
+    };
+
+    module.exports = mapSize;
+
+},{}],21:[function(require,module,exports){
+
+
+    var mapSize = function(gl, type)
+    {
+        if(!GL_TABLE)
+        {
+            var typeNames = Object.keys(GL_TO_GLSL_TYPES);
+
+            GL_TABLE = {};
+
+            for(var i = 0; i < typeNames.length; ++i)
+            {
+                var tn = typeNames[i];
+                GL_TABLE[ gl[tn] ] = GL_TO_GLSL_TYPES[tn];
+            }
+        }
+
+        return GL_TABLE[type];
+    };
+
+    var GL_TABLE = null;
+
+    var GL_TO_GLSL_TYPES = {
+        'FLOAT':       'float',
+        'FLOAT_VEC2':  'vec2',
+        'FLOAT_VEC3':  'vec3',
+        'FLOAT_VEC4':  'vec4',
+
+        'INT':         'int',
+        'INT_VEC2':    'ivec2',
+        'INT_VEC3':    'ivec3',
+        'INT_VEC4':    'ivec4',
+
+        'BOOL':        'bool',
+        'BOOL_VEC2':   'bvec2',
+        'BOOL_VEC3':   'bvec3',
+        'BOOL_VEC4':   'bvec4',
+
+        'FLOAT_MAT2':  'mat2',
+        'FLOAT_MAT3':  'mat3',
+        'FLOAT_MAT4':  'mat4',
+
+        'SAMPLER_2D':  'sampler2D'
+    };
+
+    module.exports = mapSize;
+
+},{}],22:[function(require,module,exports){
     (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -4713,7 +3166,7 @@
 
     }).call(this,require('_process'))
 
-},{"_process":61}],61:[function(require,module,exports){
+},{"_process":23}],23:[function(require,module,exports){
 // shim for using process in browser
     var process = module.exports = {};
 
@@ -4875,7 +3328,7 @@
     };
     process.umask = function() { return 0; };
 
-},{}],62:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
     (function (global){
         /*! https://mths.be/punycode v1.4.1 by @mathias */
         ;(function(root) {
@@ -5413,7 +3866,7 @@
 
     }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],63:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5499,7 +3952,7 @@
             return Object.prototype.toString.call(xs) === '[object Array]';
         };
 
-},{}],64:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5586,13 +4039,2288 @@
             return res;
         };
 
-},{}],65:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
     'use strict';
 
     exports.decode = exports.parse = require('./decode');
     exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":63,"./encode":64}],66:[function(require,module,exports){
+},{"./decode":25,"./encode":26}],28:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    'use strict';
+
+    var punycode = require('punycode');
+    var util = require('./util');
+
+    exports.parse = urlParse;
+    exports.resolve = urlResolve;
+    exports.resolveObject = urlResolveObject;
+    exports.format = urlFormat;
+
+    exports.Url = Url;
+
+    function Url() {
+        this.protocol = null;
+        this.slashes = null;
+        this.auth = null;
+        this.host = null;
+        this.port = null;
+        this.hostname = null;
+        this.hash = null;
+        this.search = null;
+        this.query = null;
+        this.pathname = null;
+        this.path = null;
+        this.href = null;
+    }
+
+// Reference: RFC 3986, RFC 1808, RFC 2396
+
+// define these here so at least they only have to be
+// compiled once on the first module load.
+    var protocolPattern = /^([a-z0-9.+-]+:)/i,
+        portPattern = /:[0-9]*$/,
+
+        // Special case for a simple path URL
+        simplePathPattern = /^(\/\/?(?!\/)[^\?\s]*)(\?[^\s]*)?$/,
+
+        // RFC 2396: characters reserved for delimiting URLs.
+        // We actually just auto-escape these.
+        delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
+
+        // RFC 2396: characters not allowed for various reasons.
+        unwise = ['{', '}', '|', '\\', '^', '`'].concat(delims),
+
+        // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
+        autoEscape = ['\''].concat(unwise),
+        // Characters that are never ever allowed in a hostname.
+        // Note that any invalid chars are also handled, but these
+        // are the ones that are *expected* to be seen, so we fast-path
+        // them.
+        nonHostChars = ['%', '/', '?', ';', '#'].concat(autoEscape),
+        hostEndingChars = ['/', '?', '#'],
+        hostnameMaxLen = 255,
+        hostnamePartPattern = /^[+a-z0-9A-Z_-]{0,63}$/,
+        hostnamePartStart = /^([+a-z0-9A-Z_-]{0,63})(.*)$/,
+        // protocols that can allow "unsafe" and "unwise" chars.
+        unsafeProtocol = {
+            'javascript': true,
+            'javascript:': true
+        },
+        // protocols that never have a hostname.
+        hostlessProtocol = {
+            'javascript': true,
+            'javascript:': true
+        },
+        // protocols that always contain a // bit.
+        slashedProtocol = {
+            'http': true,
+            'https': true,
+            'ftp': true,
+            'gopher': true,
+            'file': true,
+            'http:': true,
+            'https:': true,
+            'ftp:': true,
+            'gopher:': true,
+            'file:': true
+        },
+        querystring = require('querystring');
+
+    function urlParse(url, parseQueryString, slashesDenoteHost) {
+        if (url && util.isObject(url) && url instanceof Url) return url;
+
+        var u = new Url;
+        u.parse(url, parseQueryString, slashesDenoteHost);
+        return u;
+    }
+
+    Url.prototype.parse = function(url, parseQueryString, slashesDenoteHost) {
+        if (!util.isString(url)) {
+            throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
+        }
+
+        // Copy chrome, IE, opera backslash-handling behavior.
+        // Back slashes before the query string get converted to forward slashes
+        // See: https://code.google.com/p/chromium/issues/detail?id=25916
+        var queryIndex = url.indexOf('?'),
+            splitter =
+                (queryIndex !== -1 && queryIndex < url.indexOf('#')) ? '?' : '#',
+            uSplit = url.split(splitter),
+            slashRegex = /\\/g;
+        uSplit[0] = uSplit[0].replace(slashRegex, '/');
+        url = uSplit.join(splitter);
+
+        var rest = url;
+
+        // trim before proceeding.
+        // This is to support parse stuff like "  http://foo.com  \n"
+        rest = rest.trim();
+
+        if (!slashesDenoteHost && url.split('#').length === 1) {
+            // Try fast path regexp
+            var simplePath = simplePathPattern.exec(rest);
+            if (simplePath) {
+                this.path = rest;
+                this.href = rest;
+                this.pathname = simplePath[1];
+                if (simplePath[2]) {
+                    this.search = simplePath[2];
+                    if (parseQueryString) {
+                        this.query = querystring.parse(this.search.substr(1));
+                    } else {
+                        this.query = this.search.substr(1);
+                    }
+                } else if (parseQueryString) {
+                    this.search = '';
+                    this.query = {};
+                }
+                return this;
+            }
+        }
+
+        var proto = protocolPattern.exec(rest);
+        if (proto) {
+            proto = proto[0];
+            var lowerProto = proto.toLowerCase();
+            this.protocol = lowerProto;
+            rest = rest.substr(proto.length);
+        }
+
+        // figure out if it's got a host
+        // user@server is *always* interpreted as a hostname, and url
+        // resolution will treat //foo/bar as host=foo,path=bar because that's
+        // how the browser resolves relative URLs.
+        if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
+            var slashes = rest.substr(0, 2) === '//';
+            if (slashes && !(proto && hostlessProtocol[proto])) {
+                rest = rest.substr(2);
+                this.slashes = true;
+            }
+        }
+
+        if (!hostlessProtocol[proto] &&
+            (slashes || (proto && !slashedProtocol[proto]))) {
+
+            // there's a hostname.
+            // the first instance of /, ?, ;, or # ends the host.
+            //
+            // If there is an @ in the hostname, then non-host chars *are* allowed
+            // to the left of the last @ sign, unless some host-ending character
+            // comes *before* the @-sign.
+            // URLs are obnoxious.
+            //
+            // ex:
+            // http://a@b@c/ => user:a@b host:c
+            // http://a@b?@c => user:a host:c path:/?@c
+
+            // v0.12 TODO(isaacs): This is not quite how Chrome does things.
+            // Review our test case against browsers more comprehensively.
+
+            // find the first instance of any hostEndingChars
+            var hostEnd = -1;
+            for (var i = 0; i < hostEndingChars.length; i++) {
+                var hec = rest.indexOf(hostEndingChars[i]);
+                if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
+                    hostEnd = hec;
+            }
+
+            // at this point, either we have an explicit point where the
+            // auth portion cannot go past, or the last @ char is the decider.
+            var auth, atSign;
+            if (hostEnd === -1) {
+                // atSign can be anywhere.
+                atSign = rest.lastIndexOf('@');
+            } else {
+                // atSign must be in auth portion.
+                // http://a@b/c@d => host:b auth:a path:/c@d
+                atSign = rest.lastIndexOf('@', hostEnd);
+            }
+
+            // Now we have a portion which is definitely the auth.
+            // Pull that off.
+            if (atSign !== -1) {
+                auth = rest.slice(0, atSign);
+                rest = rest.slice(atSign + 1);
+                this.auth = decodeURIComponent(auth);
+            }
+
+            // the host is the remaining to the left of the first non-host char
+            hostEnd = -1;
+            for (var i = 0; i < nonHostChars.length; i++) {
+                var hec = rest.indexOf(nonHostChars[i]);
+                if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
+                    hostEnd = hec;
+            }
+            // if we still have not hit it, then the entire thing is a host.
+            if (hostEnd === -1)
+                hostEnd = rest.length;
+
+            this.host = rest.slice(0, hostEnd);
+            rest = rest.slice(hostEnd);
+
+            // pull out port.
+            this.parseHost();
+
+            // we've indicated that there is a hostname,
+            // so even if it's empty, it has to be present.
+            this.hostname = this.hostname || '';
+
+            // if hostname begins with [ and ends with ]
+            // assume that it's an IPv6 address.
+            var ipv6Hostname = this.hostname[0] === '[' &&
+                this.hostname[this.hostname.length - 1] === ']';
+
+            // validate a little.
+            if (!ipv6Hostname) {
+                var hostparts = this.hostname.split(/\./);
+                for (var i = 0, l = hostparts.length; i < l; i++) {
+                    var part = hostparts[i];
+                    if (!part) continue;
+                    if (!part.match(hostnamePartPattern)) {
+                        var newpart = '';
+                        for (var j = 0, k = part.length; j < k; j++) {
+                            if (part.charCodeAt(j) > 127) {
+                                // we replace non-ASCII char with a temporary placeholder
+                                // we need this to make sure size of hostname is not
+                                // broken by replacing non-ASCII by nothing
+                                newpart += 'x';
+                            } else {
+                                newpart += part[j];
+                            }
+                        }
+                        // we test again with ASCII char only
+                        if (!newpart.match(hostnamePartPattern)) {
+                            var validParts = hostparts.slice(0, i);
+                            var notHost = hostparts.slice(i + 1);
+                            var bit = part.match(hostnamePartStart);
+                            if (bit) {
+                                validParts.push(bit[1]);
+                                notHost.unshift(bit[2]);
+                            }
+                            if (notHost.length) {
+                                rest = '/' + notHost.join('.') + rest;
+                            }
+                            this.hostname = validParts.join('.');
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (this.hostname.length > hostnameMaxLen) {
+                this.hostname = '';
+            } else {
+                // hostnames are always lower case.
+                this.hostname = this.hostname.toLowerCase();
+            }
+
+            if (!ipv6Hostname) {
+                // IDNA Support: Returns a punycoded representation of "domain".
+                // It only converts parts of the domain name that
+                // have non-ASCII characters, i.e. it doesn't matter if
+                // you call it with a domain that already is ASCII-only.
+                this.hostname = punycode.toASCII(this.hostname);
+            }
+
+            var p = this.port ? ':' + this.port : '';
+            var h = this.hostname || '';
+            this.host = h + p;
+            this.href += this.host;
+
+            // strip [ and ] from the hostname
+            // the host field still retains them, though
+            if (ipv6Hostname) {
+                this.hostname = this.hostname.substr(1, this.hostname.length - 2);
+                if (rest[0] !== '/') {
+                    rest = '/' + rest;
+                }
+            }
+        }
+
+        // now rest is set to the post-host stuff.
+        // chop off any delim chars.
+        if (!unsafeProtocol[lowerProto]) {
+
+            // First, make 100% sure that any "autoEscape" chars get
+            // escaped, even if encodeURIComponent doesn't think they
+            // need to be.
+            for (var i = 0, l = autoEscape.length; i < l; i++) {
+                var ae = autoEscape[i];
+                if (rest.indexOf(ae) === -1)
+                    continue;
+                var esc = encodeURIComponent(ae);
+                if (esc === ae) {
+                    esc = escape(ae);
+                }
+                rest = rest.split(ae).join(esc);
+            }
+        }
+
+
+        // chop off from the tail first.
+        var hash = rest.indexOf('#');
+        if (hash !== -1) {
+            // got a fragment string.
+            this.hash = rest.substr(hash);
+            rest = rest.slice(0, hash);
+        }
+        var qm = rest.indexOf('?');
+        if (qm !== -1) {
+            this.search = rest.substr(qm);
+            this.query = rest.substr(qm + 1);
+            if (parseQueryString) {
+                this.query = querystring.parse(this.query);
+            }
+            rest = rest.slice(0, qm);
+        } else if (parseQueryString) {
+            // no query string, but parseQueryString still requested
+            this.search = '';
+            this.query = {};
+        }
+        if (rest) this.pathname = rest;
+        if (slashedProtocol[lowerProto] &&
+            this.hostname && !this.pathname) {
+            this.pathname = '/';
+        }
+
+        //to support http.request
+        if (this.pathname || this.search) {
+            var p = this.pathname || '';
+            var s = this.search || '';
+            this.path = p + s;
+        }
+
+        // finally, reconstruct the href based on what has been validated.
+        this.href = this.format();
+        return this;
+    };
+
+// format a parsed object into a url string
+    function urlFormat(obj) {
+        // ensure it's an object, and not a string url.
+        // If it's an obj, this is a no-op.
+        // this way, you can call url_format() on strings
+        // to clean up potentially wonky urls.
+        if (util.isString(obj)) obj = urlParse(obj);
+        if (!(obj instanceof Url)) return Url.prototype.format.call(obj);
+        return obj.format();
+    }
+
+    Url.prototype.format = function() {
+        var auth = this.auth || '';
+        if (auth) {
+            auth = encodeURIComponent(auth);
+            auth = auth.replace(/%3A/i, ':');
+            auth += '@';
+        }
+
+        var protocol = this.protocol || '',
+            pathname = this.pathname || '',
+            hash = this.hash || '',
+            host = false,
+            query = '';
+
+        if (this.host) {
+            host = auth + this.host;
+        } else if (this.hostname) {
+            host = auth + (this.hostname.indexOf(':') === -1 ?
+                    this.hostname :
+                '[' + this.hostname + ']');
+            if (this.port) {
+                host += ':' + this.port;
+            }
+        }
+
+        if (this.query &&
+            util.isObject(this.query) &&
+            Object.keys(this.query).length) {
+            query = querystring.stringify(this.query);
+        }
+
+        var search = this.search || (query && ('?' + query)) || '';
+
+        if (protocol && protocol.substr(-1) !== ':') protocol += ':';
+
+        // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
+        // unless they had them to begin with.
+        if (this.slashes ||
+            (!protocol || slashedProtocol[protocol]) && host !== false) {
+            host = '//' + (host || '');
+            if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
+        } else if (!host) {
+            host = '';
+        }
+
+        if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
+        if (search && search.charAt(0) !== '?') search = '?' + search;
+
+        pathname = pathname.replace(/[?#]/g, function(match) {
+            return encodeURIComponent(match);
+        });
+        search = search.replace('#', '%23');
+
+        return protocol + host + pathname + search + hash;
+    };
+
+    function urlResolve(source, relative) {
+        return urlParse(source, false, true).resolve(relative);
+    }
+
+    Url.prototype.resolve = function(relative) {
+        return this.resolveObject(urlParse(relative, false, true)).format();
+    };
+
+    function urlResolveObject(source, relative) {
+        if (!source) return relative;
+        return urlParse(source, false, true).resolveObject(relative);
+    }
+
+    Url.prototype.resolveObject = function(relative) {
+        if (util.isString(relative)) {
+            var rel = new Url();
+            rel.parse(relative, false, true);
+            relative = rel;
+        }
+
+        var result = new Url();
+        var tkeys = Object.keys(this);
+        for (var tk = 0; tk < tkeys.length; tk++) {
+            var tkey = tkeys[tk];
+            result[tkey] = this[tkey];
+        }
+
+        // hash is always overridden, no matter what.
+        // even href="" will remove it.
+        result.hash = relative.hash;
+
+        // if the relative url is empty, then there's nothing left to do here.
+        if (relative.href === '') {
+            result.href = result.format();
+            return result;
+        }
+
+        // hrefs like //foo/bar always cut to the protocol.
+        if (relative.slashes && !relative.protocol) {
+            // take everything except the protocol from relative
+            var rkeys = Object.keys(relative);
+            for (var rk = 0; rk < rkeys.length; rk++) {
+                var rkey = rkeys[rk];
+                if (rkey !== 'protocol')
+                    result[rkey] = relative[rkey];
+            }
+
+            //urlParse appends trailing / to urls like http://www.example.com
+            if (slashedProtocol[result.protocol] &&
+                result.hostname && !result.pathname) {
+                result.path = result.pathname = '/';
+            }
+
+            result.href = result.format();
+            return result;
+        }
+
+        if (relative.protocol && relative.protocol !== result.protocol) {
+            // if it's a known url protocol, then changing
+            // the protocol does weird things
+            // first, if it's not file:, then we MUST have a host,
+            // and if there was a path
+            // to begin with, then we MUST have a path.
+            // if it is file:, then the host is dropped,
+            // because that's known to be hostless.
+            // anything else is assumed to be absolute.
+            if (!slashedProtocol[relative.protocol]) {
+                var keys = Object.keys(relative);
+                for (var v = 0; v < keys.length; v++) {
+                    var k = keys[v];
+                    result[k] = relative[k];
+                }
+                result.href = result.format();
+                return result;
+            }
+
+            result.protocol = relative.protocol;
+            if (!relative.host && !hostlessProtocol[relative.protocol]) {
+                var relPath = (relative.pathname || '').split('/');
+                while (relPath.length && !(relative.host = relPath.shift()));
+                if (!relative.host) relative.host = '';
+                if (!relative.hostname) relative.hostname = '';
+                if (relPath[0] !== '') relPath.unshift('');
+                if (relPath.length < 2) relPath.unshift('');
+                result.pathname = relPath.join('/');
+            } else {
+                result.pathname = relative.pathname;
+            }
+            result.search = relative.search;
+            result.query = relative.query;
+            result.host = relative.host || '';
+            result.auth = relative.auth;
+            result.hostname = relative.hostname || relative.host;
+            result.port = relative.port;
+            // to support http.request
+            if (result.pathname || result.search) {
+                var p = result.pathname || '';
+                var s = result.search || '';
+                result.path = p + s;
+            }
+            result.slashes = result.slashes || relative.slashes;
+            result.href = result.format();
+            return result;
+        }
+
+        var isSourceAbs = (result.pathname && result.pathname.charAt(0) === '/'),
+            isRelAbs = (
+                relative.host ||
+                relative.pathname && relative.pathname.charAt(0) === '/'
+            ),
+            mustEndAbs = (isRelAbs || isSourceAbs ||
+            (result.host && relative.pathname)),
+            removeAllDots = mustEndAbs,
+            srcPath = result.pathname && result.pathname.split('/') || [],
+            relPath = relative.pathname && relative.pathname.split('/') || [],
+            psychotic = result.protocol && !slashedProtocol[result.protocol];
+
+        // if the url is a non-slashed url, then relative
+        // links like ../.. should be able
+        // to crawl up to the hostname, as well.  This is strange.
+        // result.protocol has already been set by now.
+        // Later on, put the first path part into the host field.
+        if (psychotic) {
+            result.hostname = '';
+            result.port = null;
+            if (result.host) {
+                if (srcPath[0] === '') srcPath[0] = result.host;
+                else srcPath.unshift(result.host);
+            }
+            result.host = '';
+            if (relative.protocol) {
+                relative.hostname = null;
+                relative.port = null;
+                if (relative.host) {
+                    if (relPath[0] === '') relPath[0] = relative.host;
+                    else relPath.unshift(relative.host);
+                }
+                relative.host = null;
+            }
+            mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
+        }
+
+        if (isRelAbs) {
+            // it's absolute.
+            result.host = (relative.host || relative.host === '') ?
+                relative.host : result.host;
+            result.hostname = (relative.hostname || relative.hostname === '') ?
+                relative.hostname : result.hostname;
+            result.search = relative.search;
+            result.query = relative.query;
+            srcPath = relPath;
+            // fall through to the dot-handling below.
+        } else if (relPath.length) {
+            // it's relative
+            // throw away the existing file, and take the new path instead.
+            if (!srcPath) srcPath = [];
+            srcPath.pop();
+            srcPath = srcPath.concat(relPath);
+            result.search = relative.search;
+            result.query = relative.query;
+        } else if (!util.isNullOrUndefined(relative.search)) {
+            // just pull out the search.
+            // like href='?foo'.
+            // Put this after the other two cases because it simplifies the booleans
+            if (psychotic) {
+                result.hostname = result.host = srcPath.shift();
+                //occationaly the auth can get stuck only in host
+                //this especially happens in cases like
+                //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+                var authInHost = result.host && result.host.indexOf('@') > 0 ?
+                    result.host.split('@') : false;
+                if (authInHost) {
+                    result.auth = authInHost.shift();
+                    result.host = result.hostname = authInHost.shift();
+                }
+            }
+            result.search = relative.search;
+            result.query = relative.query;
+            //to support http.request
+            if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
+                result.path = (result.pathname ? result.pathname : '') +
+                    (result.search ? result.search : '');
+            }
+            result.href = result.format();
+            return result;
+        }
+
+        if (!srcPath.length) {
+            // no path at all.  easy.
+            // we've already handled the other stuff above.
+            result.pathname = null;
+            //to support http.request
+            if (result.search) {
+                result.path = '/' + result.search;
+            } else {
+                result.path = null;
+            }
+            result.href = result.format();
+            return result;
+        }
+
+        // if a url ENDs in . or .., then it must get a trailing slash.
+        // however, if it ends in anything else non-slashy,
+        // then it must NOT get a trailing slash.
+        var last = srcPath.slice(-1)[0];
+        var hasTrailingSlash = (
+        (result.host || relative.host || srcPath.length > 1) &&
+        (last === '.' || last === '..') || last === '');
+
+        // strip single dots, resolve double dots to parent dir
+        // if the path tries to go above the root, `up` ends up > 0
+        var up = 0;
+        for (var i = srcPath.length; i >= 0; i--) {
+            last = srcPath[i];
+            if (last === '.') {
+                srcPath.splice(i, 1);
+            } else if (last === '..') {
+                srcPath.splice(i, 1);
+                up++;
+            } else if (up) {
+                srcPath.splice(i, 1);
+                up--;
+            }
+        }
+
+        // if the path is allowed to go above the root, restore leading ..s
+        if (!mustEndAbs && !removeAllDots) {
+            for (; up--; up) {
+                srcPath.unshift('..');
+            }
+        }
+
+        if (mustEndAbs && srcPath[0] !== '' &&
+            (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
+            srcPath.unshift('');
+        }
+
+        if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
+            srcPath.push('');
+        }
+
+        var isAbsolute = srcPath[0] === '' ||
+            (srcPath[0] && srcPath[0].charAt(0) === '/');
+
+        // put the host back
+        if (psychotic) {
+            result.hostname = result.host = isAbsolute ? '' :
+                srcPath.length ? srcPath.shift() : '';
+            //occationaly the auth can get stuck only in host
+            //this especially happens in cases like
+            //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+            var authInHost = result.host && result.host.indexOf('@') > 0 ?
+                result.host.split('@') : false;
+            if (authInHost) {
+                result.auth = authInHost.shift();
+                result.host = result.hostname = authInHost.shift();
+            }
+        }
+
+        mustEndAbs = mustEndAbs || (result.host && srcPath.length);
+
+        if (mustEndAbs && !isAbsolute) {
+            srcPath.unshift('');
+        }
+
+        if (!srcPath.length) {
+            result.pathname = null;
+            result.path = null;
+        } else {
+            result.pathname = srcPath.join('/');
+        }
+
+        //to support request.http
+        if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
+            result.path = (result.pathname ? result.pathname : '') +
+                (result.search ? result.search : '');
+        }
+        result.auth = relative.auth || result.auth;
+        result.slashes = result.slashes || relative.slashes;
+        result.href = result.format();
+        return result;
+    };
+
+    Url.prototype.parseHost = function() {
+        var host = this.host;
+        var port = portPattern.exec(host);
+        if (port) {
+            port = port[0];
+            if (port !== ':') {
+                this.port = port.substr(1);
+            }
+            host = host.substr(0, host.length - port.length);
+        }
+        if (host) this.hostname = host;
+    };
+
+},{"./util":29,"punycode":24,"querystring":27}],29:[function(require,module,exports){
+    'use strict';
+
+    module.exports = {
+        isString: function(arg) {
+            return typeof(arg) === 'string';
+        },
+        isObject: function(arg) {
+            return typeof(arg) === 'object' && arg !== null;
+        },
+        isNull: function(arg) {
+            return arg === null;
+        },
+        isNullOrUndefined: function(arg) {
+            return arg == null;
+        }
+    };
+
+},{}],30:[function(require,module,exports){
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = eachLimit;
+
+    var _eachOfLimit = require('./internal/eachOfLimit');
+
+    var _eachOfLimit2 = _interopRequireDefault(_eachOfLimit);
+
+    var _withoutIndex = require('./internal/withoutIndex');
+
+    var _withoutIndex2 = _interopRequireDefault(_withoutIndex);
+
+    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+    /**
+     * The same as [`each`]{@link module:Collections.each} but runs a maximum of `limit` async operations at a time.
+     *
+     * @name eachLimit
+     * @static
+     * @memberOf module:Collections
+     * @method
+     * @see [async.each]{@link module:Collections.each}
+     * @alias forEachLimit
+     * @category Collection
+     * @param {Array|Iterable|Object} coll - A colleciton to iterate over.
+     * @param {number} limit - The maximum number of async operations at a time.
+     * @param {Function} iteratee - A function to apply to each item in `coll`. The
+     * iteratee is passed a `callback(err)` which must be called once it has
+     * completed. If no error has occurred, the `callback` should be run without
+     * arguments or with an explicit `null` argument. The array index is not passed
+     * to the iteratee. Invoked with (item, callback). If you need the index, use
+     * `eachOfLimit`.
+     * @param {Function} [callback] - A callback which is called when all
+     * `iteratee` functions have finished, or an error occurs. Invoked with (err).
+     */
+    function eachLimit(coll, limit, iteratee, callback) {
+        (0, _eachOfLimit2.default)(limit)(coll, (0, _withoutIndex2.default)(iteratee), callback);
+    }
+    module.exports = exports['default'];
+},{"./internal/eachOfLimit":34,"./internal/withoutIndex":41}],31:[function(require,module,exports){
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+
+    var _eachLimit = require('./eachLimit');
+
+    var _eachLimit2 = _interopRequireDefault(_eachLimit);
+
+    var _doLimit = require('./internal/doLimit');
+
+    var _doLimit2 = _interopRequireDefault(_doLimit);
+
+    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+    /**
+     * The same as [`each`]{@link module:Collections.each} but runs only a single async operation at a time.
+     *
+     * @name eachSeries
+     * @static
+     * @memberOf module:Collections
+     * @method
+     * @see [async.each]{@link module:Collections.each}
+     * @alias forEachSeries
+     * @category Collection
+     * @param {Array|Iterable|Object} coll - A collection to iterate over.
+     * @param {Function} iteratee - A function to apply to each
+     * item in `coll`. The iteratee is passed a `callback(err)` which must be called
+     * once it has completed. If no error has occurred, the `callback` should be run
+     * without arguments or with an explicit `null` argument. The array index is
+     * not passed to the iteratee. Invoked with (item, callback). If you need the
+     * index, use `eachOfSeries`.
+     * @param {Function} [callback] - A callback which is called when all
+     * `iteratee` functions have finished, or an error occurs. Invoked with (err).
+     */
+    exports.default = (0, _doLimit2.default)(_eachLimit2.default, 1);
+    module.exports = exports['default'];
+},{"./eachLimit":30,"./internal/doLimit":33}],32:[function(require,module,exports){
+    "use strict";
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = DLL;
+// Simple doubly linked list (https://en.wikipedia.org/wiki/Doubly_linked_list) implementation
+// used for queues. This implementation assumes that the node provided by the user can be modified
+// to adjust the next and last properties. We implement only the minimal functionality
+// for queue support.
+    function DLL() {
+        this.head = this.tail = null;
+        this.length = 0;
+    }
+
+    function setInitial(dll, node) {
+        dll.length = 1;
+        dll.head = dll.tail = node;
+    }
+
+    DLL.prototype.removeLink = function (node) {
+        if (node.prev) node.prev.next = node.next;else this.head = node.next;
+        if (node.next) node.next.prev = node.prev;else this.tail = node.prev;
+
+        node.prev = node.next = null;
+        this.length -= 1;
+        return node;
+    };
+
+    DLL.prototype.empty = DLL;
+
+    DLL.prototype.insertAfter = function (node, newNode) {
+        newNode.prev = node;
+        newNode.next = node.next;
+        if (node.next) node.next.prev = newNode;else this.tail = newNode;
+        node.next = newNode;
+        this.length += 1;
+    };
+
+    DLL.prototype.insertBefore = function (node, newNode) {
+        newNode.prev = node.prev;
+        newNode.next = node;
+        if (node.prev) node.prev.next = newNode;else this.head = newNode;
+        node.prev = newNode;
+        this.length += 1;
+    };
+
+    DLL.prototype.unshift = function (node) {
+        if (this.head) this.insertBefore(this.head, node);else setInitial(this, node);
+    };
+
+    DLL.prototype.push = function (node) {
+        if (this.tail) this.insertAfter(this.tail, node);else setInitial(this, node);
+    };
+
+    DLL.prototype.shift = function () {
+        return this.head && this.removeLink(this.head);
+    };
+
+    DLL.prototype.pop = function () {
+        return this.tail && this.removeLink(this.tail);
+    };
+    module.exports = exports['default'];
+},{}],33:[function(require,module,exports){
+    "use strict";
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = doLimit;
+    function doLimit(fn, limit) {
+        return function (iterable, iteratee, callback) {
+            return fn(iterable, limit, iteratee, callback);
+        };
+    }
+    module.exports = exports['default'];
+},{}],34:[function(require,module,exports){
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = _eachOfLimit;
+
+    var _noop = require('lodash/noop');
+
+    var _noop2 = _interopRequireDefault(_noop);
+
+    var _once = require('./once');
+
+    var _once2 = _interopRequireDefault(_once);
+
+    var _iterator = require('./iterator');
+
+    var _iterator2 = _interopRequireDefault(_iterator);
+
+    var _onlyOnce = require('./onlyOnce');
+
+    var _onlyOnce2 = _interopRequireDefault(_onlyOnce);
+
+    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+    function _eachOfLimit(limit) {
+        return function (obj, iteratee, callback) {
+            callback = (0, _once2.default)(callback || _noop2.default);
+            if (limit <= 0 || !obj) {
+                return callback(null);
+            }
+            var nextElem = (0, _iterator2.default)(obj);
+            var done = false;
+            var running = 0;
+
+            function iterateeCallback(err) {
+                running -= 1;
+                if (err) {
+                    done = true;
+                    callback(err);
+                } else if (done && running <= 0) {
+                    return callback(null);
+                } else {
+                    replenish();
+                }
+            }
+
+            function replenish() {
+                while (running < limit && !done) {
+                    var elem = nextElem();
+                    if (elem === null) {
+                        done = true;
+                        if (running <= 0) {
+                            callback(null);
+                        }
+                        return;
+                    }
+                    running += 1;
+                    iteratee(elem.value, elem.key, (0, _onlyOnce2.default)(iterateeCallback));
+                }
+            }
+
+            replenish();
+        };
+    }
+    module.exports = exports['default'];
+},{"./iterator":36,"./once":37,"./onlyOnce":38,"lodash/noop":62}],35:[function(require,module,exports){
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+
+    exports.default = function (coll) {
+        return iteratorSymbol && coll[iteratorSymbol] && coll[iteratorSymbol]();
+    };
+
+    var iteratorSymbol = typeof Symbol === 'function' && Symbol.iterator;
+
+    module.exports = exports['default'];
+},{}],36:[function(require,module,exports){
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = iterator;
+
+    var _isArrayLike = require('lodash/isArrayLike');
+
+    var _isArrayLike2 = _interopRequireDefault(_isArrayLike);
+
+    var _getIterator = require('./getIterator');
+
+    var _getIterator2 = _interopRequireDefault(_getIterator);
+
+    var _keys = require('lodash/keys');
+
+    var _keys2 = _interopRequireDefault(_keys);
+
+    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+    function createArrayIterator(coll) {
+        var i = -1;
+        var len = coll.length;
+        return function next() {
+            return ++i < len ? { value: coll[i], key: i } : null;
+        };
+    }
+
+    function createES2015Iterator(iterator) {
+        var i = -1;
+        return function next() {
+            var item = iterator.next();
+            if (item.done) return null;
+            i++;
+            return { value: item.value, key: i };
+        };
+    }
+
+    function createObjectIterator(obj) {
+        var okeys = (0, _keys2.default)(obj);
+        var i = -1;
+        var len = okeys.length;
+        return function next() {
+            var key = okeys[++i];
+            return i < len ? { value: obj[key], key: key } : null;
+        };
+    }
+
+    function iterator(coll) {
+        if ((0, _isArrayLike2.default)(coll)) {
+            return createArrayIterator(coll);
+        }
+
+        var iterator = (0, _getIterator2.default)(coll);
+        return iterator ? createES2015Iterator(iterator) : createObjectIterator(coll);
+    }
+    module.exports = exports['default'];
+},{"./getIterator":35,"lodash/isArrayLike":54,"lodash/keys":61}],37:[function(require,module,exports){
+    "use strict";
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = once;
+    function once(fn) {
+        return function () {
+            if (fn === null) return;
+            var callFn = fn;
+            fn = null;
+            callFn.apply(this, arguments);
+        };
+    }
+    module.exports = exports['default'];
+},{}],38:[function(require,module,exports){
+    "use strict";
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = onlyOnce;
+    function onlyOnce(fn) {
+        return function () {
+            if (fn === null) throw new Error("Callback was already called.");
+            var callFn = fn;
+            fn = null;
+            callFn.apply(this, arguments);
+        };
+    }
+    module.exports = exports['default'];
+},{}],39:[function(require,module,exports){
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = queue;
+
+    var _arrayEach = require('lodash/_arrayEach');
+
+    var _arrayEach2 = _interopRequireDefault(_arrayEach);
+
+    var _isArray = require('lodash/isArray');
+
+    var _isArray2 = _interopRequireDefault(_isArray);
+
+    var _noop = require('lodash/noop');
+
+    var _noop2 = _interopRequireDefault(_noop);
+
+    var _rest = require('lodash/rest');
+
+    var _rest2 = _interopRequireDefault(_rest);
+
+    var _onlyOnce = require('./onlyOnce');
+
+    var _onlyOnce2 = _interopRequireDefault(_onlyOnce);
+
+    var _setImmediate = require('./setImmediate');
+
+    var _setImmediate2 = _interopRequireDefault(_setImmediate);
+
+    var _DoublyLinkedList = require('./DoublyLinkedList');
+
+    var _DoublyLinkedList2 = _interopRequireDefault(_DoublyLinkedList);
+
+    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+    function queue(worker, concurrency, payload) {
+        if (concurrency == null) {
+            concurrency = 1;
+        } else if (concurrency === 0) {
+            throw new Error('Concurrency must not be zero');
+        }
+
+        function _insert(data, insertAtFront, callback) {
+            if (callback != null && typeof callback !== 'function') {
+                throw new Error('task callback must be a function');
+            }
+            q.started = true;
+            if (!(0, _isArray2.default)(data)) {
+                data = [data];
+            }
+            if (data.length === 0 && q.idle()) {
+                // call drain immediately if there are no tasks
+                return (0, _setImmediate2.default)(function () {
+                    q.drain();
+                });
+            }
+            (0, _arrayEach2.default)(data, function (task) {
+                var item = {
+                    data: task,
+                    callback: callback || _noop2.default
+                };
+
+                if (insertAtFront) {
+                    q._tasks.unshift(item);
+                } else {
+                    q._tasks.push(item);
+                }
+            });
+            (0, _setImmediate2.default)(q.process);
+        }
+
+        function _next(tasks) {
+            return (0, _rest2.default)(function (args) {
+                workers -= 1;
+
+                (0, _arrayEach2.default)(tasks, function (task) {
+                    (0, _arrayEach2.default)(workersList, function (worker, index) {
+                        if (worker === task) {
+                            workersList.splice(index, 1);
+                            return false;
+                        }
+                    });
+
+                    task.callback.apply(task, args);
+
+                    if (args[0] != null) {
+                        q.error(args[0], task.data);
+                    }
+                });
+
+                if (workers <= q.concurrency - q.buffer) {
+                    q.unsaturated();
+                }
+
+                if (q.idle()) {
+                    q.drain();
+                }
+                q.process();
+            });
+        }
+
+        var workers = 0;
+        var workersList = [];
+        var q = {
+            _tasks: new _DoublyLinkedList2.default(),
+            concurrency: concurrency,
+            payload: payload,
+            saturated: _noop2.default,
+            unsaturated: _noop2.default,
+            buffer: concurrency / 4,
+            empty: _noop2.default,
+            drain: _noop2.default,
+            error: _noop2.default,
+            started: false,
+            paused: false,
+            push: function (data, callback) {
+                _insert(data, false, callback);
+            },
+            kill: function () {
+                q.drain = _noop2.default;
+                q._tasks.empty();
+            },
+            unshift: function (data, callback) {
+                _insert(data, true, callback);
+            },
+            process: function () {
+                while (!q.paused && workers < q.concurrency && q._tasks.length) {
+                    var tasks = [],
+                        data = [];
+                    var l = q._tasks.length;
+                    if (q.payload) l = Math.min(l, q.payload);
+                    for (var i = 0; i < l; i++) {
+                        var node = q._tasks.shift();
+                        tasks.push(node);
+                        data.push(node.data);
+                    }
+
+                    if (q._tasks.length === 0) {
+                        q.empty();
+                    }
+                    workers += 1;
+                    workersList.push(tasks[0]);
+
+                    if (workers === q.concurrency) {
+                        q.saturated();
+                    }
+
+                    var cb = (0, _onlyOnce2.default)(_next(tasks));
+                    worker(data, cb);
+                }
+            },
+            length: function () {
+                return q._tasks.length;
+            },
+            running: function () {
+                return workers;
+            },
+            workersList: function () {
+                return workersList;
+            },
+            idle: function () {
+                return q._tasks.length + workers === 0;
+            },
+            pause: function () {
+                q.paused = true;
+            },
+            resume: function () {
+                if (q.paused === false) {
+                    return;
+                }
+                q.paused = false;
+                var resumeCount = Math.min(q.concurrency, q._tasks.length);
+                // Need to call q.process once per concurrent
+                // worker to preserve full concurrency after pause
+                for (var w = 1; w <= resumeCount; w++) {
+                    (0, _setImmediate2.default)(q.process);
+                }
+            }
+        };
+        return q;
+    }
+    module.exports = exports['default'];
+},{"./DoublyLinkedList":32,"./onlyOnce":38,"./setImmediate":40,"lodash/_arrayEach":43,"lodash/isArray":53,"lodash/noop":62,"lodash/rest":63}],40:[function(require,module,exports){
+    (function (process){
+        'use strict';
+
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        exports.hasNextTick = exports.hasSetImmediate = undefined;
+        exports.fallback = fallback;
+        exports.wrap = wrap;
+
+        var _rest = require('lodash/rest');
+
+        var _rest2 = _interopRequireDefault(_rest);
+
+        function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+        var hasSetImmediate = exports.hasSetImmediate = typeof setImmediate === 'function' && setImmediate;
+        var hasNextTick = exports.hasNextTick = typeof process === 'object' && typeof process.nextTick === 'function';
+
+        function fallback(fn) {
+            setTimeout(fn, 0);
+        }
+
+        function wrap(defer) {
+            return (0, _rest2.default)(function (fn, args) {
+                defer(function () {
+                    fn.apply(null, args);
+                });
+            });
+        }
+
+        var _defer;
+
+        if (hasSetImmediate) {
+            _defer = setImmediate;
+        } else if (hasNextTick) {
+            _defer = process.nextTick;
+        } else {
+            _defer = fallback;
+        }
+
+        exports.default = wrap(_defer);
+    }).call(this,require('_process'))
+
+},{"_process":23,"lodash/rest":63}],41:[function(require,module,exports){
+    "use strict";
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+    exports.default = _withoutIndex;
+    function _withoutIndex(iteratee) {
+        return function (value, index, callback) {
+            return iteratee(value, callback);
+        };
+    }
+    module.exports = exports['default'];
+},{}],42:[function(require,module,exports){
+    /**
+     * A faster alternative to `Function#apply`, this function invokes `func`
+     * with the `this` binding of `thisArg` and the arguments of `args`.
+     *
+     * @private
+     * @param {Function} func The function to invoke.
+     * @param {*} thisArg The `this` binding of `func`.
+     * @param {Array} args The arguments to invoke `func` with.
+     * @returns {*} Returns the result of `func`.
+     */
+    function apply(func, thisArg, args) {
+        switch (args.length) {
+            case 0: return func.call(thisArg);
+            case 1: return func.call(thisArg, args[0]);
+            case 2: return func.call(thisArg, args[0], args[1]);
+            case 3: return func.call(thisArg, args[0], args[1], args[2]);
+        }
+        return func.apply(thisArg, args);
+    }
+
+    module.exports = apply;
+
+},{}],43:[function(require,module,exports){
+    /**
+     * A specialized version of `_.forEach` for arrays without support for
+     * iteratee shorthands.
+     *
+     * @private
+     * @param {Array} [array] The array to iterate over.
+     * @param {Function} iteratee The function invoked per iteration.
+     * @returns {Array} Returns `array`.
+     */
+    function arrayEach(array, iteratee) {
+        var index = -1,
+            length = array ? array.length : 0;
+
+        while (++index < length) {
+            if (iteratee(array[index], index, array) === false) {
+                break;
+            }
+        }
+        return array;
+    }
+
+    module.exports = arrayEach;
+
+},{}],44:[function(require,module,exports){
+    var baseTimes = require('./_baseTimes'),
+        isArguments = require('./isArguments'),
+        isArray = require('./isArray'),
+        isIndex = require('./_isIndex');
+
+    /** Used for built-in method references. */
+    var objectProto = Object.prototype;
+
+    /** Used to check objects for own properties. */
+    var hasOwnProperty = objectProto.hasOwnProperty;
+
+    /**
+     * Creates an array of the enumerable property names of the array-like `value`.
+     *
+     * @private
+     * @param {*} value The value to query.
+     * @param {boolean} inherited Specify returning inherited property names.
+     * @returns {Array} Returns the array of property names.
+     */
+    function arrayLikeKeys(value, inherited) {
+        // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+        // Safari 9 makes `arguments.length` enumerable in strict mode.
+        var result = (isArray(value) || isArguments(value))
+            ? baseTimes(value.length, String)
+            : [];
+
+        var length = result.length,
+            skipIndexes = !!length;
+
+        for (var key in value) {
+            if ((inherited || hasOwnProperty.call(value, key)) &&
+                !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+                result.push(key);
+            }
+        }
+        return result;
+    }
+
+    module.exports = arrayLikeKeys;
+
+},{"./_baseTimes":47,"./_isIndex":48,"./isArguments":52,"./isArray":53}],45:[function(require,module,exports){
+    var isPrototype = require('./_isPrototype'),
+        nativeKeys = require('./_nativeKeys');
+
+    /** Used for built-in method references. */
+    var objectProto = Object.prototype;
+
+    /** Used to check objects for own properties. */
+    var hasOwnProperty = objectProto.hasOwnProperty;
+
+    /**
+     * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+     *
+     * @private
+     * @param {Object} object The object to query.
+     * @returns {Array} Returns the array of property names.
+     */
+    function baseKeys(object) {
+        if (!isPrototype(object)) {
+            return nativeKeys(object);
+        }
+        var result = [];
+        for (var key in Object(object)) {
+            if (hasOwnProperty.call(object, key) && key != 'constructor') {
+                result.push(key);
+            }
+        }
+        return result;
+    }
+
+    module.exports = baseKeys;
+
+},{"./_isPrototype":49,"./_nativeKeys":50}],46:[function(require,module,exports){
+    var apply = require('./_apply');
+
+    /* Built-in method references for those with the same name as other `lodash` methods. */
+    var nativeMax = Math.max;
+
+    /**
+     * The base implementation of `_.rest` which doesn't validate or coerce arguments.
+     *
+     * @private
+     * @param {Function} func The function to apply a rest parameter to.
+     * @param {number} [start=func.length-1] The start position of the rest parameter.
+     * @returns {Function} Returns the new function.
+     */
+    function baseRest(func, start) {
+        start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
+        return function() {
+            var args = arguments,
+                index = -1,
+                length = nativeMax(args.length - start, 0),
+                array = Array(length);
+
+            while (++index < length) {
+                array[index] = args[start + index];
+            }
+            index = -1;
+            var otherArgs = Array(start + 1);
+            while (++index < start) {
+                otherArgs[index] = args[index];
+            }
+            otherArgs[start] = array;
+            return apply(func, this, otherArgs);
+        };
+    }
+
+    module.exports = baseRest;
+
+},{"./_apply":42}],47:[function(require,module,exports){
+    /**
+     * The base implementation of `_.times` without support for iteratee shorthands
+     * or max array length checks.
+     *
+     * @private
+     * @param {number} n The number of times to invoke `iteratee`.
+     * @param {Function} iteratee The function invoked per iteration.
+     * @returns {Array} Returns the array of results.
+     */
+    function baseTimes(n, iteratee) {
+        var index = -1,
+            result = Array(n);
+
+        while (++index < n) {
+            result[index] = iteratee(index);
+        }
+        return result;
+    }
+
+    module.exports = baseTimes;
+
+},{}],48:[function(require,module,exports){
+    /** Used as references for various `Number` constants. */
+    var MAX_SAFE_INTEGER = 9007199254740991;
+
+    /** Used to detect unsigned integer values. */
+    var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+    /**
+     * Checks if `value` is a valid array-like index.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+     * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+     */
+    function isIndex(value, length) {
+        length = length == null ? MAX_SAFE_INTEGER : length;
+        return !!length &&
+            (typeof value == 'number' || reIsUint.test(value)) &&
+            (value > -1 && value % 1 == 0 && value < length);
+    }
+
+    module.exports = isIndex;
+
+},{}],49:[function(require,module,exports){
+    /** Used for built-in method references. */
+    var objectProto = Object.prototype;
+
+    /**
+     * Checks if `value` is likely a prototype object.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+     */
+    function isPrototype(value) {
+        var Ctor = value && value.constructor,
+            proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
+
+        return value === proto;
+    }
+
+    module.exports = isPrototype;
+
+},{}],50:[function(require,module,exports){
+    var overArg = require('./_overArg');
+
+    /* Built-in method references for those with the same name as other `lodash` methods. */
+    var nativeKeys = overArg(Object.keys, Object);
+
+    module.exports = nativeKeys;
+
+},{"./_overArg":51}],51:[function(require,module,exports){
+    /**
+     * Creates a unary function that invokes `func` with its argument transformed.
+     *
+     * @private
+     * @param {Function} func The function to wrap.
+     * @param {Function} transform The argument transform.
+     * @returns {Function} Returns the new function.
+     */
+    function overArg(func, transform) {
+        return function(arg) {
+            return func(transform(arg));
+        };
+    }
+
+    module.exports = overArg;
+
+},{}],52:[function(require,module,exports){
+    var isArrayLikeObject = require('./isArrayLikeObject');
+
+    /** `Object#toString` result references. */
+    var argsTag = '[object Arguments]';
+
+    /** Used for built-in method references. */
+    var objectProto = Object.prototype;
+
+    /** Used to check objects for own properties. */
+    var hasOwnProperty = objectProto.hasOwnProperty;
+
+    /**
+     * Used to resolve the
+     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+     * of values.
+     */
+    var objectToString = objectProto.toString;
+
+    /** Built-in value references. */
+    var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+    /**
+     * Checks if `value` is likely an `arguments` object.
+     *
+     * @static
+     * @memberOf _
+     * @since 0.1.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+     *  else `false`.
+     * @example
+     *
+     * _.isArguments(function() { return arguments; }());
+     * // => true
+     *
+     * _.isArguments([1, 2, 3]);
+     * // => false
+     */
+    function isArguments(value) {
+        // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+        return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
+            (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
+    }
+
+    module.exports = isArguments;
+
+},{"./isArrayLikeObject":55}],53:[function(require,module,exports){
+    /**
+     * Checks if `value` is classified as an `Array` object.
+     *
+     * @static
+     * @memberOf _
+     * @since 0.1.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+     * @example
+     *
+     * _.isArray([1, 2, 3]);
+     * // => true
+     *
+     * _.isArray(document.body.children);
+     * // => false
+     *
+     * _.isArray('abc');
+     * // => false
+     *
+     * _.isArray(_.noop);
+     * // => false
+     */
+    var isArray = Array.isArray;
+
+    module.exports = isArray;
+
+},{}],54:[function(require,module,exports){
+    var isFunction = require('./isFunction'),
+        isLength = require('./isLength');
+
+    /**
+     * Checks if `value` is array-like. A value is considered array-like if it's
+     * not a function and has a `value.length` that's an integer greater than or
+     * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+     * @example
+     *
+     * _.isArrayLike([1, 2, 3]);
+     * // => true
+     *
+     * _.isArrayLike(document.body.children);
+     * // => true
+     *
+     * _.isArrayLike('abc');
+     * // => true
+     *
+     * _.isArrayLike(_.noop);
+     * // => false
+     */
+    function isArrayLike(value) {
+        return value != null && isLength(value.length) && !isFunction(value);
+    }
+
+    module.exports = isArrayLike;
+
+},{"./isFunction":56,"./isLength":57}],55:[function(require,module,exports){
+    var isArrayLike = require('./isArrayLike'),
+        isObjectLike = require('./isObjectLike');
+
+    /**
+     * This method is like `_.isArrayLike` except that it also checks if `value`
+     * is an object.
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is an array-like object,
+     *  else `false`.
+     * @example
+     *
+     * _.isArrayLikeObject([1, 2, 3]);
+     * // => true
+     *
+     * _.isArrayLikeObject(document.body.children);
+     * // => true
+     *
+     * _.isArrayLikeObject('abc');
+     * // => false
+     *
+     * _.isArrayLikeObject(_.noop);
+     * // => false
+     */
+    function isArrayLikeObject(value) {
+        return isObjectLike(value) && isArrayLike(value);
+    }
+
+    module.exports = isArrayLikeObject;
+
+},{"./isArrayLike":54,"./isObjectLike":59}],56:[function(require,module,exports){
+    var isObject = require('./isObject');
+
+    /** `Object#toString` result references. */
+    var funcTag = '[object Function]',
+        genTag = '[object GeneratorFunction]';
+
+    /** Used for built-in method references. */
+    var objectProto = Object.prototype;
+
+    /**
+     * Used to resolve the
+     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+     * of values.
+     */
+    var objectToString = objectProto.toString;
+
+    /**
+     * Checks if `value` is classified as a `Function` object.
+     *
+     * @static
+     * @memberOf _
+     * @since 0.1.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+     * @example
+     *
+     * _.isFunction(_);
+     * // => true
+     *
+     * _.isFunction(/abc/);
+     * // => false
+     */
+    function isFunction(value) {
+        // The use of `Object#toString` avoids issues with the `typeof` operator
+        // in Safari 8-9 which returns 'object' for typed array and other constructors.
+        var tag = isObject(value) ? objectToString.call(value) : '';
+        return tag == funcTag || tag == genTag;
+    }
+
+    module.exports = isFunction;
+
+},{"./isObject":58}],57:[function(require,module,exports){
+    /** Used as references for various `Number` constants. */
+    var MAX_SAFE_INTEGER = 9007199254740991;
+
+    /**
+     * Checks if `value` is a valid array-like length.
+     *
+     * **Note:** This method is loosely based on
+     * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+     * @example
+     *
+     * _.isLength(3);
+     * // => true
+     *
+     * _.isLength(Number.MIN_VALUE);
+     * // => false
+     *
+     * _.isLength(Infinity);
+     * // => false
+     *
+     * _.isLength('3');
+     * // => false
+     */
+    function isLength(value) {
+        return typeof value == 'number' &&
+            value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+    }
+
+    module.exports = isLength;
+
+},{}],58:[function(require,module,exports){
+    /**
+     * Checks if `value` is the
+     * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+     * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+     *
+     * @static
+     * @memberOf _
+     * @since 0.1.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+     * @example
+     *
+     * _.isObject({});
+     * // => true
+     *
+     * _.isObject([1, 2, 3]);
+     * // => true
+     *
+     * _.isObject(_.noop);
+     * // => true
+     *
+     * _.isObject(null);
+     * // => false
+     */
+    function isObject(value) {
+        var type = typeof value;
+        return !!value && (type == 'object' || type == 'function');
+    }
+
+    module.exports = isObject;
+
+},{}],59:[function(require,module,exports){
+    /**
+     * Checks if `value` is object-like. A value is object-like if it's not `null`
+     * and has a `typeof` result of "object".
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+     * @example
+     *
+     * _.isObjectLike({});
+     * // => true
+     *
+     * _.isObjectLike([1, 2, 3]);
+     * // => true
+     *
+     * _.isObjectLike(_.noop);
+     * // => false
+     *
+     * _.isObjectLike(null);
+     * // => false
+     */
+    function isObjectLike(value) {
+        return !!value && typeof value == 'object';
+    }
+
+    module.exports = isObjectLike;
+
+},{}],60:[function(require,module,exports){
+    var isObjectLike = require('./isObjectLike');
+
+    /** `Object#toString` result references. */
+    var symbolTag = '[object Symbol]';
+
+    /** Used for built-in method references. */
+    var objectProto = Object.prototype;
+
+    /**
+     * Used to resolve the
+     * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+     * of values.
+     */
+    var objectToString = objectProto.toString;
+
+    /**
+     * Checks if `value` is classified as a `Symbol` primitive or object.
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+     * @example
+     *
+     * _.isSymbol(Symbol.iterator);
+     * // => true
+     *
+     * _.isSymbol('abc');
+     * // => false
+     */
+    function isSymbol(value) {
+        return typeof value == 'symbol' ||
+            (isObjectLike(value) && objectToString.call(value) == symbolTag);
+    }
+
+    module.exports = isSymbol;
+
+},{"./isObjectLike":59}],61:[function(require,module,exports){
+    var arrayLikeKeys = require('./_arrayLikeKeys'),
+        baseKeys = require('./_baseKeys'),
+        isArrayLike = require('./isArrayLike');
+
+    /**
+     * Creates an array of the own enumerable property names of `object`.
+     *
+     * **Note:** Non-object values are coerced to objects. See the
+     * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+     * for more details.
+     *
+     * @static
+     * @since 0.1.0
+     * @memberOf _
+     * @category Object
+     * @param {Object} object The object to query.
+     * @returns {Array} Returns the array of property names.
+     * @example
+     *
+     * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+     *
+     * Foo.prototype.c = 3;
+     *
+     * _.keys(new Foo);
+     * // => ['a', 'b'] (iteration order is not guaranteed)
+     *
+     * _.keys('hi');
+     * // => ['0', '1']
+     */
+    function keys(object) {
+        return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
+    }
+
+    module.exports = keys;
+
+},{"./_arrayLikeKeys":44,"./_baseKeys":45,"./isArrayLike":54}],62:[function(require,module,exports){
+    /**
+     * This method returns `undefined`.
+     *
+     * @static
+     * @memberOf _
+     * @since 2.3.0
+     * @category Util
+     * @example
+     *
+     * _.times(2, _.noop);
+     * // => [undefined, undefined]
+     */
+    function noop() {
+        // No operation performed.
+    }
+
+    module.exports = noop;
+
+},{}],63:[function(require,module,exports){
+    var baseRest = require('./_baseRest'),
+        toInteger = require('./toInteger');
+
+    /** Used as the `TypeError` message for "Functions" methods. */
+    var FUNC_ERROR_TEXT = 'Expected a function';
+
+    /**
+     * Creates a function that invokes `func` with the `this` binding of the
+     * created function and arguments from `start` and beyond provided as
+     * an array.
+     *
+     * **Note:** This method is based on the
+     * [rest parameter](https://mdn.io/rest_parameters).
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Function
+     * @param {Function} func The function to apply a rest parameter to.
+     * @param {number} [start=func.length-1] The start position of the rest parameter.
+     * @returns {Function} Returns the new function.
+     * @example
+     *
+     * var say = _.rest(function(what, names) {
+ *   return what + ' ' + _.initial(names).join(', ') +
+ *     (_.size(names) > 1 ? ', & ' : '') + _.last(names);
+ * });
+     *
+     * say('hello', 'fred', 'barney', 'pebbles');
+     * // => 'hello fred, barney, & pebbles'
+     */
+    function rest(func, start) {
+        if (typeof func != 'function') {
+            throw new TypeError(FUNC_ERROR_TEXT);
+        }
+        start = start === undefined ? start : toInteger(start);
+        return baseRest(func, start);
+    }
+
+    module.exports = rest;
+
+},{"./_baseRest":46,"./toInteger":65}],64:[function(require,module,exports){
+    var toNumber = require('./toNumber');
+
+    /** Used as references for various `Number` constants. */
+    var INFINITY = 1 / 0,
+        MAX_INTEGER = 1.7976931348623157e+308;
+
+    /**
+     * Converts `value` to a finite number.
+     *
+     * @static
+     * @memberOf _
+     * @since 4.12.0
+     * @category Lang
+     * @param {*} value The value to convert.
+     * @returns {number} Returns the converted number.
+     * @example
+     *
+     * _.toFinite(3.2);
+     * // => 3.2
+     *
+     * _.toFinite(Number.MIN_VALUE);
+     * // => 5e-324
+     *
+     * _.toFinite(Infinity);
+     * // => 1.7976931348623157e+308
+     *
+     * _.toFinite('3.2');
+     * // => 3.2
+     */
+    function toFinite(value) {
+        if (!value) {
+            return value === 0 ? value : 0;
+        }
+        value = toNumber(value);
+        if (value === INFINITY || value === -INFINITY) {
+            var sign = (value < 0 ? -1 : 1);
+            return sign * MAX_INTEGER;
+        }
+        return value === value ? value : 0;
+    }
+
+    module.exports = toFinite;
+
+},{"./toNumber":66}],65:[function(require,module,exports){
+    var toFinite = require('./toFinite');
+
+    /**
+     * Converts `value` to an integer.
+     *
+     * **Note:** This method is loosely based on
+     * [`ToInteger`](http://www.ecma-international.org/ecma-262/7.0/#sec-tointeger).
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to convert.
+     * @returns {number} Returns the converted integer.
+     * @example
+     *
+     * _.toInteger(3.2);
+     * // => 3
+     *
+     * _.toInteger(Number.MIN_VALUE);
+     * // => 0
+     *
+     * _.toInteger(Infinity);
+     * // => 1.7976931348623157e+308
+     *
+     * _.toInteger('3.2');
+     * // => 3
+     */
+    function toInteger(value) {
+        var result = toFinite(value),
+            remainder = result % 1;
+
+        return result === result ? (remainder ? result - remainder : result) : 0;
+    }
+
+    module.exports = toInteger;
+
+},{"./toFinite":64}],66:[function(require,module,exports){
+    var isObject = require('./isObject'),
+        isSymbol = require('./isSymbol');
+
+    /** Used as references for various `Number` constants. */
+    var NAN = 0 / 0;
+
+    /** Used to match leading and trailing whitespace. */
+    var reTrim = /^\s+|\s+$/g;
+
+    /** Used to detect bad signed hexadecimal string values. */
+    var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
+
+    /** Used to detect binary string values. */
+    var reIsBinary = /^0b[01]+$/i;
+
+    /** Used to detect octal string values. */
+    var reIsOctal = /^0o[0-7]+$/i;
+
+    /** Built-in method references without a dependency on `root`. */
+    var freeParseInt = parseInt;
+
+    /**
+     * Converts `value` to a number.
+     *
+     * @static
+     * @memberOf _
+     * @since 4.0.0
+     * @category Lang
+     * @param {*} value The value to process.
+     * @returns {number} Returns the number.
+     * @example
+     *
+     * _.toNumber(3.2);
+     * // => 3.2
+     *
+     * _.toNumber(Number.MIN_VALUE);
+     * // => 5e-324
+     *
+     * _.toNumber(Infinity);
+     * // => Infinity
+     *
+     * _.toNumber('3.2');
+     * // => 3.2
+     */
+    function toNumber(value) {
+        if (typeof value == 'number') {
+            return value;
+        }
+        if (isSymbol(value)) {
+            return NAN;
+        }
+        if (isObject(value)) {
+            var other = typeof value.valueOf == 'function' ? value.valueOf() : value;
+            value = isObject(other) ? (other + '') : other;
+        }
+        if (typeof value != 'string') {
+            return value === 0 ? value : +value;
+        }
+        value = value.replace(reTrim, '');
+        var isBinary = reIsBinary.test(value);
+        return (isBinary || reIsOctal.test(value))
+            ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
+            : (reIsBadHex.test(value) ? NAN : +value);
+    }
+
+    module.exports = toNumber;
+
+},{"./isObject":58,"./isSymbol":60}],67:[function(require,module,exports){
+    'use strict';
+
+    Object.defineProperty(exports, "__esModule", {
+        value: true
+    });
+
+    exports.default = function (worker, concurrency) {
+        return (0, _queue2.default)(function (items, cb) {
+            worker(items[0], cb);
+        }, concurrency, 1);
+    };
+
+    var _queue = require('./internal/queue');
+
+    var _queue2 = _interopRequireDefault(_queue);
+
+    function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+    module.exports = exports['default'];
+
+    /**
+     * A queue of tasks for the worker function to complete.
+     * @typedef {Object} QueueObject
+     * @memberOf module:ControlFlow
+     * @property {Function} length - a function returning the number of items
+     * waiting to be processed. Invoke with `queue.length()`.
+     * @property {boolean} started - a boolean indicating whether or not any
+     * items have been pushed and processed by the queue.
+     * @property {Function} running - a function returning the number of items
+     * currently being processed. Invoke with `queue.running()`.
+     * @property {Function} workersList - a function returning the array of items
+     * currently being processed. Invoke with `queue.workersList()`.
+     * @property {Function} idle - a function returning false if there are items
+     * waiting or being processed, or true if not. Invoke with `queue.idle()`.
+     * @property {number} concurrency - an integer for determining how many `worker`
+     * functions should be run in parallel. This property can be changed after a
+     * `queue` is created to alter the concurrency on-the-fly.
+     * @property {Function} push - add a new task to the `queue`. Calls `callback`
+     * once the `worker` has finished processing the task. Instead of a single task,
+     * a `tasks` array can be submitted. The respective callback is used for every
+     * task in the list. Invoke with `queue.push(task, [callback])`,
+     * @property {Function} unshift - add a new task to the front of the `queue`.
+     * Invoke with `queue.unshift(task, [callback])`.
+     * @property {Function} saturated - a callback that is called when the number of
+     * running workers hits the `concurrency` limit, and further tasks will be
+     * queued.
+     * @property {Function} unsaturated - a callback that is called when the number
+     * of running workers is less than the `concurrency` & `buffer` limits, and
+     * further tasks will not be queued.
+     * @property {number} buffer - A minimum threshold buffer in order to say that
+     * the `queue` is `unsaturated`.
+     * @property {Function} empty - a callback that is called when the last item
+     * from the `queue` is given to a `worker`.
+     * @property {Function} drain - a callback that is called when the last item
+     * from the `queue` has returned from the `worker`.
+     * @property {Function} error - a callback that is called when a task errors.
+     * Has the signature `function(error, task)`.
+     * @property {boolean} paused - a boolean for determining whether the queue is
+     * in a paused state.
+     * @property {Function} pause - a function that pauses the processing of tasks
+     * until `resume()` is called. Invoke with `queue.pause()`.
+     * @property {Function} resume - a function that resumes the processing of
+     * queued tasks when the queue is paused. Invoke with `queue.resume()`.
+     * @property {Function} kill - a function that removes the `drain` callback and
+     * empties remaining tasks from the queue forcing it to go idle. Invoke with `queue.kill()`.
+     */
+
+    /**
+     * Creates a `queue` object with the specified `concurrency`. Tasks added to the
+     * `queue` are processed in parallel (up to the `concurrency` limit). If all
+     * `worker`s are in progress, the task is queued until one becomes available.
+     * Once a `worker` completes a `task`, that `task`'s callback is called.
+     *
+     * @name queue
+     * @static
+     * @memberOf module:ControlFlow
+     * @method
+     * @category Control Flow
+     * @param {Function} worker - An asynchronous function for processing a queued
+     * task, which must call its `callback(err)` argument when finished, with an
+     * optional `error` as an argument.  If you want to handle errors from an
+     * individual task, pass a callback to `q.push()`. Invoked with
+     * (task, callback).
+     * @param {number} [concurrency=1] - An `integer` for determining how many
+     * `worker` functions should be run in parallel.  If omitted, the concurrency
+     * defaults to `1`.  If the concurrency is `0`, an error is thrown.
+     * @returns {module:ControlFlow.QueueObject} A queue object to manage the tasks. Callbacks can
+     * attached as certain properties to listen for specific events during the
+     * lifecycle of the queue.
+     * @example
+     *
+     * // create a queue object with concurrency 2
+     * var q = async.queue(function(task, callback) {
+ *     console.log('hello ' + task.name);
+ *     callback();
+ * }, 2);
+     *
+     * // assign a callback
+     * q.drain = function() {
+ *     console.log('all items have been processed');
+ * };
+     *
+     * // add some items to the queue
+     * q.push({name: 'foo'}, function(err) {
+ *     console.log('finished processing foo');
+ * });
+     * q.push({name: 'bar'}, function (err) {
+ *     console.log('finished processing bar');
+ * });
+     *
+     * // add some items to the queue (batch-wise)
+     * q.push([{name: 'baz'},{name: 'bay'},{name: 'bax'}], function(err) {
+ *     console.log('finished processing item');
+ * });
+     *
+     * // add some items to the front of the queue
+     * q.unshift({name: 'bar'}, function (err) {
+ *     console.log('finished processing bar');
+ * });
+     */
+},{"./internal/queue":39}],68:[function(require,module,exports){
     'use strict';
 
     var asyncQueue      = require('async/queue');
@@ -6087,7 +6815,7 @@
     Loader.LOAD_TYPE = Resource.LOAD_TYPE;
     Loader.XHR_RESPONSE_TYPE = Resource.XHR_RESPONSE_TYPE;
 
-},{"./Resource":67,"async/eachSeries":18,"async/queue":29,"eventemitter3":32,"url":72}],67:[function(require,module,exports){
+},{"./Resource":69,"async/eachSeries":31,"async/queue":67,"eventemitter3":3,"url":28}],69:[function(require,module,exports){
     'use strict';
 
     var EventEmitter    = require('eventemitter3');
@@ -7000,7 +7728,7 @@
         map[extname] = val;
     }
 
-},{"eventemitter3":32,"url":72}],68:[function(require,module,exports){
+},{"eventemitter3":3,"url":28}],70:[function(require,module,exports){
     /* eslint no-magic-numbers: 0 */
     'use strict';
 
@@ -7070,7 +7798,7 @@
         }
     };
 
-},{}],69:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
     /* eslint global-require: 0 */
     'use strict';
 
@@ -7086,7 +7814,7 @@
     };
 
 
-},{"./Loader":66,"./Resource":67,"./middlewares/caching/memory":70,"./middlewares/parsing/blob":71}],70:[function(require,module,exports){
+},{"./Loader":68,"./Resource":69,"./middlewares/caching/memory":72,"./middlewares/parsing/blob":73}],72:[function(require,module,exports){
     'use strict';
 
 // a simple in-memory cache for resources
@@ -7110,7 +7838,7 @@
         };
     };
 
-},{}],71:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
     'use strict';
 
     var Resource = require('../../Resource');
@@ -7179,759 +7907,7 @@
         };
     };
 
-},{"../../Resource":67,"../../b64":68}],72:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-    'use strict';
-
-    var punycode = require('punycode');
-    var util = require('./util');
-
-    exports.parse = urlParse;
-    exports.resolve = urlResolve;
-    exports.resolveObject = urlResolveObject;
-    exports.format = urlFormat;
-
-    exports.Url = Url;
-
-    function Url() {
-        this.protocol = null;
-        this.slashes = null;
-        this.auth = null;
-        this.host = null;
-        this.port = null;
-        this.hostname = null;
-        this.hash = null;
-        this.search = null;
-        this.query = null;
-        this.pathname = null;
-        this.path = null;
-        this.href = null;
-    }
-
-// Reference: RFC 3986, RFC 1808, RFC 2396
-
-// define these here so at least they only have to be
-// compiled once on the first module load.
-    var protocolPattern = /^([a-z0-9.+-]+:)/i,
-        portPattern = /:[0-9]*$/,
-
-        // Special case for a simple path URL
-        simplePathPattern = /^(\/\/?(?!\/)[^\?\s]*)(\?[^\s]*)?$/,
-
-        // RFC 2396: characters reserved for delimiting URLs.
-        // We actually just auto-escape these.
-        delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
-
-        // RFC 2396: characters not allowed for various reasons.
-        unwise = ['{', '}', '|', '\\', '^', '`'].concat(delims),
-
-        // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
-        autoEscape = ['\''].concat(unwise),
-        // Characters that are never ever allowed in a hostname.
-        // Note that any invalid chars are also handled, but these
-        // are the ones that are *expected* to be seen, so we fast-path
-        // them.
-        nonHostChars = ['%', '/', '?', ';', '#'].concat(autoEscape),
-        hostEndingChars = ['/', '?', '#'],
-        hostnameMaxLen = 255,
-        hostnamePartPattern = /^[+a-z0-9A-Z_-]{0,63}$/,
-        hostnamePartStart = /^([+a-z0-9A-Z_-]{0,63})(.*)$/,
-        // protocols that can allow "unsafe" and "unwise" chars.
-        unsafeProtocol = {
-            'javascript': true,
-            'javascript:': true
-        },
-        // protocols that never have a hostname.
-        hostlessProtocol = {
-            'javascript': true,
-            'javascript:': true
-        },
-        // protocols that always contain a // bit.
-        slashedProtocol = {
-            'http': true,
-            'https': true,
-            'ftp': true,
-            'gopher': true,
-            'file': true,
-            'http:': true,
-            'https:': true,
-            'ftp:': true,
-            'gopher:': true,
-            'file:': true
-        },
-        querystring = require('querystring');
-
-    function urlParse(url, parseQueryString, slashesDenoteHost) {
-        if (url && util.isObject(url) && url instanceof Url) return url;
-
-        var u = new Url;
-        u.parse(url, parseQueryString, slashesDenoteHost);
-        return u;
-    }
-
-    Url.prototype.parse = function(url, parseQueryString, slashesDenoteHost) {
-        if (!util.isString(url)) {
-            throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
-        }
-
-        // Copy chrome, IE, opera backslash-handling behavior.
-        // Back slashes before the query string get converted to forward slashes
-        // See: https://code.google.com/p/chromium/issues/detail?id=25916
-        var queryIndex = url.indexOf('?'),
-            splitter =
-                (queryIndex !== -1 && queryIndex < url.indexOf('#')) ? '?' : '#',
-            uSplit = url.split(splitter),
-            slashRegex = /\\/g;
-        uSplit[0] = uSplit[0].replace(slashRegex, '/');
-        url = uSplit.join(splitter);
-
-        var rest = url;
-
-        // trim before proceeding.
-        // This is to support parse stuff like "  http://foo.com  \n"
-        rest = rest.trim();
-
-        if (!slashesDenoteHost && url.split('#').length === 1) {
-            // Try fast path regexp
-            var simplePath = simplePathPattern.exec(rest);
-            if (simplePath) {
-                this.path = rest;
-                this.href = rest;
-                this.pathname = simplePath[1];
-                if (simplePath[2]) {
-                    this.search = simplePath[2];
-                    if (parseQueryString) {
-                        this.query = querystring.parse(this.search.substr(1));
-                    } else {
-                        this.query = this.search.substr(1);
-                    }
-                } else if (parseQueryString) {
-                    this.search = '';
-                    this.query = {};
-                }
-                return this;
-            }
-        }
-
-        var proto = protocolPattern.exec(rest);
-        if (proto) {
-            proto = proto[0];
-            var lowerProto = proto.toLowerCase();
-            this.protocol = lowerProto;
-            rest = rest.substr(proto.length);
-        }
-
-        // figure out if it's got a host
-        // user@server is *always* interpreted as a hostname, and url
-        // resolution will treat //foo/bar as host=foo,path=bar because that's
-        // how the browser resolves relative URLs.
-        if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
-            var slashes = rest.substr(0, 2) === '//';
-            if (slashes && !(proto && hostlessProtocol[proto])) {
-                rest = rest.substr(2);
-                this.slashes = true;
-            }
-        }
-
-        if (!hostlessProtocol[proto] &&
-            (slashes || (proto && !slashedProtocol[proto]))) {
-
-            // there's a hostname.
-            // the first instance of /, ?, ;, or # ends the host.
-            //
-            // If there is an @ in the hostname, then non-host chars *are* allowed
-            // to the left of the last @ sign, unless some host-ending character
-            // comes *before* the @-sign.
-            // URLs are obnoxious.
-            //
-            // ex:
-            // http://a@b@c/ => user:a@b host:c
-            // http://a@b?@c => user:a host:c path:/?@c
-
-            // v0.12 TODO(isaacs): This is not quite how Chrome does things.
-            // Review our test case against browsers more comprehensively.
-
-            // find the first instance of any hostEndingChars
-            var hostEnd = -1;
-            for (var i = 0; i < hostEndingChars.length; i++) {
-                var hec = rest.indexOf(hostEndingChars[i]);
-                if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
-                    hostEnd = hec;
-            }
-
-            // at this point, either we have an explicit point where the
-            // auth portion cannot go past, or the last @ char is the decider.
-            var auth, atSign;
-            if (hostEnd === -1) {
-                // atSign can be anywhere.
-                atSign = rest.lastIndexOf('@');
-            } else {
-                // atSign must be in auth portion.
-                // http://a@b/c@d => host:b auth:a path:/c@d
-                atSign = rest.lastIndexOf('@', hostEnd);
-            }
-
-            // Now we have a portion which is definitely the auth.
-            // Pull that off.
-            if (atSign !== -1) {
-                auth = rest.slice(0, atSign);
-                rest = rest.slice(atSign + 1);
-                this.auth = decodeURIComponent(auth);
-            }
-
-            // the host is the remaining to the left of the first non-host char
-            hostEnd = -1;
-            for (var i = 0; i < nonHostChars.length; i++) {
-                var hec = rest.indexOf(nonHostChars[i]);
-                if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
-                    hostEnd = hec;
-            }
-            // if we still have not hit it, then the entire thing is a host.
-            if (hostEnd === -1)
-                hostEnd = rest.length;
-
-            this.host = rest.slice(0, hostEnd);
-            rest = rest.slice(hostEnd);
-
-            // pull out port.
-            this.parseHost();
-
-            // we've indicated that there is a hostname,
-            // so even if it's empty, it has to be present.
-            this.hostname = this.hostname || '';
-
-            // if hostname begins with [ and ends with ]
-            // assume that it's an IPv6 address.
-            var ipv6Hostname = this.hostname[0] === '[' &&
-                this.hostname[this.hostname.length - 1] === ']';
-
-            // validate a little.
-            if (!ipv6Hostname) {
-                var hostparts = this.hostname.split(/\./);
-                for (var i = 0, l = hostparts.length; i < l; i++) {
-                    var part = hostparts[i];
-                    if (!part) continue;
-                    if (!part.match(hostnamePartPattern)) {
-                        var newpart = '';
-                        for (var j = 0, k = part.length; j < k; j++) {
-                            if (part.charCodeAt(j) > 127) {
-                                // we replace non-ASCII char with a temporary placeholder
-                                // we need this to make sure size of hostname is not
-                                // broken by replacing non-ASCII by nothing
-                                newpart += 'x';
-                            } else {
-                                newpart += part[j];
-                            }
-                        }
-                        // we test again with ASCII char only
-                        if (!newpart.match(hostnamePartPattern)) {
-                            var validParts = hostparts.slice(0, i);
-                            var notHost = hostparts.slice(i + 1);
-                            var bit = part.match(hostnamePartStart);
-                            if (bit) {
-                                validParts.push(bit[1]);
-                                notHost.unshift(bit[2]);
-                            }
-                            if (notHost.length) {
-                                rest = '/' + notHost.join('.') + rest;
-                            }
-                            this.hostname = validParts.join('.');
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (this.hostname.length > hostnameMaxLen) {
-                this.hostname = '';
-            } else {
-                // hostnames are always lower case.
-                this.hostname = this.hostname.toLowerCase();
-            }
-
-            if (!ipv6Hostname) {
-                // IDNA Support: Returns a punycoded representation of "domain".
-                // It only converts parts of the domain name that
-                // have non-ASCII characters, i.e. it doesn't matter if
-                // you call it with a domain that already is ASCII-only.
-                this.hostname = punycode.toASCII(this.hostname);
-            }
-
-            var p = this.port ? ':' + this.port : '';
-            var h = this.hostname || '';
-            this.host = h + p;
-            this.href += this.host;
-
-            // strip [ and ] from the hostname
-            // the host field still retains them, though
-            if (ipv6Hostname) {
-                this.hostname = this.hostname.substr(1, this.hostname.length - 2);
-                if (rest[0] !== '/') {
-                    rest = '/' + rest;
-                }
-            }
-        }
-
-        // now rest is set to the post-host stuff.
-        // chop off any delim chars.
-        if (!unsafeProtocol[lowerProto]) {
-
-            // First, make 100% sure that any "autoEscape" chars get
-            // escaped, even if encodeURIComponent doesn't think they
-            // need to be.
-            for (var i = 0, l = autoEscape.length; i < l; i++) {
-                var ae = autoEscape[i];
-                if (rest.indexOf(ae) === -1)
-                    continue;
-                var esc = encodeURIComponent(ae);
-                if (esc === ae) {
-                    esc = escape(ae);
-                }
-                rest = rest.split(ae).join(esc);
-            }
-        }
-
-
-        // chop off from the tail first.
-        var hash = rest.indexOf('#');
-        if (hash !== -1) {
-            // got a fragment string.
-            this.hash = rest.substr(hash);
-            rest = rest.slice(0, hash);
-        }
-        var qm = rest.indexOf('?');
-        if (qm !== -1) {
-            this.search = rest.substr(qm);
-            this.query = rest.substr(qm + 1);
-            if (parseQueryString) {
-                this.query = querystring.parse(this.query);
-            }
-            rest = rest.slice(0, qm);
-        } else if (parseQueryString) {
-            // no query string, but parseQueryString still requested
-            this.search = '';
-            this.query = {};
-        }
-        if (rest) this.pathname = rest;
-        if (slashedProtocol[lowerProto] &&
-            this.hostname && !this.pathname) {
-            this.pathname = '/';
-        }
-
-        //to support http.request
-        if (this.pathname || this.search) {
-            var p = this.pathname || '';
-            var s = this.search || '';
-            this.path = p + s;
-        }
-
-        // finally, reconstruct the href based on what has been validated.
-        this.href = this.format();
-        return this;
-    };
-
-// format a parsed object into a url string
-    function urlFormat(obj) {
-        // ensure it's an object, and not a string url.
-        // If it's an obj, this is a no-op.
-        // this way, you can call url_format() on strings
-        // to clean up potentially wonky urls.
-        if (util.isString(obj)) obj = urlParse(obj);
-        if (!(obj instanceof Url)) return Url.prototype.format.call(obj);
-        return obj.format();
-    }
-
-    Url.prototype.format = function() {
-        var auth = this.auth || '';
-        if (auth) {
-            auth = encodeURIComponent(auth);
-            auth = auth.replace(/%3A/i, ':');
-            auth += '@';
-        }
-
-        var protocol = this.protocol || '',
-            pathname = this.pathname || '',
-            hash = this.hash || '',
-            host = false,
-            query = '';
-
-        if (this.host) {
-            host = auth + this.host;
-        } else if (this.hostname) {
-            host = auth + (this.hostname.indexOf(':') === -1 ?
-                    this.hostname :
-                '[' + this.hostname + ']');
-            if (this.port) {
-                host += ':' + this.port;
-            }
-        }
-
-        if (this.query &&
-            util.isObject(this.query) &&
-            Object.keys(this.query).length) {
-            query = querystring.stringify(this.query);
-        }
-
-        var search = this.search || (query && ('?' + query)) || '';
-
-        if (protocol && protocol.substr(-1) !== ':') protocol += ':';
-
-        // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
-        // unless they had them to begin with.
-        if (this.slashes ||
-            (!protocol || slashedProtocol[protocol]) && host !== false) {
-            host = '//' + (host || '');
-            if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
-        } else if (!host) {
-            host = '';
-        }
-
-        if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
-        if (search && search.charAt(0) !== '?') search = '?' + search;
-
-        pathname = pathname.replace(/[?#]/g, function(match) {
-            return encodeURIComponent(match);
-        });
-        search = search.replace('#', '%23');
-
-        return protocol + host + pathname + search + hash;
-    };
-
-    function urlResolve(source, relative) {
-        return urlParse(source, false, true).resolve(relative);
-    }
-
-    Url.prototype.resolve = function(relative) {
-        return this.resolveObject(urlParse(relative, false, true)).format();
-    };
-
-    function urlResolveObject(source, relative) {
-        if (!source) return relative;
-        return urlParse(source, false, true).resolveObject(relative);
-    }
-
-    Url.prototype.resolveObject = function(relative) {
-        if (util.isString(relative)) {
-            var rel = new Url();
-            rel.parse(relative, false, true);
-            relative = rel;
-        }
-
-        var result = new Url();
-        var tkeys = Object.keys(this);
-        for (var tk = 0; tk < tkeys.length; tk++) {
-            var tkey = tkeys[tk];
-            result[tkey] = this[tkey];
-        }
-
-        // hash is always overridden, no matter what.
-        // even href="" will remove it.
-        result.hash = relative.hash;
-
-        // if the relative url is empty, then there's nothing left to do here.
-        if (relative.href === '') {
-            result.href = result.format();
-            return result;
-        }
-
-        // hrefs like //foo/bar always cut to the protocol.
-        if (relative.slashes && !relative.protocol) {
-            // take everything except the protocol from relative
-            var rkeys = Object.keys(relative);
-            for (var rk = 0; rk < rkeys.length; rk++) {
-                var rkey = rkeys[rk];
-                if (rkey !== 'protocol')
-                    result[rkey] = relative[rkey];
-            }
-
-            //urlParse appends trailing / to urls like http://www.example.com
-            if (slashedProtocol[result.protocol] &&
-                result.hostname && !result.pathname) {
-                result.path = result.pathname = '/';
-            }
-
-            result.href = result.format();
-            return result;
-        }
-
-        if (relative.protocol && relative.protocol !== result.protocol) {
-            // if it's a known url protocol, then changing
-            // the protocol does weird things
-            // first, if it's not file:, then we MUST have a host,
-            // and if there was a path
-            // to begin with, then we MUST have a path.
-            // if it is file:, then the host is dropped,
-            // because that's known to be hostless.
-            // anything else is assumed to be absolute.
-            if (!slashedProtocol[relative.protocol]) {
-                var keys = Object.keys(relative);
-                for (var v = 0; v < keys.length; v++) {
-                    var k = keys[v];
-                    result[k] = relative[k];
-                }
-                result.href = result.format();
-                return result;
-            }
-
-            result.protocol = relative.protocol;
-            if (!relative.host && !hostlessProtocol[relative.protocol]) {
-                var relPath = (relative.pathname || '').split('/');
-                while (relPath.length && !(relative.host = relPath.shift()));
-                if (!relative.host) relative.host = '';
-                if (!relative.hostname) relative.hostname = '';
-                if (relPath[0] !== '') relPath.unshift('');
-                if (relPath.length < 2) relPath.unshift('');
-                result.pathname = relPath.join('/');
-            } else {
-                result.pathname = relative.pathname;
-            }
-            result.search = relative.search;
-            result.query = relative.query;
-            result.host = relative.host || '';
-            result.auth = relative.auth;
-            result.hostname = relative.hostname || relative.host;
-            result.port = relative.port;
-            // to support http.request
-            if (result.pathname || result.search) {
-                var p = result.pathname || '';
-                var s = result.search || '';
-                result.path = p + s;
-            }
-            result.slashes = result.slashes || relative.slashes;
-            result.href = result.format();
-            return result;
-        }
-
-        var isSourceAbs = (result.pathname && result.pathname.charAt(0) === '/'),
-            isRelAbs = (
-                relative.host ||
-                relative.pathname && relative.pathname.charAt(0) === '/'
-            ),
-            mustEndAbs = (isRelAbs || isSourceAbs ||
-            (result.host && relative.pathname)),
-            removeAllDots = mustEndAbs,
-            srcPath = result.pathname && result.pathname.split('/') || [],
-            relPath = relative.pathname && relative.pathname.split('/') || [],
-            psychotic = result.protocol && !slashedProtocol[result.protocol];
-
-        // if the url is a non-slashed url, then relative
-        // links like ../.. should be able
-        // to crawl up to the hostname, as well.  This is strange.
-        // result.protocol has already been set by now.
-        // Later on, put the first path part into the host field.
-        if (psychotic) {
-            result.hostname = '';
-            result.port = null;
-            if (result.host) {
-                if (srcPath[0] === '') srcPath[0] = result.host;
-                else srcPath.unshift(result.host);
-            }
-            result.host = '';
-            if (relative.protocol) {
-                relative.hostname = null;
-                relative.port = null;
-                if (relative.host) {
-                    if (relPath[0] === '') relPath[0] = relative.host;
-                    else relPath.unshift(relative.host);
-                }
-                relative.host = null;
-            }
-            mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
-        }
-
-        if (isRelAbs) {
-            // it's absolute.
-            result.host = (relative.host || relative.host === '') ?
-                relative.host : result.host;
-            result.hostname = (relative.hostname || relative.hostname === '') ?
-                relative.hostname : result.hostname;
-            result.search = relative.search;
-            result.query = relative.query;
-            srcPath = relPath;
-            // fall through to the dot-handling below.
-        } else if (relPath.length) {
-            // it's relative
-            // throw away the existing file, and take the new path instead.
-            if (!srcPath) srcPath = [];
-            srcPath.pop();
-            srcPath = srcPath.concat(relPath);
-            result.search = relative.search;
-            result.query = relative.query;
-        } else if (!util.isNullOrUndefined(relative.search)) {
-            // just pull out the search.
-            // like href='?foo'.
-            // Put this after the other two cases because it simplifies the booleans
-            if (psychotic) {
-                result.hostname = result.host = srcPath.shift();
-                //occationaly the auth can get stuck only in host
-                //this especially happens in cases like
-                //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
-                var authInHost = result.host && result.host.indexOf('@') > 0 ?
-                    result.host.split('@') : false;
-                if (authInHost) {
-                    result.auth = authInHost.shift();
-                    result.host = result.hostname = authInHost.shift();
-                }
-            }
-            result.search = relative.search;
-            result.query = relative.query;
-            //to support http.request
-            if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
-                result.path = (result.pathname ? result.pathname : '') +
-                    (result.search ? result.search : '');
-            }
-            result.href = result.format();
-            return result;
-        }
-
-        if (!srcPath.length) {
-            // no path at all.  easy.
-            // we've already handled the other stuff above.
-            result.pathname = null;
-            //to support http.request
-            if (result.search) {
-                result.path = '/' + result.search;
-            } else {
-                result.path = null;
-            }
-            result.href = result.format();
-            return result;
-        }
-
-        // if a url ENDs in . or .., then it must get a trailing slash.
-        // however, if it ends in anything else non-slashy,
-        // then it must NOT get a trailing slash.
-        var last = srcPath.slice(-1)[0];
-        var hasTrailingSlash = (
-        (result.host || relative.host || srcPath.length > 1) &&
-        (last === '.' || last === '..') || last === '');
-
-        // strip single dots, resolve double dots to parent dir
-        // if the path tries to go above the root, `up` ends up > 0
-        var up = 0;
-        for (var i = srcPath.length; i >= 0; i--) {
-            last = srcPath[i];
-            if (last === '.') {
-                srcPath.splice(i, 1);
-            } else if (last === '..') {
-                srcPath.splice(i, 1);
-                up++;
-            } else if (up) {
-                srcPath.splice(i, 1);
-                up--;
-            }
-        }
-
-        // if the path is allowed to go above the root, restore leading ..s
-        if (!mustEndAbs && !removeAllDots) {
-            for (; up--; up) {
-                srcPath.unshift('..');
-            }
-        }
-
-        if (mustEndAbs && srcPath[0] !== '' &&
-            (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
-            srcPath.unshift('');
-        }
-
-        if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
-            srcPath.push('');
-        }
-
-        var isAbsolute = srcPath[0] === '' ||
-            (srcPath[0] && srcPath[0].charAt(0) === '/');
-
-        // put the host back
-        if (psychotic) {
-            result.hostname = result.host = isAbsolute ? '' :
-                srcPath.length ? srcPath.shift() : '';
-            //occationaly the auth can get stuck only in host
-            //this especially happens in cases like
-            //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
-            var authInHost = result.host && result.host.indexOf('@') > 0 ?
-                result.host.split('@') : false;
-            if (authInHost) {
-                result.auth = authInHost.shift();
-                result.host = result.hostname = authInHost.shift();
-            }
-        }
-
-        mustEndAbs = mustEndAbs || (result.host && srcPath.length);
-
-        if (mustEndAbs && !isAbsolute) {
-            srcPath.unshift('');
-        }
-
-        if (!srcPath.length) {
-            result.pathname = null;
-            result.path = null;
-        } else {
-            result.pathname = srcPath.join('/');
-        }
-
-        //to support request.http
-        if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
-            result.path = (result.pathname ? result.pathname : '') +
-                (result.search ? result.search : '');
-        }
-        result.auth = relative.auth || result.auth;
-        result.slashes = result.slashes || relative.slashes;
-        result.href = result.format();
-        return result;
-    };
-
-    Url.prototype.parseHost = function() {
-        var host = this.host;
-        var port = portPattern.exec(host);
-        if (port) {
-            port = port[0];
-            if (port !== ':') {
-                this.port = port.substr(1);
-            }
-            host = host.substr(0, host.length - port.length);
-        }
-        if (host) this.hostname = host;
-    };
-
-},{"./util":73,"punycode":62,"querystring":65}],73:[function(require,module,exports){
-    'use strict';
-
-    module.exports = {
-        isString: function(arg) {
-            return typeof(arg) === 'string';
-        },
-        isObject: function(arg) {
-            return typeof(arg) === 'object' && arg !== null;
-        },
-        isNull: function(arg) {
-            return arg === null;
-        },
-        isNullOrUndefined: function(arg) {
-            return arg == null;
-        }
-    };
-
-},{}],74:[function(require,module,exports){
+},{"../../Resource":69,"../../b64":70}],74:[function(require,module,exports){
     var core = require('../core');
     var  Device = require('ismobilejs');
 
@@ -8388,7 +8364,7 @@
     core.WebGLRenderer.registerPlugin('accessibility', AccessibilityManager);
     core.CanvasRenderer.registerPlugin('accessibility', AccessibilityManager);
 
-},{"../core":97,"./accessibleTarget":75,"ismobilejs":33}],75:[function(require,module,exports){
+},{"../core":97,"./accessibleTarget":75,"ismobilejs":4}],75:[function(require,module,exports){
     /**
      * Default property values of accessible objects
      * used by {@link PIXI.accessibility.AccessibilityManager}.
@@ -8500,7 +8476,7 @@
     Shader.prototype.constructor = Shader;
     module.exports = Shader;
 
-},{"./const":78,"pixi-gl-core":7}],78:[function(require,module,exports){
+},{"./const":78,"pixi-gl-core":12}],78:[function(require,module,exports){
 
     /**
      * Constant values used in pixi
@@ -10292,7 +10268,7 @@
         this.filterArea = null;
     };
 
-},{"../const":78,"../math":102,"./Bounds":79,"./Transform":82,"./TransformStatic":84,"eventemitter3":32}],82:[function(require,module,exports){
+},{"../const":78,"../math":102,"./Bounds":79,"./Transform":82,"./TransformStatic":84,"eventemitter3":3}],82:[function(require,module,exports){
     var math = require('../math'),
         TransformBase = require('./TransformBase');
 
@@ -12537,7 +12513,7 @@
         this.glIndices = null;
     };
 
-},{"pixi-gl-core":7}],91:[function(require,module,exports){
+},{"pixi-gl-core":12}],91:[function(require,module,exports){
     var Shader = require('../../../Shader');
 
     /**
@@ -12984,7 +12960,7 @@
 
     module.exports = buildPoly;
 
-},{"../../../utils":151,"./buildLine":93,"earcut":31}],95:[function(require,module,exports){
+},{"../../../utils":151,"./buildLine":93,"earcut":2}],95:[function(require,module,exports){
     var buildLine = require('./buildLine'),
         utils = require('../../../utils');
 
@@ -13195,7 +13171,7 @@
 
     module.exports = buildRoundedRectangle;
 
-},{"../../../utils":151,"./buildLine":93,"earcut":31}],97:[function(require,module,exports){
+},{"../../../utils":151,"./buildLine":93,"earcut":2}],97:[function(require,module,exports){
     /**
      * @file        Main export of the PIXI core library
      * @author      Mat Groves <mat@goodboydigital.com>
@@ -13293,7 +13269,7 @@
         }
     });
 
-},{"./Shader":77,"./const":78,"./display/Container":80,"./display/DisplayObject":81,"./display/Transform":82,"./display/TransformBase":83,"./display/TransformStatic":84,"./graphics/Graphics":85,"./graphics/GraphicsData":86,"./graphics/canvas/CanvasGraphicsRenderer":87,"./graphics/webgl/GraphicsRenderer":89,"./math":102,"./renderers/canvas/CanvasRenderer":109,"./renderers/canvas/utils/CanvasRenderTarget":111,"./renderers/webgl/WebGLRenderer":116,"./renderers/webgl/filters/Filter":118,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":121,"./renderers/webgl/managers/WebGLManager":125,"./renderers/webgl/utils/ObjectRenderer":126,"./renderers/webgl/utils/Quad":127,"./renderers/webgl/utils/RenderTarget":128,"./sprites/Sprite":133,"./sprites/canvas/CanvasSpriteRenderer":134,"./sprites/canvas/CanvasTinter":135,"./sprites/webgl/SpriteRenderer":137,"./text/Text":139,"./text/TextStyle":140,"./textures/BaseRenderTexture":141,"./textures/BaseTexture":142,"./textures/RenderTexture":143,"./textures/Texture":144,"./textures/TextureUvs":145,"./textures/VideoBaseTexture":146,"./ticker":148,"./utils":151,"pixi-gl-core":7}],98:[function(require,module,exports){
+},{"./Shader":77,"./const":78,"./display/Container":80,"./display/DisplayObject":81,"./display/Transform":82,"./display/TransformBase":83,"./display/TransformStatic":84,"./graphics/Graphics":85,"./graphics/GraphicsData":86,"./graphics/canvas/CanvasGraphicsRenderer":87,"./graphics/webgl/GraphicsRenderer":89,"./math":102,"./renderers/canvas/CanvasRenderer":109,"./renderers/canvas/utils/CanvasRenderTarget":111,"./renderers/webgl/WebGLRenderer":116,"./renderers/webgl/filters/Filter":118,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":121,"./renderers/webgl/managers/WebGLManager":125,"./renderers/webgl/utils/ObjectRenderer":126,"./renderers/webgl/utils/Quad":127,"./renderers/webgl/utils/RenderTarget":128,"./sprites/Sprite":133,"./sprites/canvas/CanvasSpriteRenderer":134,"./sprites/canvas/CanvasTinter":135,"./sprites/webgl/SpriteRenderer":137,"./text/Text":139,"./text/TextStyle":140,"./textures/BaseRenderTexture":141,"./textures/BaseTexture":142,"./textures/RenderTexture":143,"./textures/Texture":144,"./textures/TextureUvs":145,"./textures/VideoBaseTexture":146,"./ticker":148,"./utils":151,"pixi-gl-core":12}],98:[function(require,module,exports){
 // Your friendly neighbour https://en.wikipedia.org/wiki/Dihedral_group of order 16
 
     var ux = [1, 1, 0, -1, -1, -1, 0, 1, 1, 1, 0, -1, -1, -1, 0, 1];
@@ -15010,7 +14986,7 @@
         this._lastObjectRendered = null;
     };
 
-},{"../const":78,"../display/Container":80,"../math":102,"../textures/RenderTexture":143,"../utils":151,"eventemitter3":32}],109:[function(require,module,exports){
+},{"../const":78,"../display/Container":80,"../math":102,"../textures/RenderTexture":143,"../utils":151,"eventemitter3":3}],109:[function(require,module,exports){
     var SystemRenderer = require('../SystemRenderer'),
         CanvasMaskManager = require('./utils/CanvasMaskManager'),
         CanvasRenderTarget = require('./utils/CanvasRenderTarget'),
@@ -15967,7 +15943,7 @@
 
     module.exports = TextureManager;
 
-},{"../../const":78,"../../utils":151,"./utils/RenderTarget":128,"pixi-gl-core":7}],116:[function(require,module,exports){
+},{"../../const":78,"../../utils":151,"./utils/RenderTarget":128,"pixi-gl-core":12}],116:[function(require,module,exports){
     var SystemRenderer = require('../SystemRenderer'),
         MaskManager = require('./managers/MaskManager'),
         StencilManager = require('./managers/StencilManager'),
@@ -16531,7 +16507,7 @@
         // this = null;
     };
 
-},{"../../const":78,"../../utils":151,"../SystemRenderer":108,"./TextureGarbageCollector":114,"./TextureManager":115,"./WebGLState":117,"./managers/FilterManager":122,"./managers/MaskManager":123,"./managers/StencilManager":124,"./utils/ObjectRenderer":126,"./utils/RenderTarget":128,"./utils/mapWebGLDrawModesToPixi":131,"./utils/validateContext":132,"pixi-gl-core":7}],117:[function(require,module,exports){
+},{"../../const":78,"../../utils":151,"../SystemRenderer":108,"./TextureGarbageCollector":114,"./TextureManager":115,"./WebGLState":117,"./managers/FilterManager":122,"./managers/MaskManager":123,"./managers/StencilManager":124,"./utils/ObjectRenderer":126,"./utils/RenderTarget":128,"./utils/mapWebGLDrawModesToPixi":131,"./utils/validateContext":132,"pixi-gl-core":12}],117:[function(require,module,exports){
     var mapWebGLBlendModesToPixi = require('./utils/mapWebGLBlendModesToPixi');
 
     /**
@@ -17023,7 +16999,7 @@
 
     module.exports = extractUniformsFromSrc;
 
-},{"pixi-gl-core":7}],120:[function(require,module,exports){
+},{"pixi-gl-core":12}],120:[function(require,module,exports){
     var math = require('../../../math');
 
     /*
@@ -17600,7 +17576,7 @@
         this.pool[key].push(renderTarget);
     };
 
-},{"../../../Shader":77,"../../../math":102,"../filters/filterTransforms":120,"../utils/Quad":127,"../utils/RenderTarget":128,"./WebGLManager":125,"bit-twiddle":30}],123:[function(require,module,exports){
+},{"../../../Shader":77,"../../../math":102,"../filters/filterTransforms":120,"../utils/Quad":127,"../utils/RenderTarget":128,"./WebGLManager":125,"bit-twiddle":1}],123:[function(require,module,exports){
     var WebGLManager = require('./WebGLManager'),
         AlphaMaskFilter = require('../filters/spriteMask/SpriteMaskFilter');
 
@@ -18180,7 +18156,7 @@
 
     module.exports = Quad;
 
-},{"../../../utils/createIndicesForQuads":149,"pixi-gl-core":7}],128:[function(require,module,exports){
+},{"../../../utils/createIndicesForQuads":149,"pixi-gl-core":12}],128:[function(require,module,exports){
     var math = require('../../../math'),
         CONST = require('../../../const'),
         GLFramebuffer = require('pixi-gl-core').GLFramebuffer;
@@ -18500,7 +18476,7 @@
         this.texture = null;
     };
 
-},{"../../../const":78,"../../../math":102,"pixi-gl-core":7}],129:[function(require,module,exports){
+},{"../../../const":78,"../../../math":102,"pixi-gl-core":12}],129:[function(require,module,exports){
     var glCore = require('pixi-gl-core');
 
     var fragTemplate = [
@@ -18581,7 +18557,7 @@
 
     module.exports = checkMaxIfStatmentsInShader;
 
-},{"pixi-gl-core":7}],130:[function(require,module,exports){
+},{"pixi-gl-core":12}],130:[function(require,module,exports){
     var CONST = require('../../../const');
 
     /**
@@ -20078,7 +20054,7 @@
 
     };
 
-},{"../../const":78,"../../renderers/webgl/WebGLRenderer":116,"../../renderers/webgl/utils/ObjectRenderer":126,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":129,"../../utils/createIndicesForQuads":149,"./BatchBuffer":136,"./generateMultiTextureShader":138,"bit-twiddle":30,"pixi-gl-core":7}],138:[function(require,module,exports){
+},{"../../const":78,"../../renderers/webgl/WebGLRenderer":116,"../../renderers/webgl/utils/ObjectRenderer":126,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":129,"../../utils/createIndicesForQuads":149,"./BatchBuffer":136,"./generateMultiTextureShader":138,"bit-twiddle":1,"pixi-gl-core":12}],138:[function(require,module,exports){
     var Shader = require('../../Shader');
 
 
@@ -22003,7 +21979,7 @@
         return baseTexture;
     };
 
-},{"../const":78,"../utils":151,"../utils/determineCrossOrigin":150,"bit-twiddle":30,"eventemitter3":32}],143:[function(require,module,exports){
+},{"../const":78,"../utils":151,"../utils/determineCrossOrigin":150,"bit-twiddle":1,"eventemitter3":3}],143:[function(require,module,exports){
     var BaseRenderTexture = require('./BaseRenderTexture'),
         Texture = require('./Texture');
 
@@ -22646,7 +22622,7 @@
     Texture.EMPTY.emit = function() {};
 
 
-},{"../math":102,"../utils":151,"./BaseTexture":142,"./TextureUvs":145,"./VideoBaseTexture":146,"eventemitter3":32}],145:[function(require,module,exports){
+},{"../math":102,"../utils":151,"./BaseTexture":142,"./TextureUvs":145,"./VideoBaseTexture":146,"eventemitter3":3}],145:[function(require,module,exports){
 
     /**
      * A standard object to store the Uvs of a texture
@@ -23344,7 +23320,7 @@
 
     module.exports = Ticker;
 
-},{"../const":78,"eventemitter3":32}],148:[function(require,module,exports){
+},{"../const":78,"eventemitter3":3}],148:[function(require,module,exports){
     var Ticker = require('./Ticker');
 
     /**
@@ -23477,7 +23453,7 @@
 
     module.exports = determineCrossOrigin;
 
-},{"url":72}],151:[function(require,module,exports){
+},{"url":28}],151:[function(require,module,exports){
     var CONST = require('../const');
 
     /**
@@ -23705,7 +23681,7 @@
         BaseTextureCache: {}
     };
 
-},{"../const":78,"./pluginTarget":153,"eventemitter3":32}],152:[function(require,module,exports){
+},{"../const":78,"./pluginTarget":153,"eventemitter3":3}],152:[function(require,module,exports){
 
 
     var  Device = require('ismobilejs');
@@ -23726,7 +23702,7 @@
     };
 
     module.exports = maxRecommendedTextures;
-},{"ismobilejs":33}],153:[function(require,module,exports){
+},{"ismobilejs":4}],153:[function(require,module,exports){
     /**
      * Mixins functionality to make an object have "plugins".
      *
@@ -28806,7 +28782,7 @@
     core.WebGLRenderer.registerPlugin('interaction', InteractionManager);
     core.CanvasRenderer.registerPlugin('interaction', InteractionManager);
 
-},{"../core":97,"./InteractionData":178,"./interactiveTarget":181,"eventemitter3":32}],180:[function(require,module,exports){
+},{"../core":97,"./InteractionData":178,"./interactiveTarget":181,"eventemitter3":3}],180:[function(require,module,exports){
     /**
      * @file        Main export of the PIXI interactions library
      * @author      Mat Groves <mat@goodboydigital.com>
@@ -29040,7 +29016,7 @@
         };
     };
 
-},{"../core":97,"../extras":164,"path":60,"resource-loader":69}],183:[function(require,module,exports){
+},{"../core":97,"../extras":164,"path":22,"resource-loader":71}],183:[function(require,module,exports){
     /**
      * @file        Main export of the PIXI loaders library
      * @author      Mat Groves <mat@goodboydigital.com>
@@ -29061,7 +29037,7 @@
         Resource:           require('resource-loader').Resource
     };
 
-},{"./bitmapFontParser":182,"./loader":184,"./spritesheetParser":185,"./textureParser":186,"resource-loader":69}],184:[function(require,module,exports){
+},{"./bitmapFontParser":182,"./loader":184,"./spritesheetParser":185,"./textureParser":186,"resource-loader":71}],184:[function(require,module,exports){
     var ResourceLoader = require('resource-loader'),
         textureParser = require('./textureParser'),
         spritesheetParser = require('./spritesheetParser'),
@@ -29124,7 +29100,7 @@
 
     Resource.setExtensionXhrType('fnt', Resource.XHR_RESPONSE_TYPE.DOCUMENT);
 
-},{"./bitmapFontParser":182,"./spritesheetParser":185,"./textureParser":186,"resource-loader":69}],185:[function(require,module,exports){
+},{"./bitmapFontParser":182,"./spritesheetParser":185,"./textureParser":186,"resource-loader":71}],185:[function(require,module,exports){
     var Resource = require('resource-loader').Resource,
         path = require('path'),
         core = require('../core');
@@ -29250,7 +29226,7 @@
         };
     };
 
-},{"../core":97,"path":60,"resource-loader":69}],186:[function(require,module,exports){
+},{"../core":97,"path":22,"resource-loader":71}],186:[function(require,module,exports){
     var core = require('../core');
 
     module.exports = function ()
@@ -29775,7 +29751,7 @@
         TRIANGLES: 1
     };
 
-},{"../core":97,"./webgl/MeshShader":192,"pixi-gl-core":7}],188:[function(require,module,exports){
+},{"../core":97,"./webgl/MeshShader":192,"pixi-gl-core":12}],188:[function(require,module,exports){
     var DEFAULT_BORDER_SIZE= 10;
 
     var Plane = require('./Plane');
@@ -31088,7 +31064,7 @@
         this.staticBuffer.destroy();
     };
 
-},{"../../core/utils/createIndicesForQuads":149,"pixi-gl-core":7}],196:[function(require,module,exports){
+},{"../../core/utils/createIndicesForQuads":149,"pixi-gl-core":12}],196:[function(require,module,exports){
     var core = require('../../core'),
         ParticleShader = require('./ParticleShader'),
         ParticleBuffer = require('./ParticleBuffer');
@@ -31612,7 +31588,7 @@
         Object.assign = require('object-assign');
     }
 
-},{"object-assign":59}],200:[function(require,module,exports){
+},{"object-assign":5}],200:[function(require,module,exports){
     require('./Object.assign');
     require('./requestAnimationFrame');
     require('./Math.sign');

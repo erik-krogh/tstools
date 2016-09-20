@@ -48,7 +48,7 @@ declare function runs(asyncMethod: Function): void;
 declare function waitsFor(latchMethod: () => boolean, failureMessage?: string, timeout?: number): void;
 declare function waits(timeout?: number): void;
 
-declare namespace jasmine {
+declare module jasmine {
 
     var clock: () => Clock;
 
