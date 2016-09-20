@@ -75,6 +75,11 @@ public class Util {
         return o1.getKey().compareTo(o2.getKey());
     }
 
+    public static <T> Collection<T> reduceCollection(Collection<T> acc, Collection<T> elems) {
+        acc.addAll(elems);
+        return acc;
+    }
+
     public static class StreamGobbler extends Thread {
         BufferedInputStream is;
         private CountDownLatch latch;
@@ -203,6 +208,8 @@ public class Util {
         }
     }
 
+    public static <T> Predicate<T> not(Predicate<T> p) { return o -> !p.test(o); }
+
     // I would really like to force ColT and ColS to be the same subtype of Collection. But I don't think Java generics can handle that.
     public static <T, S, ColT extends Collection<T>, ColS extends Collection<S>> ColS cast(Class<S> clazz, ColT list) {
         if (list == null) {
@@ -329,6 +336,10 @@ public class Util {
     }
 
     public static String toFixed(double number, int decimals) {
+        return toFixed(number, decimals, '.');
+    }
+
+    public static String toFixed(double number, int decimals, char separator) {
         if (Double.isInfinite(number)) {
             return number > 0 ? "Infinite" : "-Infinite";
         } else if (Double.isNaN(number)) {
@@ -336,7 +347,7 @@ public class Util {
         }
         BigDecimal numberBigDecimal = new BigDecimal(number);
         numberBigDecimal = numberBigDecimal.setScale(decimals, BigDecimal.ROUND_HALF_UP);
-        return numberBigDecimal.toString();
+        return numberBigDecimal.toString().replace('.', separator);
     }
 
     public static int lines(String file) throws IOException {
