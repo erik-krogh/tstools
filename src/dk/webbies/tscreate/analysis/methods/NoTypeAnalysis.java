@@ -23,4 +23,14 @@ public class NoTypeAnalysis extends MixedTypeAnalysis {
     public void applyConstraints(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory, Map<Identifier, UnionNode> identifierMap) {
         // Do nothing
     }
+
+    @Override
+    public void analyse(Snap.Obj closure, Map<Snap.Obj, FunctionNode> functionNodes, UnionFindSolver solver, FunctionNode functionNode, HeapValueFactory heapFactory) {
+        if (closure.function.type.equals("unknown")) {
+            return;
+        }
+
+        applyConstraints(closure, functionNodes, solver, functionNode, heapFactory, new HashMap<>());
+
+    }
 }
