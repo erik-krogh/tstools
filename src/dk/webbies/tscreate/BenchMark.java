@@ -31,12 +31,7 @@ public class BenchMark {
 
 
     public void resetOptions() {
-        List<BenchMark> allBenches = BenchMark.allBenchmarks;
-        BenchMark.allBenchmarks = new ArrayList<>();
-
         this.options = supplier.get().options;
-
-        BenchMark.allBenchmarks = allBenches; // Making sure the list of all benchmarks doesn't get extra benchmarks, just because we reset some options.
     }
 
     public Options getOptions() {
@@ -68,12 +63,7 @@ public class BenchMark {
         return result;
     }
 
-    public static List<BenchMark> allBenchmarks = new ArrayList<>();
-
     private BenchMark (String name, String scriptPath, String declarationPath, Options options, LanguageLevel languageLevel) {
-        if (!name.equals("Test file")) {
-            BenchMark.allBenchmarks.add(this);
-        }
         this.name = name;
         this.scriptPath = scriptPath;
         this.declarationPath = declarationPath;
@@ -81,16 +71,15 @@ public class BenchMark {
         this.languageLevel = languageLevel;
     }
 
-    public static final BenchMark underscore = gen(() -> {
+    public static final BenchMark underscore17 = gen(() -> {
         Options options = new Options();
         options.createInstances = true;
         options.createInstancesClassFilter = true;
-        options.asyncTest = false;
         options.recordCalls = true;
-        options.asyncTest = true;
-        BenchMark bench = new BenchMark("Underscore.js", "tests/underscore/underscore.js", "tests/underscore/underscore.d.ts", options, ES5);
+//        options.asyncTest = true;
+        BenchMark bench = new BenchMark("Underscore.js (1.7)", "tests/underscore/underscore.1.7.0.js", "tests/underscore/underscore.d.ts", options, ES5);
 
-        bench.dependencies.add(Dependency.QUnit);
+        /*bench.dependencies.add(Dependency.QUnit);
 
         bench.testFiles.add("tests/underscore/tests/arrays.js");
         bench.testFiles.add("tests/underscore/tests/chaining.js");
@@ -98,20 +87,39 @@ public class BenchMark {
 //        bench.testFiles.add("tests/underscore/tests/cross-document.js");
         bench.testFiles.add("tests/underscore/tests/functions.js");
         bench.testFiles.add("tests/underscore/tests/objects.js");
-        bench.testFiles.add("tests/underscore/tests/utility.js");
+        bench.testFiles.add("tests/underscore/tests/utility.js");*/
+        return bench;
+    });
+
+    public static final BenchMark underscore18 = gen(() -> {
+        Options options = new Options();
+        options.createInstancesClassFilter = true;
+        BenchMark bench = new BenchMark("Underscore.js (1.8)", "tests/underscore/underscore.js", null, options, ES5);
         return bench;
     });
 
     public static final BenchMark jasmine22 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
+        options.asyncTest = true;
+        options.createInstancesClassFilter = true;
         return new BenchMark("Jasmine (2.2)", "tests/jasmine/jasmine.2.2.1.js", "tests/jasmine/jasmine.2.2.d.ts", options, ES5);
     });
 
     public static final BenchMark jasmine24 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
-        return new BenchMark("Jasmine (2.2)", "tests/jasmine/jasmine.2.4.1.js", null, options, ES5);
+        options.asyncTest = true;
+        options.createInstancesClassFilter = true;
+        return new BenchMark("Jasmine (2.4)", "tests/jasmine/jasmine.2.4.1.js", null, options, ES5);
+    });
+
+    public static final BenchMark jasmine25 = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = false;
+        options.asyncTest = true;
+        options.createInstancesClassFilter = true;
+        return new BenchMark("Jasmine (2.5)", "tests/jasmine/jasmine.2.5.0.js", null, options, ES5);
     });
 
     public static final BenchMark PIXI_1_3 = gen(() -> {
@@ -120,24 +128,59 @@ public class BenchMark {
         return new BenchMark("Pixi.js (1.3)", "tests/pixi13/pixi.js", "tests/pixi13/pixi.d.ts", options, ES5);
     });
 
-    public static final BenchMark PIXI_2_2 = gen(() -> {
+    public static final BenchMark PIXI_1_6 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
+        return new BenchMark("Pixi.js (1.6)", "tests/pixi16/pixi.js", null, options, ES5);
+    });
+
+    public static final BenchMark PIXI_2_2 = gen(() -> {
+        Options options = new Options();
         return new BenchMark("Pixi.js (2.2)", "tests/pixi22/pixi.js", "tests/pixi22/pixi.d.ts", options, ES5);
     });
 
     public static final BenchMark PIXI_4_0 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
+        BenchMark bench = new BenchMark("Pixi.js (4.0)", "tests/pixi40/pixi.js", "tests/pixi40/pixi.js.d.ts", options, ES5);
+        return bench;
+    });
+
+    public static final BenchMark PIXI_4_0_tscheck_old_dec = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = false;
+        options.staticMethod = Options.StaticAnalysisMethod.NONE;
+        options.createInstances = false;
+        options.useJSDoc = false;
         BenchMark bench = new BenchMark("Pixi.js (4.0 (dev))", "tests/pixi40/pixi.js", "tests/pixi40/pixi.js.d.ts", options, ES5);
         return bench;
     });
 
     public static final BenchMark PIXI = gen(() -> {
         Options options = new Options();
+        return new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
+    });
+
+    public static final BenchMark vue = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("Vue.js", "tests/vue/vue.js", "tests/vue/vue.d.ts", options, ES6);
+    });
+
+    public static final BenchMark polymer16 = gen(() -> {
+        Options options = new Options();
         options.recordCalls = false;
-        BenchMark bench = new BenchMark("Pixi.js", "tests/pixi/pixi.js", "tests/pixi/pixi.js.d.ts", options, ES5);
-        return bench;
+        return new BenchMark("Polymer.js (1.6)", "tests/polymer/polymer.1.6.1.js", null, options, ES6);
+    });
+
+    public static final BenchMark polymer11 = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = false;
+        return new BenchMark("Polymer.js (1.1)", "tests/polymer/polymer.1.1.5.js", "tests/polymer/polymer.d.ts", options, ES6);
+    });
+
+    public static final BenchMark lodash = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("lodash", "tests/lodash/lodash.js", "tests/lodash/lodash.d.ts", options, ES6);
     });
 
     public static final BenchMark FabricJS16 = gen(() -> {
@@ -221,7 +264,7 @@ public class BenchMark {
         bench.dependencies.add(Dependency.QUnit);
         bench.dependencies.add(Dependency.QUnit_Utils);
 
-        // addTestFiles(bench, "tests/three/tests/");
+        /*// addTestFiles(bench, "tests/three/tests/");
         bench.testFiles.add("tests/three/tests/cameras/Camera.js");
         bench.testFiles.add("tests/three/tests/cameras/OrthographicCamera.js");
         bench.testFiles.add("tests/three/tests/cameras/PerspectiveCamera.js");
@@ -231,7 +274,7 @@ public class BenchMark {
         bench.testFiles.add("tests/three/tests/core/EventDispatcher.js");
         bench.testFiles.add("tests/three/tests/core/Object3D.js");
         bench.testFiles.add("tests/three/tests/extras/geometries/BoxGeometry.tests.js");
-        bench.testFiles.add("tests/three/tests/extras/geometries/CircleBufferGeometry.tests.js");
+//        bench.testFiles.add("tests/three/tests/extras/geometries/CircleBufferGeometry.tests.js");
 //        bench.testFiles.add("tests/three/tests/extras/geometries/CircleGeometry.tests.js");
 //        bench.testFiles.add("tests/three/tests/extras/geometries/CylinderGeometry.tests.js");
 //        bench.testFiles.add("tests/three/tests/extras/geometries/DodecahedronGeometry.tests.js");
@@ -272,7 +315,7 @@ public class BenchMark {
         bench.testFiles.add("tests/three/tests/math/Triangle.js");
         bench.testFiles.add("tests/three/tests/math/Vector2.js");
         bench.testFiles.add("tests/three/tests/math/Vector3.js");
-        bench.testFiles.add("tests/three/tests/math/Vector4.js");
+        bench.testFiles.add("tests/three/tests/math/Vector4.js");*/
         return bench;
     });
 
@@ -290,12 +333,18 @@ public class BenchMark {
 
     public static final BenchMark D3 = gen(() -> {
         Options options = new Options();
+        options.createInstancesClassFilter = true;
         return new BenchMark("D3.js", "tests/d3/d3.js", "tests/d3/d3.d.ts", options, ES5);
     });
 
-    public static final BenchMark react = gen(() -> {
+    public static final BenchMark react15 = gen(() -> {
         Options options = new Options();
-        return new BenchMark("React", "tests/react/react.js", "tests/react/react.d.ts", options, ES5);
+        return new BenchMark("React", "tests/react/react.js", null, options, ES5);
+    });
+
+    public static final BenchMark react014 = gen(() -> {
+        Options options = new Options();
+        return new BenchMark("React", "tests/react/react.0.14.js", "tests/react/react.d.ts", options, ES5);
     });
 
     public static final BenchMark knockout = gen(() -> {
@@ -328,7 +377,7 @@ public class BenchMark {
 
     public static final BenchMark ember1 = gen(() -> {
         Options options = new Options();
-        options.createInstances = false;
+        options.createInstances = true;
         options.recordCalls = false;
         BenchMark bench = new BenchMark("Ember.js (1.13)", "tests/ember/ember.js", "tests/ember/ember.d.ts", options, ES6);
         bench.dependencies.add(Dependency.jQuery);
@@ -337,7 +386,7 @@ public class BenchMark {
 
     public static final BenchMark ember20 = gen(() -> {
         Options options = new Options();
-        options.createInstances = false;
+        options.createInstances = true;
         options.recordCalls = false;
         BenchMark bench = new BenchMark("Ember.js (2.0)", "tests/ember/version20/ember.js", "tests/ember/version20/ember.d.ts", options, ES6);
         bench.dependencies.add(Dependency.jQuery);
@@ -346,7 +395,7 @@ public class BenchMark {
 
     public static final BenchMark ember22 = gen(() -> {
         Options options = new Options();
-        options.createInstances = false;
+        options.createInstances = true;
         options.recordCalls = false;
         BenchMark bench = new BenchMark("Ember.js (2.2)", "tests/ember/version22/ember.js", null, options, ES6);
         bench.dependencies.add(Dependency.jQuery);
@@ -355,9 +404,18 @@ public class BenchMark {
 
     public static final BenchMark ember27 = gen(() -> {
         Options options = new Options();
-        options.createInstances = false;
+        options.createInstances = true;
         options.recordCalls = false;
-        BenchMark bench = new BenchMark("Ember.js (2.7)", "tests/ember/version27/ember.js", null, options, ES6);
+        BenchMark bench = new BenchMark("Ember.js (2.7)", "tests/ember/version27/ember.js", "tests/ember/version27/ember.d.ts", options, ES6);
+        bench.dependencies.add(Dependency.jQuery);
+        return bench;
+    });
+
+    public static final BenchMark ember27_small = gen(() -> {
+        Options options = new Options();
+        options.createInstances = true;
+        options.recordCalls = false;
+        BenchMark bench = new BenchMark("Ember.js (2.7)", "tests/ember/version27/delta_js_smallest.js", "tests/ember/version27/ember.d.ts", options, ES6);
         bench.dependencies.add(Dependency.jQuery);
         return bench;
     });
@@ -374,7 +432,7 @@ public class BenchMark {
     public static final BenchMark backbone133 = gen(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true;
-        BenchMark bench = new BenchMark("Backbone.js", "tests/backbone/backbone.1.3.3.js", null, options, ES5);
+        BenchMark bench = new BenchMark("Backbone.js", "tests/backbone/backbone.1.3.3.js", "tests/backbone/backbone.1.3.3.d.ts", options, ES5);
         bench.dependencies.add(Dependency.underscore);
         bench.dependencies.add(Dependency.jQuery);
         return bench;
@@ -440,7 +498,7 @@ public class BenchMark {
 
     public static final BenchMark handlebars4 = gen(() -> {
         Options options = new Options();
-        return new BenchMark("Handlebars.js", "tests/handlebars/handlebars-v4.0.5.js", null, options, ES5);
+        return new BenchMark("Handlebars.js", "tests/handlebars/handlebars-v4.0.5.js", "tests/handlebars/handlebars-v4.0.5.d.ts", options, ES5);
     });
 
     public static final BenchMark box2d = gen(() -> {
@@ -460,7 +518,7 @@ public class BenchMark {
 
     public static final BenchMark moment_214 = gen(() -> {
         Options options = new Options();
-        return new BenchMark("Moment.js", "tests/moment/version214/moment.js", null, options, ES5);
+        return new BenchMark("Moment.js", "tests/moment/version214/moment.js", "tests/moment/version214/moment.d.ts", options, ES5);
     });
 
     public static final BenchMark hammer1 = gen(() -> {
@@ -524,7 +582,19 @@ public class BenchMark {
 
     public static final BenchMark async201 = gen(() -> {
         Options options = new Options();
-        BenchMark benchMark = new BenchMark("async", "tests/async/async.2.0.1.js", null, options, ES5);
+        BenchMark benchMark = new BenchMark("async", "tests/async/async.2.0.1.js", "tests/async/async.2.0.1.d.ts", options, ES5);
+        return benchMark;
+    });
+
+    public static final BenchMark asyncTSCheck = gen(() -> {
+        Options options = new Options();
+        options.staticMethod = Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE;
+        options.createInstances = false;
+        options.recordCalls = false;
+        options.useJSDoc = false;
+        options.unionHeapIdentifiers = true;
+        options.evaluationAnyAreOK = true;
+        BenchMark benchMark = new BenchMark("async", "tests/async/async.2.0.1.js", "tests/async/async.d.ts", options, ES5);
         return benchMark;
     });
 
@@ -561,17 +631,21 @@ public class BenchMark {
 
     public static final BenchMark test = gen(() -> {
         Options options = new Options();
-//        options.debugPrint = true;
-        options.recordCalls = true;
-        options.createInstances = true;
 
-        BenchMark bench = new BenchMark("Test file", "tests/test/test.js", "tests/test/test.d.ts", options, ES5);
-//        bench.dependencies.add(new Dependency("tests/test/empty.js", "tests/test/dependency.d.ts"));
-//        bench.dependencies.add(new Dependency("tests/test/dependency.js", "tests/test/dependency.d.ts"));
-//        bench.dependencies.add(Dependency.jQuery);
-//        bench.dependencies.add(Dependency.underscore);
+        BenchMark bench = new BenchMark("Test file", "tests/test/test.js", null/*"tests/test/test.d.ts"*/, options, ES5);
         return bench;
     });
+
+    public static final BenchMark test2 = gen(() -> {
+        Options options = new Options();
+
+        BenchMark bench = new BenchMark("Test file v2", "tests/test/test.js", null/*"tests/test/test.d.ts"*/, options, ES5);
+        return bench;
+    });
+
+    public String getName() {
+        return this.name;
+    }
 
 
     public static final class Dependency {
