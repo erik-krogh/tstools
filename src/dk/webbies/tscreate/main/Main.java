@@ -8,7 +8,6 @@ import dk.webbies.tscreate.analysis.TypeAnalysis;
 import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
 import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.analysis.declarations.types.UnnamedObjectType;
 import dk.webbies.tscreate.analysis.methods.NoTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.combined.CombinedTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.contextSensitive.combined.CombinedContextSensitiveTypeAnalysis;
@@ -41,7 +40,6 @@ import java.util.stream.Collectors;
 import static dk.webbies.tscreate.BenchMark.*;
 import static dk.webbies.tscreate.Options.StaticAnalysisMethod.*;
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
-import static dk.webbies.tscreate.util.Util.concat;
 import static dk.webbies.tscreate.util.Util.toFixed;
 import static java.util.Arrays.asList;
 
@@ -51,33 +49,80 @@ import static java.util.Arrays.asList;
 public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // TODO: Lower fixpoint != better result
-        // TODO: Synopsis.tex, look at the 4 sent by Anders.
-        // TODO: What can i do that TSCheck cannot. List the problems
-        // TODO: The need for updated .d.ts files is huge, libraries are not small 1 man project, but big collabarative project.
-        // TODO: What changes between version, look at a diff at a couple of libraries between the current version, and a version from 1-2 years ago.
-        // TODO: Collateral Evolution
-
-        // Benchmarks, where I can run ALL the static analysis methods.
-        List<BenchMark> stableBenches = asList(async142, require, knockout, backbone, hammer, moment, handlebars30, underscore, please, path, p2, mathjax, materialize, photoswipe, peer, createjs, yui);
-        List<Options.StaticAnalysisMethod> allMethods = asList(NONE, ANDERSON, MIXED, COMBINED, UPPER, UPPER_LOWER);//, ANDERSON_CONTEXT_SENSITIVE, MIXED_CONTEXT_SENSITIVE, COMBINED_CONTEXT_SENSITIVE, LOWER_CONTEXT_SENSITIVE, UPPER_LOWER_CONTEXT_SENSITIVE, UNIFICATION, UNIFICATION_CONTEXT_SENSITIVE);
-
-
         long start = System.currentTimeMillis();
         try {
+
+//            runAnalysis(leaflet);
+
+//            ember20.getOptions().staticMethod = NONE; // ember.js.none_jsDoc.gen.d.ts
+//            ember20.getOptions().asyncTest = true;
+//            runAnalysis(ember27_small);
+
+            knockout.getOptions().staticMethod = UPPER_LOWER;
+            runAnalysis(knockout);
+
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(jasmine22, jasmine25);
+                savePatchFile(patchFile, "diffViewer/jasmine-22-25.json");
+            }*/
+
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(react014, react15);
+                savePatchFile(patchFile, "diffViewer/react-014-15.json");
+            }*/
+
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(underscore17, underscore18);
+                savePatchFile(patchFile, "diffViewer/underscore-17-18.json");
+            }*/
+
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(polymer11, polymer16);
+                savePatchFile(patchFile, "diffViewer/polymer-11-16.json");
+            }*/
+
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(jasmine22, jasmine25);
+                savePatchFile(patchFile, "diffViewer/jasmine-22-25.json");
+            }*/
+
+            /*FabricJS16.getOptions().staticMethod = UNIFICATION; // fabric.js.unify_jsDoc.gen.d.ts
+            FabricJS16.getOptions().recordCalls = false;
+            FabricJS16.getOptions().createInstances = false;
+            *//*FabricJS16.getOptions().classOptions.useInstancesForThis = false;
+            FabricJS16.getOptions().classOptions.unionThisFromConstructor = false;
+            FabricJS16.getOptions().classOptions.useClassInstancesFromHeap = false;
+            FabricJS16.getOptions().classOptions.useInstancesForThis = false;*//*
+
+            runAnalysis(FabricJS16);*/
+
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(FabricJS15, FabricJS16);
+                savePatchFile(patchFile, "diffViewer/fabric-15-16.json");
+            }*/
+
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(PIXI, PIXI_4_0);
+                savePatchFile(patchFile, "diffViewer/pixi-3-4-final.json");
+            }*/
+            /*{
+                PatchFile patchFile = PatchFileFactory.fromImplementation(moment, moment_214);
+                savePatchFile(patchFile, "diffViewer/moment-to-214.json");
+            }*/
+
             /*{
                 PatchFile patchFile = PatchFileFactory.fromImplementation(backbone, backbone133);
                 savePatchFile(patchFile, "diffViewer/backbone-10-13.json");
             }
 
             {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(async142, async201);
-                savePatchFile(patchFile, "diffViewer/async-1-2.json");
+                PatchFile patchFile = PatchFileFactory.fromImplementation(ember20, ember27);
+                savePatchFile(patchFile, "diffViewer/ember-20-27.json");
             }
 
             {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(ember20, ember27);
-                savePatchFile(patchFile, "diffViewer/ember-20-27.json");
+                PatchFile patchFile = PatchFileFactory.fromImplementation(async142, async201);
+                savePatchFile(patchFile, "diffViewer/async-1-2.json");
             }
 
             {
@@ -95,10 +140,7 @@ public class Main {
                 savePatchFile(patchFile, "diffViewer/ember-1-2.json");
             }*/
 
-            {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(moment, moment_214);
-                savePatchFile(patchFile, "diffViewer/moment-to-214.json");
-            }
+
 
 //            runAnalysis(ember27);
 
@@ -223,6 +265,7 @@ public class Main {
 
         Map<String, DeclarationType> declaration = createDeclaration(benchMark, AST, globalObject, emptySnap, libraryClasses, nativeClasses);
 
+        System.out.println("Printing declaration");
         String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions()).print();
         System.out.println(printedDeclaration);
 
@@ -270,11 +313,15 @@ public class Main {
         return createDeclaration(benchMark, AST, globalObject, emptySnap, libraryClasses, nativeClasses);
     }
 
+    public static long staticAnalysisTime = 0; // ugly ugly ugly, i know.
+
     public static Map<String, DeclarationType> createDeclaration(BenchMark benchMark, FunctionExpression AST, Snap.Obj globalObject, Snap.Obj emptySnap, Map<Snap.Obj, LibraryClass> libraryClasses, NativeClassesMap nativeClasses) {
         Map<AstNode, Set<Snap.Obj>> callsites = Collections.EMPTY_MAP;
         if (benchMark.getOptions().recordCalls && globalObject.getProperty("__jsnap__callsitesToClosures") != null && benchMark.getOptions().useCallsiteInformation) {
             callsites = JSNAPUtil.getCallsitesToClosures((Snap.Obj) globalObject.getProperty("__jsnap__callsitesToClosures").value, AST);
         }
+
+        long startTime = System.currentTimeMillis();
 
         TypeAnalysis typeAnalysis = createTypeAnalysis(benchMark, globalObject, libraryClasses, nativeClasses, callsites);
         typeAnalysis.analyseFunctions();
@@ -289,13 +336,15 @@ public class Main {
             new RedundantInterfaceCleaner(declaration, nativeClasses, typeAnalysis.getTypeFactory().typeReducer).cleanDeclarations();
         }
 
+        Main.staticAnalysisTime = System.currentTimeMillis() - startTime;
+
         typeAnalysis.getTypeFactory().typeReducer.originals.clear();
         typeAnalysis.getTypeFactory().typeReducer.combinationTypeCache.clear();
 
         return declaration;
     }
 
-    public static Score getScore(BenchMark benchMark) throws IOException {
+    public static Score getScore(BenchMark benchMark, long timeout) throws IOException {
         String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
 
         Score readFromFile = readScoreFromDeclaration(resultDeclarationFilePath);
@@ -303,7 +352,7 @@ public class Main {
             return readFromFile;
         }
 
-        Evaluation evaluation = getEvaluation(benchMark, getResultingDeclarationPath(benchMark));
+        Evaluation evaluation = getEvaluation(benchMark, getResultingDeclarationPath(benchMark), timeout);
 
         if (evaluation == null) {
             throw new RuntimeException();
@@ -312,12 +361,16 @@ public class Main {
         }
     }
 
-    static Evaluation getEvaluation(BenchMark benchMark, String generatedDeclarationPath) throws IOException {
+    static Evaluation getEvaluation(BenchMark benchMark, String generatedDeclarationPath, long timeout) throws IOException {
 
         System.out.println("Get evaluation of " + benchMark.name + " - from: " + generatedDeclarationPath);
 
         if (!new File(generatedDeclarationPath).exists()) {
-            return runAnalysis(benchMark);
+            if (timeout > 0) {
+                return runAnalysisWithTimeout(benchMark, timeout);
+            } else {
+                return runAnalysis(benchMark);
+            }
         }
 
         FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, getScript(benchMark)).toTSCreateAST();
@@ -448,29 +501,7 @@ public class Main {
         return result.toString();
     }
 
-    public static void tsCheck() throws IOException {
-        for (BenchMark benchmark : allBenchmarks) {
-            benchmark.getOptions().tsCheck = true;
-            runAnalysis(benchmark);
-        }
-    }
-
-    private static void benchAll() throws IOException {
-        double combinedScore = 0;
-        for (BenchMark benchmark : allBenchmarks) {
-            double score = runAnalysis(benchmark).score().fMeasure;
-            if (!Double.isNaN(score)) {
-                combinedScore += score;
-            }
-        }
-
-        System.out.println("\nCombined score: " + combinedScore);
-    }
-
     private static void generateDeclarations(List<BenchMark> benchMarks) throws IOException {
-        if (benchMarks == null) {
-            benchMarks = allBenchmarks;
-        }
         for (BenchMark benchmark : benchMarks) {
             benchmark.declarationPath = null;
             runAnalysis(benchmark);
@@ -479,56 +510,11 @@ public class Main {
         System.out.println("Generated all declarations");
     }
 
-    private static void printTable() throws IOException {
-        Map<BenchMark, Score> scores = new HashMap<>();
-        for (BenchMark benchmark : allBenchmarks) {
-            if (benchmark.declarationPath == null || benchmark == test) {
-                continue;
-            }
-            Score score = runAnalysisWithTimeout(benchmark, Long.MAX_VALUE);
-            if (score == null) {
-                scores.put(benchmark, new Score(-1, -1, -1));
-            } else {
-                scores.put(benchmark, score);
-            }
-        }
-        System.out.print("\n\n\n\n\n");
-        System.out.println("\\begin{table}[]\n" +
-                "\\centering\n" +
-                "\\begin{tabular}{l|l|ccc}\n" +
-                "& & \\multicolumn{3}{c}{\\textit{score}}  \\\\\n" +
-                "\\textit{benchmark} & \\textit{lines of code} & \\multicolumn{1}{l}{\\textit{f-measure}} & \\multicolumn{1}{l}{\\textit{recall}} & \\multicolumn{1}{l}{\\textit{precision}} \\\\ \\hline");
-        List<BenchMark> benches = scores.keySet().stream().sorted((o1, o2) -> o1.name.compareTo(o2.name)).collect(Collectors.toList());
-        for (int i = 0; i < benches.size(); i++) {
-            BenchMark benchMark = benches.get(i);
-            String fMeasure = toFixed(scores.get(benchMark).fMeasure, 3);
-            String precision = toFixed(scores.get(benchMark).precision, 3);
-            String recall = toFixed(scores.get(benchMark).recall, 3);
-            System.out.print(benchMark.name + " & " + Util.lines(benchMark.scriptPath) + " & " + fMeasure + " & " + precision + " & " + recall);
-            if (i != benches.size() - 1) {
-                System.out.print(" \\\\");
-            }
-            System.out.print("\n");
-        }
-
-        System.out.println("\\end{tabular}\n" +
-                "\\caption{Evaluation of benchmarks} \\label{evaluationTable}\n" +
-                "\\end{table}");
-
-        System.out.println("\n\n");
-        double sumScore = 0;
-        for (Score score : scores.values()) {
-            sumScore += score.fMeasure;
-        }
-        System.out.println("Combined score: " + sumScore);
-
-    }
-
-    public static Score runAnalysisWithTimeout(BenchMark benchMark, long timeout) {
-        AtomicReference<Score> result = new AtomicReference<>(null);
+    public static Evaluation runAnalysisWithTimeout(BenchMark benchMark, long timeout) {
+        AtomicReference<Evaluation> result = new AtomicReference<>(null);
         Thread benchThread = new Thread(() -> {
             try {
-                result.set(runAnalysis(benchMark).score());
+                result.set(runAnalysis(benchMark));
             } catch (IOException e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -546,6 +532,44 @@ public class Main {
             }
             if (benchThread.isAlive()) {
                 System.err.println("Stopping benchmark because of timeout.");
+                //noinspection deprecation
+                benchThread.stop(); // <- Deprecated, and i know it.
+            }
+        });
+        killThread.start();
+        try {
+            benchThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        killThread.interrupt();
+        return result.get();
+    }
+
+    @SuppressWarnings("Duplicates")
+    public static Map<String, DeclarationType> createDeclarationWithTimeout(BenchMark benchMark, long timeout) {
+        AtomicReference<Map<String, DeclarationType>> result = new AtomicReference<>(null);
+        Thread benchThread = new Thread(() -> {
+            try {
+                result.set(createDeclaration(benchMark));
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        });
+        benchThread.start();
+        Thread killThread = new Thread(() -> {
+            try {
+                Thread.sleep(timeout);
+            } catch (InterruptedException e) {
+                return;
+            }
+            if (result.get() != null) {
+                return;
+            }
+            if (benchThread.isAlive()) {
+                System.err.println("Stopping benchmark because of timeout.");
+                benchThread.interrupt();
                 //noinspection deprecation
                 benchThread.stop(); // <- Deprecated, and i know it.
             }

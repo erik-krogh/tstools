@@ -45,7 +45,7 @@ public class CompareVersions {
 
         String orgDeclarationPath = newScript.declarationPath;
         newScript.declarationPath = oldBenchResultingDecPath;
-        DebugEvaluation newEvaluation = (DebugEvaluation) Main.getEvaluation(newScript, Main.getResultingDeclarationPath(newScript));
+        DebugEvaluation newEvaluation = (DebugEvaluation) Main.getEvaluation(newScript, Main.getResultingDeclarationPath(newScript), 0);
         newScript.declarationPath = orgDeclarationPath;
 
         Set<DebugEvaluation.EvaluationStatement> allStatements = newEvaluation.getAllStatements();
@@ -78,7 +78,7 @@ public class CompareVersions {
     }
 
     public static List<DebugEvaluation.EvaluationStatement> compareHandWritten(BenchMark oldBench, BenchMark newBench) throws IOException {
-        return ((DebugEvaluation)Main.getEvaluation(oldBench, newBench.declarationPath)).getAllStatements().stream().filter(stmt -> stmt.type != TRUE_POSITIVE).sorted(sortStmts).collect(Collectors.toList());
+        return ((DebugEvaluation)Main.getEvaluation(oldBench, newBench.declarationPath, 0)).getAllStatements().stream().filter(stmt -> stmt.type != TRUE_POSITIVE).sorted(sortStmts).collect(Collectors.toList());
     }
 
     public static Set<DebugEvaluation.EvaluationStatement> compareTheTwo(BenchMark benchMark, BenchMark newScript) throws IOException {
@@ -146,10 +146,10 @@ public class CompareVersions {
             throw new RuntimeException("Not setup for this");
         }
 
-        DebugEvaluation oldEvaluation = (DebugEvaluation) Main.getEvaluation(benchMark, Main.getResultingDeclarationPath(benchMark));
+        DebugEvaluation oldEvaluation = (DebugEvaluation) Main.getEvaluation(benchMark, Main.getResultingDeclarationPath(benchMark), 0);
         String orgDeclarationpath = newScript.declarationPath;
         newScript.declarationPath = benchMark.declarationPath;
-        DebugEvaluation newEvaluation = (DebugEvaluation) Main.getEvaluation(newScript, Main.getResultingDeclarationPath(newScript));
+        DebugEvaluation newEvaluation = (DebugEvaluation) Main.getEvaluation(newScript, Main.getResultingDeclarationPath(newScript), 0);
         newScript.declarationPath = orgDeclarationpath;
 
         Set<DebugEvaluation.EvaluationStatement> uniqueToOld = oldEvaluation.getAllStatements();
