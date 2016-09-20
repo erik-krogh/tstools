@@ -20,7 +20,6 @@ public interface Description {
 
     enum SimpleDescriptionType {
         WRONG_NATIVE_TYPE, EXPECTED_INTERFACE, WAS_INTERFACE, SHOULD_NOT_BE_CONSTRUCTOR, SHOULD_NOT_BE_FUNCTION, SHOULD_BE_CONSTRUCTOR, SHOULD_BE_FUNCTION, WAS_FUNCTION, MISSING_INDEXER, EXCESS_INDEXER, WAS_INDEXER, RIGHT_SIMPLE_TYPE, WAS_TUPLE, WAS_NOT_TUPLE, WAS_SYMBOL, WAS_NOT_SYMBOL, RIGHT_NATIVE_TYPE
-
     }
 
     public static final class SimpleDescription implements Description{
@@ -44,6 +43,11 @@ public interface Description {
         @Override
         public DescriptionType getType() {
             return type;
+        }
+
+        @Override
+        public String toString() {
+            return simpleType.toString();
         }
     }
 

@@ -29,4 +29,9 @@ public class WrongNumberOfArgumentsDescription implements Description {
     public int getNewArgCount() {
         return newArgCount;
     }
+
+    @Override
+    public String toString() {
+        return "Wrong number of arguments, was supposed to be " + oldArgCount + " was " + newArgCount;
+    }
 }

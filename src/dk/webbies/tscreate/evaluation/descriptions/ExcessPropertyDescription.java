@@ -23,4 +23,9 @@ public class ExcessPropertyDescription implements Description {
     public DescriptionType getType() {
         return DescriptionType.FALSE_POSITIVE;
     }
+
+    @Override
+    public String toString() {
+        return "Excess property: " + property;
+    }
 }

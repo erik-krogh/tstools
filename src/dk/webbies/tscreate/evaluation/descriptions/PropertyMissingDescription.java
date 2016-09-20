@@ -23,4 +23,9 @@ public class PropertyMissingDescription implements Description {
     public DescriptionType getType() {
         return DescriptionType.FALSE_NEGATIVE;
     }
+
+    @Override
+    public String toString() {
+        return "Property missing: " + property;
+    }
 }

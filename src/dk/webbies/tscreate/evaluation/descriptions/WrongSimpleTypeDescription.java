@@ -32,4 +32,9 @@ public class WrongSimpleTypeDescription implements Description {
     public DescriptionType getType() {
         return DescriptionType.FALSE_NEGATIVE;
     }
+
+    @Override
+    public String toString() {
+        return "Wrong simple type, was supposed to be: " + expected.getKind().toString() + " was " + actual;
+    }
 }
