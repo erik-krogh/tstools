@@ -100,7 +100,7 @@ public class Options {
         }
     }
 
-    public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.COMBINED;
+    public StaticAnalysisMethod staticMethod = StaticAnalysisMethod.UPPER_LOWER;
 
     public enum Runtime {
         PHANTOM,
