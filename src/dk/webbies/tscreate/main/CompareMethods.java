@@ -58,8 +58,10 @@ public class CompareMethods {
         blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.leaflet, Options.StaticAnalysisMethod.UNIFICATION));
 
-        blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
-        blackList.add(new Pair<>(BenchMark.react, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.react15, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.react15, Options.StaticAnalysisMethod.UNIFICATION));
+        blackList.add(new Pair<>(BenchMark.react014, Options.StaticAnalysisMethod.UNIFICATION_CONTEXT_SENSITIVE));
+        blackList.add(new Pair<>(BenchMark.react014, Options.StaticAnalysisMethod.UNIFICATION));
 
         /*blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION_CONTEXT_SENSITIVE));
         blackList.add(new Pair<>(BenchMark.ember, Options.StaticAnalysisMethod.OLD_UNIFICATION));
@@ -133,7 +135,7 @@ public class CompareMethods {
                 }
 
                 println("With method: " + config.prettyString);
-                Score score = Main.getScore(benchMark);
+                Score score = Main.getScore(benchMark, timeout);
                 scores.put(config, score);
             }
 
