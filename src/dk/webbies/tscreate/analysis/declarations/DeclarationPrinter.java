@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  * Created by Erik Krogh Kristensen on 04-09-2015.
  */
 public class DeclarationPrinter {
-    private final Map<String, DeclarationType> declarations;
+    public final Map<String, DeclarationType> declarations;
     public Map<DeclarationType, String> declarationNames;
     private DeclarationParser.NativeClassesMap nativeClasses;
 
@@ -163,8 +163,6 @@ public class DeclarationPrinter {
     }
 
     public String print() {
-        System.out.println("Printing declarations");
-
         if (ident != 0) {
             throw new RuntimeException("Can only print top-level declarations with this method");
         }
@@ -334,8 +332,10 @@ public class DeclarationPrinter {
     }
 
     Map<Tuple3<DeclarationType, Integer, String>, String> printedTypeCache = new HashMap<>();
+    private boolean printingInlineType = false;
     public String printType(DeclarationType type, int indentationLevel, String typePath) {
         try {
+            printingInlineType = true;
             Tuple3<DeclarationType, Integer, String> cacheKey = new Tuple3<>(type, indentationLevel, typePath);
             if (printedTypeCache.containsKey(cacheKey)) {
                 return printedTypeCache.get(cacheKey);
@@ -388,6 +388,8 @@ public class DeclarationPrinter {
             return result;
         } catch (GotCyclic e) {
             return "any"; // Happens in some corner-cases with array-indexers. Where the printer just prints "any", but the type is actually something complicated.
+        } finally {
+            this.printingInlineType = false;
         }
     }
 
@@ -489,15 +491,26 @@ public class DeclarationPrinter {
     }
 
     private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor, String prefix) {
-        if (type instanceof FunctionType && ((FunctionType)type).getAstNodes().size() == 1) {
+        String jsDoc = getJSDoc(type);
+        if (jsDoc != null) {
+            printObjectField(arg, name, type, visitor, prefix, jsDoc);
+        } else {
+            printObjectField(arg, name, type, visitor, prefix, null);
+        }
+    }
+
+    private String getJSDoc(DeclarationType type) {
+        if (type instanceof FunctionType) {
+            if (((FunctionType) type).getAstNodes().isEmpty()) {
+                return null;
+            }
             FunctionExpression function = ((FunctionType) type).getAstNodes().iterator().next();
             if (function.jsDoc != null) {
-                String jsdoc = function.jsDoc.value;
-                printObjectField(arg, name, type, visitor, prefix, jsdoc);
-                return;
+                return function.jsDoc.value;
             }
         }
-        printObjectField(arg, name, type, visitor, prefix, null);
+
+        return null;
     }
 
     private void printObjectField(VisitorArg arg, String name, DeclarationType type, DeclarationTypeVisitorWithArgument<Void, VisitorArg> visitor, String prefix, String jsDoc) {
@@ -516,6 +529,9 @@ public class DeclarationPrinter {
     }
 
     private void printJSDoc(String comment, VisitorArg arg) {
+        if (!options.useJSDoc) {
+            return;
+        }
         String[] lines = comment.split("\n");
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
@@ -532,7 +548,12 @@ public class DeclarationPrinter {
             printsAsInterface.get(functionType).accept(visitor, arg);
         } else {
             if (arg.contains(functionType)) {
-                throw new GotCyclic(arg.getSeen());
+                if (printingInlineType) {
+                    arg.builder.append("any");
+                    return;
+                } else {
+                    throw new GotCyclic(arg.getSeen());
+                }
             }
 
             arg = arg.cons(functionType, true);
@@ -588,7 +609,7 @@ public class DeclarationPrinter {
         }
         write(builder, "}");
         String declarationsString = builder.toString();
-        if (declarationsString.contains("\n") || declarationsString.length() > 50) {
+        if ((declarationsString.contains("\n") || declarationsString.length() > 50) && !this.printingInlineType) {
             throw new GotCyclic(arg.getSeen());
         } else {
             arg.builder.append(declarationsString);
@@ -624,7 +645,12 @@ public class DeclarationPrinter {
                 return printsAsInterface.get(objectType).accept(this, arg);
             } else {
                 if (arg.contains(objectType)) {
-                    throw new GotCyclic(arg.getSeen());
+                    if (printingInlineType) {
+                        arg.builder.append("any");
+                        return null;
+                    } else {
+                        throw new GotCyclic(arg.getSeen());
+                    }
                 }
 
                 arg = arg.cons(objectType, false);
