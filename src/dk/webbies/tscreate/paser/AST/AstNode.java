@@ -18,4 +18,19 @@ public abstract class AstNode {
         return contents.substring(start.offset, end.offset);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AstNode astNode = (AstNode) o;
+
+        return location.equals(astNode.location);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return location.hashCode();
+    }
 }
