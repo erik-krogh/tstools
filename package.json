@@ -12,7 +12,9 @@
     "jsnap": "https://github.com/webbiesdk/jsnap.git#fc5b788eb033707cfb85166a3eea3e484b6aca89",
     "ts-spec-reader": "https://github.com/cs-au-dk/ts-spec-reader.git#4e5b3210635398ebd4a265921eca3def920c3fca"
   },
-  "postinstall": "node node_modules/typescript/bin/tsc.js --module commonjs node_modules/ts-type-reader/src/*.ts",
+  "scripts": {
+    "postinstall": "node node_modules/typescript/bin/tsc.js --module commonjs node_modules/ts-type-reader/src/*.ts"
+  },
   "devDependencies": {},
   "repository": {
     "type": "git",
