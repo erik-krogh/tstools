@@ -9,21 +9,18 @@
   "dependencies": {
     "doctrine": "^1.2.1",
     "doctrine-cli": "^1.0.4",
-    "jsnap": "https://github.com/webbiesdk/jsnap.git",
-    "ts-spec-reader": "https://github.com/cs-au-dk/ts-spec-reader.git"
+    "jsnap": "https://github.com/webbiesdk/jsnap.git#fc5b788eb033707cfb85166a3eea3e484b6aca89",
+    "ts-spec-reader": "https://github.com/cs-au-dk/ts-spec-reader.git#4e5b3210635398ebd4a265921eca3def920c3fca"
   },
   "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/webbiesdk/TSCreate.git"
+    "url": "git+https://github.com/webbiesdk/tstools.git"
   },
   "author": "Erik Krogh Kristensen <erik@webbies.dk>",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/webbiesdk/TSCreate/issues"
+    "url": "https://github.com/webbiesdk/tstools/issues"
   },
-  "homepage": "https://github.com/webbiesdk/TSCreate#readme"
+  "homepage": "http://brics.dk/tstools"
 }
