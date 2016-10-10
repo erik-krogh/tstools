@@ -8,7 +8,9 @@ tests/**/*.normalized.d.ts
 tests/**/*.jsnap
 lib/jsnap
 lib/ts-type-reader
+lib/ts-spec-reader
 synopsis/
 **/tmp.html
 libs/
 diffViewer/*.json
+repositories/
