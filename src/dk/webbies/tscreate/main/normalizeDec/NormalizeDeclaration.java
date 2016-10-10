@@ -32,9 +32,9 @@ import static dk.webbies.tscreate.declarationReader.DeclarationParser.parseNativ
  */
 public class NormalizeDeclaration {
     public static void main(String[] args) throws IOException {
-        for (BenchMark benchmark : BenchMark.allBenchmarks) {
+        /*for (BenchMark benchmark : BenchMark.allBenchmarks) {
             normalize(benchmark);
-        }
+        }*/
 
     }
 
@@ -61,6 +61,17 @@ public class NormalizeDeclaration {
 
         DeclarationParser.NativeClassesMap nativeClasses = parseNatives(globalObject, benchMark.languageLevel.environment, benchMark.dependencyDeclarations(), new ClassHierarchyExtractor(globalObject, benchMark.getOptions()).extract(), emptySnap);
 
+        DeclarationPrinter printer = generateDeclarationPrinterFromHandwritten(benchMark, globalObject, nativeClasses, typeNames, spec, global);
+        String printedDeclaration = printer.print();
+//        System.out.println(printedDeclaration);
+
+        assert benchMark.declarationPath.endsWith(".d.ts");
+        String normalizedPath = benchMark.declarationPath.substring(0, benchMark.declarationPath.length() - 5) + ".normalized.d.ts";
+
+        Util.writeFile(normalizedPath, printedDeclaration);
+    }
+
+    public static DeclarationPrinter generateDeclarationPrinterFromHandwritten(BenchMark benchMark, Snap.Obj globalObject, DeclarationParser.NativeClassesMap nativeClasses, Map<Type, String> typeNames, SpecReader spec, InterfaceType global) throws IOException {
         TypeReducer reducer = new TypeReducer(globalObject, nativeClasses, benchMark.getOptions());
         ToDeclarationTypeVisitor converter = new ToDeclarationTypeVisitor(typeNames, DeclarationParser.getTypeNamesMap(spec), reducer);
 
@@ -103,13 +114,7 @@ public class NormalizeDeclaration {
             return type;
         });
 
-        String printedDeclaration = new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions()).print();
-//        System.out.println(printedDeclaration);
-
-        assert benchMark.declarationPath.endsWith(".d.ts");
-        String normalizedPath = benchMark.declarationPath.substring(0, benchMark.declarationPath.length() - 5) + ".normalized.d.ts";
-
-        Util.writeFile(normalizedPath, printedDeclaration);
+        return new DeclarationPrinter(declaration, nativeClasses, benchMark.getOptions());
     }
 
     private static Map<String, DeclarationType> mapTypes(TypeReducer reducer, Map<String, DeclarationType> declaration, Function<DeclarationType, DeclarationType> mapper) {
@@ -160,7 +165,7 @@ public class NormalizeDeclaration {
         }
     }
 
-    private static Map<Type, String> getTypeNames(SpecReader spec, BenchMark benchMark) {
+    public static Map<Type, String> getTypeNames(SpecReader spec, BenchMark benchMark) {
         SpecReader withoutLib = DeclarationParser.getTypeSpecification(benchMark.languageLevel.environment, benchMark.dependencyDeclarations());
 
         Map<Type, String> typesNames = DeclarationParser.getTypeNamesMap(spec);
