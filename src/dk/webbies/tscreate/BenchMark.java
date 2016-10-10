@@ -411,15 +411,6 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark ember27_small = gen(() -> {
-        Options options = new Options();
-        options.createInstances = true;
-        options.recordCalls = false;
-        BenchMark bench = new BenchMark("Ember.js (2.7)", "tests/ember/version27/delta_js_smallest.js", "tests/ember/version27/ember.d.ts", options, ES6);
-        bench.dependencies.add(Dependency.jQuery);
-        return bench;
-    });
-
     public static final BenchMark backbone = gen(() -> {
         Options options = new Options();
         options.createInstancesClassFilter = true;
