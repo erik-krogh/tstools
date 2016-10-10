@@ -1,7 +1,7 @@
 package dk.webbies.tscreate.main.patch;
 
 import com.google.gson.JsonObject;
-import dk.webbies.tscreate.util.JSONBuilder;
+import dk.webbies.tscreate.util.JSONBuild;
 
 import java.util.List;
 import java.util.Objects;
@@ -49,9 +49,9 @@ public class PatchFile {
     }
 
     public JsonObject toJSON() {
-        return JSONBuilder.createObject()
+        return JSONBuild.createObject()
                 .add("statements",
-                        JSONBuilder.fromCollection(this.statements.stream().map((patchStatement) -> patchStatement.toJSONObject(newInfo, oldInfo)).collect(Collectors.toList())))
+                        JSONBuild.fromCollection(this.statements.stream().map((patchStatement) -> patchStatement.toJSONObject(newInfo, oldInfo)).collect(Collectors.toList())))
                 .add("newName", newInfo.benchMark.name)
                 .add("oldName", oldInfo.benchMark.name)
                 .add("oldDeclaration", oldInfo.printedDeclaration)

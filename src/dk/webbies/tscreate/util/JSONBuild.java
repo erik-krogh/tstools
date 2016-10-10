@@ -9,7 +9,7 @@ import java.util.Collection;
 /**
  * Created by erik1 on 17-06-2016.
  */
-public class JSONBuilder {
+public class JSONBuild {
     public static ObjectBuilder createObject() {
         return new ObjectBuilder();
     }

@@ -3,7 +3,6 @@ package dk.webbies.tscreate.main.patch;
 import com.google.gson.JsonObject;
 import dk.webbies.tscreate.analysis.declarations.types.ClassType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
-import dk.webbies.tscreate.util.JSONBuilder;
 
 /**
  * Created by erik1 on 09-06-2016.

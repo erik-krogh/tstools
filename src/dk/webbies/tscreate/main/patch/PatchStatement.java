@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import dk.au.cs.casa.typescript.types.Type;
 import dk.webbies.tscreate.analysis.declarations.types.*;
 import dk.webbies.tscreate.paser.AST.FunctionExpression;
-import dk.webbies.tscreate.util.JSONBuilder;
+import dk.webbies.tscreate.util.JSONBuild;
 import dk.webbies.tscreate.util.LookupDeclarationType;
 import dk.webbies.tscreate.util.LookupType;
 import dk.webbies.tscreate.util.Util;
@@ -56,13 +56,13 @@ public interface PatchStatement {
 
     JsonObject toJSONObject(PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo);
 
-    static JSONBuilder.ObjectBuilder build(String typePath, PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo) {
+    static JSONBuild.ObjectBuilder build(String typePath, PatchFileFactory.BenchmarkInformation newInfo, PatchFileFactory.BenchmarkInformation oldInfo) {
         String containerPath = withoutLastPart(typePath);
 
         InclosingFunctionResult newInclosingFunction = getInclodingFunction(typePath, newInfo);
         InclosingFunctionResult oldInclosingFunction = getInclodingFunction(typePath, oldInfo);
 
-        return JSONBuilder.createObject()
+        return JSONBuild.createObject()
                 .add("isInOldDec", PatchStatement.findInHandWritten(typePath, oldInfo) != null)
                 .add("isInOldDecContainer", PatchStatement.findInHandWritten(containerPath, oldInfo) != null)
                 .add("isInNewDec", PatchStatement.findInHandWritten(typePath, newInfo) != null)

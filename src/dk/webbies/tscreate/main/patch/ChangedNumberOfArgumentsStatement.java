@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import dk.webbies.tscreate.analysis.declarations.types.ClassType;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.declarations.types.FunctionType;
-import dk.webbies.tscreate.util.JSONBuilder;
 
 /**
  * Created by erik1 on 10-06-2016.
