@@ -174,7 +174,12 @@ public class MixedTypeAnalysis implements TypeAnalysis {
         if (closure.recordedCalls == null) {
             return false;
         }
-        int argsSize = closure.function.astNode.getArguments().size();
+        int argsSize;
+        if (closure.function.astNode != null) {
+            argsSize = closure.function.astNode.getArguments().size();
+        } else {
+            argsSize = JSNAPUtil.getCalls(closure.recordedCalls).stream().map(call -> call.arguments.size()).reduce(0, Math::max);
+        }
         List<Integer> notSeenArgs = new ArrayList<>();
         for (int i = 0; i < argsSize; i++) {
             notSeenArgs.add(i);
