@@ -68,14 +68,24 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
             }
             InterfaceType instanceType = (InterfaceType) uncastInstancetype;
             if (instanceType.getBaseTypes() != null && !instanceType.getBaseTypes().isEmpty()) {
-                assert instanceType.getBaseTypes().size() == 1;
-                Type superType = instanceType.getBaseTypes().iterator().next();
-                if (libraryTypeNames.containsKey(superType)) {
-                    String name = libraryTypeNames.get(superType);
-                    pair.right.setSuperClass(new NamedObjectType(name, false));
+                if (instanceType.getBaseTypes().size() == 1) {
+                    Type superType = instanceType.getBaseTypes().iterator().next();
+                    if (libraryTypeNames.containsKey(superType)) {
+                        String name = libraryTypeNames.get(superType);
+                        pair.right.setSuperClass(new NamedObjectType(name, false));
+                    } else {
+                        dk.webbies.tscreate.analysis.declarations.types.ClassType superClass = classesMap.get(superType);
+                        pair.right.setSuperClass(superClass);
+                    }
                 } else {
-                    dk.webbies.tscreate.analysis.declarations.types.ClassType superClass = classesMap.get(superType);
-                    pair.right.setSuperClass(superClass);
+                    List<Type> filtered = instanceType.getBaseTypes().stream().filter(classesMap::containsKey).collect(Collectors.toList());
+                    if (filtered.size() == 0) {
+                        pair.right.setSuperClass(null);
+                    } else  if (filtered.size() == 1) {
+                        pair.right.setSuperClass(classesMap.get(filtered.iterator().next()));
+                    } else {
+                        throw new RuntimeException();
+                    }
                 }
             }
         }
@@ -243,7 +253,11 @@ public class ToDeclarationTypeVisitor implements TypeVisitor<DeclarationType> {
             if (uncastReturnType instanceof PrimitiveDeclarationType /* Happens if literally empty */|| uncastReturnType instanceof dk.webbies.tscreate.analysis.declarations.types.ClassType /*Not sure when this happens */) {
                 returnType = new InterfaceDeclarationType(null, EMPTY_SET);
             } else {
-                returnType = (InterfaceDeclarationType) uncastReturnType;
+                if (uncastReturnType instanceof NamedObjectType) {
+                    returnType = new InterfaceDeclarationType(Collections.EMPTY_SET); // Enough of an edge-case, only happens in Jasmine.
+                } else {
+                    returnType = (InterfaceDeclarationType) uncastReturnType;
+                }
             }
 
             interfaceToClassInstanceMap.put(returnType, clazz.getEmptyNameInstance());
