@@ -1,5 +1,6 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
+import dk.webbies.tscreate.analysis.methods.old.analysis.UnionConstraintVisitor;
 import dk.webbies.tscreate.util.MappedCollection;
 import dk.webbies.tscreate.util.Tarjan;
 
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 public final class UnionClass {
     public UnionFindSolver solver;
     private Map<String, UnionNode> fields = null;
-    public List<Runnable> callbacks = null;
+    public List<UnionFindCallback> callbacks = null;
 
     private UnionFeature feature = new UnionFeature(this);
 
@@ -169,7 +170,7 @@ public final class UnionClass {
         }
     }
 
-    public void addChangeCallback(Runnable callback) {
+    public void addChangeCallback(UnionFindCallback callback) {
         if (this.callbacks == null) {
             this.callbacks = new ArrayList<>();
         }
@@ -190,6 +191,7 @@ public final class UnionClass {
         hasRunAtIteration = iteration;
         waitingForCallback = false;
         if (this.callbacks != null) {
+            this.callbacks = this.callbacks.stream().distinct().collect(Collectors.toList());
             for (Runnable callback : new ArrayList<>(this.callbacks)) {
                 callback.run();
             }

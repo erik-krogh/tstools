@@ -76,7 +76,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
 
             case EQUAL: // = // assignment
                 solver.union(lhs, new IncludeNode(solver, rhs));
-                if (typeAnalysis.options.unifyShortCurcuitOrsAtAssignments) {
+                if (typeAnalysis.getOptions().unifyShortCurcuitOrsAtAssignments) {
                     if (op.getRhs() instanceof BinaryExpression && ((BinaryExpression) op.getRhs()).getOperator() == Operator.OR) {
                         BinaryExpression orExp = (BinaryExpression) op.getRhs();
                         IncludeNode rhsInclude = (IncludeNode) rhs; // I here assume that the result returns an IncludeNode
@@ -103,10 +103,6 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
             case MULT_EQUAL: // *=
             case DIV_EQUAL: // /=
             case MOD_EQUAL: // %=
-            case LESS_THAN: // <
-            case LESS_THAN_EQUAL: // <=
-            case GREATER_THAN: // >
-            case GREATER_THAN_EQUAL: // >=
             case BITWISE_AND: // &
             case BITWISE_OR: // |
             case BITWISE_XOR: // ^
@@ -120,6 +116,11 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
             case BITWISE_AND_EQUAL: // &=
             case BITWISE_XOR_EQUAL: // ^=
                 return primitiveFactory.number();
+            case LESS_THAN: // <
+            case LESS_THAN_EQUAL: // <=
+            case GREATER_THAN: // >
+            case GREATER_THAN_EQUAL: // >=
+                return primitiveFactory.bool();
             case INSTANCEOF: // instanceof
                 return primitiveFactory.bool();
             case IN: // in
@@ -327,6 +328,13 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
         UnionNode initNode = variableNode.getInit().accept(this);
         UnionNode identifierNode = variableNode.getlValue().accept(this);
         solver.union(identifierNode, new IncludeNode(solver, initNode));
+
+        if (typeAnalysis.getOptions().unifyShortCurcuitOrsAtAssignments) {
+            if (variableNode.getInit() instanceof BinaryExpression && ((BinaryExpression) variableNode.getInit()).getOperator() == Operator.OR) {
+                IncludeNode rhsInclude = (IncludeNode) initNode; // I here assume that the result returns an IncludeNode
+                solver.union(rhsInclude.getNodes());
+            }
+        }
         return null;
     }
 
@@ -439,7 +447,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
         return thisNode;
     }
 
-    private final class IncludesWithFieldsResolver implements Runnable {
+    private final class IncludesWithFieldsResolver extends UnionFindCallback {
         private final UnionNode node;
         private final List<String> fields;
 
@@ -448,6 +456,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
         }
 
         public IncludesWithFieldsResolver(UnionNode node, List<String> fields) {
+            super(node, fields);
             this.node = node;
             this.fields = fields;
         }
@@ -488,7 +497,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
     }
 
 
-    private final class NewCallResolver implements Runnable {
+    private final class NewCallResolver extends UnionFindCallback {
         private final UnionNode function;
         private final List<UnionNode> args;
         private final UnionNode thisNode;
@@ -497,6 +506,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode, Expression callExpression) {
+            super(function, thisNode, callExpression, args);
             this.function = function;
             this.args = args;
             this.thisNode = thisNode;
@@ -554,7 +564,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
         }
     }
 
-    private final class CallGraphResolver implements Runnable {
+    private final class CallGraphResolver extends UnionFindCallback {
         List<UnionNode> args;
         private final Expression callExpression; // Useful for debugging.
         boolean constructorCalls;
@@ -562,6 +572,7 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
         private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, UnionNode returnNode, Expression callExpression) {
+            super(thisNode, function, returnNode, args);
             MixedConstraintVisitor.DisableSomeCallFlow disableSomeCallFlow = new MixedConstraintVisitor.DisableSomeCallFlow(args, returnNode).invoke(typeAnalysis, solver);
             args = disableSomeCallFlow.getArgs();
             returnNode = disableSomeCallFlow.getReturnNode();
@@ -640,13 +651,14 @@ public class PureSubsetsContextSensitiveConstraintVisitor implements ExpressionV
                             solver.union(this.functionNode.returnNode, returnFunction);
                             solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, returnFunction.arguments, returnFunction.returnNode, null));
 
-                            solver.runWhenChanged(this.functionNode.thisNode, () -> {
+                            // FIXME:
+                            /*solver.runWhenChanged(this.functionNode.thisNode, () -> {
                                 int maxArgs = getFunctionNodes(this.functionNode.thisNode).stream().map(func -> func.arguments.size()).reduce(0, Math::max);
                                 if (maxArgs > maxArgsSeen.get()) {
                                     maxArgsSeen.set(maxArgs);
                                     solver.union(returnFunction, FunctionNode.create(maxArgs - boundArgs, solver));
                                 }
-                            });
+                            });*/
                         } else {
                             List<FunctionNode> signatures = MixedConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
                             signatures.forEach(sig -> {

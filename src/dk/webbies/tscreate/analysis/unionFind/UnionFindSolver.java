@@ -43,7 +43,7 @@ public class UnionFindSolver {
     public void finish() {
         while (doneCallbacks.size() > 0) {
             int count = iteration++;
-//            System.out.println(" - " + count + " (" + doneCallbacks.size() + ")");
+            System.out.println(" - " + count + " (" + doneCallbacks.size() + ")");
             ArrayList<UnionClass> copy = new ArrayList<>(doneCallbacks);
             doneCallbacks.clear();
             for (UnionClass unionClass : copy) {
@@ -88,7 +88,7 @@ public class UnionFindSolver {
         return true;
     }
 
-    public void runWhenChanged(UnionNode node, Runnable callback) {
+    public void runWhenChanged(UnionNode node, UnionFindCallback callback) {
         node.getUnionClass().addChangeCallback(callback);
     }
 
@@ -136,8 +136,7 @@ public class UnionFindSolver {
         /* Otherwise, look up the parent of this element, then compress the
          * path.
          */
-        elem.parent = recFind(elem.parent);
-        return elem.parent;
+        return elem.parent = recFind(elem.parent);
     }
 
     public UnionNode union(UnionNode... nodes) {
@@ -174,6 +173,9 @@ public class UnionFindSolver {
      * @return UnionNode, returns the first argument, for chaining.
      */
     public UnionNode union(UnionNode one, UnionNode two) {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new RuntimeException("INTERRUPT!");
+        }
         if (one == null || two == null) {
             throw new RuntimeException("A unionNode cannot be null");
         }

@@ -88,7 +88,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 } else {
                     solver.union(lhs, rhs);
                 }
-                if (typeAnalysis.options.unifyShortCurcuitOrsAtAssignments) {
+                if (typeAnalysis.getOptions().unifyShortCurcuitOrsAtAssignments) {
                     if (op.getRhs() instanceof BinaryExpression && ((BinaryExpression) op.getRhs()).getOperator() == Operator.OR) {
                         IncludeNode rhsInclude = (IncludeNode) rhs; // I here assume that the result returns an IncludeNode
                         solver.union(rhsInclude.getNodes());
@@ -115,10 +115,6 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             case MULT_EQUAL: // *=
             case DIV_EQUAL: // /=
             case MOD_EQUAL: // %=
-            case LESS_THAN: // <
-            case LESS_THAN_EQUAL: // <=
-            case GREATER_THAN: // >
-            case GREATER_THAN_EQUAL: // >=
             case BITWISE_AND: // &
             case BITWISE_OR: // |
             case BITWISE_XOR: // ^
@@ -134,6 +130,13 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 solver.union(primitiveFactory.number(), lhs);
                 solver.union(primitiveFactory.number(), rhs);
                 return primitiveFactory.number();
+            case LESS_THAN: // <
+            case LESS_THAN_EQUAL: // <=
+            case GREATER_THAN: // >
+            case GREATER_THAN_EQUAL: // >=
+                solver.union(primitiveFactory.number(), lhs);
+                solver.union(primitiveFactory.number(), rhs);
+                return primitiveFactory.bool();
             case INSTANCEOF: // instanceof
                 return primitiveFactory.bool();
             case IN: // in
@@ -195,7 +198,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
     @Override
     public UnionNode visit(ThisExpression thisExpression) {
-        if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses) {
+        if (typeAnalysis.getOptions().classOptions.onlyUseThisWithFieldAccesses) {
             return new EmptyNode(solver);
         } else {
             return this.functionNode.thisNode;
@@ -250,7 +253,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             throw new RuntimeException("Cannot have null declarations");
         }
         UnionNode result;
-        if (!typeAnalysis.options.unionHeapIdentifiers) {
+        if (!typeAnalysis.getOptions().unionHeapIdentifiers) {
             result = getIdentifier(identifier, solver, identifierMap);
         } else {
             result = solver.union(getIdentifier(identifier, solver, identifierMap), getIdentifier(identifier.getDeclaration(), solver, identifierMap));
@@ -360,6 +363,14 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         UnionNode initNode = variableNode.getInit().accept(this);
         UnionNode identifierNode = variableNode.getlValue().accept(this);
         solver.union(initNode, identifierNode);
+
+        if (typeAnalysis.getOptions().unifyShortCurcuitOrsAtAssignments) {
+            if (variableNode.getInit() instanceof BinaryExpression && ((BinaryExpression) variableNode.getInit()).getOperator() == Operator.OR) {
+                IncludeNode rhsInclude = (IncludeNode) initNode; // I here assume that the result returns an IncludeNode
+                solver.union(rhsInclude.getNodes());
+            }
+        }
+
         return null;
     }
 
@@ -405,7 +416,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return returnType;
     }
 
-    public static final class DynamicAccessResolver implements Runnable {
+    public static final class DynamicAccessResolver extends UnionFindCallback {
         private final UnionNode operand;
         private final UnionNode lookupKey;
         private final UnionNode returnType;
@@ -413,6 +424,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private UnionFindSolver solver;
 
         public DynamicAccessResolver(UnionNode operand, UnionNode lookupKey, UnionNode returnType, Snap.Obj globalObject, UnionFindSolver solver) {
+            super(operand, lookupKey, returnType);
             this.operand = operand;
             this.lookupKey = lookupKey;
             this.returnType = returnType;
@@ -439,6 +451,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                 List<UnionNode> newIncludes = new ArrayList<>();
                 UnionFeature.getReachable(operand.getFeature()).forEach(feature -> {
                     feature.getObjectFields().forEach((fieldName, fieldType) -> {
+                        fieldType = fieldType.findParent();
                         if (Util.isInteger(fieldName)) {
                             if (returnType.getUnionClass().includes == null || !returnType.getUnionClass().includes.contains(fieldType)) {
                                 newIncludes.add(fieldType);
@@ -494,7 +507,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
             solver.runWhenChanged(object, new MemberResolver(member, objectExp, result, solver, heapFactory));
             solver.runWhenChanged(object, new IncludesWithFieldsResolver(object, ObjectNode.FIELD_PREFIX + member.getProperty()));
 
-            if (typeAnalysis.options.classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
+            if (typeAnalysis.getOptions().classOptions.onlyUseThisWithFieldAccesses && member.getExpression() instanceof ThisExpression) {
                 solver.union(MixedConstraintVisitor.this.functionNode.thisNode, object);
             }
             return this;
@@ -525,7 +538,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         return thisNode;
     }
 
-    protected final class IncludesWithFieldsResolver implements Runnable {
+    protected final class IncludesWithFieldsResolver extends UnionFindCallback {
         private final UnionNode node;
         private final List<String> fields;
 
@@ -534,13 +547,14 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
 
         public IncludesWithFieldsResolver(UnionNode node, List<String> fields) {
+            super(node, fields);
             this.node = node;
             this.fields = fields;
         }
 
         @Override
         public void run() {
-            if (!typeAnalysis.options.resolveIncludesWithFields) {
+            if (!typeAnalysis.getOptions().resolveIncludesWithFields) {
                 return;
             }
             UnionClass myClass = this.node.getUnionClass();
@@ -573,7 +587,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         }
     }
 
-    public static final class MemberResolver implements Runnable {
+    public static final class MemberResolver extends UnionFindCallback {
         private MemberExpression member;
         private final UnionNode expressionNode;
         private final UnionNode memberNode;
@@ -584,6 +598,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         // expressionNode = node for "foo" in "foo.bar".
         // memberNode = node for "foo.bar" in "foo.bar".
         public MemberResolver(MemberExpression member, UnionNode expressionNode, UnionNode memberNode, UnionFindSolver solver, HeapValueFactory heapFactory) {
+            super(member.getProperty(), expressionNode, memberNode);
             this.member = member;
             this.expressionNode = expressionNode;
             this.memberNode = memberNode;
@@ -631,7 +646,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
 
 
     @SuppressWarnings("Duplicates")
-    private final class NewCallResolver implements Runnable {
+    private final class NewCallResolver extends UnionFindCallback {
         private final UnionNode function;
         private final List<UnionNode> args;
         private final UnionNode thisNode;
@@ -640,6 +655,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode, Expression callExpression) {
+            super(function, thisNode, args);
             this.function = function;
             this.args = args;
             this.thisNode = thisNode;
@@ -672,7 +688,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                         }
                         LibraryClass clazz = typeAnalysis.libraryClasses.get(closure.getProperty("prototype").value);
                         if (clazz != null) {
-                            if (typeAnalysis.options.classOptions.unionThisFromConstructedObjects) {
+                            if (typeAnalysis.getOptions().classOptions.unionThisFromConstructedObjects) {
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));
@@ -698,7 +714,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
     }
 
     @SuppressWarnings("Duplicates")
-    private final class CallGraphResolver implements Runnable {
+    private final class CallGraphResolver extends UnionFindCallback {
         List<UnionNode> args;
         private final Expression callExpression;
         boolean constructorCalls;
@@ -706,6 +722,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
         private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, UnionNode returnNode, Expression callExpression) {
+            super(thisNode, function, returnNode, args);
             DisableSomeCallFlow disableSomeCallFlow = new DisableSomeCallFlow(args, returnNode).invoke(typeAnalysis, solver);
             args = disableSomeCallFlow.getArgs();
             returnNode = disableSomeCallFlow.getReturnNode();
@@ -790,7 +807,7 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             List<UnionNode> arguments = Arrays.asList(argumentType, argumentType, argumentType, argumentType, argumentType);
                             solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, arguments, this.functionNode.returnNode, null));
                             break;
-                        } else if (closure.function.id.equals("Function.prototype.bind") && typeAnalysis.options.FunctionDotBind) {
+                        } else if (closure.function.id.equals("Function.prototype.bind") && typeAnalysis.getOptions().FunctionDotBind) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
                             int boundArgs = this.functionNode.arguments.size() - 1;
                             AtomicInteger maxArgsSeen = new AtomicInteger(-1);
@@ -799,13 +816,14 @@ public class MixedConstraintVisitor implements ExpressionVisitor<UnionNode>, Sta
                             solver.union(this.functionNode.returnNode, returnFunction);
                             solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, returnFunction.arguments, returnFunction.returnNode, null));
 
-                            solver.runWhenChanged(this.functionNode.thisNode, () -> {
+                            // FIXME:
+                            /*solver.runWhenChanged(this.functionNode.thisNode, () -> {
                                 int maxArgs = getFunctionNodes(this.functionNode.thisNode).stream().map(func -> func.arguments.size()).reduce(0, Math::max);
                                 if (maxArgs > maxArgsSeen.get()) {
                                     maxArgsSeen.set(maxArgs);
                                     solver.union(returnFunction, FunctionNode.create(maxArgs - boundArgs, solver));
                                 }
-                            });
+                            });*/
                         } else {
                             List<FunctionNode> signatures = MixedConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
                             solver.union(functionNode, new IncludeNode(solver, signatures));

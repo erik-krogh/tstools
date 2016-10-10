@@ -61,10 +61,6 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
             case MULT_EQUAL: // *=
             case DIV_EQUAL: // /=
             case MOD_EQUAL: // %=
-            case LESS_THAN: // <
-            case LESS_THAN_EQUAL: // <=
-            case GREATER_THAN: // >
-            case GREATER_THAN_EQUAL: // >=
             case BITWISE_AND: // &
             case BITWISE_OR: // |
             case BITWISE_XOR: // ^
@@ -80,6 +76,13 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                 solver.union(primitiveFactory.number(), lhs);
                 solver.union(primitiveFactory.number(), rhs);
                 return primitiveFactory.number();
+            case LESS_THAN: // <
+            case LESS_THAN_EQUAL: // <=
+            case GREATER_THAN: // >
+            case GREATER_THAN_EQUAL: // >=
+                solver.union(primitiveFactory.number(), lhs);
+                solver.union(primitiveFactory.number(), rhs);
+                return primitiveFactory.bool();
             case INSTANCEOF: // instanceof
                 return primitiveFactory.bool();
             case IN: // in
@@ -107,13 +110,14 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
         return returnType;
     }
 
-    public static final class DynamicAccessResolver implements Runnable {
+    public static final class DynamicAccessResolver extends UnionFindCallback {
         private final UnionNode operand;
         private final UnionNode lookupKey;
         private final UnionNode returnType;
         private UnionFindSolver solver;
 
         public DynamicAccessResolver(UnionNode operand, UnionNode lookupKey, UnionNode returnType, UnionFindSolver solver) {
+            super(operand, lookupKey, returnType);
             this.operand = operand;
             this.lookupKey = lookupKey;
             this.returnType = returnType;
@@ -126,6 +130,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
             List<UnionNode> newIncludes = new ArrayList<>();
             UnionFeature.getReachable(operand.getFeature()).forEach(feature -> {
                 feature.getObjectFields().forEach((fieldName, fieldType) -> {
+                    fieldType = fieldType.findParent();
                     if (Util.isInteger(fieldName)) {
                         if (returnType.getUnionClass().includes == null || !returnType.getUnionClass().includes.contains(fieldType)) {
                             newIncludes.add(fieldType);
@@ -221,7 +226,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
         return thisNode;
     }
 
-    private final class NewCallResolver implements Runnable {
+    private final class NewCallResolver extends UnionFindCallback {
         private final UnionNode function;
         private final List<UnionNode> args;
         private final UnionNode thisNode;
@@ -230,6 +235,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
         private final HashSet<Snap.Obj> seenHeap = new HashSet<>();
 
         public NewCallResolver(UnionNode function, List<UnionNode> args, UnionNode thisNode, Expression callExpression) {
+            super(function, thisNode, args);
             this.function = function;
             this.args = args;
             this.thisNode = thisNode;
@@ -262,7 +268,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                         }
                         LibraryClass clazz = typeAnalysis.libraryClasses.get((Snap.Obj) closure.getProperty("prototype").value);
                         if (clazz != null) {
-                            if (typeAnalysis.options.classOptions.unionThisFromConstructedObjects) {
+                            if (typeAnalysis.getOptions().classOptions.unionThisFromConstructedObjects) {
                                 solver.union(this.thisNode, clazz.getNewThisNode(solver));
                             }
                             solver.union(this.thisNode, new HasPrototypeNode(solver, clazz.prototype));
@@ -287,7 +293,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
     }
 
     @SuppressWarnings("Duplicates")
-    private final class CallGraphResolver implements Runnable {
+    private final class CallGraphResolver extends UnionFindCallback  {
         List<UnionNode> args;
         private final Expression callExpression; // Useful for debugging.
         boolean constructorCalls;
@@ -295,6 +301,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
         private final FunctionNode functionNode;
 
         public CallGraphResolver(UnionNode thisNode, UnionNode function, List<UnionNode> args, UnionNode returnNode, Expression callExpression) {
+            super(thisNode, function, returnNode, args);
             MixedConstraintVisitor.DisableSomeCallFlow disableSomeCallFlow = new MixedConstraintVisitor.DisableSomeCallFlow(args, returnNode).invoke(typeAnalysis, solver);
             args = disableSomeCallFlow.getArgs();
             returnNode = disableSomeCallFlow.getReturnNode();
@@ -366,7 +373,7 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                             List<UnionNode> arguments = Arrays.asList(argumentType, argumentType, argumentType, argumentType, argumentType);
                             solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, arguments, this.functionNode.returnNode, null));
                             break;
-                        } else if (closure.function.id.equals("Function.prototype.bind") && typeAnalysis.options.FunctionDotBind) {
+                        } else if (closure.function.id.equals("Function.prototype.bind") && typeAnalysis.getOptions().FunctionDotBind) {
                             UnionNode thisNode = emptyArgs ? new EmptyNode(solver) : this.functionNode.arguments.get(0);
                             int boundArgs = this.functionNode.arguments.size() - 1;
                             AtomicInteger maxArgsSeen = new AtomicInteger(-1);
@@ -375,13 +382,14 @@ public class UnionEverythingConstraintVisitor extends MixedConstraintVisitor {
                             solver.union(this.functionNode.returnNode, returnFunction);
                             solver.runWhenChanged(this.functionNode.thisNode, new CallGraphResolver(thisNode, this.functionNode.thisNode, returnFunction.arguments, returnFunction.returnNode, null));
 
-                            solver.runWhenChanged(this.functionNode.thisNode, () -> {
+                            // FIXME:
+                            /*solver.runWhenChanged(this.functionNode.thisNode, () -> {
                                 int maxArgs = getFunctionNodes(this.functionNode.thisNode).stream().map(func -> func.arguments.size()).reduce(0, Math::max);
                                 if (maxArgs > maxArgsSeen.get()) {
                                     maxArgsSeen.set(maxArgs);
                                     solver.union(returnFunction, FunctionNode.create(maxArgs - boundArgs, solver));
                                 }
-                            });
+                            });*/
                         } else {
                             // This is actually better than what TSCheck does, it ignores the arguments.
                             List<FunctionNode> signatures = UnionEverythingConstraintVisitor.createNativeSignatureNodes(closure, this.constructorCalls, nativeTypeFactory);
