@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/lib/ts-spec-reader/deserializers/java/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/lib/jsnap/testcases" />
+      <excludeFolder url="file://$MODULE_DIR$/libs" />
+      <excludeFolder url="file://$MODULE_DIR$/repositories" />
+      <excludeFolder url="file://$MODULE_DIR$/tests" />
+      <excludeFolder url="file://$MODULE_DIR$/tests/extjs" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="selenium-server-standalone-2.48.2" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
+  </component>
+</module>
