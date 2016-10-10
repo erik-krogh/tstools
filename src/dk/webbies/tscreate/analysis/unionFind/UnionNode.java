@@ -40,4 +40,29 @@ public abstract class UnionNode {
     public UnionFeature getFeature() {
         return getUnionClass().getFeature();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        UnionNode unionNode = (UnionNode) o;
+
+        if (unionNode.parent == null || this.parent == null) {
+            return false;
+        }
+
+        return findParent() == unionNode.findParent();
+    }
+
+    @Override
+    public int hashCode() {
+        if (this.parent == null) {
+            return 0;
+        }
+        if (this.parent == this) {
+            return super.hashCode();
+        }
+        return findParent().hashCode();
+    }
 }
