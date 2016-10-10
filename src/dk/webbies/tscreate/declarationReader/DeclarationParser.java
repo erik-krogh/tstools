@@ -103,14 +103,14 @@ public class DeclarationParser {
     }
 
     public static SpecReader getTypeSpecification(Environment env, Collection<String> declarationFilePaths) {
-        String runString = "node_modules/ts-spec-reader/src/CLI.js --env " + env.cliArgument;
+        String runString = "node_modules/ts-type-reader/src/CLI.js --env " + env.cliArgument;
         for (String declarationFile : declarationFilePaths) {
             runString += " \"" + declarationFile + "\"";
         }
 
         String cachePath = "declaration-" + env.cliArgument + "-" + runString.hashCode() + ".json";
 
-        List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("node_modules/ts-spec-reader")));
+        List<File> toCheckAgainst = new ArrayList<>(Arrays.asList(new File("node_modules/ts-type-reader")));
         declarationFilePaths.stream().map(File::new).forEach(toCheckAgainst::add);
 
         String specification;
