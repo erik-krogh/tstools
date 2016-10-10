@@ -518,12 +518,8 @@ public class EvaluationVisitor implements TypeVisitorWithArgument<Void, Evaluati
 
     @Override
     public Void visit(UnionType real, Arg arg) {
-        Type type = arg.type;
-        if (type instanceof UnionType) {
-            throw new RuntimeException();
-        } else {
-            throw new RuntimeException();
-        }
+        nextDepth(real, arg.type, arg.callback, arg.prefix, 0);
+        return null;
     }
 
     @Override
