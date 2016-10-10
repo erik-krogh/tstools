@@ -33,14 +33,28 @@ import static java.util.Collections.*;
  * Created by erik1 on 09-06-2016.
  */
 public class PatchFileFactory {
-    public static PatchFile fromImplementation(BenchMark oldBench, BenchMark newBench) throws IOException {
-        BenchmarkInformation oldInfo = getInfo(oldBench);
+    public static PatchFile fromImplementation(BenchMark oldBench, BenchMark newBench) throws Throwable {
+        final BenchmarkInformation[] oldInfo = new BenchmarkInformation[1];
 
-        BenchmarkInformation newInfo = getInfo(newBench);
+        final BenchmarkInformation[] newInfo = new BenchmarkInformation[1];
 
-        List<PatchStatement> patchStatements = FindPatchStatementsVisitor.generateStatements(oldInfo.globalObject, newInfo.globalObject, newBench.getOptions(), oldInfo.handwritten, newInfo.handwritten, newInfo.nativeClasses);
+        Util.runAll(() -> {
+            try {
+                oldInfo[0] = getInfo(oldBench);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, () -> {
+            try {
+                newInfo[0] = getInfo(newBench);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        List<PatchStatement> patchStatements = FindPatchStatementsVisitor.generateStatements(oldInfo[0].globalObject, newInfo[0].globalObject, newBench.getOptions(), oldInfo[0].handwritten, newInfo[0].handwritten, newInfo[0].nativeClasses);
         // For braekPoint: Break on NullPointerException.
-        return new PatchFile(patchStatements, oldInfo, newInfo);
+        return new PatchFile(patchStatements, oldInfo[0], newInfo[0]);
     }
 
     public static PatchFile fromHandwritten(BenchMark oldBench, BenchMark newBench) throws IOException {
@@ -65,20 +79,22 @@ public class PatchFileFactory {
         public final UnnamedObjectType globalObject;
         public final DeclarationPrinter printer;
         public String printedDeclaration;
-        private DeclarationParser.NativeClassesMap nativeClasses;
+        public DeclarationParser.NativeClassesMap nativeClasses;
         public final Type handwritten;
+        public Snap.Obj snapshot;
 
-        public BenchmarkInformation(BenchMark benchMark, UnnamedObjectType globalObject, DeclarationPrinter printer, String printedDeclaration, DeclarationParser.NativeClassesMap nativeClasses, Type handwritten) {
+        public BenchmarkInformation(BenchMark benchMark, UnnamedObjectType globalObject, DeclarationPrinter printer, String printedDeclaration, DeclarationParser.NativeClassesMap nativeClasses, Type handwritten, Snap.Obj snapshot) {
             this.benchMark = benchMark;
             this.globalObject = globalObject;
             this.printer = printer;
             this.printedDeclaration = printedDeclaration;
             this.nativeClasses = nativeClasses;
             this.handwritten = handwritten;
+            this.snapshot = snapshot;
         }
     }
 
-    private static BenchmarkInformation getInfo(BenchMark benchMark) throws IOException {
+    public static BenchmarkInformation getInfo(BenchMark benchMark) throws IOException {
         FunctionExpression AST = new JavaScriptParser(benchMark.languageLevel).parse(benchMark.name, Main.getScript(benchMark)).toTSCreateAST();
 
         Snap.Obj globalObjectJsnapObject = JSNAPUtil.getStateDump(JSNAPUtil.getJsnapRaw(benchMark.scriptPath, benchMark.getOptions(), benchMark.dependencyScripts(), benchMark.testFiles, benchMark.getOptions().asyncTest), AST);
@@ -99,7 +115,7 @@ public class PatchFileFactory {
         }
 
 
-        return new BenchmarkInformation(benchMark, globalObject, printer, printedDeclaration, nativeClasses, handwritten);
+        return new BenchmarkInformation(benchMark, globalObject, printer, printedDeclaration, nativeClasses, handwritten, globalObjectJsnapObject);
     }
 
     public static boolean isAny(DeclarationType type) {
