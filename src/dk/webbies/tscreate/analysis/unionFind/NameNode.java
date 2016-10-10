@@ -1,5 +1,7 @@
 package dk.webbies.tscreate.analysis.unionFind;
 
+import dk.webbies.tscreate.util.Util;
+
 import java.util.HashSet;
 
 /**
@@ -16,9 +18,11 @@ public class NameNode extends UnionNode {
     @Override
     public void addTo(UnionClass unionClass) {
         UnionFeature feature = unionClass.getFeature();
-        if (feature.names == null) {
-            feature.names = new HashSet<>();
+        if (!Util.isInteger(this.name)) {
+            if (feature.names == null) {
+                feature.names = new HashSet<>();
+            }
+            feature.names.add(this.name);
         }
-        feature.names.add(this.name);
     }
 }
