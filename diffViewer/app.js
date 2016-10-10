@@ -27,16 +27,36 @@ var app = angular.module('materializeApp', ['ui.materialize'])
 
             if ($scope.filterOn.old) {
                 result = result.filter(function (stmt) {
-                    if (stmt.type == "removedProperty" || stmt.type == "addedProperty") {
-                        if (!stmt.isInOldDecContainer) {
-                            return false;
+                    function newer() {
+                        if (stmt.type == "removedProperty" || stmt.type == "addedProperty") {
+                            if (!stmt.isInOldDecContainer) {
+                                return false;
+                            }
+                            if (stmt.type == "removedProperty" && !stmt.isInOldDec) {
+                                return false;
+                            }
+                        } else {
+                            if (!stmt.isInOldDec) {
+                                return false;
+                            }
                         }
-                    } else {
-                        if (!stmt.isInOldDec) {
-                            return false;
-                        }
+                        return true;
                     }
-                    return true;
+
+                    function older() {
+                        if (stmt.type == "removedProperty" || stmt.type == "addedProperty") {
+                            if (!stmt.isInOldDecContainer) {
+                                return false;
+                            }
+                        } else {
+                            if (!stmt.isInOldDec) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+
+                    return newer();
                 });
             }
 
