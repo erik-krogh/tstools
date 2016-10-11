@@ -40,7 +40,7 @@ public class CompareVersions {
 
         String oldBenchResultingDecPath = Main.getResultingDeclarationPath(oldVersion);
         if (!new File(oldBenchResultingDecPath).exists()) {
-            Main.runAnalysis(oldVersion);
+            Main.runTSInfer(oldVersion);
         }
 
         String orgDeclarationPath = newScript.declarationPath;

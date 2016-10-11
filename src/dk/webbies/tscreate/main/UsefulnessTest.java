@@ -37,10 +37,8 @@ public class UsefulnessTest {
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // Something goes wrong when running with ember, most likely related to the Em object.
         // Fabric, jQuery, leaflet, jasmine24 doesn't work (inconsistent class hierarchy).
         for (BenchMark benchMark : Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS15, hammer, handlebars4, jasmine22, jQuery, knockout, leaflet, moment_214, PIXI_4_0, polymer11, react014, three, underscore17, vue)) {
-//        for (BenchMark benchMark : Arrays.asList(/*async201, backbone133, D3, three, ember27, hammer, knockout, jasmine22, vue, PIXI_4_0, */FabricJS15, leaflet)) {
             runForBench(benchMark, 50);
             printPrecRecall("field existence", fieldExistence);
             printPrecRecall("class method existence", classMethodExistence);
@@ -48,11 +46,6 @@ public class UsefulnessTest {
             printPrecRecall("module existence", moduleExistence);
             printPrecRecall("heap prop existence", heapPropExistence);
         }
-
-//        for (BenchMark benchMark : Arrays.asList(PIXI_4_0)) {
-//            runForBench(benchMark, 50);
-//            printPrecRecall("field existence", fieldExistence);
-//        }
 
         printPrecRecall("field existence", fieldExistence);
         printPrecRecall("class method existence", classMethodExistence);
@@ -145,8 +138,8 @@ public class UsefulnessTest {
 
         testModuleExistence(extractor, benchMark);
 
-        /*Map<String, Pair<DeclarationType, DeclarationType>> toCompare;
-        for (PrecisionTest.TestType testType : Arrays.asList(CONSTRUCTORS, FUNCTIONS)) {
+        Map<String, Pair<DeclarationType, DeclarationType>> toCompare;
+        for (PrecisionTest.TestType testType : Arrays.asList(FIELDS, MODULES, CONSTRUCTORS, FUNCTIONS)) {
             switch (testType) {
                 case CONSTRUCTORS: toCompare = extractor.constructors; break;
                 case FIELDS: toCompare = extractor.fields; break;
@@ -162,7 +155,7 @@ public class UsefulnessTest {
 
             System.out.println("Press enter to continue");
             scanner.nextLine();
-        }*/
+        }
     }
 
     private static void testClassExistence(PrecisionTest.FeatureExtractor extractor, BenchMark benchMark) {

@@ -22,16 +22,9 @@ public class PrecisionTest {
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        /*for (BenchMark benchMark : Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS16, hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, react, polymer, three, underscore)) {
+        for (BenchMark benchMark : Arrays.asList(ace, angular, async201, backbone133, D3, /*ember27, FabricJS16, */hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, /*react014, */polymer11, /*three, */underscore17)) {
             runForBench(benchMark, 50);
-        }*/
-        runForBench(polymer16, 50);
-//        runForBench(vue, 50);
-//        runForBench(polymer, 50);
-//        runForBench(backbone133, 50);
-//        runForBench(leaflet, 50);
-//        runForBench(ace, 50);
-//        runForBench(mooTools, 50);
+        }
 
 
         System.exit(0);

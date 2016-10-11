@@ -113,7 +113,7 @@ public class DeclarationPrinter {
 
     private static final Predicate<String> validNameRegexp = Pattern.compile("[a-zA-Z_$][0-9a-zA-Z_$]*").asPredicate();
     private boolean validName(String str) {
-        return validNameRegexp.test(str) && !keyWords.contains(str);
+        return validNameRegexp.test(str) && !keyWords.contains(str) && !(str.contains("&") || str.contains("#") || str.contains(";"));
     }
 
     private Set<InterfaceDeclarationType> printedInterfaces = new HashSet<>();

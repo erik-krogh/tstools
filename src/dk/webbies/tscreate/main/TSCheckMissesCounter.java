@@ -20,10 +20,9 @@ public class TSCheckMissesCounter {
     public static void main(String[] args) throws IOException {
         // Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS15, hammer, handlebars4, jQuery, knockout, leaflet, moment_214, p2, PIXI_4_0, react, sugar, three, underscore)
         System.out.println("Benchmark\tfunctions\targuments\tclasses\tfields");
-        /*for (BenchMark benchMark : Arrays.asList(ace, angular, async201, backbone133, *//*D3, *//*ember27, FabricJS15, hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, react, polymer16, three, underscore)) {
-//        for (BenchMark benchMark : Arrays.asList(vue, jasmine24, polymer)) {
+        for (BenchMark benchMark : Arrays.asList(ace, angular, async201, backbone133, D3, /*ember27, FabricJS15, */hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, /*react014, */polymer16, /*three, */underscore17)) {
             runForBenchmark(benchMark);
-        }*/
+        }
 
         runForBenchmark(polymer11);
 

@@ -1,8 +1,37 @@
+String.prototype.endsWith = function(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+};
+
+function getJSONPath() {
+    // google - stackoverflow - copy - paste: http://stackoverflow.com/questions/12049620/how-to-get-get-variables-value-in-javascript#answer-12049737
+    var $_GET = Object.create(null);
+    if(document.location.toString().indexOf('?') !== -1) {
+        var query = document.location
+            .toString()
+            // get the query string
+            .replace(/^.*?\?/, '')
+            // and remove any existing hash string (thanks, @vrijdenker)
+            .replace(/#.*$/, '')
+            .split('&');
+
+        for(var i=0, l=query.length; i<l; i++) {
+            var aux = decodeURIComponent(query[i]).split('=');
+            $_GET[aux[0]] = aux[1];
+        }
+    }
+
+    if ($_GET["json"] && $_GET["json"].endsWith(".json")) {
+        return $_GET["json"];
+    }
+
+    return 'diff.json';
+}
 var app = angular.module('materializeApp', ['ui.materialize'])
     .controller('BodyController', ["$scope", "$http", function ($scope, $http) {
+        var jsonPath = getJSONPath();
         $http({
             method: 'GET',
-            url: 'diff.json'
+            url: jsonPath
         }).then(function (response) {
             Materialize.toast("Loaded diff", 1500);
             $scope.diff = response.data;

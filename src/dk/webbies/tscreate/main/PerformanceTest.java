@@ -30,8 +30,8 @@ public class PerformanceTest {
         List<CompareMethods.Config> configs = Arrays.asList(noneHeavy, none, tsinfer, tsinferHeavy, tscheck, tscheckHeavy);
 //        List<CompareMethods.Config> configs = Arrays.asList(tsinfer, tsinferHeavy);
 //        List<CompareMethods.Config> configs = Arrays.asList(none, noneHeavy);
-//        compareConfigs(Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS16, hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, react15, polymer16, three, underscore18), configs, 30 * 60 * 1000);
-        compareConfigs(Arrays.asList(three), configs, 30 * 60 * 1000);
+        compareConfigs(Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS16, hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, react15, polymer16, three, underscore18), configs, 30 * 60 * 1000);
+//        compareConfigs(Arrays.asList(three), configs, 30 * 60 * 1000);
     }
 
     public static Config disableHeavy(StaticAnalysisMethod method, String prettyString) {

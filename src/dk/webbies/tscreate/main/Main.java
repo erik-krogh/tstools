@@ -1,12 +1,9 @@
 package dk.webbies.tscreate.main;
 
 import com.google.javascript.jscomp.parsing.parser.Parser;
-import dk.webbies.tscreate.BenchMark;
-import dk.webbies.tscreate.Options;
-import dk.webbies.tscreate.Score;
+import dk.webbies.tscreate.*;
 import dk.webbies.tscreate.analysis.TypeAnalysis;
-import dk.webbies.tscreate.analysis.declarations.DeclarationBuilder;
-import dk.webbies.tscreate.analysis.declarations.DeclarationPrinter;
+import dk.webbies.tscreate.analysis.declarations.*;
 import dk.webbies.tscreate.analysis.declarations.types.DeclarationType;
 import dk.webbies.tscreate.analysis.methods.NoTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.combined.CombinedTypeAnalysis;
@@ -19,16 +16,11 @@ import dk.webbies.tscreate.analysis.methods.pureSubsets.PureSubsetsTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionEverything.UnionEverythingTypeAnalysis;
 import dk.webbies.tscreate.analysis.methods.unionRecursively.UnionRecursivelyTypeAnalysis;
 import dk.webbies.tscreate.cleanup.RedundantInterfaceCleaner;
-import dk.webbies.tscreate.evaluation.DebugEvaluation;
-import dk.webbies.tscreate.evaluation.DeclarationEvaluator;
-import dk.webbies.tscreate.evaluation.Evaluation;
-import dk.webbies.tscreate.jsnap.JSNAPUtil;
-import dk.webbies.tscreate.jsnap.Snap;
-import dk.webbies.tscreate.jsnap.classes.ClassHierarchyExtractor;
-import dk.webbies.tscreate.jsnap.classes.LibraryClass;
+import dk.webbies.tscreate.evaluation.*;
+import dk.webbies.tscreate.jsnap.*;
+import dk.webbies.tscreate.jsnap.classes.*;
 import dk.webbies.tscreate.main.patch.*;
-import dk.webbies.tscreate.paser.AST.AstNode;
-import dk.webbies.tscreate.paser.AST.FunctionExpression;
+import dk.webbies.tscreate.paser.AST.*;
 import dk.webbies.tscreate.paser.JavaScriptParser;
 import dk.webbies.tscreate.util.Util;
 
@@ -38,162 +30,46 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static dk.webbies.tscreate.BenchMark.*;
-import static dk.webbies.tscreate.Options.StaticAnalysisMethod.*;
 import static dk.webbies.tscreate.declarationReader.DeclarationParser.*;
 import static dk.webbies.tscreate.util.Util.toFixed;
-import static java.util.Arrays.asList;
 
-/**
- * Created by Erik Krogh Kristensen on 01-09-2015.
- */
 public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         long start = System.currentTimeMillis();
         try {
+            // All the currently configured Benchmarks can be seen in the BenchMark.java file, there is a lot, and some of them were never used for the paper.
+            // The ones used in the paper are:
+            List<BenchMark> paperBenchmarks = Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS16, hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, react15, polymer16, three, underscore18);
 
-//            runAnalysis(leaflet);
+//            To run TSInfer on a benchmark, uncomment the below line, and TSInfer will run on the given benchmark. The declaration will both be printed to a file (name of which is printed in the beginning of the run), and to stdout.
+//            runTSInfer(PIXI_4_0);
 
-//            ember20.getOptions().staticMethod = NONE; // ember.js.none_jsDoc.gen.d.ts
-//            ember20.getOptions().asyncTest = true;
-//            runAnalysis(ember27_small);
+//            You can modify the options for a benchmark (see the options in Options.java, some of them are explained).
+//            PIXI_4_0.getOptions().staticMethod = NONE;
+//            PIXI_4_0.getOptions().createInstances = false;
+//            runTSInfer(PIXI_4_0);
 
-            knockout.getOptions().staticMethod = UPPER_LOWER;
-            runAnalysis(knockout);
+//            To run TSEvolve, use the runTSEvolve method (as seen below).
+//            The first argument is the old JavaScript implementation, the second argument is the new implementation, and the last argument is the path were the resulting .json file should be saved.
+//            The diff can be viewed by copying the .json you want to view to "diffViewer/diff.json", and then running the "View TSEvolve diff" configuration (dropdown in top-right corder of IntelliJ). (or view the index.html in the diffViewer folder using some webserver).
 
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(jasmine22, jasmine25);
-                savePatchFile(patchFile, "diffViewer/jasmine-22-25.json");
-            }*/
+//            The TSEvolve runs used in the paper, uncomment to run
+//            runTSEvolve(ember1, ember20, "diffViewer/ember-1-2.json");
+//            runTSEvolve(ember20, ember27, "diffViewer/ember-20-27.json");
+//            runTSEvolve(backbone, backbone133, "diffViewer/backbone-10-13.json");
+//            runTSEvolve(async142, async201, "diffViewer/async-1-2.json");
+//            runTSEvolve(handlebars30, handlebars4, "diffViewer/handlebars-3-4.json");
+//            runTSEvolve(moment, moment_214, "diffViewer/moment-to-214.json");
+//            runTSEvolve(PIXI, PIXI_4_0, "diffViewer/pixi-3-4-final.json");
 
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(react014, react15);
-                savePatchFile(patchFile, "diffViewer/react-014-15.json");
-            }*/
-
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(underscore17, underscore18);
-                savePatchFile(patchFile, "diffViewer/underscore-17-18.json");
-            }*/
-
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(polymer11, polymer16);
-                savePatchFile(patchFile, "diffViewer/polymer-11-16.json");
-            }*/
-
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(jasmine22, jasmine25);
-                savePatchFile(patchFile, "diffViewer/jasmine-22-25.json");
-            }*/
-
-            /*FabricJS16.getOptions().staticMethod = UNIFICATION; // fabric.js.unify_jsDoc.gen.d.ts
-            FabricJS16.getOptions().recordCalls = false;
-            FabricJS16.getOptions().createInstances = false;
-            *//*FabricJS16.getOptions().classOptions.useInstancesForThis = false;
-            FabricJS16.getOptions().classOptions.unionThisFromConstructor = false;
-            FabricJS16.getOptions().classOptions.useClassInstancesFromHeap = false;
-            FabricJS16.getOptions().classOptions.useInstancesForThis = false;*//*
-
-            runAnalysis(FabricJS16);*/
-
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(FabricJS15, FabricJS16);
-                savePatchFile(patchFile, "diffViewer/fabric-15-16.json");
-            }*/
-
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(PIXI, PIXI_4_0);
-                savePatchFile(patchFile, "diffViewer/pixi-3-4-final.json");
-            }*/
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(moment, moment_214);
-                savePatchFile(patchFile, "diffViewer/moment-to-214.json");
-            }*/
-
-            /*{
-                PatchFile patchFile = PatchFileFactory.fromImplementation(backbone, backbone133);
-                savePatchFile(patchFile, "diffViewer/backbone-10-13.json");
-            }
-
-            {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(ember20, ember27);
-                savePatchFile(patchFile, "diffViewer/ember-20-27.json");
-            }
-
-            {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(async142, async201);
-                savePatchFile(patchFile, "diffViewer/async-1-2.json");
-            }
-
-            {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(handlebars30, handlebars4);
-                savePatchFile(patchFile, "diffViewer/handlebars-3-4.json");
-            }
-
-            {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(PIXI, PIXI_4_0);
-                savePatchFile(patchFile, "diffViewer/pixi-3-4.json");
-            }
-
-            {
-                PatchFile patchFile = PatchFileFactory.fromImplementation(ember1, ember20);
-                savePatchFile(patchFile, "diffViewer/ember-1-2.json");
-            }*/
-
-
-
-//            runAnalysis(ember27);
-
-//            PatchFile patchFromImplementation = PatchFileFactory.fromImplementation(PIXI, PIXI_4_0);
-
-            /*PatchFile patchFromHandwritten = PatchFileFactory.fromHandwritten(PIXI, PIXI_4_0);
-
-            savePatchFile(patchFromImplementation, "diffViewer/ember/diff.json");
-
-
-
-            int adds = 0;
-            int addsInOld = 0;
-            int addsInNew = 0;
-
-            int removals = 0;
-            int removalsInOld = 0;
-            int removalsInNew = 0;
-
-            for (PatchStatement stmt : patchFromImplementation.getStatements()) {
-                if (stmt instanceof AddedPropertyStatement) {
-                    AddedPropertyStatement addedProp = (AddedPropertyStatement) stmt;
-                    boolean inOld = PatchStatement.findInHandWritten(addedProp.getTypePath() + "." + addedProp.getPropertyName(), patchFromImplementation.getOldInfo()) != null;
-                    boolean inOldContainer = PatchStatement.findInHandWritten(addedProp.getTypePath(), patchFromImplementation.getOldInfo()) != null;
-                    boolean inNew = PatchStatement.findInHandWritten(addedProp.getTypePath() + "." + addedProp.getPropertyName(), patchFromImplementation.getNewInfo()) != null;
-                    boolean inNewContainer = PatchStatement.findInHandWritten(addedProp.getTypePath(), patchFromImplementation.getNewInfo()) != null;
-
-                    if (!inOldContainer || !inNewContainer) {
-                        continue;
-                    }
-
-                    adds++;
-                    addsInOld += inOld ? 1 : 0;
-                    addsInNew += inNew ? 1 : 0;
-                } else if (stmt instanceof RemovedPropertyStatement) {
-                    RemovedPropertyStatement removedProp = (RemovedPropertyStatement) stmt;
-                    boolean inOld = PatchStatement.findInHandWritten(removedProp.getTypePath() + "." + removedProp.getPropertyName(), patchFromImplementation.getOldInfo()) != null;
-                    boolean inOldContainer = PatchStatement.findInHandWritten(removedProp.getTypePath(), patchFromImplementation.getOldInfo()) != null;
-                    boolean inNew = PatchStatement.findInHandWritten(removedProp.getTypePath() + "." + removedProp.getPropertyName(), patchFromImplementation.getNewInfo()) != null;
-                    boolean inNewContainer = PatchStatement.findInHandWritten(removedProp.getTypePath(), patchFromImplementation.getNewInfo()) != null;
-
-                    if (!inOldContainer || !inNewContainer) {
-                        continue;
-                    }
-
-                    removals++;
-                    removalsInOld += inOld ? 1 : 0;
-                    removalsInNew += inNew ? 1 : 0;
-                }
-            }
-
-            System.out.println();*/
-
+//            Other TSEvolve runs.
+//            runTSEvolve(jasmine22, jasmine25, "diffViewer/jasmine-22-25.json");
+//            runTSEvolve(react014, react15, "diffViewer/react-014-15.json");
+//            runTSEvolve(underscore17, underscore18, "diffViewer/underscore-17-18.json");
+//            runTSEvolve(polymer11, polymer16, "diffViewer/polymer-11-16.json");
+//            runTSEvolve(jasmine22, jasmine25, "diffViewer/jasmine-22-25.json");
+//            runTSEvolve(FabricJS15, FabricJS16, "diffViewer/fabric-15-16.json");
 
         } catch (Throwable e) {
             System.err.println("Crashed: ");
@@ -205,6 +81,11 @@ public class Main {
 
             System.exit(0);
         }
+    }
+
+    public static void runTSEvolve(BenchMark oldVersion, BenchMark newVersion, String jsonPath) throws Throwable {
+        PatchFile patchFile = PatchFileFactory.fromImplementation(oldVersion, newVersion);
+        savePatchFile(patchFile, jsonPath);
     }
 
     public static void savePatchFile(PatchFile patchFile, String path) throws IOException {
@@ -249,7 +130,7 @@ public class Main {
 
     }
 
-    public static Evaluation runAnalysis(BenchMark benchMark) throws IOException {
+    public static Evaluation runTSInfer(BenchMark benchMark) throws IOException {
         String resultDeclarationFilePath = getResultingDeclarationPath(benchMark);
 
         System.out.println("Analysing " + benchMark.name + " - output: " + resultDeclarationFilePath);
@@ -275,7 +156,7 @@ public class Main {
         if (benchMark.declarationPath != null) {
             evaluation = new DeclarationEvaluator(resultDeclarationFilePath, benchMark, globalObject, libraryClasses, benchMark.getOptions(), emptySnap).getEvaluation();
 
-            System.out.println(evaluation);
+//            System.out.println(evaluation);
         }
 
         if (benchMark.getOptions().tsCheck) {
@@ -369,7 +250,7 @@ public class Main {
             if (timeout > 0) {
                 return runAnalysisWithTimeout(benchMark, timeout);
             } else {
-                return runAnalysis(benchMark);
+                return runTSInfer(benchMark);
             }
         }
 
@@ -504,7 +385,7 @@ public class Main {
     private static void generateDeclarations(List<BenchMark> benchMarks) throws IOException {
         for (BenchMark benchmark : benchMarks) {
             benchmark.declarationPath = null;
-            runAnalysis(benchmark);
+            runTSInfer(benchmark);
         }
 
         System.out.println("Generated all declarations");
@@ -514,7 +395,7 @@ public class Main {
         AtomicReference<Evaluation> result = new AtomicReference<>(null);
         Thread benchThread = new Thread(() -> {
             try {
-                result.set(runAnalysis(benchMark));
+                result.set(runTSInfer(benchMark));
             } catch (IOException e) {
                 e.printStackTrace();
                 System.exit(1);
