@@ -101,10 +101,11 @@ public class SeleniumDriver {
         String operatingSystem = System.getProperty("os.name");
         if (operatingSystem.contains("Windows")) {
             System.setProperty("webdriver.chrome.driver", "./lib/selenium/chromedriver.exe");
-        }else if (operatingSystem.contains("Linux")) {
+        } else if (operatingSystem.contains("Linux")) {
             System.setProperty("webdriver.chrome.driver", "./lib/selenium/chromedriverLinux64");
-        }
-        else {
+        } else if (operatingSystem.contains("Mac")) {
+            System.setProperty("webdriver.chrome.driver", "./lib/selenium/chromedriverMac");
+        } else {
             throw new RuntimeException("Unknown operating system: " + operatingSystem);
         }
     }
