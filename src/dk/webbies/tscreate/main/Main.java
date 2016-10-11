@@ -40,7 +40,11 @@ public class Main {
         try {
             // All the currently configured Benchmarks can be seen in the BenchMark.java file, there is a lot, and some of them were never used for the paper.
             // The ones used in the paper are:
-            List<BenchMark> paperBenchmarks = Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS16, hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, react15, polymer16, three, underscore18);
+            List<BenchMark> paperBenchmarks = Arrays.asList(ace, angular, async142, backbone, D3, ember1, FabricJS15, hammer, handlebars30, jQuery, knockout, leaflet, moment, vue, jasmine22, PIXI, react15, polymer16, three, underscore17);
+
+            // Analyzing some benchmarks can be very memory intensive, if you have under 16GB of ram available, some benchmarks might run very slow.
+            // The below benchmarks should only use up to 3GB of RAM, even when running TSEvolve.
+            List<BenchMark> fastBenchmarks = Arrays.asList(async142, backbone, hammer, handlebars30, jasmine22, knockout, moment, underscore17);
 
 //            To run TSInfer on a benchmark, uncomment the below line, and TSInfer will run on the given benchmark. The declaration will both be printed to a file (name of which is printed in the beginning of the run), and to stdout.
 //            runTSInfer(PIXI_4_0);
