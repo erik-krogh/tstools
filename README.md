@@ -22,4 +22,18 @@ The tools do not have a command line interface, instead they are executed by ope
 and writing the source code that does the intended task.  
 
 The file `src\dk\webbies\tscreate\main\Main.java` is the main starting point to start using **TSInfer** and **TSEvolve**, 
-`Main.java` includes comments describing how to 
+`Main.java` includes comments describing how to run **TSInfer** and **TSEvolve**
+
+Experiments
+-----
+In the main package alongside Main.java is also a couple of classes that run experiments, these are: 
+`PerformanceTest`, `PrecisionTest`, `TSCheckMissesCounter` and `UsefullnessTest`. 
+They are configured as an IntelliJ run configuration, and can thus be executed by selecting and running the appropriate run configuration in the top right corner of IntelliJ. 
+
+
+Performance
+-----
+These tools can be very hungry for RAM, for the biggest benchmarks it is recommended to have at least 16GB of RAM and an SSD, or 32GB of RAM. 
+If your computer doesn't have that amount of RAM, it is recommended to only execute the smaller libraries. 
+
+Some benchmarks that should run fine on most computers are: `async`, `Backbone`, `Hammer`, `Handlebars`, `jasmine`, `Knockout`, `moment`, and `underscore`. 

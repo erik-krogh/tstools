@@ -42,7 +42,7 @@ public class Main {
             // The ones used in the paper are:
             List<BenchMark> paperBenchmarks = Arrays.asList(ace, angular, async142, backbone, D3, ember1, FabricJS15, hammer, handlebars30, jQuery, knockout, leaflet, moment, vue, jasmine22, PIXI, react15, polymer16, three, underscore17);
 
-            // Analyzing some benchmarks can be very memory intensive, if you have under 16GB of ram available, some benchmarks might run very slow.
+            // Analyzing some benchmarks can be very memory intensive, if you have under 16GB of ram available, some benchmarks might run very slow (PixiJS and Ember are the worst offenders).
             // The below benchmarks should only use up to 3GB of RAM, even when running TSEvolve.
             List<BenchMark> fastBenchmarks = Arrays.asList(async142, backbone, hammer, handlebars30, jasmine22, knockout, moment, underscore17);
 
@@ -65,7 +65,7 @@ public class Main {
 //            runTSEvolve(async142, async201, "diffViewer/async-1-2.json");
 //            runTSEvolve(handlebars30, handlebars4, "diffViewer/handlebars-3-4.json");
 //            runTSEvolve(moment, moment_214, "diffViewer/moment-to-214.json");
-//            runTSEvolve(PIXI, PIXI_4_0, "diffViewer/pixi-3-4-final.json");
+//            runTSEvolve(PIXI, PIXI_4_0, "diffViewer/pixi-3-4.json"); // VERY memory intensive! Allocates up to 26GB, but should run on machines with 16GB of RAM that has an SSD.
 
 //            Other TSEvolve runs.
 //            runTSEvolve(jasmine22, jasmine25, "diffViewer/jasmine-22-25.json");
