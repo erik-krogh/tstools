@@ -101,7 +101,6 @@ public class BenchMark {
     public static final BenchMark jasmine22 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
-        options.asyncTest = true;
         options.createInstancesClassFilter = true;
         return new BenchMark("Jasmine (2.2)", "tests/jasmine/jasmine.2.2.1.js", "tests/jasmine/jasmine.2.2.d.ts", options, ES5);
     });
@@ -109,7 +108,6 @@ public class BenchMark {
     public static final BenchMark jasmine24 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
-        options.asyncTest = true;
         options.createInstancesClassFilter = true;
         return new BenchMark("Jasmine (2.4)", "tests/jasmine/jasmine.2.4.1.js", null, options, ES5);
     });
@@ -117,7 +115,6 @@ public class BenchMark {
     public static final BenchMark jasmine25 = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
-        options.asyncTest = true;
         options.createInstancesClassFilter = true;
         return new BenchMark("Jasmine (2.5)", "tests/jasmine/jasmine.2.5.0.js", null, options, ES5);
     });
@@ -202,7 +199,6 @@ public class BenchMark {
     public static final BenchMark jQuery = gen(() -> {
         Options options = new Options();
         options.recordCalls = true;
-        options.asyncTest = true;
         BenchMark bench = new BenchMark("jQuery", "tests/jquery/jquery.js", "tests/jquery/jquery.d.ts", options, ES5);
 
         bench.dependencies.add(Dependency.QUnit);
@@ -239,7 +235,6 @@ public class BenchMark {
     public static final BenchMark jQuery17 = gen(() -> {
         Options options = new Options();
         options.recordCalls = true;
-        options.asyncTest = true;
         BenchMark bench = new BenchMark("jQuery", "tests/jquery17/jquery.js", "tests/jquery17/jquery.d.ts", options, ES5);
         return bench;
     });
@@ -258,7 +253,6 @@ public class BenchMark {
 //        options.debugPrint = true;
         options.maxEvaluationDepth = null;
         options.recordCalls = true;
-        options.asyncTest = true;
         BenchMark bench = new BenchMark("three.js", "tests/three/three.js", "tests/three/three.d.ts", options, ES6);
         bench.dependencies.add(Dependency.underscore);
         bench.dependencies.add(Dependency.QUnit);
