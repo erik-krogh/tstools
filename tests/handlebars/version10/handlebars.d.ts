@@ -43,17 +43,17 @@ interface HandlebarsTemplates {
 }
 
 interface HandlebarsRuntimeStatic extends HandlebarsCommon {
-    // Handlebars.templates is the default template namespace in precompiler.
+    // Handlebars.templates is the default template module in precompiler.
     templates: HandlebarsTemplates;
 }
 
-declare namespace hbs {
+declare module hbs {
     class SafeString {
         constructor(str: string);
         static toString(): string;
     }
 
-    namespace Utils {
+    module Utils {
         function escapeExpression(str: string): string;
     }
 }
@@ -70,8 +70,8 @@ interface Logger {
     log(level: number, obj: string): void;
 }
 
-declare namespace hbs {
-    namespace AST {
+declare module hbs {
+    module AST {
         interface IStripInfo {
             left?: boolean;
             right?: boolean;
