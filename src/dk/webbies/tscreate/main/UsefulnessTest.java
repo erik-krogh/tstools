@@ -40,27 +40,45 @@ public class UsefulnessTest {
         // Fabric, jQuery, leaflet, jasmine24 doesn't work (inconsistent class hierarchy).
         for (BenchMark benchMark : Arrays.asList(ace, angular, async201, backbone133, D3, ember27, FabricJS15, hammer, handlebars4, jasmine22, jQuery, knockout, leaflet, moment_214, PIXI_4_0, polymer11, react014, three, underscore17, vue)) {
             runForBench(benchMark, 50);
+            System.out.println();
             printPrecRecall("field existence", fieldExistence);
             printPrecRecall("class method existence", classMethodExistence);
             printPrecRecall("class existence", classExistence);
             printPrecRecall("module existence", moduleExistence);
             printPrecRecall("heap prop existence", heapPropExistence);
+            printPrecRecall("module function existence", moduleFunctionExistence);
         }
 
-        printPrecRecall("field existence", fieldExistence);
-        printPrecRecall("class method existence", classMethodExistence);
-        printPrecRecall("class existence", classExistence);
-        printPrecRecall("module existence", moduleExistence);
-        printPrecRecall("heap prop existence", heapPropExistence);
+
+        System.out.println("\n\n");
+
+        printTableStuff(classExistence, moduleExistence, fieldExistence, classMethodExistence, moduleFunctionExistence);
 
         System.exit(0);
     }
 
-    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> fieldExistence = new HashMap<>();
-    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> classMethodExistence = new HashMap<>();
-    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> classExistence = new HashMap<>();
-    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> moduleExistence = new HashMap<>();
-    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> heapPropExistence = new HashMap<>();
+    private static void printTableStuff(Map<BenchMark, Tuple3<Integer, Integer, Integer>>... columns) {
+        List<BenchMark> rows = columns[0].keySet().stream().sorted((a, b) -> a.name.toLowerCase().compareTo(b.name.toLowerCase())).collect(Collectors.toList());
+        for (BenchMark row : rows) {
+            System.out.print(row.name + ":  ");
+            for (int i = 0; i < columns.length; i++) {
+                Tuple3<Integer, Integer, Integer> tuple = columns[i].get(row);
+                System.out.print(tuple.a + " & " + tuple.b + " & " + tuple.c);
+                if (i != columns.length - 1) {
+                    System.out.print(" & ");
+                }
+            }
+            System.out.println();
+        }
+
+    }
+
+    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> fieldExistence = new LinkedHashMap<>();
+    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> classMethodExistence = new LinkedHashMap<>();
+    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> classExistence = new LinkedHashMap<>();
+    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> moduleExistence = new LinkedHashMap<>();
+    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> heapPropExistence = new LinkedHashMap<>();
+    public static Map<BenchMark, Tuple3<Integer, Integer, Integer>> moduleFunctionExistence = new LinkedHashMap<>();
 
     private static void printPrecRecall(String title, Map<BenchMark, Tuple3<Integer, Integer, Integer>> map) {
         if (map.isEmpty()) {
@@ -138,8 +156,10 @@ public class UsefulnessTest {
 
         testModuleExistence(extractor, benchMark);
 
+        testModuleFunctionExistence(extractor, benchMark);
+
         Map<String, Pair<DeclarationType, DeclarationType>> toCompare;
-        for (PrecisionTest.TestType testType : Arrays.asList(FIELDS, MODULES, CONSTRUCTORS, FUNCTIONS)) {
+        for (PrecisionTest.TestType testType : Arrays.asList(CONSTRUCTORS, FUNCTIONS, FIELDS)) {
             switch (testType) {
                 case CONSTRUCTORS: toCompare = extractor.constructors; break;
                 case FIELDS: toCompare = extractor.fields; break;
@@ -219,9 +239,13 @@ public class UsefulnessTest {
             Set<String> handwrittenFields = handwritten.getDeclarations().entrySet().stream().filter(entry -> entry.getValue().resolve() instanceof UnnamedObjectType).map(Map.Entry::getKey).collect(Collectors.toSet());
             int shared = Util.intersection(inferredFields, handwrittenFields).size();
             truePositives += shared;
-
-            falseNegatives += (handwrittenFields.size()) - shared;
-            falsePositives += (inferredFields.size()) - shared;
+            int extraFalseNegatives = (handwrittenFields.size()) - shared;
+            int extraFalsePositives = (inferredFields.size()) - shared;
+            if (shared + extraFalseNegatives + extraFalsePositives > 0) {
+                System.out.println();
+            }
+            falseNegatives += extraFalseNegatives;
+            falsePositives += extraFalsePositives;
         }
 
         moduleExistence.put(benchMark, new Tuple3<>(truePositives, falsePositives, falseNegatives));
@@ -330,7 +354,55 @@ public class UsefulnessTest {
 //        scanner.nextLine();
     }
 
-    public static List<String> fieldFalsePositives = new ArrayList<>();
+
+    public static void testModuleFunctionExistence(PrecisionTest.FeatureExtractor extractor, BenchMark benchMark) {
+        System.out.println("Testing recall and precision for existence of module functions. ");
+        int truePositives = 0;
+        int falsePositives = 0;
+        int falseNegatives = 0;
+        Set<ClassType> seen = new HashSet<>();
+        List<Pair<DeclarationType, DeclarationType>> modules = new ArrayList<>(extractor.modules.values());
+
+        extractor.classes.values().forEach(pair -> modules.add(new Pair<>(
+                new UnnamedObjectType(((ClassType)pair.left).getStaticFields(), Collections.EMPTY_SET),
+                new UnnamedObjectType(((ClassType)pair.right).getStaticFields(), Collections.EMPTY_SET)
+        )));
+
+        for (Pair<DeclarationType, DeclarationType> pair : modules) {
+            int thisTruePositives = 0;
+            int thisFalsePositives = 0;
+            int thisFalseNegatives = 0;
+
+            Set<String> inferredFields = ((UnnamedObjectType)pair.left).getDeclarations().entrySet().stream().filter(entry -> entry.getValue().resolve() instanceof FunctionType || entry.getValue().resolve() instanceof ClassType).map(Map.Entry::getKey).collect(Collectors.toSet());
+            Set<String> handwrittenFields = ((UnnamedObjectType)pair.right).getDeclarations().entrySet().stream().filter(entry -> entry.getValue().resolve() instanceof FunctionType || entry.getValue().resolve() instanceof ClassType).map(Map.Entry::getKey).collect(Collectors.toSet());
+
+            for (String field : Util.concat(inferredFields, handwrittenFields).stream().distinct().collect(Collectors.toList())) {
+                if (!handwrittenFields.contains(field)) {
+                    thisFalsePositives++;
+                } else {
+                    if (inferredFields.contains(field)) {
+                        thisTruePositives++;
+                    } else {
+                        thisFalseNegatives++;
+                    }
+                }
+            }
+
+            truePositives += thisTruePositives;
+            falsePositives += thisFalsePositives;
+            falseNegatives += thisFalseNegatives;
+        }
+
+        moduleFunctionExistence.put(benchMark, new Tuple3<>(truePositives, falsePositives, falseNegatives));
+
+        System.out.println("For benchmark " + benchMark.name + " testing the existence of module functions");
+        System.out.println("True positives: " + truePositives);
+        System.out.println("False positives: " + falsePositives);
+        System.out.println("False negatives: " + falseNegatives);
+
+//        System.out.println("Press enter to continue");
+//        scanner.nextLine();
+    }
 
     public static void testFieldExistence(PrecisionTest.FeatureExtractor extractor, BenchMark benchMark) {
         System.out.println("Testing recall and precision for existence of fields. ");
@@ -360,7 +432,6 @@ public class UsefulnessTest {
 
             for (String field : Util.concat(inferredFields, handwrittenFields).stream().distinct().collect(Collectors.toList())) {
                 if (!handwrittenWithSuperClasses.contains(field)) {
-                    fieldFalsePositives.add(field);
                     thisFalsePositives++;
                 } else {
                     if (inferredFieldsWithSuperClasses.contains(field)) {
@@ -435,7 +506,7 @@ public class UsefulnessTest {
         int unknown = 0;
         int missingArgs = 0;
 
-        for (int i = 0; i < paths.size(); i++) {
+        outer: for (int i = 0; i < paths.size(); i++) {
             String path = paths.get(i);
             DeclarationType oneType = types.get(path).getLeft();
             DeclarationType twoType = types.get(path).getRight();
@@ -459,6 +530,9 @@ public class UsefulnessTest {
                 } catch (NumberFormatException e) {
                     System.err.println(e.toString());
                     in = 0;
+                }
+                if (in == 1337) {
+                    break outer;
                 }
                 if (in == 7) {
                     System.out.println("----- Start Inferred declaration -----: ");
@@ -501,7 +575,7 @@ public class UsefulnessTest {
     }
 
     private static void printTwoTypes(ArrayList<String> paths, int i, String path, String oneString, String twoString) {
-        System.out.println("----- Compare the below two types (" + i + "/" + paths.size() + ") -----");
+        System.out.println("----- Compare the below two types (" + (i + 1) + "/" + paths.size() + ") -----");
         System.out.println("Path: " + path);
 
         System.out.println("Inferred type: ");
