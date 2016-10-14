@@ -143,13 +143,10 @@ public class BenchMark {
         return bench;
     });
 
-    public static final BenchMark PIXI_4_0_tscheck_old_dec = gen(() -> {
+    public static final BenchMark PIXI_4_0_predec = gen(() -> {
         Options options = new Options();
         options.recordCalls = false;
-        options.staticMethod = Options.StaticAnalysisMethod.NONE;
-        options.createInstances = false;
-        options.useJSDoc = false;
-        BenchMark bench = new BenchMark("Pixi.js (4.0 (dev))", "tests/pixi40/pixi.js", "tests/pixi40/pixi.js.d.ts", options, ES5);
+        BenchMark bench = new BenchMark("Pixi.js (4.0)", "tests/pixi40/pixi.js", "tests/pixi40/pixi.js.40.pre.d.ts", options, ES5);
         return bench;
     });
 
@@ -236,6 +233,13 @@ public class BenchMark {
         Options options = new Options();
         options.recordCalls = true;
         BenchMark bench = new BenchMark("jQuery", "tests/jquery17/jquery.js", "tests/jquery17/jquery.d.ts", options, ES5);
+        return bench;
+    });
+
+    public static final BenchMark jQuery1_11 = gen(() -> {
+        Options options = new Options();
+        options.recordCalls = true;
+        BenchMark bench = new BenchMark("jQuery", "tests/jquery111/jquery.js", null, options, ES5);
         return bench;
     });
 
