@@ -245,6 +245,11 @@ public class PrecisionTest {
 
         @Override
         public Void visit(UnnamedObjectType objectType, Arg arg) {
+            if (arg.type instanceof ClassInstanceType) {
+                UnnamedObjectType instanceAsObject = new UnnamedObjectType(((ClassInstanceType) arg.type).getClazz().getPrototypeFields(), Collections.EMPTY_SET);
+                return objectType.accept(this, new Arg(instanceAsObject, arg.path, arg.depth));
+            }
+
             if (!(arg.type instanceof UnnamedObjectType)) {
                 return null;
             }
@@ -262,6 +267,15 @@ public class PrecisionTest {
 
         @Override
         public Void visit(InterfaceDeclarationType interfaceType, Arg arg) {
+            if (arg.type instanceof ClassType || arg.type instanceof ClassInstanceType) {
+                ClassType classType = arg.type instanceof ClassType ? (ClassType) arg.type : ((ClassInstanceType) arg.type).getClazz();
+                InterfaceDeclarationType classAsInter = new InterfaceDeclarationType(Collections.EMPTY_SET);
+                classAsInter.setObject(new UnnamedObjectType(classType.getStaticFields(), Collections.EMPTY_SET));
+                classAsInter.setFunction(new FunctionType(classType.getEmptyNameInstance(), classType.getConstructorType().getArguments(), Collections.EMPTY_SET, new ArrayList<>(classType.getConstructorType().getAstNodes())));
+                return interfaceType.accept(this, new Arg(classAsInter, arg.path, arg.depth));
+            }
+
+
             if (!(arg.type instanceof InterfaceDeclarationType)) {
                 return null;
             }
@@ -290,6 +304,13 @@ public class PrecisionTest {
 
         @Override
         public Void visit(ClassType classType, Arg arg) {
+            if (arg.type instanceof InterfaceDeclarationType) {
+                InterfaceDeclarationType classAsInter = new InterfaceDeclarationType(Collections.EMPTY_SET);
+                classAsInter.setObject(new UnnamedObjectType(classType.getStaticFields(), Collections.EMPTY_SET));
+                classAsInter.setFunction(new FunctionType(classType.getEmptyNameInstance(), classType.getConstructorType().getArguments(), Collections.EMPTY_SET, new ArrayList<>(classType.getConstructorType().getAstNodes())));
+                return classAsInter.accept(this, arg);
+            }
+
             if (!(arg.type instanceof ClassType)) {
                 return null;
             }
@@ -318,6 +339,17 @@ public class PrecisionTest {
 
         @Override
         public Void visit(ClassInstanceType instanceType, Arg arg) {
+            if (arg.type instanceof UnnamedObjectType) {
+                UnnamedObjectType asObject = new UnnamedObjectType(instanceType.getClazz().getPrototypeFields(), Collections.EMPTY_SET);
+                asObject.accept(this, arg);
+            }
+
+            if (arg.type instanceof InterfaceDeclarationType) {
+                InterfaceDeclarationType instanceAsInterface = new InterfaceDeclarationType(Collections.EMPTY_SET);
+                instanceAsInterface.setObject(new UnnamedObjectType(instanceType.getClazz().getPrototypeFields(), Collections.EMPTY_SET));
+                return instanceAsInterface.accept(this, arg);
+            }
+
             if (arg.type instanceof ClassInstanceType) {
                 recurse(instanceType.getClazz(), new Arg(((ClassInstanceType) arg.type).getClazz(), arg.path + ".[typeof]", arg.depth + 1000));
             }
@@ -330,15 +362,16 @@ public class PrecisionTest {
             queue.add(new QueueElement(type, arg));
         }
 
-        private Set<DeclarationType> seen = new HashSet<>();
+        private Set<Pair<DeclarationType, DeclarationType>> seen = new HashSet<>();
 
         public void finish() {
             while (!queue.isEmpty()) {
                 QueueElement element = queue.poll();
-                if (seen.contains(element.type)) {
+                Pair<DeclarationType, DeclarationType> key = new Pair<>(element.type, element.arg.type);
+                if (seen.contains(key)) {
                     continue;
                 }
-                seen.add(element.type);
+                seen.add(key);
                 element.type.accept(this, element.arg);
             }
         }
