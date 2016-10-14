@@ -22,7 +22,7 @@ public class PrecisionTest {
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        for (BenchMark benchMark : Arrays.asList(ace, angular, async201, backbone133, D3, /*ember27, FabricJS16, */hammer, handlebars4, jQuery, knockout, leaflet, moment_214, vue, jasmine24, PIXI_4_0, /*react014, */polymer11, /*three, */underscore17)) {
+        for (BenchMark benchMark : Arrays.asList(/*ace, */angular, async201, backbone133, D3, /*ember27, FabricJS16, */hammer, handlebars4, /*jQuery, */knockout, /*leaflet, */moment_214, /*vue, */jasmine24, /*PIXI_4_0, react014, */polymer11, /*three, */underscore17)) {
             runForBench(benchMark, 50);
         }
 
@@ -50,11 +50,11 @@ public class PrecisionTest {
         CompareMethods.Config tsCheck = new CompareMethods.Config("TSCheck", (options) -> {
             options.staticMethod = UNIFICATION_CONTEXT_SENSITIVE;
             options.useJSDoc = false;
-            options.recordCalls = false;
-            options.createInstances = false;
-            options.classOptions.useInstancesForThis = false;
-            options.classOptions.unionThisFromConstructor = false;
-            options.classOptions.useClassInstancesFromHeap = false;
+//            options.recordCalls = false;
+//            options.createInstances = false;
+//            options.classOptions.useInstancesForThis = false;
+//            options.classOptions.unionThisFromConstructor = false;
+//            options.classOptions.useClassInstancesFromHeap = false;
         });
 
         tsInfer.applier.accept(benchMark.getOptions());
