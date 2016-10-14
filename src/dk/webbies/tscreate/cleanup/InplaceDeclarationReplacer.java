@@ -54,7 +54,7 @@ public class InplaceDeclarationReplacer implements DeclarationTypeVisitor<Void> 
         }
 
         collector.getEveryThing().forEach(dec -> dec.accept(this));
-        declarations.entrySet().stream().forEach(entry -> declarations.put(entry.getKey(), this.findReplacement(entry.getValue())));
+        declarations.entrySet().forEach(entry -> declarations.put(entry.getKey(), this.findReplacement(entry.getValue())));
     }
 
     private List<List<DeclarationType>> computeCycles() {
