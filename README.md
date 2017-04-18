@@ -28,7 +28,14 @@ Experiments
 -----
 In the main package alongside Main.java is also a couple of classes that run experiments, these are: 
 `PerformanceTest`, `PrecisionTest`, `TSCheckMissesCounter` and `UsefullnessTest`. 
-They are configured as an IntelliJ run configuration, and can thus be executed by selecting and running the appropriate run configuration in the top right corner of IntelliJ. 
+They are configured as an IntelliJ run configuration, and can thus be executed by selecting and running the appropriate run configuration in the top right corner of IntelliJ.
+ 
+Mapping the tables from the [paper](http://cs.au.dk/~amoeller/papers/tstools/paper.pdf) to classes in the implementation:  
+**Table 1:** `PerformanceTest` for the left part, and `PrecisionTest` for the right part.     
+**Table 2:** `TSCheckMissesCounter`  
+**Table 3:** `UsefulnessTest`   
+**Table 4:** `UsefulnessTest` (comment in the part starting with `Map<String, Pair<DeclarationType, DeclarationType>> toCompare`)  
+**Table 5/6:** Manual by running TSEvolve (from `Main`).
 
 
 Performance
